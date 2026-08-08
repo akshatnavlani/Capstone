@@ -1,10 +1,11 @@
 # Ingestion Orchestration — Design (Track A)
 
-Status as of 2026-08-09: **design + skeleton, still not wired to real platform calls**.
-YouTube got a real pilot (see `DATA_COLLECTION_STATUS.md` Section 4a) confirming the
-worker/rate-limiter shape works mechanically, but Instagram/Reddit workers remain
-untestable — both still blocked on the OpenCLI Chrome extension (same doc, Section 2/3).
-Full wiring is still Weeks 3-4 scope, now further along for YouTube than IG/Reddit.
+Status as of 2026-08-09: **design + skeleton; all three platforms now confirmed
+reachable with real commands and real latency numbers** (`DATA_COLLECTION_STATUS.md`
+Section 4) — both OpenCLI blockers are closed (real Chrome, not Arc — see that doc's
+Section 2). The worker/rate-limiter shape below is validated against real pilot calls,
+not just designed on paper. Wiring the actual `# TODO`s in `orchestrator.py` against
+these now-proven commands is the next concrete step, still open as of this writing.
 
 This is the "Hermes agent or equivalent automation" from the original Capstone doc:
 something that queues targets, calls the right scraper per platform, and merges
@@ -45,8 +46,10 @@ Key decisions:
   since it's quota-based, not session-based, but there's no evidence yet that YouTube
   needs it given the target influencer count.
 - **Rate limiting lives in the worker, not the caller.** Each platform worker holds a
-  minimum-interval gate (~2-3s between OpenCLI calls, tunable) so nothing upstream has
-  to reason about it.
+  minimum-interval gate — real measured OpenCLI-via-Chrome latency is 5.1-8.6s/call
+  (avg 6.68s across 5 real pilot calls, see `DATA_COLLECTION_STATUS.md` Section 4b),
+  meaningfully slower than the ~2-3s/call the Weeks 1-2 design assumed. Gate should be
+  tuned around the real number, not the borrowed one.
 - **Upsert on natural platform IDs** (`video_id`, `post_id`, `comment_id`, etc.), so
   re-running a scrape pass is idempotent — a later pass just refreshes metrics
   (view/like/comment counts change over time, which is useful data itself, not just
@@ -76,19 +79,40 @@ same per-platform backends as the creator workers, same session-rate-limit
 considerations apply. Bounded by construction: this worker only ever runs against
 brand names the extraction step actually found, never an open-ended brand search.
 
+## Real command reference (confirmed working 2026-08-09)
+
+For filling in `orchestrator.py`'s `# TODO`s — these are the actual commands used in
+the pilot, not documentation guesses. All OpenCLI calls need `OPENCLI_PROFILE` set
+(see `.env`) or `--profile <id>` as a global flag (before the subcommand).
+
+- Reddit profile-equivalent: `opencli reddit subreddit-info <name> -f yaml`
+- Reddit post listing: `opencli reddit subreddit <name> -f yaml`
+- Reddit post + comments (bundled in one call): `opencli reddit read <post_id> -f yaml`
+  — truncates past ~68-90 comments on high-engagement posts ("[+N more]"); full
+  retrieval needs pagination, not yet implemented.
+- Instagram profile: `opencli instagram profile <username> -f yaml`
+- Instagram post listing: `opencli instagram user <username> --limit N -f yaml` —
+  **no comment-text command exists for Instagram** (see
+  `DATA_COLLECTION_STATUS.md` Section 4b) — only aggregate counts on each post row.
+- YouTube: use the real Data API (`YOUTUBE_API_KEY` in `.env`, verified working) as
+  primary; yt-dlp commands from `DATA_COLLECTION_STATUS.md` Section 4a as supplement.
+
 ## What's NOT built yet (intentionally — Weeks 3-4 scope, still open as of 2026-08-09)
 
-- Actual platform-call logic (the real `opencli instagram user X --limit 12` /
-  YouTube Data API calls and response parsing) — still blocked on Instagram/Reddit
-  session access and the YouTube API key (`DATA_COLLECTION_STATUS.md` Section 3).
-  yt-dlp-based YouTube calls ARE validated now (Section 4a of that doc).
+- The actual response-parsing code behind each `# TODO` in `orchestrator.py` — the
+  commands above are confirmed working and their real output shape has been seen
+  (YAML for OpenCLI, JSON for the Data API and yt-dlp), but nothing parses it into
+  the DB schema yet.
 - The brand-account scraping worker described above (extraction logic exists; the
   worker that acts on its output doesn't yet).
 - The target-queue population logic (how `creators` rows get created in the first
   place — manual seed list vs. discovery scraping).
-- Retry/backoff tuning against real observed rate-limit behavior — still can't be done
-  for IG/Reddit without a live session; YouTube's yt-dlp latency numbers from the pilot
-  (1.2-8.5s/call depending on call type) are a starting point for that worker's gate.
+- Reddit `read` pagination past the ~68-90 comment truncation point.
+- A resolution for the Instagram comment-text gap (accept caption-only signal, or
+  investigate `opencli browser extract` against a post's rendered comments — untested).
+- Retry/backoff tuning against sustained real-world rate-limit behavior — the pilot was
+  5 calls with manual 3s gaps, not a sustained multi-hour run, so CAPTCHA/ban thresholds
+  are still unknown in practice.
 
 ## Skeleton
 
