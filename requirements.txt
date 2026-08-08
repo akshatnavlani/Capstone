@@ -1,0 +1,13 @@
+# ML-Core (Track B) environment. Python 3.11.
+#
+# torch/torchvision need the PyTorch CUDA wheel index (CPU-only wheels are
+# on PyPI, but this machine has an NVIDIA GPU, so pull CUDA 12.4 builds):
+#   uv pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+# Then install the rest normally:
+#   uv pip install -r requirements.txt
+
+torch==2.6.0
+torchvision==0.21.0
+torch-geometric==2.8.0.post1
+transformers==5.14.1
+pytest==9.1.1
