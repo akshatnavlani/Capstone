@@ -82,10 +82,44 @@ Layer-1 source from the HLD — query this view, don't expect a separate table.
   JSON, agent-reach/OpenCLI output shapes) are seen in Weeks 3-4 — treat this as
   stable-but-not-frozen.
 
-## Cross-track check (2026-08-08)
+## Cross-track check (2026-08-08) — 2 unresolved mismatches, flagging rather than silently deciding
 
 Checked `origin/track-b-ml-core:GRAPH_SCHEMA.md`, `origin/track-c-fusion-backend:API_CONTRACTS.md`,
-`origin/track-d-frontend-app:WIREFRAMES.md` via `git fetch` — only `WIREFRAMES.md` exists so far
-(Track D has scaffolded a Next.js app and made field-name guesses pending Track C's contract).
-Track B/C haven't published yet. No mismatches to flag against this schema yet — will
-re-check and update this section as other tracks publish.
+`origin/track-d-frontend-app:WIREFRAMES.md` via `git fetch`. All three now exist. Two real
+disagreements found — **not resolved unilaterally here, need explicit confirmation:**
+
+### 1. Who computes `is_sponsored`? (Track A vs. Track C)
+
+`API_CONTRACTS.md` states Track C's current assumption: **Track A computes `is_sponsored`
+upstream and sends it pre-labeled** via the ingestion endpoints.
+
+This schema does the opposite: `is_sponsored` is stored **nullable/unpopulated** by Track A.
+My reading is based on PROJECT_PLAN.md Section 6's weekly timeline, row "7-8", **Track C's own
+column**, which reads: *"Text scrubbing + temporal normalization + sponsorship labeling
+pipeline."* That literally assigns the disclosure-tag labeling step to Track C, not Track A.
+
+**This needs to be settled before Week 7-8**, or the labeling step risks falling through the
+cracks (both tracks think the other owns it) — it's flagged in PROJECT_PLAN.md Section 1 as
+precision-critical (sole source of GAIL's treatment labels), so an ownership gap here is a real
+risk, not a paperwork detail. Recommend: whichever track ends up owning it, `sponsorship_raw_matches`
+(matched disclosure phrases) stays on Track A's ingestion tables either way, so the labeler
+(wherever it runs) has an audit trail.
+
+### 2. Brand-side data — not in Track A's current scope
+
+`GRAPH_SCHEMA.md` flags that Track B's `brand` graph node assumes a feature vector (BERT
+embedding of "brand product/marketing copy" + `budget_tier` + industry category) that **no
+Track A table currently supplies** — PROJECT_PLAN.md Section 1 (Data Collection) only scopes
+creator-side YouTube/Instagram/Reddit scraping and never mentions collecting brand profile data.
+
+Two options, not yet decided:
+- **(a) No new scraping** — Track B derives brand node identity/features from the brand-name
+  text already implicit in `sponsorship_raw_matches` on creator posts (Track B does its own
+  BERT embedding of that extracted text). Stays within Track A's current scope; brand node
+  features would be sparser (no follower counts, no official bio).
+- **(b) Track A adds brand-handle scraping** (a real scope addition — brand social profiles
+  aren't in PROJECT_PLAN.md today) to give Track B's brand nodes actual profile-level features.
+
+Leaning toward (a) as the lower-risk default given the timeline, but this affects Track B's
+model design, not just data plumbing — needs Track B/user sign-off, not a Track A unilateral
+call.
