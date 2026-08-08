@@ -35,16 +35,26 @@ NUM_CATEGORIES = len(CREATOR_CATEGORIES)
 CREATOR_METADATA_DIM = 3 + NUM_CATEGORIES
 CREATOR_FEATURE_DIM = CLIP_DIM + BERT_DIM + CREATOR_METADATA_DIM
 
-# PLACEHOLDER — replace once Track A publishes a `brands` table, see
-# GRAPH_SCHEMA.md ("brand" node section). Direction is resolved (user
-# decided on real brand scraping, not text-derived approximation; Track A is
-# adding the table this week) but it hasn't landed yet. Everything below —
-# BERT-of-marketing-copy, budget_tier, shared category taxonomy — is a guess
-# for dummy-data validation only, not a confirmed contract. Do not build
-# Track A/C-facing code against these exact dims until GRAPH_SCHEMA.md's
-# brand section is rewritten against real columns.
-BRAND_METADATA_DIM = 1 + NUM_CATEGORIES  # PLACEHOLDER: budget_tier + category one-hot
-BRAND_FEATURE_DIM = BERT_DIM + BRAND_METADATA_DIM  # PLACEHOLDER, see above
+# Brand category is free-text/nullable in Track A's real `brands` table
+# ("industry/vertical", not classified into a fixed enum yet) — NOT the same
+# taxonomy as CREATOR_CATEGORIES. This count is still a placeholder pending
+# Track A's real taxonomy; everything else below is grounded in real
+# `brands` columns (origin/track-a-data-infra:supabase/migrations/
+# 20260809010000_add_brands.sql, confirmed 2026-08-09).
+NUM_BRAND_CATEGORIES = 5  # PLACEHOLDER pending Track A's brand-category taxonomy
+
+# Rewritten 2026-08-09 against Track A's real `brands` table. The Weeks 3-4
+# guess (BERT-of-marketing-copy + budget_tier) was wrong in KIND, not just in
+# values: `brands` has no text/bio field at all — Track A's scope is
+# "basic profile data" only (category, follower_count, post_count,
+# is_verified, up to 3 platform handles), not brand content the way creator
+# posts/captions are. So no CLIP, no BERT for brand nodes under the current
+# scope — this is a real, structural feature-richness gap vs. creator nodes
+# (1289-dim) that GRAPH_SCHEMA.md documents. Metadata:
+# log_follower_count, log_post_count, is_verified, num_platforms_present
+# (count of non-null youtube/instagram/reddit handles, 0-3).
+BRAND_METADATA_DIM = 4 + NUM_BRAND_CATEGORIES
+BRAND_FEATURE_DIM = BRAND_METADATA_DIM
 
 NODE_TYPES = ("creator", "brand")
 

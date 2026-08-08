@@ -26,24 +26,39 @@ Feature vector = CLIP embedding ++ BERT embedding ++ metadata, dim **1289**:
 
 ### `brand`
 
-Feature vector = BERT embedding ++ metadata, dim **775**:
+**Rewritten 2026-08-09 against Track A's real `brands` table** (migration
+`20260809010000_add_brands.sql`, confirmed live). Metadata only, dim **9**:
 
 | Segment | Dim | Source |
 |---|---|---|
-| BERT embedding | 768 | `bert-base-uncased` pooled embedding of brand product/marketing copy |
-| `budget_tier` | 1 | |
-| category/industry one-hot | 6 (reuses `NUM_CATEGORIES`, shared-taxonomy assumption — **unconfirmed**) | |
+| `log_follower_count` | 1 | `brands.follower_count`, log-scaled to match creator metadata convention |
+| `log_post_count` | 1 | `brands.post_count` |
+| `is_verified` | 1 | `brands.is_verified` |
+| `num_platforms_present` | 1 | count of non-null `youtube_handle`/`instagram_handle`/`reddit_handle` (0-3) |
+| category one-hot | 5 (`NUM_BRAND_CATEGORIES`, **placeholder**) | `brands.category` is free-text/nullable ("industry/vertical") with no fixed enum yet — NOT the same taxonomy as `CREATOR_CATEGORIES` |
 
-**⏳ RESOLVED direction, not yet landed (2026-08-09):** user decided on real
-brand scraping (option (b)/schema-extension from the 2026-08-08 discussion),
-not a text-derived approximation. **Track A is adding a `brands` table this
-week**, scoped to brands that appear in sponsorship text. Until that lands,
-the feature vector above stays a placeholder — every field in
-`ml/schema.py`'s `BRAND_METADATA_DIM`/`BRAND_FEATURE_DIM` block is now
-marked with an explicit `# PLACEHOLDER` comment pointing back here, so it
-can't be mistaken for a confirmed contract. Once Track A publishes the
-`brands` table shape, this section needs a full rewrite against real
-columns, not just an update.
+**Structural gap vs. `creator` (1289-dim), not a bug:** Track A's real
+`brands` table has **no text/bio field at all** — their scope is "basic
+profile data" (category, follower/post counts, verification, handles), not
+brand content the way creator posts/captions are characterized. So there is
+currently no source for CLIP or BERT features on brand nodes, under the
+current (deliberately bounded) scraping scope. If the thesis later needs
+richer brand features, that requires Track A scraping brand post
+content/bio text — a real scope question, not something to invent
+client-side. `NUM_BRAND_CATEGORIES` is still a placeholder pending Track
+A's real category taxonomy (open item below).
+
+Zero real rows in the DB yet, but for a more precise reason than "still
+blocked": Track A's 2026-08-09 update shows all three platforms' scraping
+*mechanisms* now proven end-to-end with real pilot calls (YouTube API key
+live, Instagram/Reddit via a real logged-in Chrome + OpenCLI, real
+comment/post yields measured) — the remaining gap is that the orchestrator
+that writes scraped results into the shared Supabase DB isn't wired up yet
+("Wire the orchestrator's platform-call TODOs" is still an open item on
+their side). So bulk collection is not "still blocked" so much as "proven
+but not yet flowing into the DB" — dummy data is still the correct
+validation method for now, but this is likely to change soon; worth
+re-checking every session, not just once.
 
 ## Edge types
 
@@ -59,32 +74,69 @@ explicitly (Track B does not apply `ToUndirected()` at load time) — if
 creator A collaborated with creator B, both `(A,B)` and `(B,A)` edges should
 be present with the same weight.
 
-## Why GAT over GraphSAGE (for this smoke test)
+## Why GAT over GraphSAGE (for this smoke test) — and whether the swap is even needed
 
-PROJECT_PLAN.md Section 3a names both as acceptable backbones. GAT was used
-for the Week 1-2 schema-validation model (`ml/model.py`) because its
-per-edge attention coefficients are the direct implementation of GAIL's
-"personalized spillover weight per collaborator" (see the GAIL working-doc
-Step 6). GraphSAGE's inductive aggregation (new nodes without full retrain)
-is still the plan for the production GAIL branch in Weeks 11-13 — this
-isn't a final architecture decision, just what Week 1-2 needed to prove the
-schema works with attention-based message passing.
+PROJECT_PLAN.md Section 3a names both as acceptable backbones and gives
+GraphSAGE a specific rationale: *"Inductive setting: GraphSAGE-style
+inductive aggregation so new influencer nodes can get embeddings without a
+full retrain."* GAT was used for the Week 1-2 schema-validation model
+(`ml/model.py`) because its attention coefficients directly implement
+GAIL's "personalized spillover weight per collaborator" (GAIL working-doc
+Step 6).
 
-**Swap-cost check (2026-08-09):** verified empirically, not assumed —
-`torch_geometric.nn.SAGEConv` has no `edge_attr`/`edge_dim` parameter at
-all (`SAGEConv.forward` only takes `x`, `edge_index`, `size`; confirmed by
-inspecting the signature and by reproducing the `TypeError` when passing
-`edge_attr` into a `HeteroConv`-wrapped `SAGEConv`). GAT's weighted-edge
-handling in `ml/model.py` depends entirely on `edge_dim`, which GraphSAGE
-has no equivalent for. **This means swapping backbones for the Weeks 11-13
-production model is not a one-line class swap** — the `collaborates_with`/
-`co_occurs_with` weighted relations will need either a small custom
-`MessagePassing` layer (e.g. scale `x_j` by edge weight before mean
-aggregation — the standard way to add edge weights to GraphSAGE) or another
-mechanism. The good news: this only affects `ml/model.py`, not the data
-contract — `ml/schema.py`'s scalar `edge_attr` representation is
-backbone-agnostic and doesn't need to change. Budget real implementation
-time for this in Weeks 11-13 rather than assuming it's free.
+**Swap-cost check (2026-08-09):** verified empirically — `torch_geometric.nn.SAGEConv`
+has no `edge_attr`/`edge_dim` parameter at all (confirmed via signature
+inspection and by reproducing the `TypeError` when passing `edge_attr` into
+a `HeteroConv`-wrapped `SAGEConv`). GAT's weighted-edge handling in
+`ml/model.py` depends entirely on `edge_dim`, which GraphSAGE has no
+equivalent for.
+
+**Re-examined 2026-08-09, per the user's request to check for a middle
+option before treating "custom layer needed" as settled.** Question asked:
+is GraphSAGE's cited rationale (inductive, no-retrain-for-new-nodes) even a
+real reason to swap away from GAT, given GAT already has `edge_attr`
+support? **Finding: no, PROJECT_PLAN's stated rationale doesn't force a
+swap.** GAT is *also* inductive — this isn't a guess, it's the headline
+result of the original GAT paper (Veličković et al. 2018), which evaluates
+on the inductive PPI benchmark (train on one set of graphs, test on
+completely unseen ones). Verified two ways here, not just cited:
+1. **Structural check:** `GATConv`'s only learnable parameters are
+   `att_src`, `att_dst`, `lin.weight`, `bias` — all shape-fixed, none
+   indexed by node identity. Same category of parameterization as
+   `SAGEConv`'s `lin_l`/`lin_r`. Neither layer holds a per-node lookup
+   table, which is the actual structural reason either one generalizes to
+   unseen nodes.
+2. **Empirical check:** ran the exact same trained `SchemaSmokeTestGAT`
+   instance — no retraining — first on a 6-creator/3-brand dummy graph,
+   then on an unrelated 20-creator/8-brand graph. Correct output shapes
+   both times, same module, zero errors.
+
+**Revised conclusion:** a custom `MessagePassing` layer is **not
+definitely required** — "avoid the swap entirely, stay on GAT for
+production" is a legitimate option, not just a fallback. GraphSAGE's real
+remaining edges over GAT are unrelated to inductive capability: neighbor
+*sampling* for scalability to very large graphs (probably not needed at
+this thesis's scale — thousands, not millions, of nodes) and mean
+aggregation's potentially different robustness properties when node degree
+varies a lot (a mega-influencer with thousands of collaborators vs. a niche
+creator with a handful) — a modeling-quality question, not an architecture
+necessity. **This changes PROJECT_PLAN.md Section 3a's stated rationale and
+is a thesis-level architecture call — flagging for the user's judgment,
+not deciding unilaterally to drop GraphSAGE from the plan.**
+
+**Prototype built anyway** (`ml/weighted_sage_conv.py`, `WeightedSAGEConv`,
+tested in `tests/test_weighted_sage_conv.py`), per the Weeks 5-6 ask to
+de-risk this regardless of whether it turns out to be necessary — a small
+custom `MessagePassing` layer (self-transform + edge-weight-scaled
+mean-aggregated neighbor transform) that *does* consume `edge_attr`,
+unlike stock `SAGEConv`. Validated: produces correct shapes on dummy data,
+edge weight demonstrably changes the output (proving it's actually
+consumed, not silently ignored), and — same inductive check as GAT above —
+the same trained instance generalizes to a graph with more nodes without
+retraining. Not production-ready (no bias/normalization options,
+unbenchmarked for accuracy) — confirms the approach works structurally, no
+more. The data contract (`ml/schema.py`'s scalar `edge_attr`) is unaffected
+by any of this either way.
 
 ## Causal regularization (pulled forward from Weeks 5-6)
 
@@ -105,20 +157,37 @@ The end-to-end test derives a stand-in "is_sponsored" signal from the
 `sponsors` edge (since real `is_sponsored` labels aren't populated yet) —
 noted inline as a placeholder, not a real treatment label source.
 
+## Bot detection (pulled forward from Weeks 7-8)
+
+`ml/bot_detection.py` implements the four PROJECT_PLAN.md Section 2
+heuristics — deliberately not a trained classifier (no labeled ground truth
+exists, an intentional simplification): follower/following ratio outliers,
+account age, posting-frequency anomalies, engagement-rate-vs-follower-count
+mismatch. Combines them into `bot_score` (float, 0-1) and `is_bot_flagged`
+(bool via threshold) — matching Track A's reserved `bot_score real` /
+`is_bot_flagged boolean` columns exactly. Missing `account_age_days`
+(Instagram doesn't expose it) scores as 0/not-suspicious rather than being
+excluded or guessed, so an Instagram account isn't penalized for data that
+was never available. Tested against synthetic normal and obvious-bot cases
+(`tests/test_bot_detection.py`) — thresholds are reasonable defaults, not
+fit to real data, since none exists yet; revisit once real profiles land.
+
 ## What Track A needs to produce
 
 Populate `ml/schema.py::empty_hetero_data()` — i.e., for each creator/brand,
 the raw inputs needed to compute the feature segments above (thumbnail
 image(s) for CLIP, scrubbed text for BERT, the metadata fields, and category
-label), plus the edge lists for all four edge types with weights where
-applicable. **Brand-side data is entirely unscoped — see the blocker above.**
+label for creators; follower/post counts, verification, category, and
+platform handles for brands), plus the edge lists for all four edge types
+with weights where applicable. Brand-side data is now scoped and schema'd
+(see `brand` node section above) — no longer an open blocker, just not
+populated with real rows yet.
 
-Bot-detection heuristic signals (Track B's Weeks 7-8 deliverable) are
-already confirmed available per Track A's SCHEMA.md: `follower_count`/
-`following_count` ratio, `account_created_at` (YouTube/Reddit only —
-Instagram doesn't expose this), and posting frequency from
-`posted_at`/`published_at` timestamps. No action needed now, just noting
-the dependency is resolved.
+Bot-detection heuristic signals are confirmed available per Track A's
+SCHEMA.md and now actually consumed by `ml/bot_detection.py`:
+`follower_count`/`following_count` ratio, `account_created_at`
+(YouTube/Reddit only — Instagram doesn't expose this), and posting
+frequency from `posted_at`/`published_at` timestamps.
 
 ## What Track C should expect as output
 
@@ -134,32 +203,54 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
 
 ## Open items
 
-- **Brand-entity data — direction resolved, not yet landed.** Real brand
-  scraping confirmed (see ⏳ above); waiting on Track A's `brands` table this
-  week. Once it lands, rewrite the `brand` node section against real
-  columns and drop the `# PLACEHOLDER` markers in `ml/schema.py`.
-- Brand category/industry taxonomy — currently reuses creator's 6-value
-  taxonomy as a placeholder assumption; brands likely need a different,
-  currently-undefined taxonomy (e.g. industry verticals vs. content niches).
-  Revisit once Track A's `brands` table shape is known.
+- Brand category/industry taxonomy (`NUM_BRAND_CATEGORIES`, currently a
+  5-value placeholder) — `brands.category` is free-text/nullable with no
+  fixed enum yet; revisit once Track A classifies/fixes a real taxonomy.
 - Edge weight semantics (raw counts vs. normalized) for `collaborates_with`
   / `co_occurs_with` — currently unspecified pending real data shape from
   Track A; `ml/schema.py` just reserves a scalar `edge_attr` slot.
-- **GraphSAGE weighted-edge support** (see "Why GAT over GraphSAGE" above) —
-  needs a custom `MessagePassing` layer before the Weeks 11-13 production
-  swap, not a config change.
-- **Who computes `is_sponsored`? (FYI, not Track B's call to make.)** Track
-  A's SCHEMA.md flags a real disagreement with Track C's API_CONTRACTS.md:
-  Track C assumes Track A pre-computes and sends `is_sponsored`; Track A's
-  reading of PROJECT_PLAN.md's timeline (row "7-8", Track C's column: "...
-  sponsorship labeling pipeline") assigns that step to Track C. Unresolved
-  as of the last check. This matters to Track B because `is_sponsored` is
-  GAIL's sole treatment-label source — if it falls through the cracks
-  between A and C, the `sponsors` edge has no data regardless of the
-  brand-entity resolution above. Not Track B's dispute to settle, but worth
-  the user's attention alongside the brand-table work.
+- **GraphSAGE backbone decision needs the user's sign-off** (see "Why GAT
+  over GraphSAGE" above) — re-examination found GAT already satisfies
+  PROJECT_PLAN.md's stated inductive rationale for choosing GraphSAGE, so
+  "stay on GAT for production, skip the swap" is a legitimate option, not
+  just a fallback. A prototype weighted `MessagePassing` layer exists
+  either way (`ml/weighted_sage_conv.py`) in case GraphSAGE is still wanted
+  for other reasons (large-scale neighbor sampling, degree-variance
+  robustness). This is a real change from PROJECT_PLAN.md Section 3a's
+  wording — not decided unilaterally here.
+- Brand feature richness is capped by Track A's current bounded scope (no
+  brand post/bio content, only profile-level counts) — revisit only if the
+  thesis specifically needs richer brand features and Track A's scope is
+  deliberately expanded for it.
+- **Who computes `is_sponsored`? RESOLVED (2026-08-09) per Track A's
+  SCHEMA.md** — Track C owns the labeling pipeline (Weeks 7-8), confirmed
+  by the user. Track C's `API_CONTRACTS.md` fix has landed (re-checked
+  below) — `is_sponsored`/`sponsorship_raw_matches` are now correctly
+  `Optional`/unpopulated in their ingestion schemas, matching Track A's
+  real DB. No longer open.
 
-## Cross-track check (2026-08-09)
+## Cross-track check (2026-08-09, second pass)
+
+Re-checked `origin/track-a-data-infra` and `origin/track-c-fusion-backend`
+fresh via `git fetch` + `git log`/`git show` before starting Weeks 5-6 work.
+Real, substantive changes since the last check (same day): Track A added
+the `brands` table (migration `20260809010000_add_brands.sql`) — brand
+node section above rewritten against it. Track A also ran an adversarial
+self-check of their own and found two real bugs (missing Reddit FK
+indexes, an over-capturing brand-name regex) — both fixed, documented in
+their SCHEMA.md. All three scraping platforms now proven working
+end-to-end via real pilot calls, though the orchestrator→DB wiring isn't
+done yet, so no real rows exist in the DB (see brand section above for the
+precise distinction). Track C fixed the `is_sponsored` contract and
+switched `creator_unique_id: str` → `creator_id: uuid.UUID` to match Track
+A's real schema (a breaking change for anyone who built against their
+Weeks 1-2 version — noted here since it's a reminder to re-check contracts
+after "resolved" cross-track items, not just once). Neither change affects
+`ml/schema.py` directly (Track B doesn't reference creator ID strings/UUIDs
+in the graph tensors themselves), but worth knowing before any future
+real-data loading code is written.
+
+## Cross-track check (2026-08-09, first pass)
 
 Re-checked `origin/track-a-data-infra` (all files, latest commits) via
 `git fetch` + `git ls-tree`/`git show`. No `brands` table yet (still just
