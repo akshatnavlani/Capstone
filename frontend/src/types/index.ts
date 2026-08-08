@@ -1,46 +1,53 @@
-// Expected shapes for the Track C (Fusion+Backend) API. Not yet confirmed against
-// Track C's actual contract — see WIREFRAMES.md at the repo root for the
-// cross-check note. Field names are our best guess based on PROJECT_PLAN.md
-// Sections 1, 4, and 5.
-
-export interface BrandInputRequest {
-  product_category: string;
-  budget_inr: number;
-  region_proxy: string;
-  demographic_proxy: string;
-}
+// Mirrors Track C's backend/app/schemas.py exactly (checked against
+// origin/track-c-fusion-backend on 2026-08-09). See WIREFRAMES.md for the
+// list of mismatches versus Track D's original Weeks 1-2 field-name guesses.
 
 export interface ScoreBreakdown {
-  spillover_score: number;
-  sentiment_risk_score: number;
-  feature_score: number;
+  spillover_score: number; // 0-1
+  sentiment_risk_score: number; // 0-1
+  creator_feature_score: number; // 0-1
+  weight_spillover: number;
+  weight_sentiment_risk: number;
+  weight_creator_feature: number;
 }
 
-export type RiskSeverity = "low" | "medium" | "high";
-
-export interface RiskFlag {
-  type: string;
-  severity: RiskSeverity;
-  message: string;
+export interface BrandRecommendationRequest {
+  product_category: string;
+  budget: number; // INR
+  target_region?: string;
+  target_demographic?: string;
+  platform_preference?: ("youtube" | "instagram" | "reddit")[];
+  max_results?: number;
 }
 
 export interface InfluencerRecommendation {
-  influencer_id: string;
+  creator_unique_id: string;
   name: string;
-  platform_handles: Partial<Record<"youtube" | "instagram" | "reddit", string>>;
-  overall_score: number; // 0-100
-  confidence_interval: [number, number];
+  category: string | null;
+  youtube_handle: string | null;
+  instagram_handle: string | null;
+  reddit_handle: string | null;
+  final_score: number; // 0-100
+  confidence_low: number;
+  confidence_high: number;
+  estimated_reach: number | null;
   score_breakdown: ScoreBreakdown;
-  risk_flags: RiskFlag[];
 }
 
-export interface MonitoringAlert {
-  alert_id: string;
-  influencer_id: string;
-  influencer_name: string;
-  alert_type: string;
-  severity: RiskSeverity;
-  detected_at: string; // ISO timestamp
-  description: string;
-  propagated_from_influencer_id?: string;
+export interface BrandRecommendationResponse {
+  query: BrandRecommendationRequest;
+  results: InfluencerRecommendation[];
+  is_mock_data: boolean;
+}
+
+export type AlertSeverity = "low" | "medium" | "high";
+
+export interface AlertResponse {
+  id: number;
+  creator_unique_id: string;
+  severity: AlertSeverity;
+  reason: string;
+  source: string;
+  created_at: string;
+  resolved: boolean;
 }

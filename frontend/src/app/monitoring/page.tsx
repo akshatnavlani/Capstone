@@ -1,36 +1,64 @@
-// Wireframe shell only — one illustrative placeholder alert, not real/mock data.
-// Wiring against the Temporal branch's sentiment-propagation output is a
-// Weeks 16-17 objective. Shape documented in WIREFRAMES.md and
-// src/types/index.ts (MonitoringAlert).
+"use client";
+
+import { useEffect, useState } from "react";
+import { getAlerts } from "@/lib/api";
+import SeverityBadge from "@/components/SeverityBadge";
+import type { AlertResponse } from "@/types";
 
 export default function MonitoringPage() {
+  const [alerts, setAlerts] = useState<AlertResponse[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getAlerts()
+      .then(setAlerts)
+      .catch(() =>
+        setError(
+          "Couldn't reach the alerts API. Is the Track C backend running at " +
+            (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000") +
+            "?"
+        )
+      );
+  }, []);
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-16">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Monitoring &amp; Alerts</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Risk flags and sentiment alerts, including risk propagated from a
-          collaborator&apos;s controversy.
+          Risk flags and sentiment alerts, driven by the Temporal branch&apos;s
+          sentiment propagation output (once wired in — see backend
+          &quot;source&quot; field for what generated each alert).
         </p>
       </div>
 
-      <ul className="flex flex-col gap-3">
-        <li className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-          <div className="flex items-center justify-between">
-            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-              medium severity
-            </span>
-            <span className="text-xs text-zinc-500">detected_at placeholder</span>
-          </div>
-          <h2 className="mt-2 text-sm font-medium">Example Influencer Name</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Placeholder alert description.
-          </p>
-          <p className="mt-1 text-xs text-zinc-500">
-            Propagated from collaborator: propagated_from_influencer_id slot
-          </p>
-        </li>
-      </ul>
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+      {!error && alerts === null && (
+        <p className="text-sm text-zinc-500">Loading…</p>
+      )}
+
+      {alerts !== null && alerts.length === 0 && (
+        <p className="text-sm text-zinc-500">No alerts yet.</p>
+      )}
+
+      {alerts !== null && alerts.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {alerts.map((alert) => (
+            <li key={alert.id} className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+              <div className="flex items-center justify-between">
+                <SeverityBadge severity={alert.severity} />
+                <span className="text-xs text-zinc-500">
+                  {new Date(alert.created_at).toLocaleString()}
+                </span>
+              </div>
+              <h2 className="mt-2 text-sm font-medium">creator: {alert.creator_unique_id}</h2>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{alert.reason}</p>
+              <p className="mt-1 text-xs text-zinc-500">source: {alert.source}</p>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
