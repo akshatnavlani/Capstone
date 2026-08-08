@@ -5,6 +5,8 @@ POST /scores/compute with those values; this stores and returns the fused
 0-100 score. GET retrieves the most recently computed score for a creator.
 """
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
@@ -24,7 +26,7 @@ def compute_score(payload: FusionScoreComputeRequest, session: Session = Depends
     )
 
     record = FusionScore(
-        creator_unique_id=payload.creator_unique_id,
+        creator_id=payload.creator_id,
         spillover_score=payload.spillover_score,
         sentiment_risk_score=payload.sentiment_risk_score,
         creator_feature_score=payload.creator_feature_score,
@@ -38,7 +40,7 @@ def compute_score(payload: FusionScoreComputeRequest, session: Session = Depends
     session.refresh(record)
 
     return FusionScoreResponse(
-        creator_unique_id=record.creator_unique_id,
+        creator_id=record.creator_id,
         final_score=record.final_score,
         confidence_low=record.confidence_low,
         confidence_high=record.confidence_high,
@@ -49,16 +51,16 @@ def compute_score(payload: FusionScoreComputeRequest, session: Session = Depends
     )
 
 
-@router.get("/{creator_unique_id}", response_model=FusionScoreResponse)
-def get_latest_score(creator_unique_id: str, session: Session = Depends(get_session)) -> FusionScoreResponse:
+@router.get("/{creator_id}", response_model=FusionScoreResponse)
+def get_latest_score(creator_id: uuid.UUID, session: Session = Depends(get_session)) -> FusionScoreResponse:
     record = session.exec(
         select(FusionScore)
-        .where(FusionScore.creator_unique_id == creator_unique_id)
+        .where(FusionScore.creator_id == creator_id)
         .order_by(FusionScore.computed_at.desc())
     ).first()
 
     if not record:
-        raise HTTPException(status_code=404, detail=f"No fusion score found for creator '{creator_unique_id}'")
+        raise HTTPException(status_code=404, detail=f"No fusion score found for creator '{creator_id}'")
 
     breakdown = ScoreBreakdown(
         spillover_score=record.spillover_score,
@@ -70,7 +72,7 @@ def get_latest_score(creator_unique_id: str, session: Session = Depends(get_sess
     )
 
     return FusionScoreResponse(
-        creator_unique_id=record.creator_unique_id,
+        creator_id=record.creator_id,
         final_score=record.final_score,
         confidence_low=record.confidence_low,
         confidence_high=record.confidence_high,

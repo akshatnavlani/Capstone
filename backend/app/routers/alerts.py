@@ -5,6 +5,7 @@ POST lets any track push a flag manually, and GET is what the frontend
 polls for the monitoring dashboard.
 """
 
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends
@@ -28,13 +29,13 @@ def create_alert(payload: AlertCreate, session: Session = Depends(get_session)) 
 
 @router.get("", response_model=list[AlertResponse])
 def list_alerts(
-    creator_unique_id: Optional[str] = None,
+    creator_id: Optional[uuid.UUID] = None,
     include_resolved: bool = False,
     session: Session = Depends(get_session),
 ) -> list[AlertResponse]:
     query = select(RiskAlert)
-    if creator_unique_id:
-        query = query.where(RiskAlert.creator_unique_id == creator_unique_id)
+    if creator_id:
+        query = query.where(RiskAlert.creator_id == creator_id)
     if not include_resolved:
         query = query.where(RiskAlert.resolved == False)  # noqa: E712
 
