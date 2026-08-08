@@ -13,7 +13,7 @@ correct validation method for this stage.
 
 ### `creator`
 
-Feature vector = CLIP embedding ++ BERT embedding ++ metadata, dim **1291**:
+Feature vector = CLIP embedding ++ BERT embedding ++ metadata, dim **1289**:
 
 | Segment | Dim | Source |
 |---|---|---|
@@ -22,26 +22,43 @@ Feature vector = CLIP embedding ++ BERT embedding ++ metadata, dim **1291**:
 | `log_subscriber_count` | 1 | log-scaled per PROJECT_PLAN.md Section 2 metric scaling |
 | `engagement_rate` | 1 | |
 | `reputation_score` | 1 | |
-| category one-hot | 8 (`NUM_CATEGORIES`, placeholder) | e.g. Fitness, Lifestyle, Sports — **see Open Items** |
+| category one-hot | 6 (`NUM_CATEGORIES`) | matches Track A's `creators.category` enum exactly (confirmed 2026-08-08): `athlete \| team \| league \| fitness_influencer \| lifestyle_influencer \| other` |
 
 ### `brand`
 
-Feature vector = BERT embedding ++ metadata, dim **777**:
+Feature vector = BERT embedding ++ metadata, dim **775**:
 
 | Segment | Dim | Source |
 |---|---|---|
 | BERT embedding | 768 | `bert-base-uncased` pooled embedding of brand product/marketing copy |
 | `budget_tier` | 1 | |
-| category/industry one-hot | 8 (`NUM_CATEGORIES`, shared taxonomy with creator) | **see Open Items** |
+| category/industry one-hot | 6 (reuses `NUM_CATEGORIES`, shared-taxonomy assumption — **unconfirmed**) | |
 
-**⚠️ Open item for Track A:** PROJECT_PLAN.md Section 1 (Data Collection)
-only scopes creator-side scraping (YouTube/Instagram/Reddit). It doesn't
-say what data gets collected for brands, so the brand feature vector above
-is Track B's assumption, not a confirmed contract. If brand-side data
-collection isn't planned, we need an explicit decision here — either Track A
-adds a minimal brand data source (e.g. product descriptions, industry tags),
-or Track B drops the BERT component and uses metadata-only brand features.
-Flagging now rather than discovering it at Week 9-10 feature-extraction time.
+**🛑 Confirmed cross-track blocker (not just an assumption anymore):**
+Track A's `SCHEMA.md` (published 2026-08-08) has **no brand entity at all**.
+Sponsorship is stored as a binary `is_sponsored` flag on content rows plus
+`sponsorship_raw_matches jsonb` (the matched disclosure phrase text, e.g.
+"in partnership with Nike") — there is no parsed/normalized brand name,
+brand ID, or brand table anywhere in the data layer. Track A's doc says
+explicitly: *"If GAIL needs brand nodes with names (not just a binary
+treatment flag), that requires either a NER step downstream or a schema
+extension — tell me if you need this and I'll add it."*
+
+GAIL **does** need this — PROJECT_PLAN.md Section 3a specifies a
+heterogeneous graph with creator *and brand* nodes, and the whole point of
+the `(brand, sponsors, creator)` edge is to know which specific brand
+sponsored which creator (so spillover can be attributed and, later, brands
+can be recommended creators). A bare `is_sponsored` boolean can't populate
+brand nodes.
+
+**This needs a decision, relayed by the user, not resolved silently:**
+either (a) Track A extends the schema with a parsed brand entity (would need
+NER/entity-linking on `sponsorship_raw_matches`), or (b) Track B owns a
+downstream brand-name-extraction step on top of Track A's raw
+`sponsorship_raw_matches` text. Until decided, `brand` nodes in this schema
+are validated only against synthetic dummy data — there is no real path to
+populate them yet. The feature vector above is a placeholder pending that
+decision.
 
 ## Edge types
 
@@ -49,7 +66,7 @@ Flagging now rather than discovering it at Week 9-10 feature-extraction time.
 |---|---|---|---|
 | `(creator, collaborates_with, creator)` | both directions populated | yes (`edge_attr`, scalar) | collaboration frequency between two creators |
 | `(creator, co_occurs_with, creator)` | both directions populated | yes (`edge_attr`, scalar) | platform co-occurrence (shared platforms / joint appearances) |
-| `(brand, sponsors, creator)` | brand → creator | no | treatment edge; existence derived from `is_sponsored` disclosure-tag labeling (PROJECT_PLAN.md Section 1/2) — the sole source of GAIL's training signal |
+| `(brand, sponsors, creator)` | brand → creator | no | treatment edge; existence derived from `is_sponsored` disclosure-tag labeling. Per Track A's SCHEMA.md, `is_sponsored` is currently **nullable/unpopulated** — the labeling pipeline is Track C's Weeks 7-8 deliverable, and per Track A, don't build a separate labeler against raw text in the meantime. Also blocked on the brand-identity gap above: even once `is_sponsored` is populated, this edge needs a `brand` endpoint to attach to. |
 | `(creator, sponsored_by, brand)` | creator → brand (reverse of `sponsors`) | no | required so PyG can message-pass into brand nodes; not a separate data source, just the transpose |
 
 Both directions of `collaborates_with` / `co_occurs_with` must be populated
@@ -74,23 +91,44 @@ Populate `ml/schema.py::empty_hetero_data()` — i.e., for each creator/brand,
 the raw inputs needed to compute the feature segments above (thumbnail
 image(s) for CLIP, scrubbed text for BERT, the metadata fields, and category
 label), plus the edge lists for all four edge types with weights where
-applicable.
+applicable. **Brand-side data is entirely unscoped — see the blocker above.**
+
+Bot-detection heuristic signals (Track B's Weeks 7-8 deliverable) are
+already confirmed available per Track A's SCHEMA.md: `follower_count`/
+`following_count` ratio, `account_created_at` (YouTube/Reddit only —
+Instagram doesn't expose this), and posting frequency from
+`posted_at`/`published_at` timestamps. No action needed now, just noting
+the dependency is resolved.
 
 ## What Track C should expect as output
 
-Not yet built (Weeks 11-15 per the timeline) — the GAIL branch will output
-a per-creator spillover/exposure score, combined with the Temporal branch's
-output in the Causal Inference layer (PROJECT_PLAN.md Section 3c) before
-reaching Track C's Fusion Layer. This doc will be updated with the concrete
-output tensor shape once that's implemented; called out here so Track C
-knows not to expect it yet.
+Confirmed via `origin/track-c-fusion-backend:API_CONTRACTS.md`
+(2026-08-08): `POST /scores/compute` expects `spillover_score`,
+`sentiment_risk_score`, and `creator_feature_score`, each a float in
+`[0, 1]`, one per creator. The GAIL branch (this doc) is responsible for
+`spillover_score`; `sentiment_risk_score` comes from the Temporal branch and
+`creator_feature_score` from the feature-extraction pipeline (Section 2).
+None of these are wired up yet — Track C's endpoint currently accepts
+caller-supplied or placeholder `0.5` values. Actual GAIL output lands per
+the Weeks 11-15 timeline (Causal Inference combiner validation).
 
 ## Open items
 
-- `NUM_CATEGORIES` (currently 8, placeholder) needs Track A's finalized
-  category taxonomy — used identically for creator niche and brand industry
-  under a shared-taxonomy assumption (also unconfirmed).
-- Brand-side data collection scope (see ⚠️ above).
+- **Brand-entity data gap (see 🛑 above)** — needs a decision between Track A
+  extending their schema vs. Track B owning brand-name extraction downstream.
+  Highest-priority open item; blocks any real (non-dummy) `brand` node data.
+- Brand category/industry taxonomy — currently reuses creator's 6-value
+  taxonomy as a placeholder assumption; brands likely need a different,
+  currently-undefined taxonomy (e.g. industry verticals vs. content niches).
 - Edge weight semantics (raw counts vs. normalized) for `collaborates_with`
   / `co_occurs_with` — currently unspecified pending real data shape from
   Track A; `ml/schema.py` just reserves a scalar `edge_attr` slot.
+
+## Cross-track check (2026-08-08)
+
+Checked `origin/track-a-data-infra:SCHEMA.md` and
+`origin/track-c-fusion-backend:API_CONTRACTS.md` via `git fetch` + `git
+show`. Reconciled: creator category taxonomy (now matches Track A exactly),
+Track C's output contract (now referenced above), bot-detection signal
+availability (confirmed). Surfaced: the brand-entity gap above. Track D's
+`WIREFRAMES.md` also exists but wasn't relevant to this file's scope.
