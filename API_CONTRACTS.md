@@ -57,6 +57,18 @@ for the real Weeks 3-4 scraping pipeline the way Weeks 1-2 assumed.
 
 ---
 
+## Note: `brands` table (added by Track A 2026-08-09, reconciled here same day)
+
+Track A added a `brands` table + nullable `brand_id` FK on `youtube_videos`/
+`instagram_posts`/`reddit_posts` (migration `20260809010000_add_brands.sql`,
+bounded scope: populated only from brand names found in sponsorship-disclosure
+text already on creator content, not an open crawl — see their SCHEMA.md).
+Added a matching `Brand` model in `backend/app/models.py` so this stays in
+sync. **Not yet exposed via `/ingestion/*` or used in `/recommendations`** —
+Track A's orchestrator writes it directly like everything else (see breaking-
+change note #3), and no Track C endpoint reads/writes it yet. Flag if Track B
+or D need it surfaced through this API.
+
 ## Cross-track dependency flags
 
 - **Track A (Data/Infra):** models in `backend/app/models.py` now mirror

@@ -2,13 +2,14 @@
 
 Two ownership zones, per API_CONTRACTS.md:
 
-1. Track A's live schema (`Creator`, `YouTubeChannel`, `YouTubeVideo`,
-   `InstagramProfile`, `InstagramPost`, `RedditProfile`, `RedditPost`) —
-   mirrors `SCHEMA.md` + `supabase/migrations/20260808163402_init_schema.sql`
-   on `origin/track-a-data-infra` as of 2026-08-09. Track A owns migrations
-   for these tables; Track C only reads/writes them via this ORM mapping.
-   Re-diff against their SCHEMA.md if it changes — don't assume this stays
-   in sync automatically.
+1. Track A's live schema (`Brand`, `Creator`, `YouTubeChannel`,
+   `YouTubeVideo`, `InstagramProfile`, `InstagramPost`, `RedditProfile`,
+   `RedditPost`) — mirrors `SCHEMA.md` +
+   `supabase/migrations/20260808163402_init_schema.sql` +
+   `20260809010000_add_brands.sql` on `origin/track-a-data-infra` as of
+   2026-08-09. Track A owns migrations for these tables; Track C only
+   reads/writes them via this ORM mapping. Re-diff against their SCHEMA.md
+   if it changes — don't assume this stays in sync automatically.
 
    `is_sponsored` / `sponsorship_raw_matches` are nullable by design: Track A
    stores raw scraped text only. Track C owns the disclosure-tag labeling
@@ -49,6 +50,30 @@ def _string_array_column():
 
 
 # ---- Track A-owned tables (read/write mapping only, no migration ownership) --
+
+class Brand(SQLModel, table=True):
+    """Added by Track A 2026-08-09 (migration 20260809010000_add_brands.sql),
+    bounded scope: populated only from brand names extracted out of
+    sponsorship-disclosure text already on creator content rows, not an
+    open-ended brand-discovery crawl. Gives Track B's GAIL graph a real
+    (brand, sponsors, creator) edge endpoint."""
+
+    __tablename__ = "brands"
+
+    brand_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    name: str
+    category: Optional[str] = None
+    youtube_handle: Optional[str] = None
+    instagram_handle: Optional[str] = None
+    reddit_handle: Optional[str] = None
+    follower_count: Optional[int] = None
+    post_count: Optional[int] = None
+    is_verified: Optional[bool] = None
+    source: str = "sponsorship_mention"
+    fetched_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
 
 class Creator(SQLModel, table=True):
     __tablename__ = "creators"
@@ -101,6 +126,7 @@ class YouTubeVideo(SQLModel, table=True):
     tags: list[str] = Field(default_factory=list, sa_column=_string_array_column())
     is_sponsored: Optional[bool] = None  # null = not yet labeled (Track C, Weeks 7-8)
     sponsorship_raw_matches: Optional[list] = Field(default=None, sa_column=Column(JSON))
+    brand_id: Optional[uuid.UUID] = Field(default=None, foreign_key="brands.brand_id", index=True)
     fetched_at: datetime = Field(default_factory=utcnow)
     created_at: datetime = Field(default_factory=utcnow)
 
@@ -138,6 +164,7 @@ class InstagramPost(SQLModel, table=True):
     hashtags: list[str] = Field(default_factory=list, sa_column=_string_array_column())
     is_sponsored: Optional[bool] = None
     sponsorship_raw_matches: Optional[list] = Field(default=None, sa_column=Column(JSON))
+    brand_id: Optional[uuid.UUID] = Field(default=None, foreign_key="brands.brand_id", index=True)
     fetched_at: datetime = Field(default_factory=utcnow)
     created_at: datetime = Field(default_factory=utcnow)
 
@@ -170,6 +197,7 @@ class RedditPost(SQLModel, table=True):
     num_comments: Optional[int] = None
     is_sponsored: Optional[bool] = None
     sponsorship_raw_matches: Optional[list] = Field(default=None, sa_column=Column(JSON))
+    brand_id: Optional[uuid.UUID] = Field(default=None, foreign_key="brands.brand_id", index=True)
     fetched_at: datetime = Field(default_factory=utcnow)
     created_at: datetime = Field(default_factory=utcnow)
 
