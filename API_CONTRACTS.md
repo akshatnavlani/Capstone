@@ -243,7 +243,7 @@ first. This is what Track D's monitoring/alerts UI should poll.
 |---|---|
 | FastAPI app, all routes, request/response validation | Real, working |
 | DB models matching Track A's live schema | Real, working (re-diff if their schema changes) |
-| DB (SQLite local fallback works fully now / Postgres via `DATABASE_URL`) | SQLite: real, working. Postgres: **not yet connected** — waiting on real Supabase connection string from the user/Track A, see below |
+| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified as of 2026-08-09 — connected to the live Supabase instance, confirmed `db_connected: true` and successfully queried all of Track A's real tables (all empty, matches their scraping-still-blocked status) |
 | Ingestion upsert logic | Real, working, but secondary path (see breaking-change note #3) |
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic filtering | Real (see above), heuristic-based (placeholder cost rate, substring text match) |
