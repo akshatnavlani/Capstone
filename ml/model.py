@@ -4,6 +4,18 @@ NOT the final GAIL model (that lands in Weeks 11-13 per PROJECT_PLAN.md
 Section 6). This just confirms the heterogeneous schema in schema.py
 supports a basic attention-based forward pass with sane output shapes,
 using PyG's off-the-shelf HeteroConv + GATConv.
+
+Swapping this backbone for GraphSAGE later is NOT a drop-in class-name
+change: `torch_geometric.nn.SAGEConv` has no `edge_attr`/`edge_dim` support
+at all (confirmed empirically 2026-08-09 — passing edge_attr into a
+HeteroConv-wrapped SAGEConv raises TypeError). The weighted
+`collaborates_with`/`co_occurs_with` relations here rely on GATConv's
+edge_dim mechanism, which GraphSAGE has no equivalent for. A GraphSAGE
+backbone will need either a small custom MessagePassing layer that folds
+edge weight into the message (e.g. scale x_j by edge weight before mean
+aggregation) or another way to inject edge weight — budget real time for
+this in Weeks 11-13, don't assume it's a one-line swap. See
+GRAPH_SCHEMA.md's "Why GAT over GraphSAGE" section.
 """
 
 from __future__ import annotations

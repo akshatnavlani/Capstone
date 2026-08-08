@@ -28,27 +28,29 @@ def make_dummy_hetero_data(
     data["creator"].x = torch.randn((num_creators, CREATOR_FEATURE_DIM), generator=gen)
     data["brand"].x = torch.randn((num_brands, BRAND_FEATURE_DIM), generator=gen)
 
-    def random_edges(num_edges: int, src_n: int, dst_n: int, self_loops_ok: bool):
-        src = torch.randint(0, src_n, (num_edges,), generator=gen)
-        dst = torch.randint(0, dst_n, (num_edges,), generator=gen)
-        if not self_loops_ok:
-            mask = src != dst
-            src, dst = src[mask], dst[mask]
-        return torch.stack([src, dst], dim=0)
+    def symmetric_weighted_edges(n: int, num_pairs: int):
+        # Unique unordered pairs, both directions populated with the SAME
+        # weight, per the GRAPH_SCHEMA.md contract ("if creator A
+        # collaborated with creator B, both (A,B) and (B,A) edges should be
+        # present with the same weight"). Sampling from unique pairs (rather
+        # than drawing (src, dst) independently at random) avoids the two
+        # directions ending up with different weights by chance collision.
+        all_pairs = torch.combinations(torch.arange(n), r=2)
+        num_pairs = min(num_pairs, all_pairs.size(0))
+        perm = torch.randperm(all_pairs.size(0), generator=gen)[:num_pairs]
+        pairs = all_pairs[perm]
+        weight = torch.rand((num_pairs, 1), generator=gen)
+        edge_index = torch.cat([pairs.t(), pairs.flip(1).t()], dim=1)
+        edge_attr = torch.cat([weight, weight], dim=0)
+        return edge_index, edge_attr
 
-    num_collab_edges = num_creators * avg_degree
-    collab_index = random_edges(num_collab_edges, num_creators, num_creators, self_loops_ok=False)
+    collab_index, collab_attr = symmetric_weighted_edges(num_creators, num_creators * avg_degree // 2)
     data["creator", "collaborates_with", "creator"].edge_index = collab_index
-    data["creator", "collaborates_with", "creator"].edge_attr = torch.rand(
-        (collab_index.size(1), 1), generator=gen
-    )
+    data["creator", "collaborates_with", "creator"].edge_attr = collab_attr
 
-    num_cooccur_edges = num_creators * avg_degree
-    cooccur_index = random_edges(num_cooccur_edges, num_creators, num_creators, self_loops_ok=False)
+    cooccur_index, cooccur_attr = symmetric_weighted_edges(num_creators, num_creators * avg_degree // 2)
     data["creator", "co_occurs_with", "creator"].edge_index = cooccur_index
-    data["creator", "co_occurs_with", "creator"].edge_attr = torch.rand(
-        (cooccur_index.size(1), 1), generator=gen
-    )
+    data["creator", "co_occurs_with", "creator"].edge_attr = cooccur_attr
 
     num_sponsor_edges = max(1, num_brands * 2)
     brand_idx = torch.randint(0, num_brands, (num_sponsor_edges,), generator=gen)

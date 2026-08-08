@@ -35,15 +35,16 @@ NUM_CATEGORIES = len(CREATOR_CATEGORIES)
 CREATOR_METADATA_DIM = 3 + NUM_CATEGORIES
 CREATOR_FEATURE_DIM = CLIP_DIM + BERT_DIM + CREATOR_METADATA_DIM
 
-# brand metadata: budget_tier
-# ASSUMPTION (flagged in GRAPH_SCHEMA.md as a CONFIRMED cross-track gap, not
-# just a guess): Track A's published SCHEMA.md (2026-08-08) has no brand
-# entity at all — sponsorship is stored as a binary is_sponsored flag plus
-# raw matched disclosure phrases, with no parsed/normalized brand name.
-# There is currently no real data source for brand nodes. This feature
-# vector is a placeholder for dummy-data validation only.
-BRAND_METADATA_DIM = 1 + NUM_CATEGORIES
-BRAND_FEATURE_DIM = BERT_DIM + BRAND_METADATA_DIM
+# PLACEHOLDER — replace once Track A publishes a `brands` table, see
+# GRAPH_SCHEMA.md ("brand" node section). Direction is resolved (user
+# decided on real brand scraping, not text-derived approximation; Track A is
+# adding the table this week) but it hasn't landed yet. Everything below —
+# BERT-of-marketing-copy, budget_tier, shared category taxonomy — is a guess
+# for dummy-data validation only, not a confirmed contract. Do not build
+# Track A/C-facing code against these exact dims until GRAPH_SCHEMA.md's
+# brand section is rewritten against real columns.
+BRAND_METADATA_DIM = 1 + NUM_CATEGORIES  # PLACEHOLDER: budget_tier + category one-hot
+BRAND_FEATURE_DIM = BERT_DIM + BRAND_METADATA_DIM  # PLACEHOLDER, see above
 
 NODE_TYPES = ("creator", "brand")
 

@@ -34,31 +34,16 @@ Feature vector = BERT embedding ++ metadata, dim **775**:
 | `budget_tier` | 1 | |
 | category/industry one-hot | 6 (reuses `NUM_CATEGORIES`, shared-taxonomy assumption — **unconfirmed**) | |
 
-**🛑 Confirmed cross-track blocker (not just an assumption anymore):**
-Track A's `SCHEMA.md` (published 2026-08-08) has **no brand entity at all**.
-Sponsorship is stored as a binary `is_sponsored` flag on content rows plus
-`sponsorship_raw_matches jsonb` (the matched disclosure phrase text, e.g.
-"in partnership with Nike") — there is no parsed/normalized brand name,
-brand ID, or brand table anywhere in the data layer. Track A's doc says
-explicitly: *"If GAIL needs brand nodes with names (not just a binary
-treatment flag), that requires either a NER step downstream or a schema
-extension — tell me if you need this and I'll add it."*
-
-GAIL **does** need this — PROJECT_PLAN.md Section 3a specifies a
-heterogeneous graph with creator *and brand* nodes, and the whole point of
-the `(brand, sponsors, creator)` edge is to know which specific brand
-sponsored which creator (so spillover can be attributed and, later, brands
-can be recommended creators). A bare `is_sponsored` boolean can't populate
-brand nodes.
-
-**This needs a decision, relayed by the user, not resolved silently:**
-either (a) Track A extends the schema with a parsed brand entity (would need
-NER/entity-linking on `sponsorship_raw_matches`), or (b) Track B owns a
-downstream brand-name-extraction step on top of Track A's raw
-`sponsorship_raw_matches` text. Until decided, `brand` nodes in this schema
-are validated only against synthetic dummy data — there is no real path to
-populate them yet. The feature vector above is a placeholder pending that
-decision.
+**⏳ RESOLVED direction, not yet landed (2026-08-09):** user decided on real
+brand scraping (option (b)/schema-extension from the 2026-08-08 discussion),
+not a text-derived approximation. **Track A is adding a `brands` table this
+week**, scoped to brands that appear in sponsorship text. Until that lands,
+the feature vector above stays a placeholder — every field in
+`ml/schema.py`'s `BRAND_METADATA_DIM`/`BRAND_FEATURE_DIM` block is now
+marked with an explicit `# PLACEHOLDER` comment pointing back here, so it
+can't be mistaken for a confirmed contract. Once Track A publishes the
+`brands` table shape, this section needs a full rewrite against real
+columns, not just an update.
 
 ## Edge types
 
@@ -84,6 +69,41 @@ Step 6). GraphSAGE's inductive aggregation (new nodes without full retrain)
 is still the plan for the production GAIL branch in Weeks 11-13 — this
 isn't a final architecture decision, just what Week 1-2 needed to prove the
 schema works with attention-based message passing.
+
+**Swap-cost check (2026-08-09):** verified empirically, not assumed —
+`torch_geometric.nn.SAGEConv` has no `edge_attr`/`edge_dim` parameter at
+all (`SAGEConv.forward` only takes `x`, `edge_index`, `size`; confirmed by
+inspecting the signature and by reproducing the `TypeError` when passing
+`edge_attr` into a `HeteroConv`-wrapped `SAGEConv`). GAT's weighted-edge
+handling in `ml/model.py` depends entirely on `edge_dim`, which GraphSAGE
+has no equivalent for. **This means swapping backbones for the Weeks 11-13
+production model is not a one-line class swap** — the `collaborates_with`/
+`co_occurs_with` weighted relations will need either a small custom
+`MessagePassing` layer (e.g. scale `x_j` by edge weight before mean
+aggregation — the standard way to add edge weights to GraphSAGE) or another
+mechanism. The good news: this only affects `ml/model.py`, not the data
+contract — `ml/schema.py`'s scalar `edge_attr` representation is
+backbone-agnostic and doesn't need to change. Budget real implementation
+time for this in Weeks 11-13 rather than assuming it's free.
+
+## Causal regularization (pulled forward from Weeks 5-6)
+
+`ml/causal_regularization.py` implements the three PROJECT_PLAN.md Section 3c
+regularization terms as standalone, tested primitives (not yet wired into a
+training loop — no GAIL predictor exists yet to regularize):
+- `PropensityScoreModel` + `overlap_penalty` + `doubly_robust_weights` —
+  logistic-regression/small-MLP propensity model, overlap violation penalty,
+  and inverse-propensity correction weights for selection bias.
+- `laplacian_smoothness_penalty` — weighted graph-Laplacian quadratic form
+  over the `collaborates_with` graph.
+- `has_sponsored_neighbor` + `consistency_penalty` — zero-exposure
+  constraint for creators with no sponsored collaborators.
+
+Tested against both hand-built small graphs (exact expected values) and the
+real `ml/dummy_data.py` HeteroData (`tests/test_causal_regularization.py`).
+The end-to-end test derives a stand-in "is_sponsored" signal from the
+`sponsors` edge (since real `is_sponsored` labels aren't populated yet) —
+noted inline as a placeholder, not a real treatment label source.
 
 ## What Track A needs to produce
 
@@ -114,15 +134,42 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
 
 ## Open items
 
-- **Brand-entity data gap (see 🛑 above)** — needs a decision between Track A
-  extending their schema vs. Track B owning brand-name extraction downstream.
-  Highest-priority open item; blocks any real (non-dummy) `brand` node data.
+- **Brand-entity data — direction resolved, not yet landed.** Real brand
+  scraping confirmed (see ⏳ above); waiting on Track A's `brands` table this
+  week. Once it lands, rewrite the `brand` node section against real
+  columns and drop the `# PLACEHOLDER` markers in `ml/schema.py`.
 - Brand category/industry taxonomy — currently reuses creator's 6-value
   taxonomy as a placeholder assumption; brands likely need a different,
   currently-undefined taxonomy (e.g. industry verticals vs. content niches).
+  Revisit once Track A's `brands` table shape is known.
 - Edge weight semantics (raw counts vs. normalized) for `collaborates_with`
   / `co_occurs_with` — currently unspecified pending real data shape from
   Track A; `ml/schema.py` just reserves a scalar `edge_attr` slot.
+- **GraphSAGE weighted-edge support** (see "Why GAT over GraphSAGE" above) —
+  needs a custom `MessagePassing` layer before the Weeks 11-13 production
+  swap, not a config change.
+- **Who computes `is_sponsored`? (FYI, not Track B's call to make.)** Track
+  A's SCHEMA.md flags a real disagreement with Track C's API_CONTRACTS.md:
+  Track C assumes Track A pre-computes and sends `is_sponsored`; Track A's
+  reading of PROJECT_PLAN.md's timeline (row "7-8", Track C's column: "...
+  sponsorship labeling pipeline") assigns that step to Track C. Unresolved
+  as of the last check. This matters to Track B because `is_sponsored` is
+  GAIL's sole treatment-label source — if it falls through the cracks
+  between A and C, the `sponsors` edge has no data regardless of the
+  brand-entity resolution above. Not Track B's dispute to settle, but worth
+  the user's attention alongside the brand-table work.
+
+## Cross-track check (2026-08-09)
+
+Re-checked `origin/track-a-data-infra` (all files, latest commits) via
+`git fetch` + `git ls-tree`/`git show`. No `brands` table yet (still just
+the 2026-08-08 `SCHEMA.md` state) and no pilot-scraping-batch results yet
+(`DATA_COLLECTION_STATUS.md` still shows Weeks 1-2 setup status, Instagram/
+Reddit backends still off pending human Chrome-extension/login steps) — both
+expected, not a problem, just confirming nothing to reconcile against yet.
+Surfaced the `is_sponsored` ownership disagreement above while re-reading
+Track A's file (it was already flagged there on 2026-08-08; repeating it
+here since it's directly relevant to this doc's `sponsors` edge).
 
 ## Cross-track check (2026-08-08)
 
