@@ -1,2 +1,5 @@
 .claude/settings.local.json
 .agents/
+.env
+.venv/
+__pycache__/
