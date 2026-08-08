@@ -91,19 +91,32 @@ the Weeks 1-2 doc's "~600-700/hour" — that figure turns out to have been rough
 right neighborhood by coincidence (it was derived by halving a wrong theoretical
 ceiling), not because the reasoning behind it was sound.
 
-**Real structural finding, not just a speed number: Instagram has no comment-text
-read path via OpenCLI.** Checked `opencli instagram --help` — the full command list
-(`profile`, `user`, `search`, `explore`, `followers`, `following`, `saved`, etc.) has
-no comment-reading verb. `user` returns a comment *count* per post, not the comment
-text. This matters because PROJECT_PLAN.md Section 1 explicitly wants comments for
-sentiment analysis (Module 2) and demographic proxy signals — for Instagram
-specifically, that signal will have to come from captions/hashtags only unless another
-tool/backend is found for comment text. Reddit and YouTube don't have this gap (both
-return real comment text). **Flagging this for you directly rather than deciding
-unilaterally to drop Instagram comments from scope** — worth a real decision: accept
-caption-only signal for Instagram, or spend time finding an alternate comment-scraping
-route (e.g. `opencli browser extract` generic page-scraping against a post's rendered
-comment section, untested, would need real investigation).
+**Instagram comment-text gap — RESOLVED 2026-08-09.** There's no dedicated
+`opencli instagram comments`-style command (confirmed via `--help`, `user` only
+returns aggregate counts), but per your instruction, tried OpenCLI's generic browser
+automation before reaching for Apify — and it works. `opencli browser <session>
+extract` on an *opened post page* returns the rendered page as markdown, and
+Instagram's comment section IS present in that render: author, comment text, like
+count, and a permalink containing a real comment ID.
+
+Pipeline, all real commands, all tested against live posts:
+1. `opencli browser <s> open <profile_url>` → `find --css 'a[href*="/reel/"], a[href*="/p/"]'` to get real post URLs (the `user`/`profile` commands don't expose these — had to get them a different way).
+2. `opencli browser <s> open <post_url>` → `extract` → markdown with comments embedded.
+3. Parse with `scripts/ingestion/instagram_comment_extract.py::parse_comments()`.
+
+Validated against 2 real posts (`/reel/` and `/p/` — different post types), 30 total
+comments parsed correctly, including multi-paragraph text and heavy emoji use. Two
+real regex bugs found and fixed during testing (markdown escapes underscores in
+usernames like `kozmo\_spacely`; an over-restrictive end-of-string anchor) — first
+draft parsed 0 comments despite the permalinks matching fine. **Apify wasn't needed —
+this path worked on the first real attempt once the regex bugs were fixed.**
+
+Caveats, real not hypothetical: this captures what's rendered on first page load, not
+guaranteed complete — Instagram truncates long comment threads ("View all N replies",
+"[+N more]") in the initial render, so very high-engagement posts will need pagination
+(not built) to get everything. Not yet load-tested across many posts/rate-limit
+behavior under this generic-browser-automation path specifically (may differ from the
+dedicated `instagram user`/`profile` commands' rate characteristics — untested).
 
 ### 4c. Re-estimating reachable entities with real numbers (both platforms have real
 yield-per-call data now, but they're structurally different, so one flat number
@@ -116,17 +129,20 @@ across both isn't honest)
   plausibly reaches the 1,000-datapoint floor in the 20-30 call range for an
   entity/community with this level of activity. Lower-activity subreddits would need
   more calls per datapoint, same caveat as YouTube's team-account finding.
-- **Instagram**: much less efficient given the comment-text gap above — only ~12
-  post-level rows (caption + 2 count fields, no comment text) per `user` call. Hitting
-  1,000 datapoints from post metadata alone would need on the order of 80+ calls/entity
-  unless comment text becomes available some other way. This is the platform most
-  likely to fall short of the 1,000-datapoint floor as currently scoped.
+- **Instagram**: now that the comment-extraction pipeline exists (see above), the
+  per-post cost changed shape: `user` listing (1 call → 12 posts) + `browser open` +
+  `browser extract` per post of interest (2 calls → up to ~15 comments/post from the
+  first pilot posts, real range seen 15/post so far) — i.e. ~3 calls to get 1 post +
+  ~15 comments ≈ 16 datapoints, comparable in shape to Reddit's efficiency now, not the
+  80+-calls/entity worst case from before this was resolved. Still needs a real
+  multi-entity pilot to confirm this holds beyond the 2 posts tested.
 - At ~370-540 calls/hour (Section 4b) and an 8-12hr/day operating window (Chrome must
-  stay open — true for both platforms), **Reddit could plausibly reach several hundred
-  to ~1,000+ entities over the 14-day Weeks 3-4 window; Instagram's realistic reach is
-  likely lower per-entity-cost, closer to the low end or below, until the comment-text
-  gap is resolved one way or another.** Still order-of-magnitude, but now anchored to
-  real measured latency and real yield instead of a borrowed rate-limit figure.
+  stay open — true for both platforms), **both Reddit and Instagram now look
+  plausibly capable of reaching the 1,000-datapoint floor per entity without needing an
+  order-of-magnitude more calls than Reddit** — a meaningful improvement over the
+  pre-comment-extraction estimate. Still order-of-magnitude and still not load-tested
+  across many entities, but the earlier concern that Instagram would structurally fall
+  short is no longer the leading risk.
 
 ## 5. Throughput / session ceiling — still true, now with real numbers behind it
 
@@ -149,10 +165,11 @@ last self-check.
   not Arc — see Section 2).
 - [x] ~~YouTube Data API key~~ — received and verified working 2026-08-09.
 - [x] ~~Pilot batch~~ — done for all three platforms (Section 4).
-- [ ] **Decide Instagram comment-text gap** (Section 4b) — accept captions-only signal,
-  or investigate an alternate route. Needs your input, not a Track A unilateral call.
+- [x] ~~Instagram comment-text gap~~ — resolved via `opencli browser extract` +
+  `scripts/ingestion/instagram_comment_extract.py` (Section 4b). Not yet: pagination
+  past Instagram's initial-render truncation, and a real multi-entity load test.
 - [ ] Wire the orchestrator's platform-call TODOs using the now-confirmed-working real
-  commands (`ORCHESTRATION.md`).
+  commands, including the new Instagram comment-extraction pipeline (`ORCHESTRATION.md`).
 - [ ] Decide whether Reddit runs via OpenCLI (desktop, Chrome must stay open) or
   `rdt-cli` (headless, cookie-based, unattended) — OpenCLI is now proven to work, so
   this is a convenience/uptime tradeoff, not a functionality question anymore.

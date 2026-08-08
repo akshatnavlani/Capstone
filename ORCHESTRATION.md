@@ -92,10 +92,32 @@ the pilot, not documentation guesses. All OpenCLI calls need `OPENCLI_PROFILE` s
   retrieval needs pagination, not yet implemented.
 - Instagram profile: `opencli instagram profile <username> -f yaml`
 - Instagram post listing: `opencli instagram user <username> --limit N -f yaml` —
-  **no comment-text command exists for Instagram** (see
-  `DATA_COLLECTION_STATUS.md` Section 4b) — only aggregate counts on each post row.
+  returns captions + like/comment counts, no comment text and no post URLs.
+- Instagram post URLs (needed for the comment pipeline below, not returned by `user`):
+  `opencli browser <session> open <profile_url>` then
+  `opencli browser <session> find --css 'a[href*="/reel/"], a[href*="/p/"]'`.
+- Instagram comments (see "Instagram comment extraction" below for the full pipeline):
+  `opencli browser <session> open <post_url>` then `opencli browser <session> extract`,
+  parsed with `scripts/ingestion/instagram_comment_extract.py`.
 - YouTube: use the real Data API (`YOUTUBE_API_KEY` in `.env`, verified working) as
   primary; yt-dlp commands from `DATA_COLLECTION_STATUS.md` Section 4a as supplement.
+
+## Instagram comment extraction (added 2026-08-09)
+
+OpenCLI has no dedicated comment-reading command for Instagram. Per the user's
+instruction to try OpenCLI first and fall back to Apify only if that failed: it didn't
+fail. `opencli browser <session> extract` on an opened post page renders the comment
+section into the page's markdown (author, text, like count, and a permalink containing
+a real comment ID) — `scripts/ingestion/instagram_comment_extract.py::parse_comments()`
+parses it. Validated against 2 real posts of different types (30 comments total,
+including multi-paragraph text and emoji) — see `DATA_COLLECTION_STATUS.md` Section 4b
+for the full validation writeup and known caveats (initial-render truncation on
+high-engagement posts, not yet load-tested at volume). Apify was never actually used.
+
+This adds a 4th call per Instagram post to the worker's per-entity cost (listing →
+find post URLs → open post → extract), on top of the 1 `user`-listing call — see
+`DATA_COLLECTION_STATUS.md` Section 4c for the revised reachable-entities estimate now
+that this exists.
 
 ## What's NOT built yet (intentionally — Weeks 3-4 scope, still open as of 2026-08-09)
 
@@ -107,12 +129,14 @@ the pilot, not documentation guesses. All OpenCLI calls need `OPENCLI_PROFILE` s
   worker that acts on its output doesn't yet).
 - The target-queue population logic (how `creators` rows get created in the first
   place — manual seed list vs. discovery scraping).
-- Reddit `read` pagination past the ~68-90 comment truncation point.
-- A resolution for the Instagram comment-text gap (accept caption-only signal, or
-  investigate `opencli browser extract` against a post's rendered comments — untested).
+- Reddit `read` pagination past the ~68-90 comment truncation point, and equivalent
+  pagination for Instagram's `browser extract` comment truncation.
+- Wiring `instagram_comment_extract.py` into the actual `InstagramWorker` — the parser
+  exists and is tested against saved output, but the worker doesn't call the
+  open→extract→parse sequence yet.
 - Retry/backoff tuning against sustained real-world rate-limit behavior — the pilot was
-  5 calls with manual 3s gaps, not a sustained multi-hour run, so CAPTCHA/ban thresholds
-  are still unknown in practice.
+  a handful of calls with manual 3s gaps, not a sustained multi-hour run, so CAPTCHA/ban
+  thresholds are still unknown in practice.
 
 ## Skeleton
 
