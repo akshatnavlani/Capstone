@@ -1,10 +1,10 @@
 # Ingestion Orchestration — Design (Track A)
 
-Status: **design + skeleton only**, per the Weeks 1-2 objective. Full automation is a
-Weeks 3-4 deliverable, built once real scraping starts and we've seen actual
-agent-reach/OpenCLI/YouTube API output shapes (Section 4 of `DATA_COLLECTION_STATUS.md`
-notes the throughput numbers are still unvalidated — the orchestrator's rate limiter
-will need tuning against real numbers, not the estimates below).
+Status as of 2026-08-09: **design + skeleton, still not wired to real platform calls**.
+YouTube got a real pilot (see `DATA_COLLECTION_STATUS.md` Section 4a) confirming the
+worker/rate-limiter shape works mechanically, but Instagram/Reddit workers remain
+untestable — both still blocked on the OpenCLI Chrome extension (same doc, Section 2/3).
+Full wiring is still Weeks 3-4 scope, now further along for YouTube than IG/Reddit.
 
 This is the "Hermes agent or equivalent automation" from the original Capstone doc:
 something that queues targets, calls the right scraper per platform, and merges
@@ -58,18 +58,42 @@ Key decisions:
   bad handle kill the whole batch. Retry transient errors (network, 429) with backoff;
   don't retry auth/not-found errors.
 
-## What's NOT built yet (intentionally — Weeks 3-4 scope)
+## Brand-name extraction step (added 2026-08-09)
+
+New pipeline step, inserted between fetch and upsert for the three content workers:
+after a post/video's caption/title/body text is fetched, run
+`scripts/ingestion/brand_extraction.py::extract_brand_mentions()` on it. If it returns
+a candidate, upsert a `brands` row (or match an existing one by name) and set the
+content row's `brand_id`. This is a coarse lead-generation regex, not the real
+`is_sponsored` classifier — see `SCHEMA.md` "Brand-side data" for the scope boundary
+between this and Track C's Weeks 7-8 labeling pipeline. Built and unit-tested (caught
+a real over-capture bug in the first draft — see `SCHEMA.md`'s adversarial self-check
+section), not yet run against real content since there's no real content in the DB yet.
+
+Once a brand is identified, a fourth worker type (not yet written) scrapes that
+specific brand's official account(s) for `brands.category/follower_count/post_count` —
+same per-platform backends as the creator workers, same session-rate-limit
+considerations apply. Bounded by construction: this worker only ever runs against
+brand names the extraction step actually found, never an open-ended brand search.
+
+## What's NOT built yet (intentionally — Weeks 3-4 scope, still open as of 2026-08-09)
 
 - Actual platform-call logic (the real `opencli instagram user X --limit 12` /
-  `yt-dlp`/YouTube Data API calls and response parsing) — depends on real output
-  shapes I haven't seen live data for yet.
+  YouTube Data API calls and response parsing) — still blocked on Instagram/Reddit
+  session access and the YouTube API key (`DATA_COLLECTION_STATUS.md` Section 3).
+  yt-dlp-based YouTube calls ARE validated now (Section 4a of that doc).
+- The brand-account scraping worker described above (extraction logic exists; the
+  worker that acts on its output doesn't yet).
 - The target-queue population logic (how `creators` rows get created in the first
   place — manual seed list vs. discovery scraping).
-- Retry/backoff tuning against real observed rate-limit behavior.
+- Retry/backoff tuning against real observed rate-limit behavior — still can't be done
+  for IG/Reddit without a live session; YouTube's yt-dlp latency numbers from the pilot
+  (1.2-8.5s/call depending on call type) are a starting point for that worker's gate.
 
 ## Skeleton
 
 See `scripts/ingestion/orchestrator.py` — a runnable skeleton with the worker/rate-limiter
 shape above, `# TODO` markers where platform-specific calls go, and DB upsert stubs
-against the schema in `SCHEMA.md`. Not wired to a live DB yet (needs `DATABASE_URL` in
-`.env` once Supabase is provisioned) and not scheduled anywhere.
+against the schema in `SCHEMA.md`. Wired to a live DB now (`DATABASE_URL` is set in
+`.env`, Supabase is provisioned and verified) but the platform-call TODOs are still
+unfilled, and nothing is scheduled anywhere yet.

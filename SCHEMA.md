@@ -1,12 +1,13 @@
 # Data Layer Schema — Track A (Data/Infra)
 
-Status as of 2026-08-08: **finalized for Weeks 1-2, DDL committed and applied to a
-live Supabase Postgres instance** (verified: all 11 tables + the derived view exist).
+Status as of 2026-08-09: **live on Supabase Postgres, 12 tables + 1 view, verified
+column-by-column against the migration files** (see "Adversarial self-check" below).
 Build API contracts / graph-loading code against this file. If anything here changes
 later, this file will be updated and re-pushed to `track-a-data-infra` — diff it
 before assuming it's stale.
 
-- DDL: `supabase/migrations/20260808163402_init_schema.sql`
+- DDL: `supabase/migrations/` (applied in filename order: `20260808163402_init_schema.sql`,
+  `20260809000000_fix_missing_reddit_indexes.sql`, `20260809010000_add_brands.sql`)
 - DB: Supabase (managed Postgres), project provisioned 2026-08-08. Connection details
   go in `.env` (see `.env.example` for the required keys), never committed — ask the
   user directly for real credentials if you need them, they aren't in git or memory.
@@ -64,7 +65,16 @@ themselves). Content tables carry:
 ### `creator_sponsorship_events` (view)
 `UNION ALL` across `youtube_videos` / `instagram_posts` / `reddit_posts` where
 `is_sponsored = true`. This *is* the "Historical Data - Partnerships/Collaborations"
-Layer-1 source from the HLD — query this view, don't expect a separate table.
+Layer-1 source from the HLD — query this view, don't expect a separate table. Now
+also carries `brand_id` (see "Brand data" below), for Track B's `(brand, sponsors,
+creator)` graph edge.
+
+### `brands` (added 2026-08-09 — see "Brand data" below)
+Seed table analogous to `creators`, but deliberately populated only from names
+extracted out of sponsorship-disclosure text already collected on creator content
+rows — not an independent brand-discovery crawl. `youtube_videos.brand_id` /
+`instagram_posts.brand_id` / `reddit_posts.brand_id` (all nullable) link a sponsored
+content row to the brand it names.
 
 ## Known open items / things that will change
 
@@ -73,55 +83,78 @@ Layer-1 source from the HLD — query this view, don't expect a separate table.
   (`bio`, `hashtags`, `posted_at`) — no dedicated derived columns yet. If Track B/C
   need a precomputed region signal, that's a downstream feature-store concern, not a
   raw-ingestion-table concern; flag if you disagree.
-- **Brand name extraction** from sponsorship text (e.g. "which brand sponsored this
-  post") is NOT in scope for this schema — `sponsorship_raw_matches` only stores the
-  matched disclosure phrase, not a parsed/normalized brand entity. If GAIL needs brand
-  nodes with names (not just a binary treatment flag), that requires either a NER step
-  downstream or a schema extension — tell me if you need this and I'll add it.
 - **QA/data-completeness tracking** (flagging gaps against the 1k/entity floor) is a
   Weeks 7-8 Track A deliverable, not built yet.
+
+## Adversarial self-check (2026-08-09)
+
+Actively re-verified rather than trusting the Weeks 1-2 summary. Findings:
+
+- **DB drift check:** dumped every live column (name/type/nullable/default) from
+  `information_schema.columns` and diffed against the migration file by hand — exact
+  match, no drift, before any fixes were applied.
+- **Real bug found and fixed:** `reddit_profiles.creator_id`, `reddit_posts.author_username`,
+  and `reddit_comments.author_username` are FK columns that had **no index** —
+  inconsistent with `youtube_channels.creator_id` / `instagram_profiles.creator_id`,
+  which do. Fixed in `20260809000000_fix_missing_reddit_indexes.sql` and verified live
+  via `pg_indexes`. Cheap to catch now (0 rows in the DB); would've been a real
+  performance problem once `ON DELETE SET NULL` had to scan populated Reddit tables.
+- **Real bug found and fixed in new code:** the first draft of `brand_extraction.py`'s
+  regex over-captured brand names (matched "Nike for this drop" instead of "Nike")
+  because of a greedy character class. Caught by the module's own `__main__` self-test
+  before this was ever wired into the orchestrator. Fixed by switching to a
+  consecutive-capitalized-words heuristic.
+- **agent-reach doctor re-run:** identical status to Weeks 1-2 (Instagram/Reddit still
+  blocked on the Chrome extension, YouTube still yt-dlp-only) — no drift, but also no
+  progress since the blockers are still open.
+- **Throughput estimate re-derivation — see `DATA_COLLECTION_STATUS.md` "Adversarial
+  re-check" section for the full writeup.** Short version: the ~2-3s/call figure the
+  Weeks 1-2 estimate leaned on turned out to be documented by agent-reach specifically
+  for Xiaohongshu, not Instagram or Reddit — those platforms' docs only say "back off
+  on 429," no concrete number. A real YouTube pilot (the one platform not blocked) also
+  showed comment yield per video varies by roughly an order of magnitude between a
+  team/brand account and a personal creator account, which the original flat
+  "30-50 calls/entity" assumption didn't account for. Net effect: less confidence in
+  the 1,500-2,500 figure than the Weeks 1-2 doc implied, not more.
 - Table/column names may still shift slightly once real scraped payloads (YouTube API
   JSON, agent-reach/OpenCLI output shapes) are seen in Weeks 3-4 — treat this as
   stable-but-not-frozen.
 
-## Cross-track check (2026-08-08) — 2 unresolved mismatches, flagging rather than silently deciding
+## Cross-track check (updated 2026-08-09)
 
-Checked `origin/track-b-ml-core:GRAPH_SCHEMA.md`, `origin/track-c-fusion-backend:API_CONTRACTS.md`,
-`origin/track-d-frontend-app:WIREFRAMES.md` via `git fetch`. All three now exist. Two real
-disagreements found — **not resolved unilaterally here, need explicit confirmation:**
+### 1. Who computes `is_sponsored`? — RESOLVED, Track A's design confirmed correct
 
-### 1. Who computes `is_sponsored`? (Track A vs. Track C)
+User confirmed 2026-08-09: PROJECT_PLAN.md Section 6's timeline row 7-8 does assign the
+sponsorship labeling pipeline to Track C, as read here. Track C has been told directly to
+fix `API_CONTRACTS.md` to match this schema. **Note:** re-checked `origin/track-c-fusion-backend:API_CONTRACTS.md`
+on 2026-08-09 and it still says "Track A sends it pre-computed" as of that commit — Track C's
+fix hasn't landed on their branch yet. Not a Track A action item; just noting it's not
+actually closed on their side yet, re-check before assuming it's fixed.
 
-`API_CONTRACTS.md` states Track C's current assumption: **Track A computes `is_sponsored`
-upstream and sends it pre-labeled** via the ingestion endpoints.
+### 2. Brand-side data — RESOLVED, real scope addition (2026-08-09)
 
-This schema does the opposite: `is_sponsored` is stored **nullable/unpopulated** by Track A.
-My reading is based on PROJECT_PLAN.md Section 6's weekly timeline, row "7-8", **Track C's own
-column**, which reads: *"Text scrubbing + temporal normalization + sponsorship labeling
-pipeline."* That literally assigns the disclosure-tag labeling step to Track C, not Track A.
+User decided GAIL needs real brand features, not text-derived approximations only. Added:
+`brands` table + `brand_id` FK on all three platform content tables + brand extraction
+module (`scripts/ingestion/brand_extraction.py`). **Deliberately bounded**, per explicit
+instruction: brands are identified ONLY from names/mentions found in sponsorship-disclosure
+text already being collected from creators (see `brand_extraction.py`'s regex-based lead
+extraction) — this is NOT an open-ended brand-discovery crawl. Once a brand name is
+identified this way, Track A scrapes that brand's own official account(s) on the same
+platform(s) for basic profile data (category, follower count, post count, verification).
 
-**This needs to be settled before Week 7-8**, or the labeling step risks falling through the
-cracks (both tracks think the other owns it) — it's flagged in PROJECT_PLAN.md Section 1 as
-precision-critical (sole source of GAIL's treatment labels), so an ownership gap here is a real
-risk, not a paperwork detail. Recommend: whichever track ends up owning it, `sponsorship_raw_matches`
-(matched disclosure phrases) stays on Track A's ingestion tables either way, so the labeler
-(wherever it runs) has an audit trail.
+**Important scope distinction, to avoid a third cross-track mismatch:** `brand_extraction.py`'s
+regex matching is a coarse "lead generation" pass to decide which brand accounts to go scrape
+— it is explicitly NOT the precision-validated `is_sponsored` classifier from item 1 above
+(that's still Track C's Weeks 7-8 job). Don't treat a populated `brand_id` as proof
+`is_sponsored` has been reliably set for that row — check `is_sponsored` itself.
 
-### 2. Brand-side data — not in Track A's current scope
+**Status as of 2026-08-09: schema + extraction logic built and unit-tested (see
+`scripts/ingestion/brand_extraction.py`'s `__main__` self-test — caught and fixed a real
+over-capture bug in the first draft regex). NOT yet run against real data** — there is no
+real scraped content in the DB yet (Instagram/Reddit still blocked on the OpenCLI Chrome
+extension; YouTube Data API key not yet provided — see `DATA_COLLECTION_STATUS.md`). This
+will run for real once the orchestrator starts landing real captions/titles/bodies.
 
-`GRAPH_SCHEMA.md` flags that Track B's `brand` graph node assumes a feature vector (BERT
-embedding of "brand product/marketing copy" + `budget_tier` + industry category) that **no
-Track A table currently supplies** — PROJECT_PLAN.md Section 1 (Data Collection) only scopes
-creator-side YouTube/Instagram/Reddit scraping and never mentions collecting brand profile data.
-
-Two options, not yet decided:
-- **(a) No new scraping** — Track B derives brand node identity/features from the brand-name
-  text already implicit in `sponsorship_raw_matches` on creator posts (Track B does its own
-  BERT embedding of that extracted text). Stays within Track A's current scope; brand node
-  features would be sparser (no follower counts, no official bio).
-- **(b) Track A adds brand-handle scraping** (a real scope addition — brand social profiles
-  aren't in PROJECT_PLAN.md today) to give Track B's brand nodes actual profile-level features.
-
-Leaning toward (a) as the lower-risk default given the timeline, but this affects Track B's
-model design, not just data plumbing — needs Track B/user sign-off, not a Track A unilateral
-call.
+Flagged for Track B: `brands` now exists with real columns (not the placeholder BERT-of-marketing-copy
+vector from `GRAPH_SCHEMA.md`) — re-check `GRAPH_SCHEMA.md`'s brand feature vector assumption
+against the actual `brands` table shape above once real rows start landing.
