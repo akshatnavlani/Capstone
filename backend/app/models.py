@@ -35,7 +35,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlmodel import Field, SQLModel
 
@@ -45,8 +45,16 @@ def utcnow() -> datetime:
 
 
 def _string_array_column():
-    """Real Postgres text[] in production; JSON list on the SQLite dev fallback."""
-    return Column(ARRAY(str).with_variant(JSON(), "sqlite"))
+    """Real Postgres text[] in production; JSON list on the SQLite dev fallback.
+
+    Must be ARRAY(String), not ARRAY(str) -- the bare Python type coerces
+    fine for DDL/table creation but breaks reading rows back from real
+    Postgres (`AttributeError: 'str' object has no attribute 'dialect_impl'`
+    in the array result processor). Only surfaces when actually querying
+    real data, not against the SQLite/JSON fallback path -- caught testing
+    against the real Supabase instance on 2026-08-09.
+    """
+    return Column(ARRAY(String).with_variant(JSON(), "sqlite"))
 
 
 # ---- Track A-owned tables (read/write mapping only, no migration ownership) --
