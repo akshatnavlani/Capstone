@@ -1,27 +1,15 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAlerts } from "@/lib/api";
-import type { AlertResponse, BrandRecommendationResponse } from "@/types";
+import { useStoredRecommendationResult } from "@/lib/useStoredRecommendationResult";
+import type { AlertResponse } from "@/types";
 
 // Reads the /recommendations response left in sessionStorage by the
 // brand-input form. Risk-flag badges are NOT part of InfluencerRecommendation
 // (see WIREFRAMES.md mismatch notes) — they come from a separate GET /alerts
-// call, matched client-side by creator_unique_id.
-
-// sessionStorage is browser-only and can't be read during server prerender;
-// useSyncExternalStore is the hydration-safe way to read it (getServerSnapshot
-// returns null on the server, then React reconciles with the real client
-// value after hydration) without a synchronous setState-in-effect.
-function useStoredRecommendationResult(): BrandRecommendationResponse | null {
-  const raw = useSyncExternalStore(
-    () => () => {},
-    () => sessionStorage.getItem("recommendationResult"),
-    () => null
-  );
-  return raw ? (JSON.parse(raw) as BrandRecommendationResponse) : null;
-}
+// call, matched client-side by creator_id.
 
 export default function DashboardPage() {
   const result = useStoredRecommendationResult();
@@ -32,9 +20,9 @@ export default function DashboardPage() {
       .then((alerts) => {
         const map = new Map<string, AlertResponse[]>();
         for (const alert of alerts) {
-          const existing = map.get(alert.creator_unique_id) ?? [];
+          const existing = map.get(alert.creator_id) ?? [];
           existing.push(alert);
-          map.set(alert.creator_unique_id, existing);
+          map.set(alert.creator_id, existing);
         }
         setAlertsByCreator(map);
       })
@@ -74,10 +62,10 @@ export default function DashboardPage() {
 
       <ul className="flex flex-col gap-4">
         {result.results.map((influencer, index) => {
-          const alerts = alertsByCreator.get(influencer.creator_unique_id) ?? [];
+          const alerts = alertsByCreator.get(influencer.creator_id) ?? [];
           return (
             <li
-              key={influencer.creator_unique_id}
+              key={influencer.creator_id}
               className="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800"
             >
               <div className="flex items-start justify-between gap-4">
@@ -85,10 +73,15 @@ export default function DashboardPage() {
                   <span className="text-xs font-medium text-zinc-500">#{index + 1}</span>
                   <h2 className="text-lg font-medium">{influencer.name}</h2>
                   <p className="text-xs text-zinc-500">
-                    {[influencer.youtube_handle, influencer.instagram_handle, influencer.reddit_handle]
+                    {[influencer.youtube_handle, influencer.instagram_handle, ...influencer.reddit_handles]
                       .filter(Boolean)
                       .join(" · ") || "no linked handles"}
                   </p>
+                  {influencer.estimated_cost != null && (
+                    <p className="mt-1 text-xs text-zinc-500">
+                      est. cost ₹{influencer.estimated_cost.toLocaleString()} (placeholder rate)
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-semibold">{influencer.final_score.toFixed(0)}</div>

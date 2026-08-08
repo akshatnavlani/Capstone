@@ -1,21 +1,18 @@
 # Frontend Wireframes & API Field Expectations (Track D)
 
-Status: Weeks 3-4 deliverable (Weeks 1-2 wireframes below, now wired to
-Track C's real API). See `PROJECT_PLAN.md` Section 5 (Application Layer) for
-the feature list this implements.
+Status: Weeks 5-6 deliverable. See `PROJECT_PLAN.md` Section 5 (Application
+Layer) for the feature list this implements.
 
-**Cross-track note (2026-08-09):** Track C's `API_CONTRACTS.md` is now
-published on `origin/track-c-fusion-backend` (checked fresh via
-`git fetch origin && git show origin/track-c-fusion-backend:API_CONTRACTS.md`,
-plus the exact Pydantic schemas in `backend/app/schemas.py`). Field names
-below have been **reconciled to match it exactly** — see the mismatch table
-at the bottom for what Track D's Weeks 1-2 guesses got wrong, since those
-were never checked against a real contract at the time.
-
-Track A's `SCHEMA.md` and Track B's `GRAPH_SCHEMA.md` are also now published
-(cross-checked via other tracks' shared memory — see `cross_track_memory_leak`
-memory entry — plus `git show` against their branches). Nothing in those two
-affects the frontend directly; Track D only consumes Track C's API.
+**Cross-track note (2026-08-09, re-checked same day as a second pass):**
+Track C shipped a **second, same-day breaking change** to `API_CONTRACTS.md`
+after Track D's Weeks 3-4 reconciliation: `creator_unique_id: str` →
+`creator_id: uuid.UUID`, plus `reddit_handle` (singular) → `reddit_handles`
+(array), plus a new `estimated_cost` field, once Track A's real schema
+existed to reconcile against. **Re-checked and re-reconciled below** — do
+not trust the Weeks 3-4 version of this doc, it's now stale in multiple
+places. Always `git fetch origin && git show origin/track-c-fusion-backend:backend/app/schemas.py`
+fresh before trusting any field name here, since this is now the second time
+it's changed same-week.
 
 ## Tech stack decision
 
@@ -27,65 +24,58 @@ Next.js (App Router, v16) + TypeScript + Tailwind CSS v4, scaffolded via
 | Route | Purpose | Status |
 |---|---|---|
 | `/` | Landing page, CTA into the flow | Static |
-| `/brand-input` | Brand-input flow | **Wired** — real form (client component), `POST /recommendations` on submit, result handed to `/dashboard` via `sessionStorage` |
-| `/dashboard` | Ranked recommendation dashboard | **Wired** — reads the stored `/recommendations` response, shows `is_mock_data` banner, cross-references `GET /alerts` for per-creator risk badges |
-| `/monitoring` | Monitoring & alerts | **Wired** — `GET /alerts` on mount, renders severity/reason/source/creator |
-| `/explainability` | Network-graph explainability | Text placeholder only — lowest priority per plan, build after recommendation engine + fusion layer are stable |
+| `/brand-input` | Brand-input flow | Wired — real form (client component), `POST /recommendations` on submit, result handed to `/dashboard` and `/explainability` via `sessionStorage` |
+| `/dashboard` | Ranked recommendation dashboard | Wired — reads the stored `/recommendations` response, shows `is_mock_data` banner, `estimated_cost`, cross-references `GET /alerts` for per-creator risk badges |
+| `/monitoring` | Monitoring & alerts | Wired — `GET /alerts` on mount, renders severity/reason/source/creator. See "Monitoring — resolved is currently dead" below for why no resolve UI was added |
+| `/explainability` | Score-breakdown explainability | **New this round** — shows the real weighted fusion formula per influencer (data already flowing via `/recommendations`), plus a note that the network-graph/causal-insights view is still blocked on Track B's graph data |
 
-Docker deployment skeleton (`frontend/Dockerfile`, `.dockerignore`,
-`next.config.ts` → `output: "standalone"`) is done — see "Docker" section
-below.
+Docker deployment skeleton done (`frontend/Dockerfile`, `.dockerignore`,
+`next.config.ts` → `output: "standalone"`) — see "Docker" section below.
+**Docker build/run itself still not verified — no Docker CLI in this
+environment, asked the user about this again this round.**
 
 ## 1. Brand-input flow (`/brand-input`)
 
-Fields, per PROJECT_PLAN.md Section 1 (region/demographic are proxy signals,
-since real third-party audience analytics aren't available):
-
-- **Product / Category** — free text (e.g. "Running shoes — fitness")
-- **Budget** — numeric, INR
-- **Target Region (proxy)** — free text
-- **Target Demographic (proxy)** — free text
-
-Real request shape sent to `POST {NEXT_PUBLIC_API_BASE_URL}/recommendations`
-(`src/types/index.ts` → `BrandRecommendationRequest`, matches Track C's
-`BrandRecommendationRequest` in `backend/app/schemas.py` exactly):
+Unchanged from Weeks 3-4. Real request shape sent to
+`POST {NEXT_PUBLIC_API_BASE_URL}/recommendations`
+(`src/types/index.ts` → `BrandRecommendationRequest`):
 
 ```ts
 {
   product_category: string;
-  budget: number; // INR
+  budget: number; // INR, must be > 0 and finite (NaN/Infinity rejected with 422)
   target_region?: string;
   target_demographic?: string;
-  platform_preference?: ("youtube" | "instagram" | "reddit")[]; // not exposed in the UI yet — optional, server defaults apply
-  max_results?: number; // not exposed in the UI yet — server defaults to 10
+  platform_preference?: ("youtube" | "instagram" | "reddit")[]; // not exposed in the UI yet
+  max_results?: number; // not exposed in the UI yet
 }
 ```
 
 ## 2. Results dashboard (`/dashboard`)
 
-Ranked list of influencer cards, populated from `BrandRecommendationResponse.results`:
+Ranked list of influencer cards, populated from `BrandRecommendationResponse.results`.
+**Filtering is now real** (was a pure echo-stub through Weeks 1-2): budget is
+a hard filter via a placeholder cost heuristic (`estimated_cost`, now shown
+in the UI); region/demographic are soft filters (only exclude on a
+*confirmed* text mismatch, missing data never excludes); `product_category`/
+`platform_preference` remain unfiltered, still open on Track C's side.
 
-- Rank + name + cross-platform handles (flat `youtube_handle` / `instagram_handle` / `reddit_handle`, each nullable)
-- `final_score` (0-100) + `confidence_low`/`confidence_high`
-- `score_breakdown`: `spillover_score`, `sentiment_risk_score`, `creator_feature_score` (each 0-1, per-branch weights also included but not surfaced in the UI yet)
-- Risk badge: **not** part of the recommendation object (see mismatch #5 below) — computed client-side by cross-referencing `GET /alerts`, grouped by `creator_unique_id`
-- `is_mock_data` banner shown when true (currently always true — no real `Creator`/`FusionScore` rows in Track C's DB yet)
-
-Real response shape (`src/types/index.ts` → `BrandRecommendationResponse` /
-`InfluencerRecommendation`, matches `backend/app/schemas.py` exactly):
+Current real response shape (`src/types/index.ts`, matches
+`backend/app/schemas.py` exactly as of 2026-08-09):
 
 ```ts
 interface InfluencerRecommendation {
-  creator_unique_id: string;
+  creator_id: string; // uuid — was creator_unique_id: string through Weeks 3-4, renamed same-day
   name: string;
   category: string | null;
   youtube_handle: string | null;
   instagram_handle: string | null;
-  reddit_handle: string | null;
+  reddit_handles: string[]; // was reddit_handle: string | null through Weeks 3-4 — now an array
   final_score: number; // 0-100
   confidence_low: number;
   confidence_high: number;
   estimated_reach: number | null;
+  estimated_cost: number | null; // new field, placeholder cost heuristic used for the budget filter
   score_breakdown: {
     spillover_score: number; sentiment_risk_score: number; creator_feature_score: number;
     weight_spillover: number; weight_sentiment_risk: number; weight_creator_feature: number;
@@ -98,17 +88,18 @@ interface BrandRecommendationResponse {
 }
 ```
 
+Risk badge: still **not** part of the recommendation object — computed
+client-side by cross-referencing `GET /alerts`, grouped by `creator_id`.
+
 ## 3. Monitoring & alerts (`/monitoring`)
 
-Fetches `GET {NEXT_PUBLIC_API_BASE_URL}/alerts` on mount. Real response shape
-(`src/types/index.ts` → `AlertResponse`, matches `backend/app/schemas.py`
-`AlertResponse` exactly):
+Fetches `GET {NEXT_PUBLIC_API_BASE_URL}/alerts` on mount. Current shape:
 
 ```ts
 interface AlertResponse {
   id: number;
-  creator_unique_id: string;
-  severity: "low" | "medium" | "high"; // server types this as `str`, not an enum — client assumes these 3 values per the docs, not contractually guaranteed
+  creator_id: string; // uuid — renamed from creator_unique_id same-day as the recommendation-endpoint rename
+  severity: "low" | "medium" | "high"; // AlertCreate now enforces this as a strict Literal server-side; AlertResponse itself still types it as plain `str` on the read side, not tightened — assume the 3 values in practice
   reason: string;
   source: string; // e.g. "sentiment_propagation"
   created_at: string;
@@ -116,49 +107,100 @@ interface AlertResponse {
 }
 ```
 
-Note: there is **no `influencer_name` or `propagated_from` field** on this
-endpoint (see mismatch #6/#7 below) — the UI currently just shows the raw
-`creator_unique_id`. If Track C's `/alerts` response ever grows a joined
-creator name or a propagation-source field, update `MonitoringPage` to use
-it instead of the raw ID.
+**Monitoring — `resolved` is currently dead, no UI built around it:**
+checked `backend/app/routers/alerts.py` directly — `POST /alerts`
+(`AlertCreate`) has no `resolved` field, so every alert is created with
+`resolved=False` and **there is no endpoint that can ever set it to
+`True`**. `GET /alerts` defaults to `include_resolved=False` server-side
+(confirmed in the router code, not just the docs). Given that, an
+"include resolved" toggle in the UI would currently be inert — didn't build
+one. Revisit if Track C ships a resolve endpoint.
+
+**Propagation-source field:** still **not present** on `AlertResponse` as
+of the last committed state on `origin/track-c-fusion-backend`
+(`ad96e4f`). While re-testing this round, found Track C's live worktree had
+an **uncommitted, in-progress** `propagated_from_creator_id` field on the
+`RiskAlert` model (`backend/app/models.py`) — confirms they're actively
+building this now (matches the Weeks 5-6 ask), but it's not committed/
+pushed yet, and the live Supabase table doesn't have the column yet either
+(hit a live `UndefinedColumn` 500 testing `POST`/`GET /alerts` against it —
+Track C's own migration-drift bug, not touched, not Track D's lane).
+**Re-check `AlertResponse` again once this lands on their branch** — don't
+build UI against the uncommitted field, and don't assume it's stable until
+it's actually pushed and the live table is migrated.
 
 ## 4. Explainability (`/explainability`)
 
-Unchanged from Weeks 1-2 — placeholder text only, per plan (Weeks 18-19).
+Fleshed out this round (was text-only through Weeks 3-4). Uses the same
+`sessionStorage`-stored `/recommendations` result as the dashboard (shared
+via `src/lib/useStoredRecommendationResult.ts`) to show, per influencer, the
+weighted fusion formula spelled out: `final_score = (w1×spillover +
+w2×sentiment_risk + w3×creator_feature) × 100 [+ risk_adjustment]`, using
+the real `score_breakdown` weights/scores already flowing through the app.
+
+One caveat documented in the component itself: the displayed risk-adjustment
+figure is **back-derived** (`final_score - weightedSum`), not the
+authoritative value — the real `risk_adjustment` field only exists on
+`FusionScoreResponse` (`GET /scores/{creator_id}`), not on
+`InfluencerRecommendation`, and the backend clamps `final_score` to
+`[0, 100]`, so the derived figure would be wrong for any clamped result.
+Didn't add a per-creator `GET /scores/{creator_id}` fetch to get the
+authoritative value — N+1 fetches for a labeled-as-approximate number felt
+like more complexity than the current data warranted; revisit if this
+becomes misleading in practice (e.g. once real, non-mock scores start
+clamping).
+
+Network-graph visualization + Granger-causality posting-time insights are
+still not built — genuinely blocked on Track B's GAIL branch/graph data,
+which per the timeline doesn't start until weeks 11-13. Said so explicitly
+in the UI rather than a bare "coming soon."
 
 ## Docker
 
 `frontend/Dockerfile` — 3-stage build (`deps` → `builder` → `runner`) on
-`node:20-alpine`, using `next.config.ts`'s `output: "standalone"` so the
-final image only needs `.next/standalone` + `.next/static` + `public`, not
-the full `node_modules`. `.dockerignore` excludes `node_modules`, `.next`,
-`.git`, `.env*`.
+`node:20-alpine`, using `next.config.ts`'s `output: "standalone"`.
+`.dockerignore` excludes `node_modules`, `.next`, `.git`, `.env*`.
 
 **Verified:** `next build` with `output: "standalone"` produces
-`.next/standalone/server.js` correctly (checked locally). **Not verified:**
-the actual `docker build`/`docker run` — the Docker CLI isn't installed in
-this environment, so the image itself has never been built or run. Flag this
-if Weeks 3-4 sign-off requires an actually-built image, not just a
-Dockerfile that should work per the documented `output: standalone` contract.
+`.next/standalone/server.js` correctly (re-checked this round, still true).
+**Still not verified:** `docker build`/`docker run` themselves — no Docker
+CLI in this environment. Asked the user this round whether to get Docker
+into this session or have them run it and report back, since this needs
+real verification before Weeks 22-23's deployment, not just a Dockerfile
+that should work on paper.
 
-## Field-name mismatches found when reconciling against Track C's real contract (2026-08-09)
+## Field-name mismatch history
 
-Weeks 1-2 field names were Track D's own guess (no contract existed yet).
-Now reconciled — this table exists so nobody assumes the Weeks 1-2 doc
-above was ever accurate:
+Two separate rounds now — kept both so nobody assumes either the Weeks 1-2
+or Weeks 3-4 version of this doc was ever fully accurate.
 
-| # | Weeks 1-2 guess | Real contract | Notes |
-|---|---|---|---|
-| 1 | `BrandInputRequest.budget_inr` | `BrandRecommendationRequest.budget` | Still INR (per field description), just not in the name |
-| 2 | `region_proxy` | `target_region` (optional) | |
-| 3 | `demographic_proxy` | `target_demographic` (optional) | |
-| 4 | `platform_handles: { youtube?, instagram?, reddit? }` (nested object) | `youtube_handle` / `instagram_handle` / `reddit_handle` (flat, nullable) | Structural, not just naming |
-| 5 | `risk_flags: RiskFlag[]` embedded on each `InfluencerRecommendation` | **No such field exists.** Risk data lives entirely in the separate `/alerts` resource, joined client-side by `creator_unique_id` | This was a design assumption, not just a name guess — the Weeks 1-2 wireframe assumed risk flags would ride along with the recommendation payload; they don't |
-| 6 | `overall_score` / `confidence_interval: [number, number]` | `final_score` / `confidence_low` + `confidence_high` (two separate fields, not a tuple) | |
-| 7 | `MonitoringAlert.influencer_name` | **Does not exist.** Only `creator_unique_id` is returned | UI currently shows the raw ID |
-| 8 | `MonitoringAlert.propagated_from_influencer_id` | **Does not exist.** Closest is `source` (freeform string, e.g. `"sentiment_propagation"`), which names the *mechanism*, not the source creator | If Track B/C want to expose "propagated from creator X," that needs a new field — flagging for Track C, not adding it unilaterally |
-| 9 | `alert_type` | `reason` (freeform string) + `source` | |
-| 10 | `feature_score` (in score breakdown) | `creator_feature_score`, plus 3 weight fields (`weight_spillover` etc.) not previously modeled at all | |
+### Round 1 (Weeks 1-2 guess → Weeks 3-4 real contract, 2026-08-09)
 
-No open questions requiring Track C action right now beyond #8 (propagation
-source on alerts) — flagged above, not blocking.
+| # | Weeks 1-2 guess | Weeks 3-4 real contract |
+|---|---|---|
+| 1 | `budget_inr` | `budget` |
+| 2 | `region_proxy` | `target_region` (optional) |
+| 3 | `demographic_proxy` | `target_demographic` (optional) |
+| 4 | `platform_handles: {...}` nested object | flat `youtube_handle`/`instagram_handle`/`reddit_handle` |
+| 5 | `risk_flags: RiskFlag[]` embedded per recommendation | doesn't exist there — separate `/alerts` resource |
+| 6 | `overall_score`/`confidence_interval` tuple | `final_score`/`confidence_low`+`confidence_high` |
+| 7 | `MonitoringAlert.influencer_name` | doesn't exist — only `creator_unique_id` |
+| 8 | `MonitoringAlert.propagated_from_influencer_id` | doesn't exist — closest was `source` (mechanism, not source creator) |
+| 9 | `alert_type` | `reason` + `source` |
+| 10 | `feature_score` | `creator_feature_score` + 3 weight fields |
+
+### Round 2 (Weeks 3-4 real contract → Weeks 5-6 real contract, same-day break, 2026-08-09)
+
+Track C's Weeks 3-4 contract itself became stale hours later, once Track
+A's real schema was published and Track C reconciled `creator_unique_id`
+away:
+
+| # | Weeks 3-4 (Track D built against this) | Weeks 5-6 real contract |
+|---|---|---|
+| 11 | `creator_unique_id: string` (everywhere: recommendations, alerts) | `creator_id: string` (uuid) |
+| 12 | `reddit_handle: string \| null` | `reddit_handles: string[]` |
+| 13 | *(no equivalent)* | `estimated_cost: number \| null` — new, now surfaced in the dashboard UI |
+| 14 | `MonitoringAlert.propagated_from_influencer_id` — flagged open, not built | Still doesn't exist on the **committed** contract; **in-progress uncommitted** on Track C's live worktree as `propagated_from_creator_id`, currently causing a live-DB 500 for them (schema drift, their bug). Re-check once pushed. |
+
+No open questions requiring Track D action right now beyond re-checking
+#14 once Track C pushes it.

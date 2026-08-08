@@ -52,7 +52,7 @@ export default function MonitoringPage() {
                   {new Date(alert.created_at).toLocaleString()}
                 </span>
               </div>
-              <h2 className="mt-2 text-sm font-medium">creator: {alert.creator_unique_id}</h2>
+              <h2 className="mt-2 text-sm font-medium">creator: {alert.creator_id}</h2>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{alert.reason}</p>
               <p className="mt-1 text-xs text-zinc-500">source: {alert.source}</p>
             </li>
