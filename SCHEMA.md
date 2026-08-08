@@ -1,13 +1,15 @@
 # Data Layer Schema — Track A (Data/Infra)
 
-Status as of 2026-08-08: **finalized for Weeks 1-2, DDL committed**, DB provisioning
-in progress. Build API contracts / graph-loading code against this file. If anything
-here changes later, this file will be updated and re-pushed to `track-a-data-infra` —
-diff it before assuming it's stale.
+Status as of 2026-08-08: **finalized for Weeks 1-2, DDL committed and applied to a
+live Supabase Postgres instance** (verified: all 11 tables + the derived view exist).
+Build API contracts / graph-loading code against this file. If anything here changes
+later, this file will be updated and re-pushed to `track-a-data-infra` — diff it
+before assuming it's stale.
 
 - DDL: `supabase/migrations/20260808163402_init_schema.sql`
-- Target DB: Supabase (managed Postgres). Connection details go in `.env` (see
-  `.env.example`), never committed.
+- DB: Supabase (managed Postgres), project provisioned 2026-08-08. Connection details
+  go in `.env` (see `.env.example` for the required keys), never committed — ask the
+  user directly for real credentials if you need them, they aren't in git or memory.
 
 ## Design
 
