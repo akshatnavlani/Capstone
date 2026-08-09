@@ -4,12 +4,40 @@ Owner: Track C (Fusion+Backend). Updated whenever the contract changes — treat
 edits to this file as high-signal for Tracks A/B/D, since there's no live
 channel between sessions, only git.
 
-**Status as of 2026-08-09 (Weeks 7-8 update):** all endpoints below are live
+**Status as of 2026-08-10:** all endpoints below are live
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
 Base URL (local dev): `http://127.0.0.1:8000`. Basic auth now exists — see
-the **Auth** section below — off by default, opt-in via `API_KEY`.
+the **Auth** section below — off by default, opt-in via `API_KEY`. CORS is
+now configured — see the incident below before assuming any prior "verified
+end-to-end" claim covered real browser behavior.
+
+## ⚠️ Incident (2026-08-10): no CORS middleware existed at all, since Weeks 1-2
+
+Found by Track D's first real browser test of the product. **Every prior
+"verified end-to-end" check across every track (mine included) used curl,
+which does not enforce or even send `Origin`/CORS the way a real browser
+does** — so this was invisible for 8 weeks despite blocking all real
+browser use of the API. Fixed by adding `CORSMiddleware` in `main.py`,
+allowing `http://localhost:3000`/`http://127.0.0.1:3000` (Track D's `next
+dev` origins) by default — extend via `CORS_ALLOW_ORIGINS` (comma-separated)
+in `.env` once a deployed frontend origin exists. `allow_credentials=False`
+since auth here is an explicit `X-API-Key` header, not a cookie.
+
+Verified server-side via curl (checking the actual `Access-Control-Allow-*`
+response headers, which is what determines whether a real browser accepts
+the response — this is a legitimate way to check the *server's* behavior,
+just not a substitute for confirming a *browser* accepts it): allowed
+origin (`http://localhost:3000`) gets `access-control-allow-origin` back on
+both simple requests and preflight `OPTIONS`; a disallowed origin
+(`http://evil.example.com`) does not, confirming the allowlist is actually
+enforced, not a wildcard. Checked uniformly across `/health`,
+`/recommendations`, `POST /ingestion/creators`, `POST /alerts`, and `GET
+/alerts` — same middleware applies globally, so no per-router gap. **Not
+yet confirmed by an actual browser** — ask Track D to re-test now that this
+is pushed, since they have the working browser tool and this session
+doesn't.
 
 ## Weeks 7-8 update summary
 

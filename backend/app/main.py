@@ -2,6 +2,7 @@ import math
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
@@ -9,6 +10,19 @@ from app.database import init_db
 from app.routers import alerts, feature_store, health, influencers, ingestion, labeling, scores
 
 app = FastAPI(title=settings.api_title, version=settings.api_version)
+
+# No CORSMiddleware existed at all before 2026-08-10 -- every browser
+# fetch() from Track D's frontend would have failed CORS entirely, silently
+# invisible to curl-based verification (curl doesn't enforce CORS, so
+# "verified end-to-end" checks across every track never caught this in 8
+# weeks). Found by Track D's first real browser test.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allow_origins_list,
+    allow_credentials=False,  # no cookie-based auth -- API key is an explicit header, not automatic
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _sanitize_non_finite(obj):

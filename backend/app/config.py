@@ -35,5 +35,20 @@ class Settings(BaseSettings):
     api_title: str = "Capstone Fusion Backend"
     api_version: str = "0.1.0"
 
+    # Comma-separated allowed origins for CORS -- defaults to Track D's
+    # Next.js dev server (`next dev` defaults to port 3000; both
+    # localhost/127.0.0.1 listed since browsers treat them as distinct
+    # origins for CORS purposes). No CORSMiddleware existed at all before
+    # 2026-08-10 -- curl doesn't enforce/send Origin the way a real browser
+    # does, so every prior "verified end-to-end" check across every track
+    # missed this; found by Track D's first real browser test. Extend via
+    # CORS_ALLOW_ORIGINS in .env (comma-separated) once there's a deployed
+    # frontend origin to add.
+    cors_allow_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    @property
+    def cors_allow_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()]
+
 
 settings = Settings()
