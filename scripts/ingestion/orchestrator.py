@@ -1,49 +1,81 @@
-"""Ingestion orchestrator skeleton — Track A (Data/Infra).
+"""Ingestion orchestrator — Track A (Data/Infra).
 
 Design + rationale: see ORCHESTRATION.md at repo root.
 Schema this writes into: see SCHEMA.md at repo root.
 
-This is NOT wired to real platform calls yet (Weeks 3-4 scope) — the platform
-workers below have `# TODO` markers where the actual agent-reach/OpenCLI/YouTube
-Data API calls and response parsing go. What IS real:
-  - the rate-limiting shape (one gate per platform, since throughput is capped by
-    a single logged-in session, not by how many workers you run — see
-    DATA_COLLECTION_STATUS.md Section 4)
-  - the DB upsert shape (idempotent on platform-native IDs)
-  - the per-creator failure isolation (one bad handle doesn't kill the batch)
+Weeks 5-6 status: real, working fetch/upsert logic for YouTube (official Data API) and
+Instagram (OpenCLI + the browser-automation comment extractor). Reddit fetch/upsert is
+real but deliberately lean (see RedditWorker) since Reddit's role here is community
+context, not the primary sponsorship-disclosure source PROJECT_PLAN.md cares about for
+GAIL training data — that's YouTube/Instagram creator-published content.
 
-Run: python scripts/ingestion/orchestrator.py --platform youtube --dry-run
-Requires DATABASE_URL in .env once Supabase is provisioned (see .env.example).
+Brand-name leads (scripts/ingestion/brand_extraction.py) are extracted from every
+caption/title/description fetched and upserted into `brands`, linking via `brand_id`.
+This is a lead-generation pass, not the real `is_sponsored` classifier (Track C's job,
+still not built as of this writing) — see SCHEMA.md "Brand data" for that boundary.
+
+Run: python scripts/ingestion/orchestrator.py --platform youtube --handles athleanx
+Requires DATABASE_URL (+ YOUTUBE_API_KEY / OPENCLI_PROFILE as relevant) in .env.
 """
 
 import argparse
+import hashlib
+import json
 import logging
 import os
+import shutil
+import subprocess
 import time
-from dataclasses import dataclass
+import urllib.parse
+import urllib.request
+from dataclasses import dataclass, field
+
+import yaml
+
+from brand_extraction import extract_brand_mentions
+from instagram_comment_extract import parse_comments
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("orchestrator")
 
 
+def load_env():
+    env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+    env = dict(os.environ)
+    if os.path.exists(env_path):
+        with open(env_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                env.setdefault(k, v)
+    return env
+
+
+ENV = load_env()
+
+
 @dataclass
 class Creator:
-    creator_id: str
+    creator_id: str | None
     name: str
-    youtube_handle: str | None
-    instagram_handle: str | None
-    reddit_handles: list[str]
+    category: str
+    youtube_handle: str | None = None
+    instagram_handle: str | None = None
+    reddit_handles: list[str] = field(default_factory=list)
 
 
 class RateLimiter:
     """Enforces a minimum interval between calls for one platform's single session.
 
-    Tune min_interval_seconds against real observed behavior once scraping starts —
-    the 2-3s figure in DATA_COLLECTION_STATUS.md is agent-reach's stated guidance,
-    not something we've validated against sustained real traffic yet.
+    Real measured OpenCLI-via-Chrome latency is 5.1-8.6s/call (avg 6.68s) — see
+    DATA_COLLECTION_STATUS.md Section 4b. min_interval is the GAP added on top of a
+    call's own latency, not a replacement for it — real sustained rate ends up close
+    to ~370 calls/hour at min_interval=3.
     """
 
-    def __init__(self, min_interval_seconds: float = 2.5):
+    def __init__(self, min_interval_seconds: float = 3.0):
         self.min_interval = min_interval_seconds
         self._last_call = 0.0
 
@@ -54,6 +86,63 @@ class RateLimiter:
         self._last_call = time.monotonic()
 
 
+_OPENCLI_BIN = shutil.which("opencli")
+if not _OPENCLI_BIN:
+    raise RuntimeError("opencli not found on PATH")
+
+
+def run_opencli(*args: str, timeout: int = 30) -> dict | list:
+    # subprocess.run's default (no shell=True) uses CreateProcess directly on
+    # Windows, which can't resolve a bare "opencli" to the npm-installed
+    # opencli.cmd shim (no extension = no match) — shutil.which() does the same
+    # PATHEXT-aware resolution a shell would, so this works without shell=True.
+    env = dict(os.environ)
+    if ENV.get("OPENCLI_PROFILE"):
+        env["OPENCLI_PROFILE"] = ENV["OPENCLI_PROFILE"]
+    # subprocess.run(text=True) defaults to the OS locale encoding (cp1252 on this
+    # Windows machine) to decode child stdout — crashes on real comment text with
+    # emoji (confirmed: 'charmap' codec can't decode byte 0x8d). Force UTF-8.
+    result = subprocess.run(
+        [_OPENCLI_BIN, *args], capture_output=True, text=True, timeout=timeout, env=env,
+        encoding="utf-8", errors="replace",
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+    return yaml.safe_load(result.stdout)
+
+
+def youtube_api_get(endpoint: str, **params) -> dict:
+    params["key"] = ENV["YOUTUBE_API_KEY"]
+    url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{urllib.parse.urlencode(params)}"
+    with urllib.request.urlopen(url, timeout=20) as resp:
+        return json.loads(resp.read())
+
+
+def upsert_brand(cur, name: str) -> str:
+    cur.execute(
+        """
+        insert into brands (name) values (%s)
+        on conflict (name) do update set updated_at = now()
+        returning brand_id
+        """,
+        (name,),
+    )
+    return cur.fetchone()[0]
+
+
+def brand_id_for_text(cur, text: str | None) -> str | None:
+    if not text:
+        return None
+    mentions = extract_brand_mentions(text)
+    if not mentions:
+        return None
+    # explicit-confidence mentions first; take the first candidate found
+    best = next((m for m in mentions if m.confidence == "explicit"), mentions[0])
+    brand_id = upsert_brand(cur, best.candidate_name)
+    log.info("brand lead: %r -> brand_id=%s (confidence=%s)", best.candidate_name, brand_id, best.confidence)
+    return brand_id
+
+
 class PlatformWorker:
     platform_name = "base"
 
@@ -61,32 +150,21 @@ class PlatformWorker:
         self.rate_limiter = rate_limiter
         self.dry_run = dry_run
 
-    def fetch_creator(self, creator: Creator) -> dict | None:
-        raise NotImplementedError
-
-    def upsert(self, creator: Creator, data: dict, conn) -> None:
-        raise NotImplementedError
-
     def run_batch(self, creators: list[Creator], conn) -> None:
         for creator in creators:
             handle = self._handle_for(creator)
             if not handle:
                 continue
-            self.rate_limiter.wait()
             try:
-                data = self.fetch_creator(creator)
+                self.process_creator(creator, handle, conn)
             except Exception:
-                log.exception("Fetch failed for %s (%s) on %s — skipping, continuing batch",
+                log.exception("Failed for %s (%s) on %s — skipping, continuing batch",
                                creator.name, handle, self.platform_name)
-                continue
-            if data is None:
-                continue
-            if self.dry_run:
-                log.info("[dry-run] would upsert %s data for %s", self.platform_name, creator.name)
-                continue
-            self.upsert(creator, data, conn)
 
     def _handle_for(self, creator: Creator) -> str | None:
+        raise NotImplementedError
+
+    def process_creator(self, creator: Creator, handle: str, conn) -> None:
         raise NotImplementedError
 
 
@@ -96,17 +174,96 @@ class YouTubeWorker(PlatformWorker):
     def _handle_for(self, creator: Creator) -> str | None:
         return creator.youtube_handle
 
-    def fetch_creator(self, creator: Creator) -> dict | None:
-        # TODO (Weeks 3-4): call the YouTube Data API (channels.list, search.list,
-        # playlistItems.list for uploads, commentThreads.list). Requires
-        # YOUTUBE_API_KEY in .env. Not session-bottlenecked like IG/Reddit — see
-        # DATA_COLLECTION_STATUS.md Section 4 for the quota budget.
-        raise NotImplementedError
+    def process_creator(self, creator: Creator, handle: str, conn) -> None:
+        channel_resp = youtube_api_get(
+            "channels", forHandle=handle.lstrip("@"),
+            part="snippet,statistics,contentDetails",
+        )
+        items = channel_resp.get("items", [])
+        if not items:
+            log.warning("No YouTube channel found for handle %s", handle)
+            return
+        ch = items[0]
+        channel_id = ch["id"]
+        snippet, stats = ch["snippet"], ch["statistics"]
+        uploads_playlist = ch["contentDetails"]["relatedPlaylists"]["uploads"]
 
-    def upsert(self, creator: Creator, data: dict, conn) -> None:
-        # TODO: upsert into youtube_channels / youtube_videos / youtube_comments,
-        # keyed on channel_id / video_id / comment_id (see SCHEMA.md).
-        raise NotImplementedError
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                insert into youtube_channels
+                    (channel_id, creator_id, channel_handle, title, description,
+                     subscriber_count, view_count, video_count, country)
+                values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                on conflict (channel_id) do update set
+                    subscriber_count=excluded.subscriber_count,
+                    view_count=excluded.view_count,
+                    video_count=excluded.video_count,
+                    fetched_at=now(), updated_at=now()
+                """,
+                (channel_id, creator.creator_id, handle, snippet.get("title"),
+                 snippet.get("description"), stats.get("subscriberCount"),
+                 stats.get("viewCount"), stats.get("videoCount"), snippet.get("country")),
+            )
+        conn.commit()
+
+        self.rate_limiter.wait()
+        playlist_resp = youtube_api_get(
+            "playlistItems", playlistId=uploads_playlist, part="contentDetails", maxResults=10,
+        )
+        video_ids = [i["contentDetails"]["videoId"] for i in playlist_resp.get("items", [])]
+        if not video_ids:
+            return
+
+        self.rate_limiter.wait()
+        videos_resp = youtube_api_get(
+            "videos", id=",".join(video_ids), part="snippet,statistics,contentDetails",
+        )
+        for v in videos_resp.get("items", []):
+            vs, vstats = v["snippet"], v["statistics"]
+            with conn.cursor() as cur:
+                brand_id = brand_id_for_text(cur, f"{vs.get('title', '')} {vs.get('description', '')}")
+                cur.execute(
+                    """
+                    insert into youtube_videos
+                        (video_id, channel_id, creator_id, title, description, published_at,
+                         thumbnail_url, view_count, like_count, comment_count, tags, brand_id)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    on conflict (video_id) do update set
+                        view_count=excluded.view_count, like_count=excluded.like_count,
+                        comment_count=excluded.comment_count, brand_id=coalesce(excluded.brand_id, youtube_videos.brand_id),
+                        fetched_at=now()
+                    """,
+                    (v["id"], channel_id, creator.creator_id, vs.get("title"), vs.get("description"),
+                     vs.get("publishedAt"), vs.get("thumbnails", {}).get("high", {}).get("url"),
+                     vstats.get("viewCount"), vstats.get("likeCount"), vstats.get("commentCount"),
+                     vs.get("tags"), brand_id),
+                )
+            conn.commit()
+
+            self.rate_limiter.wait()
+            try:
+                comments_resp = youtube_api_get(
+                    "commentThreads", videoId=v["id"], part="snippet", maxResults=20, order="relevance",
+                )
+            except Exception as e:
+                log.info("Comments disabled or unavailable for video %s: %s", v["id"], e)
+                continue
+            with conn.cursor() as cur:
+                for item in comments_resp.get("items", []):
+                    c = item["snippet"]["topLevelComment"]["snippet"]
+                    cur.execute(
+                        """
+                        insert into youtube_comments
+                            (comment_id, video_id, author_handle, text, published_at, like_count)
+                        values (%s,%s,%s,%s,%s,%s)
+                        on conflict (comment_id) do update set like_count=excluded.like_count
+                        """,
+                        (item["id"], v["id"], c.get("authorDisplayName"), c.get("textDisplay"),
+                         c.get("publishedAt"), c.get("likeCount")),
+                    )
+            conn.commit()
+        log.info("YouTube: %s -> %d videos", handle, len(videos_resp.get("items", [])))
 
 
 class InstagramWorker(PlatformWorker):
@@ -115,32 +272,176 @@ class InstagramWorker(PlatformWorker):
     def _handle_for(self, creator: Creator) -> str | None:
         return creator.instagram_handle
 
-    def fetch_creator(self, creator: Creator) -> dict | None:
-        # TODO (Weeks 3-4): shell out to `opencli instagram user HANDLE --limit N -f yaml`
-        # (requires the OpenCLI Chrome extension + a logged-in instagram.com session —
-        # see DATA_COLLECTION_STATUS.md Section 3). Parse the YAML output.
-        raise NotImplementedError
+    def process_creator(self, creator: Creator, handle: str, conn) -> None:
+        self.rate_limiter.wait()
+        profile_resp = run_opencli("instagram", "profile", handle, "-f", "yaml")
+        # `instagram profile` returns a 1-item list of a flat dict (bio/followers/...
+        # keys directly) — NOT field/value rows like `reddit subreddit-info` uses.
+        # Confirmed wrong on the first real run (KeyError: 'field') — different
+        # OpenCLI commands use different YAML shapes, don't assume one fits all.
+        prof = profile_resp[0] if isinstance(profile_resp, list) else profile_resp
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                insert into instagram_profiles
+                    (username, creator_id, full_name, bio, follower_count, following_count,
+                     post_count, is_verified)
+                values (%s,%s,%s,%s,%s,%s,%s,%s)
+                on conflict (username) do update set
+                    follower_count=excluded.follower_count, following_count=excluded.following_count,
+                    post_count=excluded.post_count, fetched_at=now(), updated_at=now()
+                """,
+                (handle, creator.creator_id, prof.get("name"), prof.get("bio"),
+                 prof.get("followers"), prof.get("following"), prof.get("posts"),
+                 str(prof.get("verified")).lower() == "yes"),
+            )
+        conn.commit()
 
-    def upsert(self, creator: Creator, data: dict, conn) -> None:
-        # TODO: upsert into instagram_profiles / instagram_posts / instagram_comments.
-        raise NotImplementedError
+        self.rate_limiter.wait()
+        session = f"orc_{handle}"
+        run_opencli("browser", session, "open", f"https://www.instagram.com/{handle}/")
+        run_opencli("browser", session, "wait", "time", "2")
+        # The post grid is lazy-loaded and load timing is genuinely inconsistent —
+        # observed anywhere from 0 to 2+ scrolls needed for the same account across
+        # different runs (not just cold-vs-warm cache; re-ran kingjames twice in a
+        # row and got different results). Padding the retry budget rather than
+        # assuming a fixed scroll count is reliable.
+        found = None
+        max_attempts = 5
+        for attempt in range(max_attempts):
+            try:
+                found = run_opencli("browser", session, "find", "--css",
+                                     'a[href*="/reel/"], a[href*="/p/"]', "--limit", "8")
+                break
+            except RuntimeError:
+                if attempt == max_attempts - 1:
+                    raise
+                run_opencli("browser", session, "scroll", "down")
+                run_opencli("browser", session, "wait", "time", "3")
+        post_paths = list(dict.fromkeys(e["attrs"]["href"] for e in found.get("entries", [])))
+
+        for path in post_paths[:5]:
+            post_url = f"https://www.instagram.com{path}"
+            post_id = path.strip("/").split("/")[-1]
+            self.rate_limiter.wait()
+            run_opencli("browser", session, "open", post_url)
+            run_opencli("browser", session, "wait", "time", "2")
+            extracted = run_opencli("browser", session, "extract")
+            markdown = extracted["content"] if isinstance(extracted, dict) else str(extracted)
+
+            with conn.cursor() as cur:
+                brand_id = brand_id_for_text(cur, markdown[:2000])  # caption is near the top
+                cur.execute(
+                    """
+                    insert into instagram_posts (post_id, username, creator_id, brand_id)
+                    values (%s,%s,%s,%s)
+                    on conflict (post_id) do update set fetched_at=now(), brand_id=coalesce(excluded.brand_id, instagram_posts.brand_id)
+                    """,
+                    (post_id, handle, creator.creator_id, brand_id),
+                )
+                comments = parse_comments(markdown)
+                for c in comments:
+                    cur.execute(
+                        """
+                        insert into instagram_profiles (username) values (%s)
+                        on conflict (username) do nothing
+                        """,
+                        (c.author_username,),
+                    )
+                    cur.execute(
+                        """
+                        insert into instagram_comments (comment_id, post_id, author_username, text, like_count)
+                        values (%s,%s,%s,%s,%s)
+                        on conflict (comment_id) do update set like_count=excluded.like_count
+                        """,
+                        (c.comment_id, post_id, c.author_username, c.text, c.like_count),
+                    )
+            conn.commit()
+            log.info("Instagram: %s post %s -> %d comments", handle, post_id, len(comments))
+        run_opencli("browser", session, "close")
 
 
 class RedditWorker(PlatformWorker):
+    """Deliberately leaner than YouTube/Instagram — Reddit is community context here,
+    not the primary sponsorship-disclosure source (see module docstring). Unlike
+    Instagram, Reddit's OpenCLI backend already covers comment reading natively
+    (`reddit read`, bundled in the same call as the post) — no browser-automation
+    workaround needed here."""
+
     platform_name = "reddit"
 
     def _handle_for(self, creator: Creator) -> str | None:
         return creator.reddit_handles[0] if creator.reddit_handles else None
 
-    def fetch_creator(self, creator: Creator) -> dict | None:
-        # TODO (Weeks 3-4): shell out to `opencli reddit subreddit HANDLE -f yaml` (or
-        # `rdt sub HANDLE --limit N` for the headless backend — see
-        # DATA_COLLECTION_STATUS.md Section 3/4 for the OpenCLI-vs-rdt-cli tradeoff).
-        raise NotImplementedError
+    def process_creator(self, creator: Creator, handle: str, conn) -> None:
+        self.rate_limiter.wait()
+        posts = run_opencli("reddit", "subreddit", handle, "-f", "yaml")
+        if not isinstance(posts, list):
+            return
+        for post in posts[:5]:
+            post_id = post.get("id")
+            if not post_id:
+                continue
+            with conn.cursor() as cur:
+                if post.get("author"):
+                    cur.execute(
+                        "insert into reddit_profiles (username) values (%s) on conflict (username) do nothing",
+                        (post["author"],),
+                    )
+                brand_id = brand_id_for_text(cur, f"{post.get('title', '')} {post.get('selftext', '')}")
+                cur.execute(
+                    """
+                    insert into reddit_posts
+                        (post_id, subreddit, creator_id, author_username, title, body,
+                         posted_at, score, num_comments, brand_id)
+                    values (%s,%s,%s,%s,%s,%s,to_timestamp(%s),%s,%s,%s)
+                    on conflict (post_id) do update set score=excluded.score, num_comments=excluded.num_comments,
+                        brand_id=coalesce(excluded.brand_id, reddit_posts.brand_id), fetched_at=now()
+                    """,
+                    (post_id, handle, creator.creator_id, post.get("author"), post.get("title"),
+                     post.get("selftext"), post.get("created_utc"), post.get("upvotes"),
+                     post.get("comments"), brand_id),
+                )
+            conn.commit()
 
-    def upsert(self, creator: Creator, data: dict, conn) -> None:
-        # TODO: upsert into reddit_profiles / reddit_posts / reddit_comments.
-        raise NotImplementedError
+            self.rate_limiter.wait()
+            self._fetch_comments(post_id, conn)
+        log.info("Reddit: r/%s -> %d posts", handle, len(posts[:5]))
+
+    def _fetch_comments(self, post_id: str, conn) -> None:
+        rows = run_opencli("reddit", "read", post_id, "-f", "yaml")
+        if not isinstance(rows, list):
+            return
+        n = 0
+        with conn.cursor() as cur:
+            for row in rows:
+                # type=="POST" is the post itself (already captured); rows with no
+                # author are truncation placeholders ("[+N more replies]"), not real
+                # comments — Reddit's `read` output has NO comment-id field at all
+                # (checked the raw JSON directly), so a content hash stands in as a
+                # stable synthetic id, idempotent across reruns of the same comment.
+                if row.get("type") == "POST" or not row.get("author"):
+                    continue
+                comment_id = hashlib.sha1(
+                    f"{post_id}:{row['author']}:{row.get('text', '')}".encode("utf-8")
+                ).hexdigest()[:24]
+                score = row.get("score")
+                score = score if isinstance(score, int) else None
+                cur.execute(
+                    "insert into reddit_profiles (username) values (%s) on conflict (username) do nothing",
+                    (row["author"],),
+                )
+                cur.execute(
+                    """
+                    insert into reddit_comments (comment_id, post_id, author_username, body, score)
+                    values (%s,%s,%s,%s,%s)
+                    on conflict (comment_id) do update set score=excluded.score
+                    """,
+                    (comment_id, post_id, row["author"], row.get("text"), score),
+                )
+                n += 1
+        conn.commit()
+        log.info("Reddit: post %s -> %d comments", post_id, n)
 
 
 WORKERS = {
@@ -150,28 +451,78 @@ WORKERS = {
 }
 
 
-def load_target_creators(conn) -> list[Creator]:
-    # TODO: SELECT from creators (and join whichever *_profiles table to find rows
-    # whose fetched_at is null or stale, for gap-filling passes — see ORCHESTRATION.md).
-    raise NotImplementedError
-
-
 def get_connection():
-    database_url = os.environ.get("DATABASE_URL")
+    import psycopg2
+    database_url = ENV.get("DATABASE_URL")
     if not database_url:
         raise RuntimeError("DATABASE_URL not set — copy .env.example to .env and fill it in")
-    import psycopg2  # local import: only needed once a real DB is wired up
     return psycopg2.connect(database_url)
+
+
+def get_or_create_creator(conn, name: str, category: str, **handles) -> Creator:
+    """Idempotent on youtube_handle/instagram_handle via the real unique partial
+    indexes (migration 20260809020000) — a prior version relied on a bare `ON
+    CONFLICT DO NOTHING` with no matching constraint, which silently inserted a
+    duplicate creator row on every rerun (found running a real pilot, not
+    hypothetical — see that migration's comment for the data-corruption it caused).
+    Reddit-only creators (no youtube/instagram handle) aren't covered by a unique
+    constraint here — `reddit_handles` is an array, dedup would need its own
+    constraint; falls back to a plain name lookup for that case, best-effort only.
+    """
+    yt, ig = handles.get("youtube_handle"), handles.get("instagram_handle")
+    with conn.cursor() as cur:
+        if yt:
+            cur.execute(
+                """
+                insert into creators (name, category, youtube_handle, reddit_handles)
+                values (%s,%s,%s,%s)
+                on conflict (youtube_handle) where youtube_handle is not null
+                do update set category = excluded.category
+                returning creator_id
+                """,
+                (name, category, yt, handles.get("reddit_handles", [])),
+            )
+            row = cur.fetchone()
+        elif ig:
+            cur.execute(
+                """
+                insert into creators (name, category, instagram_handle, reddit_handles)
+                values (%s,%s,%s,%s)
+                on conflict (instagram_handle) where instagram_handle is not null
+                do update set category = excluded.category
+                returning creator_id
+                """,
+                (name, category, ig, handles.get("reddit_handles", [])),
+            )
+            row = cur.fetchone()
+        else:
+            cur.execute("select creator_id from creators where name = %s", (name,))
+            row = cur.fetchone()
+            if row is None:
+                cur.execute(
+                    "insert into creators (name, category, reddit_handles) values (%s,%s,%s) returning creator_id",
+                    (name, category, handles.get("reddit_handles", [])),
+                )
+                row = cur.fetchone()
+    conn.commit()
+    return Creator(creator_id=str(row[0]), name=name, category=category, **handles)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--platform", choices=WORKERS.keys(), required=True)
+    parser.add_argument("--handles", nargs="+", help="Handles to fetch (uses handle as name too)")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     conn = None if args.dry_run else get_connection()
-    creators = [] if args.dry_run else load_target_creators(conn)
+
+    creators = []
+    if not args.dry_run and args.handles:
+        for h in args.handles:
+            kwargs = {f"{args.platform}_handle" if args.platform != "reddit" else "reddit_handles":
+                      h if args.platform != "reddit" else [h]}
+            creators.append(get_or_create_creator(conn, h, "other", **kwargs))
 
     worker = WORKERS[args.platform](RateLimiter(), dry_run=args.dry_run)
     worker.run_batch(creators, conn)

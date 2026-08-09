@@ -1,11 +1,9 @@
 # Ingestion Orchestration — Design (Track A)
 
-Status as of 2026-08-09: **design + skeleton; all three platforms now confirmed
-reachable with real commands and real latency numbers** (`DATA_COLLECTION_STATUS.md`
-Section 4) — both OpenCLI blockers are closed (real Chrome, not Arc — see that doc's
-Section 2). The worker/rate-limiter shape below is validated against real pilot calls,
-not just designed on paper. Wiring the actual `# TODO`s in `orchestrator.py` against
-these now-proven commands is the next concrete step, still open as of this writing.
+Status as of 2026-08-09 (Weeks 5-6): **`orchestrator.py` is live and has actually
+written real rows to the production Supabase DB** for all three platforms — this is
+no longer a skeleton. Run history and real bugs found while getting it working are in
+this file below; live row counts are in `DATA_COLLECTION_STATUS.md` Section 5.
 
 This is the "Hermes agent or equivalent automation" from the original Capstone doc:
 something that queues targets, calls the right scraper per platform, and merges
@@ -119,29 +117,79 @@ find post URLs → open post → extract), on top of the 1 `user`-listing call �
 `DATA_COLLECTION_STATUS.md` Section 4c for the revised reachable-entities estimate now
 that this exists.
 
-## What's NOT built yet (intentionally — Weeks 3-4 scope, still open as of 2026-08-09)
+## Real bugs found and fixed getting the first real run working (2026-08-09)
 
-- The actual response-parsing code behind each `# TODO` in `orchestrator.py` — the
-  commands above are confirmed working and their real output shape has been seen
-  (YAML for OpenCLI, JSON for the Data API and yt-dlp), but nothing parses it into
-  the DB schema yet.
-- The brand-account scraping worker described above (extraction logic exists; the
-  worker that acts on its output doesn't yet).
-- The target-queue population logic (how `creators` rows get created in the first
-  place — manual seed list vs. discovery scraping).
-- Reddit `read` pagination past the ~68-90 comment truncation point, and equivalent
-  pagination for Instagram's `browser extract` comment truncation.
-- Wiring `instagram_comment_extract.py` into the actual `InstagramWorker` — the parser
-  exists and is tested against saved output, but the worker doesn't call the
-  open→extract→parse sequence yet.
-- Retry/backoff tuning against sustained real-world rate-limit behavior — the pilot was
-  a handful of calls with manual 3s gaps, not a sustained multi-hour run, so CAPTCHA/ban
+Wiring the workers against actually-live data surfaced real bugs the design/skeleton
+didn't predict — none of these showed up until real subprocess/DB calls ran:
+
+1. **Data corruption: duplicate creator rows.** `get_or_create_creator` used
+   `ON CONFLICT DO NOTHING` with no unique constraint on `youtube_handle`/
+   `instagram_handle` to actually trigger it — every rerun silently inserted a new
+   creator row for the same handle. A single real channel ('athleanx') ended up split
+   across two `creator_id`s, with `youtube_channels` and `youtube_videos` pointing at
+   different ones. Fixed: added partial unique indexes (migration
+   `20260809020000_dedupe_creators.sql`, which also merges the duplicate this bug
+   already created) and rewrote the upsert to conflict on the real constraint.
+2. **`opencli` not found from Python's subprocess.** `subprocess.run(["opencli", ...])`
+   failed with `FileNotFoundError` — Windows `CreateProcess` (no `shell=True`) can't
+   resolve a bare command name to the npm-installed `opencli.cmd` shim the way a shell
+   does. Fixed with `shutil.which("opencli")` to get the real resolvable path.
+3. **Console/subprocess encoding crash on real comment text.** `subprocess.run(text=True)`
+   defaults to the OS locale encoding (cp1252 on this machine) to decode child
+   stdout — crashed on real emoji in extracted comments (`'charmap' codec can't decode
+   byte 0x8d`). Fixed with explicit `encoding="utf-8", errors="replace"`.
+4. **Wrong assumed YAML shape for `instagram profile`.** Wrote the parser assuming
+   `field`/`value` rows (that's `reddit subreddit-info`'s shape, not Instagram's) —
+   `instagram profile` returns a 1-item list of a flat dict instead. `KeyError: 'field'`
+   on the first real run; different OpenCLI commands use different output shapes, this
+   doesn't generalize.
+5. **Instagram's post-grid lazy-load timing is genuinely inconsistent**, not just
+   "sometimes needs a scroll" — re-ran the same account (`kingjames`) twice in a row
+   and got different scroll counts needed. A fixed 1-scroll fallback wasn't enough;
+   padded to a 5-attempt retry loop with scroll+wait between attempts.
+6. **Reddit's `read` output has no comment-ID field at all** (checked the raw JSON
+   directly) — only `author`/`score`/`text`/`type`. Used a content hash
+   (`sha1(post_id:author:text)`) as a stable synthetic `comment_id`, idempotent across
+   reruns of the same comment. Also had to filter out `"[+N more replies]"`-style
+   placeholder rows (empty `author`) that aren't real comments.
+7. **No follower-floor enforcement.** A guessed Instagram handle (`whitneysimmons`,
+   intended to be the fitness influencer) resolved to an unrelated real account with
+   460 followers — below PROJECT_PLAN.md's 5k-follower scope floor. Cleaned up
+   manually; the orchestrator doesn't check this automatically yet — real gap, not
+   fixed, see open items.
+
+## What's NOT built yet
+
+- **Follower-floor enforcement** (bug #7 above) — nothing currently stops an
+  out-of-scope (or misidentified) account from being ingested.
+- **Handle verification before ingestion** — handles are currently supplied on faith
+  (a guess from training knowledge, in the one case that went wrong); `opencli
+  instagram search` exists and could verify/disambiguate before fetching, not wired in.
+- The brand-account scraping worker (extraction logic exists and runs on every
+  fetched caption/title/description; the worker that would scrape an *identified*
+  brand's own profile doesn't exist yet).
+- The target-queue population logic beyond `--handles` on the CLI (how `creators` rows
+  get created at real scale — manual seed list vs. discovery scraping).
+- Reddit `read` pagination past truncation, and Instagram `browser extract`'s
+  initial-render truncation (scoped, not solved — see `DATA_COLLECTION_STATUS.md`).
+- Retry/backoff tuning against sustained real-world rate-limit behavior — real runs so
+  far are small batches (5-10 items), not sustained multi-hour operation; CAPTCHA/ban
   thresholds are still unknown in practice.
+- Real brand-mention hits: 0 so far across all real entities tried (`athleanx`,
+  `kingjames`, `r/lebron`) — the extraction module itself is unit-tested and correct
+  (caught and fixed a real over-capture bug earlier), but explicit disclosure phrasing
+  ("sponsored by X", "#ad") hasn't actually appeared in the real captions/descriptions
+  sampled so far. Not yet proven against a real positive case — worth deliberately
+  seeking one out (verified via `instagram search` first, not guessed) before trusting
+  the brands pipeline is validated end-to-end.
 
-## Skeleton
+## Running it
 
-See `scripts/ingestion/orchestrator.py` — a runnable skeleton with the worker/rate-limiter
-shape above, `# TODO` markers where platform-specific calls go, and DB upsert stubs
-against the schema in `SCHEMA.md`. Wired to a live DB now (`DATABASE_URL` is set in
-`.env`, Supabase is provisioned and verified) but the platform-call TODOs are still
-unfilled, and nothing is scheduled anywhere yet.
+```
+python scripts/ingestion/orchestrator.py --platform youtube --handles athleanx
+python scripts/ingestion/orchestrator.py --platform instagram --handles kingjames
+python scripts/ingestion/orchestrator.py --platform reddit --handles lebron
+```
+Real run so far (2026-08-09): 3 creators, 10 YouTube videos + 200 comments, 5 Instagram
+posts + 71 comments, 6 Reddit posts + 135 comments — all live in Supabase. See
+`DATA_COLLECTION_STATUS.md` Section 5 for the up-to-date table.

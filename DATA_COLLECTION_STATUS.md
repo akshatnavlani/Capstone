@@ -12,6 +12,12 @@ trusting this if it's more than a couple weeks old.
 - **Real Google Chrome**, installed and logged into Instagram + Reddit, with the OpenCLI
   extension enabled — this is the browser that actually works (see Section 2).
 
+**Re-verified fresh 2026-08-09 (Weeks 5-6 session, not just re-reading this doc):**
+re-ran `opencli doctor`, a real `opencli reddit subreddit-info nba` call (subscriber
+count differed from the last read — confirms live, not cached), a real
+`opencli instagram profile nasa` call (follower count also differed), and a real
+YouTube Data API call with the stored key. All still genuinely working — not assumed.
+
 ## 2. Both platform blockers are now closed — all three platforms verified working end-to-end
 
 | Platform | Status | Evidence |
@@ -111,12 +117,38 @@ usernames like `kozmo\_spacely`; an over-restrictive end-of-string anchor) — f
 draft parsed 0 comments despite the permalinks matching fine. **Apify wasn't needed —
 this path worked on the first real attempt once the regex bugs were fixed.**
 
-Caveats, real not hypothetical: this captures what's rendered on first page load, not
-guaranteed complete — Instagram truncates long comment threads ("View all N replies",
-"[+N more]") in the initial render, so very high-engagement posts will need pagination
-(not built) to get everything. Not yet load-tested across many posts/rate-limit
-behavior under this generic-browser-automation path specifically (may differ from the
-dedicated `instagram user`/`profile` commands' rate characteristics — untested).
+### Pagination-past-truncation gap — scoped and quantified 2026-08-09, not solved
+
+Re-tested against a 3rd real post (`@cristiano` — Cristiano Ronaldo, chosen deliberately
+as a worst-case: one of the highest-engagement accounts on the platform) to find out how
+bad the initial-render truncation actually is. Parser worked correctly (no crash, no new
+bugs), but only **9 comments** were extracted from a post with **352,130 total comments**
+(per `opencli instagram user`'s comment-count field) — a **0.0026% coverage ratio**.
+
+Tried to actually fix this, not just note it: searched the page for a "load more
+comments" control (`browser find --text`/`--role`) — none found; tried scrolling
+further — no additional comments appeared after 2 extra scrolls; inspected
+`browser network` capture for a comments-pagination API call to potentially replicate
+directly — nothing usable surfaced in the capture without deeper reverse-engineering of
+Instagram's private GraphQL endpoints. **Deliberately stopped there** — calling a
+private API directly outside the browser-automation path is a materially different (and
+higher ban-risk) approach than everything else in this pipeline, and the team already
+treats ban risk as a hard constraint (see the throughput/session-ceiling decision). Not
+worth it for comment pagination specifically without your sign-off.
+
+**Scoped, not solved:** this method captures Instagram's algorithmically-surfaced "top
+comments" from the initial page render only, full stop. Coverage ratio is
+worst-case-negligible for mega-celebrity posts (Ronaldo: 0.0026%) but PROJECT_PLAN.md's
+actual target entities are 5k-follower-and-up creators, not global icons with 650M
+followers — a realistically-scoped entity's posts will have far fewer total comments
+(dozens to low thousands, not hundreds of thousands), so the *same* ~9-15
+comments-per-post ceiling should cover a much larger fraction there. That's a reasoned
+hypothesis, not yet measured — haven't tested a genuinely mid-tier (5k-500k follower)
+account's coverage ratio specifically; `@kingjames` (LeBron, still a global mega-star)
+gave ~15/1802 ≈ 0.8% earlier, so even a "normal" superstar is low. **Recommend
+validating coverage ratio against 2-3 real mid-tier target entities before the Weeks
+5-6 bulk run, so the team knows the actual signal density going in, not an
+extrapolation from two extreme examples.**
 
 ### 4c. Re-estimating reachable entities with real numbers (both platforms have real
 yield-per-call data now, but they're structurally different, so one flat number
@@ -144,7 +176,46 @@ across both isn't honest)
   across many entities, but the earlier concern that Instagram would structurally fall
   short is no longer the leading risk.
 
-## 5. Throughput / session ceiling — still true, now with real numbers behind it
+## 5. Real bulk collection — Weeks 5-6, first live run (2026-08-09)
+
+`scripts/ingestion/orchestrator.py` is no longer a skeleton — it wrote real rows to
+the production Supabase DB. Getting there surfaced 7 real bugs (data corruption from a
+missing unique constraint, subprocess/encoding issues, wrong assumed YAML shapes,
+inconsistent lazy-load timing, an undocumented missing comment-ID field, no
+follower-floor check) — full list with fixes in `ORCHESTRATION.md`. None of these were
+visible from the Weeks 3-4 pilot testing (single ad-hoc commands, not a real pipeline
+run) — worth remembering that a working manual command and a working automated
+pipeline calling the same command are not the same claim.
+
+**Real row counts after this run:**
+
+| Table | Rows |
+|---|---|
+| creators | 3 |
+| youtube_channels / videos / comments | 1 / 10 / 200 |
+| instagram_profiles / posts / comments | 59 / 5 / 71 |
+| reddit_profiles / posts / comments | 113 / 6 / 135 |
+| brands | 0 |
+
+**Brand extraction: 0 real hits so far, and that's a real (if inconclusive) finding,
+not a bug.** Tried 3 real entities (`athleanx`'s YouTube descriptions, `kingjames`'s
+Instagram captions, `r/lebron`'s posts) — none matched the explicit disclosure
+phrasing (`sponsored by`, `in partnership with`, `#ad`) the extractor looks for.
+Checked real description text directly: `athleanx`'s videos link to the creator's own
+product (self-promotion, not third-party sponsorship) — a legitimately negative case,
+not a miss. The extraction module itself is unit-tested correct (see `SCHEMA.md`'s
+adversarial self-check). **Not yet proven against a real positive case** — should
+deliberately find a known-sponsored post (verified via `opencli instagram search`
+first, not guessed from training knowledge — see the handle-guessing lesson below)
+before trusting the brands pipeline end-to-end, not just the regex in isolation.
+
+**Real lesson: don't guess handles from training knowledge.** Tried `whitneysimmons`
+expecting the well-known fitness influencer; got a real but unrelated 460-follower
+personal account instead (below PROJECT_PLAN.md's 5k-follower floor). Cleaned up
+manually. The orchestrator has no handle-verification or follower-floor check yet —
+real open item, not fixed here (`ORCHESTRATION.md` "What's NOT built yet").
+
+## 6. Throughput / session ceiling — still true, now with real numbers behind it
 
 **The bottleneck is the logged-in session, not the number of sub-agents** — unchanged
 from Weeks 1-2, now confirmed: `OPENCLI_PROFILE` pins to one Chrome profile, and every
@@ -159,17 +230,24 @@ shows a material shortfall.
 quota-based (10k units/day default), independently re-verified via web search in the
 last self-check.
 
-## 6. Open items going into Weeks 3-4
+## 7. Open items going into Weeks 7-8
 
 - [x] ~~OpenCLI Chrome extension + IG/Reddit logins~~ — done 2026-08-09 (real Chrome,
   not Arc — see Section 2).
 - [x] ~~YouTube Data API key~~ — received and verified working 2026-08-09.
 - [x] ~~Pilot batch~~ — done for all three platforms (Section 4).
 - [x] ~~Instagram comment-text gap~~ — resolved via `opencli browser extract` +
-  `scripts/ingestion/instagram_comment_extract.py` (Section 4b). Not yet: pagination
-  past Instagram's initial-render truncation, and a real multi-entity load test.
-- [ ] Wire the orchestrator's platform-call TODOs using the now-confirmed-working real
-  commands, including the new Instagram comment-extraction pipeline (`ORCHESTRATION.md`).
+  `scripts/ingestion/instagram_comment_extract.py` (Section 4b).
+- [x] ~~Wire the orchestrator~~ — done and run for real (Section 5).
+- [ ] Follower-floor enforcement + handle verification before ingestion (Section 5) —
+  real gap found this session, not fixed.
+- [ ] Prove the brands pipeline against a real positive case (a genuinely sponsored
+  post, verified before fetching) — 0 hits so far isn't proof the pipeline is broken,
+  but it's also not proof it works end-to-end (Section 5).
+- [ ] Pagination past truncation (Reddit `read`'s ~68-90 comment cap, Instagram
+  `browser extract`'s initial-render cap) — scoped, not solved.
 - [ ] Decide whether Reddit runs via OpenCLI (desktop, Chrome must stay open) or
   `rdt-cli` (headless, cookie-based, unattended) — OpenCLI is now proven to work, so
   this is a convenience/uptime tradeoff, not a functionality question anymore.
+- [ ] Real load test — all real runs so far are small batches (5-10 items/platform),
+  not sustained operation; CAPTCHA/ban thresholds still unknown in practice.

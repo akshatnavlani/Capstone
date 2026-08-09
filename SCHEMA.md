@@ -7,7 +7,18 @@ later, this file will be updated and re-pushed to `track-a-data-infra` — diff 
 before assuming it's stale.
 
 - DDL: `supabase/migrations/` (applied in filename order: `20260808163402_init_schema.sql`,
-  `20260809000000_fix_missing_reddit_indexes.sql`, `20260809010000_add_brands.sql`)
+  `20260809000000_fix_missing_reddit_indexes.sql`, `20260809010000_add_brands.sql`,
+  `20260809020000_dedupe_creators.sql`)
+- **`creators.youtube_handle`/`instagram_handle` now have real unique partial
+  indexes** (added in the dedupe migration) — found via a real bug where the
+  ingestion orchestrator's `ON CONFLICT DO NOTHING` had no matching constraint and
+  silently created duplicate creator rows on every rerun. See `ORCHESTRATION.md` for
+  the full bug list from wiring the orchestrator for real.
+- **`reddit_comments.comment_id` is a synthetic content-hash, not a real Reddit ID** —
+  `opencli reddit read` exposes no comment-ID field at all (checked the raw JSON).
+  `sha1(post_id:author:text)` stands in, idempotent across reruns of the same comment
+  but not a real externally-meaningful identifier if you need to cross-reference
+  against Reddit directly.
 - DB: Supabase (managed Postgres), project provisioned 2026-08-08. Connection details
   go in `.env` (see `.env.example` for the required keys), never committed — ask the
   user directly for real credentials if you need them, they aren't in git or memory.
