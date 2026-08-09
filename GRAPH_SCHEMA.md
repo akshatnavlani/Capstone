@@ -4,10 +4,12 @@ Owner: Track B (ML-Core). Source: `ml/schema.py` (this doc mirrors that code —
 if they ever disagree, the code is authoritative). Implements
 PROJECT_PLAN.md Section 3a.
 
-This is validated end-to-end against synthetic data (`ml/dummy_data.py`,
-`tests/test_schema.py`) with a basic GAT forward pass — real data doesn't
-exist until Track A finishes Weeks 3-4 scraping, so dummy data is the
-correct validation method for this stage.
+Validated end-to-end against synthetic data (`ml/dummy_data.py`,
+`tests/test_schema.py`) with a basic GAT forward pass, AND (as of Weeks
+7-10) against real data pulled from the live DB via Track C's
+feature-store API — see "Real-data status" near the end of this doc for
+current row counts and what's still missing before real GAIL training can
+start.
 
 ## Node types
 
@@ -278,10 +280,11 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
 - **`reputation_score` has no source column anywhere** (same — confirmed by
   Track C, always `None`). Open, no owner assigned yet.
 - **Real-data validation of the GAT/GraphSAGE finding is real-feature-value
-  validated but NOT real-graph-structure validated** — 0 real collaboration
-  edges exist yet (data-collection gap, not evidence of no real
-  collaborations). Re-run `scripts/validate_gat_on_real_data.py` once real
-  `collaborates_with` edges exist for at least a few creators.
+  validated but STILL NOT real-graph-structure validated as of 2026-08-10**
+  — re-checked this round, still 0 real `collaborates_with` edges (data
+  collection gap, not evidence against real collaborations). Re-run
+  `scripts/validate_gat_on_real_data.py` the moment real edges exist — see
+  "Real-data status" below for exact current counts.
 - **GraphSAGE backbone decision — provisionally accepted 2026-08-09,
   PROJECT_PLAN.md Section 3a updated** (see "Why GAT over GraphSAGE"
   above): GAT already satisfies the plan's stated inductive rationale, so
@@ -290,8 +293,8 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   (`ml/weighted_sage_conv.py`) in case GraphSAGE is wanted later for
   unrelated reasons (large-scale neighbor sampling, degree-variance
   robustness). **Not fully closed:** real-data validation so far covers
-  real feature values but not real graph structure (0 real collaboration
-  edges exist) — re-run once real edges land.
+  real feature values but not real graph structure — re-run once real edges
+  land.
 - Brand feature richness is capped by Track A's current bounded scope (no
   brand post/bio content, only profile-level counts) — revisit only if the
   thesis specifically needs richer brand features and Track A's scope is
@@ -302,6 +305,124 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   below) — `is_sponsored`/`sponsorship_raw_matches` are now correctly
   `Optional`/unpopulated in their ingestion schemas, matching Track A's
   real DB. No longer open.
+
+## Real-data status (2026-08-10, Weeks 9-10)
+
+Pulled fresh via Track C's live `/feature-store/*` endpoints against the
+real Supabase DB, plus a direct read-only SQL check for what the
+feature-store API doesn't expose (raw `is_sponsored`/`brand_id` state).
+
+**Creators: 10 real rows** (up from 3 last round) — the 9 curated
+Indian-first target-list creators (Virat Kohli, Neeraj Chopra, Ranveer
+Allahbadia, PV Sindhu, Saina Nehwal, Sania Mirza, MC Mary Kom, LeBron James,
+Cristiano Ronaldo) plus `athleanx` from the earlier pilot. 8/10 have real
+content (text/thumbnails); LeBron James and Cristiano Ronaldo are still
+stubs (metadata only, per Track A's real per-creator datapoint table —
+their scraping attempts partially failed this round, see Track A's
+`DATA_COLLECTION_STATUS.md` Section 8).
+
+**Collaboration edges: still 0.** Unchanged from last round — Track A's
+`creator_related_accounts` "frequent_collaborator" rows aren't populated
+for these creators yet. **GAT structural (graph-structure) validation
+remains blocked on this, not a Track B gap.**
+
+**Sponsorship edges: still 0, but for a nuanced reason worth documenting
+precisely** (checked via direct read-only SQL, not just the feature-store
+API, since the API only exposes derived edges):
+- `brands` table: **1 real row** — "Agilitas" (matches Track A's
+  Virat-Kohli/Agilitas positive brand-extraction case from Weeks 7-8).
+- Exactly **1 content row has `brand_id` set**: an Instagram post from
+  Virat Kohli — caption starts *"2 years back I joined hands with Agilitas
+  to build a dream..."* — genuine partnership language, a strong candidate.
+- **But `is_sponsored` is `None` (not `false`) on that exact row** — it
+  hasn't been run through the disclosure-tag labeler at all. Checked why:
+  labeling has only ever been run on the original 21-row pre-bulk-collection
+  sample (10 YouTube + 5 Instagram + 6 Reddit) — the real content table
+  totals are now 20/41/36 respectively, so **most content, including this
+  specific promising row, has never been labeled**. This is not a labeler
+  bug — Track A's own SCHEMA.md explicitly warns `brand_id` presence isn't
+  proof of `is_sponsored`, and that's exactly what's being observed here:
+  a brand *mention* was found, but disclosure-tag labeling is a separate,
+  not-yet-applied step for this row.
+- **Did not trigger Track C's `POST /labeling/run` myself** — that's their
+  pipeline against shared production data, not something to invoke
+  unilaterally while just checking status. Flagging as an actionable,
+  specific next step instead: re-running labeling against the full current
+  dataset is likely to produce at least one real `is_sponsored=true` row
+  (the Kohli/Agilitas post looks like a strong candidate on its text
+  alone), which would be GAIL's first real training pair.
+
+**CLIP+BERT extraction: run across the full current real dataset (all 10
+creators, not just the 3-creator sample from last round)** — 10/10
+succeeded, correct `(1289,)` shape, no NaNs, no new integration bugs at
+this larger scale. Creators with real thumbnails took ~2.5-3s each (real
+CLIP inference on real fetched images); text-only/stub creators were
+near-instant. No code changes needed this round — `ml/feature_extraction.py`
+held up at 3x the data volume.
+
+## Weeks 11-13 training-loop gap analysis
+
+Per the user's request: what's missing between today's tested primitives
+(schema, dummy data, GAT forward pass, causal regularization terms,
+CLIP+BERT extraction) and an actual trainable GAIL pipeline — so Weeks
+11-13 isn't a cold start. Not built this round (real data isn't ready at
+volume, and this was explicitly scoped as analysis, not implementation).
+
+**Blocked on real data (can't be built against dummy data meaningfully):**
+1. **Training examples don't exist yet.** GAIL trains on historical
+   sponsorship events, predicting neighbor engagement-gain. This needs real
+   `(sponsored creator, timestamp, collaborator, engagement before,
+   engagement after)` tuples. Currently: 0 real sponsorship events (see
+   "Real-data status" above) and, separately, no code anywhere computes
+   *temporal engagement deltas* at all — the current feature vectors are a
+   single static snapshot (`log_subscriber_count`, `engagement_rate` as of
+   scrape time), not a before/after time series. Even once a real
+   sponsorship event exists, extracting its training pair requires
+   per-post timestamped engagement history, which Track A's raw tables can
+   support (they have `posted_at`/`published_at` per post) but nothing in
+   Track B's or Track C's pipeline currently constructs this. **This is
+   the single biggest gap** — likely needs a small new module (a
+   time-windowed engagement-delta calculator) once real events exist.
+2. **Propensity model can't be meaningfully fit yet** — `PropensityScoreModel`
+   (`ml/causal_regularization.py`) is architecturally ready and unit-tested,
+   but fitting it needs real treated/untreated creator examples, and there
+   are currently 0 real treated (sponsored) creators.
+
+**NOT blocked on real data — could be built and dummy-data-tested now,
+the same way the regularization terms were in Weeks 3-4:**
+3. **No explicit "exposure" computation.** `ml/model.py`'s
+   `SchemaSmokeTestGAT` outputs generic per-node embeddings, not GAIL's
+   named "exposure" quantity (GAIL doc Step 7: exposure = f(sponsored
+   neighbors, attention weights)). Needs a small module that reads GAT's
+   attention weights (or recomputes an attention-weighted aggregate over
+   sponsored neighbors specifically) into a single per-creator exposure
+   scalar/vector.
+4. **No spillover prediction head.** Nothing turns embeddings/exposure into
+   a scalar engagement-gain prediction (GAIL doc Step 8). Needs a small
+   MLP head, straightforward to add and dummy-data-testable today.
+5. **No combined loss function.** The three regularization terms
+   (`overlap_penalty`, `laplacian_smoothness_penalty`,
+   `consistency_penalty`) exist and are tested individually, but nothing
+   sums them with a prediction loss (e.g. MSE against actual engagement
+   gain) and tunable weights (`λ1`, `λ2`, `λ3`). Straightforward once the
+   prediction head (#4) exists.
+6. **No training loop at all** — no optimizer, no epoch loop, no train/val
+   split, no checkpointing. Standard PyTorch boilerplate, buildable and
+   testable against dummy data now (a fake "training run" that converges on
+   synthetic targets would at least prove the loop's plumbing).
+7. **No evaluation harness** — PROJECT_PLAN.md Section 3c calls for
+   "empirical train/test split on historical campaigns, held-out
+   accuracy/calibration reporting." Doesn't need real data to build the
+   harness itself, just something to evaluate.
+
+**Recommendation for next round with schedule slack:** items 3-7 above are
+worth building against dummy data before Weeks 11-13 proper starts, mirroring
+how the regularization terms were de-risked early — they're pure engineering
+work, not blocked on anything external. Item 1 (real training-pair
+construction) is the one piece that's genuinely blocked and worth
+monitoring Track A/C for rather than attempting against dummy data (a fake
+temporal-delta calculator would validate the code shape but not the real
+signal it needs to prove out).
 
 ## Cross-track check (2026-08-09, fourth pass — late addition)
 
