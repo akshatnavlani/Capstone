@@ -70,6 +70,17 @@ def test_laplacian_smoothness_penalty_positive_for_varying_values():
     assert penalty.item() > 0.0
 
 
+def test_laplacian_smoothness_penalty_zero_not_nan_for_empty_edges():
+    # Real bug found 2026-08-10 while wiring this into ml/gail_loss.py:
+    # .mean() over an empty tensor is NaN, and 0 real collaboration edges
+    # is the actual live-data state right now, not a hypothetical.
+    node_values = torch.randn(5)
+    edge_index = torch.empty((2, 0), dtype=torch.long)
+    edge_weight = torch.empty((0, 1))
+    penalty = laplacian_smoothness_penalty(node_values, edge_index, edge_weight)
+    assert penalty.item() == 0.0
+
+
 def test_has_sponsored_neighbor_and_consistency_penalty_hand_built_graph():
     # 3 creators: 0 is sponsored, 1 collaborates with 0 (has a sponsored
     # neighbor, namely 0), 2 has no collaborations at all (no sponsored

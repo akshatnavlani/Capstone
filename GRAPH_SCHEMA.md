@@ -306,6 +306,52 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   `Optional`/unpopulated in their ingestion schemas, matching Track A's
   real DB. No longer open.
 
+## Real-data status (2026-08-10, Weeks 11-13 — second check this round)
+
+Re-checked partway through this round per the user's instruction, since
+Track A was diversifying the target list and Track C was re-running
+labeling specifically because of last round's finding. Real progress
+happened, but not yet on the two things that unblock GAIL:
+
+- **Creators: 16** (up from 10), reflecting Track A's target-list expansion
+  9→15 (6 new verified Indian content creators: BB Ki Vines, CarryMinati,
+  MostlySane, Technical Guruji, Mumbiker Nikhil, Guru Mann — all with real
+  YouTube channels) plus the original `athleanx` pilot creator.
+- **Content volume grew substantially in the background** (collection runs
+  via Windows Task Scheduler, independent of git commits) — 97 → 449 real
+  content rows just within this session, confirmed via a direct DB
+  recheck, not a doc claim.
+- **Collaboration edges: still 0.** Unchanged.
+- **Co-occurrence edges: still 0** — and this needed its own investigation,
+  since Track C's doc claimed a real example existed (PV Sindhu/Saina
+  Nehwal via r/badminton). Checked directly: `reddit_post_creators` now has
+  233 rows but **zero posts have 2+ distinct creators linked** — every row
+  is single-creator. Root cause found via Track A's own commit message:
+  their Weeks 11-13 Reddit relevance-gating fix purged 289 of 330 existing
+  creator↔post links (88%) as topically-adjacent noise, and the PV
+  Sindhu/Saina Nehwal r/badminton links were almost certainly exactly that
+  class of noise (the same shared-subreddit-without-actual-mention pattern
+  the purge specifically targeted) — Track C's claim was accurate when
+  written, the underlying data has since changed (correctly, as a
+  data-quality fix) out from under it. Real co-occurrence may reappear
+  under the new relevance-gated methodology, just hasn't yet.
+- **Kohli/Agilitas still not a training pair, checked precisely again**:
+  Track A's latest commit (`8b493d1`) root-caused and fixed the caption
+  truncation *going forward* ("opencli instagram user truncates to exactly
+  100 chars... parse the full text from the page extract already fetched
+  at zero extra cost") — but this is a scraper fix, not a backfill.
+  Verified directly: the already-stored Kohli post's caption is still
+  exactly 100 characters in the live DB right now. The fix will apply the
+  next time this post (or a similar one) is scraped fresh, not
+  retroactively. `is_sponsored` is still `False`, all 449 real content rows
+  now have a real (non-null) `is_sponsored` value, 0 are `true`.
+
+**GAT structural (graph-structure) re-validation not run this round** —
+both edge types are still empirically at 0 real edges despite the volume
+growth elsewhere, so there is nothing new to validate against yet. Worth
+checking again next round rather than assuming either the co-occurrence or
+collaboration gap has closed just because upstream work is happening.
+
 ## Real-data status (2026-08-10, Weeks 9-10)
 
 Pulled fresh via Track C's live `/feature-store/*` endpoints against the
@@ -360,69 +406,86 @@ CLIP inference on real fetched images); text-only/stub creators were
 near-instant. No code changes needed this round — `ml/feature_extraction.py`
 held up at 3x the data volume.
 
-## Weeks 11-13 training-loop gap analysis
+## Weeks 11-13 training-loop components — 5 of 7 gap-analysis items now built
 
-Per the user's request: what's missing between today's tested primitives
+The Weeks 9-10 gap analysis (below, preserved for history) identified 7
+missing pieces between the tested primitives and an actual trainable GAIL
+pipeline. Items 3-7 (not blocked on real data) are now built and tested
+against dummy data, same pattern as the Weeks 3-4 regularization work:
+
+3. **Exposure computation — DONE** (`ml/exposure.py`, `ExposureModule`).
+   Off-the-shelf per PROJECT_PLAN's stated preference: reuses PyG
+   `GATConv`'s own `return_attention_weights` output (already
+   softmax-normalized per destination node — exactly GAIL Step 6's
+   "personalized weight per collaborator") rather than a separate
+   attention mechanism. By construction, exposure is exactly 0 for a node
+   with no sponsored neighbors (not just approximately — every term in the
+   weighted sum is `attention * treatment`, and `treatment=0` for every
+   neighbor zeroes it out exactly).
+4. **Spillover prediction head — DONE** (`ml/spillover_head.py`,
+   `SpilloverPredictionHead`). Small MLP over `[embedding, exposure]` ->
+   scalar prediction (GAIL Step 8).
+5. **Combined loss function — DONE** (`ml/gail_loss.py`,
+   `compute_gail_loss`). Wires MSE prediction loss to the three existing
+   regularization terms with tunable `GAILLossWeights`. **Found and fixed
+   a real bug while wiring this**: `laplacian_smoothness_penalty` returned
+   `NaN` on zero edges (`.mean()` over an empty tensor) — and 0 real
+   collaboration edges is the *actual current live-data state* (see
+   "Real-data status" below), not a hypothetical. Fixed to return 0.
+   **Also found and fixed a real architecture bug**: naively subsetting
+   `prediction[train_idx]` before passing it (with the *full* graph's
+   `collab_edge_index`) into the structural terms desyncs node indices and
+   crashes. Fixed with a `prediction_mask` parameter — the full graph
+   always runs through smoothness/consistency (standard transductive GNN
+   practice), only the supervised MSE term is restricted to train nodes.
+6. **Training loop — DONE** (`ml/training.py` + `ml/gail_model.py`, which
+   wires backbone+exposure+propensity+head into one `forward()`).
+   `train_val_split` always leaves ≥1 train node even for tiny graphs.
+   Empirically confirmed the plumbing actually works, not just "runs
+   without erroring": trained on dummy data with a synthetic target
+   (sponsored-neighbor count), prediction-loss component dropped from
+   ~0.52 to ~0.002 over 80 epochs — real gradient flow through the whole
+   stack, not a no-op.
+7. **Evaluation harness — DONE** (`ml/evaluation.py`,
+   `evaluate_predictions`). MAE/RMSE/R²/calibration slope+intercept per
+   PROJECT_PLAN.md Section 3c's "held-out accuracy/calibration reporting."
+   Written independent of how the held-out split is made, so it's ready to
+   consume a real campaign-based split later without changes.
+
+All 5 tested against edge cases per this round's self-check instruction,
+not just the happy path: zero exposure, empty/zero collaboration edges,
+single-node graphs, and a hand-built fully-symmetric complete graph
+(4 nodes, identical features, checked that structurally-interchangeable
+nodes get identical exposure). 29 new tests, all passing
+(`tests/test_exposure.py`, `test_spillover_head.py`, `test_gail_loss.py`,
+`test_gail_model.py`, `test_training.py`, `test_evaluation.py`).
+
+**Still blocked on real data (items 1-2, unchanged from Weeks 9-10):**
+training-pair construction (needs real sponsorship events + temporal
+engagement deltas — nothing computes the latter yet) and propensity-model
+fitting (needs real treated/untreated examples). See "Weeks 9-10 gap
+analysis" below for the original full writeup of why these are blocked.
+
+<details>
+<summary>Weeks 9-10 gap analysis (original, preserved for history)</summary>
+
+Per the user's request: what's missing between the tested primitives
 (schema, dummy data, GAT forward pass, causal regularization terms,
-CLIP+BERT extraction) and an actual trainable GAIL pipeline — so Weeks
-11-13 isn't a cold start. Not built this round (real data isn't ready at
-volume, and this was explicitly scoped as analysis, not implementation).
+CLIP+BERT extraction) and an actual trainable GAIL pipeline.
 
 **Blocked on real data (can't be built against dummy data meaningfully):**
 1. **Training examples don't exist yet.** GAIL trains on historical
    sponsorship events, predicting neighbor engagement-gain. This needs real
    `(sponsored creator, timestamp, collaborator, engagement before,
-   engagement after)` tuples. Currently: 0 real sponsorship events (see
-   "Real-data status" above) and, separately, no code anywhere computes
-   *temporal engagement deltas* at all — the current feature vectors are a
-   single static snapshot (`log_subscriber_count`, `engagement_rate` as of
-   scrape time), not a before/after time series. Even once a real
-   sponsorship event exists, extracting its training pair requires
-   per-post timestamped engagement history, which Track A's raw tables can
-   support (they have `posted_at`/`published_at` per post) but nothing in
-   Track B's or Track C's pipeline currently constructs this. **This is
-   the single biggest gap** — likely needs a small new module (a
-   time-windowed engagement-delta calculator) once real events exist.
-2. **Propensity model can't be meaningfully fit yet** — `PropensityScoreModel`
-   (`ml/causal_regularization.py`) is architecturally ready and unit-tested,
-   but fitting it needs real treated/untreated creator examples, and there
-   are currently 0 real treated (sponsored) creators.
+   engagement after)` tuples. Currently: 0 real sponsorship events and,
+   separately, no code anywhere computes *temporal engagement deltas* at
+   all — the current feature vectors are a single static snapshot, not a
+   before/after time series. **This is the single biggest gap.**
+2. **Propensity model can't be meaningfully fit yet** — architecturally
+   ready and unit-tested, but fitting it needs real treated/untreated
+   creator examples, and there are currently 0 real treated creators.
 
-**NOT blocked on real data — could be built and dummy-data-tested now,
-the same way the regularization terms were in Weeks 3-4:**
-3. **No explicit "exposure" computation.** `ml/model.py`'s
-   `SchemaSmokeTestGAT` outputs generic per-node embeddings, not GAIL's
-   named "exposure" quantity (GAIL doc Step 7: exposure = f(sponsored
-   neighbors, attention weights)). Needs a small module that reads GAT's
-   attention weights (or recomputes an attention-weighted aggregate over
-   sponsored neighbors specifically) into a single per-creator exposure
-   scalar/vector.
-4. **No spillover prediction head.** Nothing turns embeddings/exposure into
-   a scalar engagement-gain prediction (GAIL doc Step 8). Needs a small
-   MLP head, straightforward to add and dummy-data-testable today.
-5. **No combined loss function.** The three regularization terms
-   (`overlap_penalty`, `laplacian_smoothness_penalty`,
-   `consistency_penalty`) exist and are tested individually, but nothing
-   sums them with a prediction loss (e.g. MSE against actual engagement
-   gain) and tunable weights (`λ1`, `λ2`, `λ3`). Straightforward once the
-   prediction head (#4) exists.
-6. **No training loop at all** — no optimizer, no epoch loop, no train/val
-   split, no checkpointing. Standard PyTorch boilerplate, buildable and
-   testable against dummy data now (a fake "training run" that converges on
-   synthetic targets would at least prove the loop's plumbing).
-7. **No evaluation harness** — PROJECT_PLAN.md Section 3c calls for
-   "empirical train/test split on historical campaigns, held-out
-   accuracy/calibration reporting." Doesn't need real data to build the
-   harness itself, just something to evaluate.
-
-**Recommendation for next round with schedule slack:** items 3-7 above are
-worth building against dummy data before Weeks 11-13 proper starts, mirroring
-how the regularization terms were de-risked early — they're pure engineering
-work, not blocked on anything external. Item 1 (real training-pair
-construction) is the one piece that's genuinely blocked and worth
-monitoring Track A/C for rather than attempting against dummy data (a fake
-temporal-delta calculator would validate the code shape but not the real
-signal it needs to prove out).
+</details>
 
 ## Cross-track check (2026-08-09, fourth pass — late addition)
 

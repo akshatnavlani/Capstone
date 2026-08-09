@@ -73,7 +73,14 @@ def laplacian_smoothness_penalty(
     over edges. Expects `edge_index`/`edge_weight` for a single relation
     (e.g. collaborates_with) with both directions already populated per
     GRAPH_SCHEMA.md's symmetric-edge contract.
+
+    Zero edges (the real collaboration graph's actual state as of
+    2026-08-10 — found while wiring this into ml/gail_loss.py) means no
+    smoothness constraint to apply, vacuously satisfied — returns 0, not
+    the NaN that `.mean()` over an empty tensor would silently produce.
     """
+    if edge_index.size(1) == 0:
+        return torch.zeros((), dtype=node_values.dtype)
     src, dst = edge_index
     diff = node_values[src] - node_values[dst]
     weight = edge_weight.squeeze(-1) if edge_weight.dim() > 1 else edge_weight
