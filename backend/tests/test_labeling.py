@@ -165,6 +165,56 @@ def test_real_athleanx_bio_credentials_no_false_positive():
     assert found is False
 
 
+# ---- Weeks 11-13 additions: real near-misses found scanning the ~400-row
+# dataset (up from 97) for anything containing sponsor/partner/collab/
+# affiliate keywords, then checking each hit against the actual regex
+# precisely -- the whole point of re-validating precision at a bigger scale
+# is that a larger dataset surfaces near-misses a small sample doesn't. ----
+
+def test_in_collaboration_with_is_not_in_partnership_with():
+    # Real caption (truncated at 100 chars by a since-fixed Track A bug,
+    # instagram_posts.post_id 'DbAkoNOPAXS', 2026-08-10): an event-hosting
+    # collaboration announcement, not a brand-pays-creator disclosure.
+    # "in collaboration with" must not be conflated with "in partnership
+    # with" -- the pattern requires the literal phrase, not just "collab"-
+    # adjacent wording.
+    caption = "Honoured to host the legendary @mcmary.kom at the @indianschoolawards, in collaboration with @coa.ev"
+    found, matches = detect_sponsorship(caption)
+    assert found is False
+
+
+def test_vague_partnership_language_does_not_match_literal_phrase():
+    # Real caption (same truncation bug, instagram_posts.post_id
+    # 'DZZ8lRptve1', 2026-08-10): describes an ongoing brand relationship
+    # ("a partnership that's...") without using the literal "in partnership
+    # with" disclosure phrase. Deliberately not treated as a match --
+    # loosening the pattern to catch "partnership" anywhere near a brand
+    # mention would catch far more than actual disclosures (see the
+    # institutional-partnership decoy above for the same principle).
+    caption = "A new chapter for @one8world  Made stronger by a partnership that's always meant the most. Let's bui"
+    found, matches = detect_sponsorship(caption)
+    assert found is False
+
+
+def test_was_my_sponsor_is_not_sponsored_by():
+    # Real Reddit post title (reddit_posts.post_id '1viokai', 2026-08-10):
+    # describes Kohli personally sponsoring/patronizing another athlete
+    # (financial support of a person), not a brand sponsoring Kohli -- the
+    # opposite direction of GAIL's treatment-label question. "was my
+    # sponsor" must not match "sponsored by".
+    title = "“He was my sponsor”: How Virat Kohli helped CWG gold medallist Sakshi Chaudhary"
+    found, matches = detect_sponsorship(title)
+    assert found is False
+
+
+def test_batting_partner_is_not_a_brand_partnership():
+    # Real Reddit post title (reddit_posts.post_id, 2026-08-10): sports
+    # terminology ("batting partner" = teammate), unrelated to brand deals.
+    title = "Virat Kohli calls Ajinkya Rahane his favourite Test batting partner in emotional farewell"
+    found, matches = detect_sponsorship(title)
+    assert found is False
+
+
 def test_none_and_empty_text():
     assert detect_sponsorship(None) == (False, [])
     assert detect_sponsorship("") == (False, [])

@@ -1,11 +1,23 @@
 """Runs the disclosure-tag labeling pipeline (app/labeling.py) against
-content rows where is_sponsored is still null, and persists the result.
+content rows, and persists the result.
 
 Track A's real orchestrator writes new content directly to Postgres (see
 API_CONTRACTS.md breaking-change note #3), so this endpoint is meant to be
 invoked periodically/on-demand (manually for now) to catch up rows Track A
 has landed since the last run -- there's no trigger/webhook wiring it
 automatically yet.
+
+Default mode only processes `is_sponsored IS NULL` rows (cheap, safe to
+call often). `force=True` reprocesses every row regardless of current
+value -- needed because Track A's upsert only touches columns *they* write
+(caption/title/body etc.), never `is_sponsored`/`sponsorship_raw_matches`
+(that's Track C's column). So if Track A corrects/refetches a row's text
+after it was already labeled (e.g. the 2026-08-10 caption-truncation fix),
+the corrected text silently never gets re-examined under the default mode
+-- the row is no longer null, so it's permanently skipped even though the
+label was computed against now-stale text. Found via the Kohli/Agilitas
+case: labeled `false` against a truncated caption, and the default mode
+would never re-check it even after Track A fixes the truncation.
 """
 
 from fastapi import APIRouter, Depends
@@ -21,9 +33,10 @@ router = APIRouter(prefix="/labeling", tags=["labeling"])
 
 
 @router.post("/run", response_model=LabelingRunResponse, dependencies=[Depends(require_api_key)])
-def run_labeling(session: Session = Depends(get_session)) -> LabelingRunResponse:
+def run_labeling(force: bool = False, session: Session = Depends(get_session)) -> LabelingRunResponse:
     yt_checked = yt_sponsored = 0
-    for v in session.exec(select(YouTubeVideo).where(YouTubeVideo.is_sponsored.is_(None))).all():
+    yt_query = select(YouTubeVideo) if force else select(YouTubeVideo).where(YouTubeVideo.is_sponsored.is_(None))
+    for v in session.exec(yt_query).all():
         found, matches = detect_sponsorship(v.title, v.description)
         v.is_sponsored = found
         v.sponsorship_raw_matches = matches or None
@@ -32,7 +45,8 @@ def run_labeling(session: Session = Depends(get_session)) -> LabelingRunResponse
         yt_sponsored += int(found)
 
     ig_checked = ig_sponsored = 0
-    for p in session.exec(select(InstagramPost).where(InstagramPost.is_sponsored.is_(None))).all():
+    ig_query = select(InstagramPost) if force else select(InstagramPost).where(InstagramPost.is_sponsored.is_(None))
+    for p in session.exec(ig_query).all():
         found, matches = detect_sponsorship(p.caption)
         p.is_sponsored = found
         p.sponsorship_raw_matches = matches or None
@@ -41,7 +55,8 @@ def run_labeling(session: Session = Depends(get_session)) -> LabelingRunResponse
         ig_sponsored += int(found)
 
     rd_checked = rd_sponsored = 0
-    for r in session.exec(select(RedditPost).where(RedditPost.is_sponsored.is_(None))).all():
+    rd_query = select(RedditPost) if force else select(RedditPost).where(RedditPost.is_sponsored.is_(None))
+    for r in session.exec(rd_query).all():
         found, matches = detect_sponsorship(r.title, r.body)
         r.is_sponsored = found
         r.sponsorship_raw_matches = matches or None

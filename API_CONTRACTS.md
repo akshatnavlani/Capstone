@@ -27,17 +27,104 @@ since auth here is an explicit `X-API-Key` header, not a cookie.
 
 Verified server-side via curl (checking the actual `Access-Control-Allow-*`
 response headers, which is what determines whether a real browser accepts
-the response — this is a legitimate way to check the *server's* behavior,
-just not a substitute for confirming a *browser* accepts it): allowed
-origin (`http://localhost:3000`) gets `access-control-allow-origin` back on
-both simple requests and preflight `OPTIONS`; a disallowed origin
-(`http://evil.example.com`) does not, confirming the allowlist is actually
-enforced, not a wildcard. Checked uniformly across `/health`,
-`/recommendations`, `POST /ingestion/creators`, `POST /alerts`, and `GET
-/alerts` — same middleware applies globally, so no per-router gap. **Not
-yet confirmed by an actual browser** — ask Track D to re-test now that this
-is pushed, since they have the working browser tool and this session
-doesn't.
+the response): allowed origin (`http://localhost:3000`) gets
+`access-control-allow-origin` back on both simple requests and preflight
+`OPTIONS`; a disallowed origin (`http://evil.example.com`) does not,
+confirming the allowlist is actually enforced, not a wildcard. Checked
+uniformly across `/health`, `/recommendations`, `POST /ingestion/creators`,
+`POST /alerts`, and `GET /alerts`.
+
+**CONFIRMED by Track D in a real browser** (first non-curl verification
+this project has had) — the fix works. Closed.
+
+## Weeks 11-13 update summary
+
+- **Re-ran `POST /labeling/run`** against the dataset's continued growth
+  (97 → 422 real content rows, as Track A diversified the target list to
+  15 creators including non-athlete YouTubers). 325 newly-landed rows
+  labeled, still 0 hit any disclosure-tag pattern.
+- **Added `force=True` query param to `POST /labeling/run`** — a real gap
+  found this round: the default mode only processes `is_sponsored IS NULL`
+  rows, but Track A's upsert never touches `is_sponsored`/
+  `sponsorship_raw_matches` (that's Track C's column), so if Track A
+  corrects a row's text *after* Track C already labeled it, the corrected
+  text would never get re-examined under default mode — permanently stuck
+  on a label computed against stale text. Concrete motivating case: the
+  Kohli/Agilitas caption (see below).
+- **Re-validated precision at the new scale with real near-misses**, not
+  just a bigger version of the same check — scanned the full ~400-row
+  dataset for anything containing sponsor/partner/collab/affiliate
+  keywords, then checked each real hit against the actual patterns. Found
+  and added 4 new tests from genuinely real text: "in collaboration with"
+  (an event-hosting announcement) vs. "in partnership with", vague ongoing-
+  relationship language ("a partnership that's...") vs. the literal
+  disclosure phrase, "was my sponsor" (personal patronage, wrong direction)
+  vs. "sponsored by", and "batting partner" (sports terminology) — all
+  correctly produce no match. 48 tests total now, all passing.
+- **`co_occurs_with` edges are empty again** — not a regression. Track A
+  purged 88% of the Reddit data these edges were built from as topically-
+  irrelevant noise (measured directly: 0 of 41 r/badminton posts credited
+  to PV Sindhu actually mentioned her). Confirmed the feature store
+  self-healed automatically — it recomputes from live DB state on every
+  request rather than caching, so no code change was needed when the
+  underlying (bad) signal disappeared. Real edges will return once Track
+  A's new two-mode Reddit collection (verified-relevant only) produces
+  genuine co-occurrences.
+- **`reputation_score`**: still no source column anywhere in Track A's
+  schema (re-checked their latest migration — adds `reddit_topic_subs`,
+  not a metric). Track A's Reddit rework does make community discussion
+  *about* a creator more reliably real now (verified-relevant, not noise),
+  which is a prerequisite for a future sentiment-based reputation proxy —
+  but building that sentiment analysis is Track B's Temporal branch/
+  Sentiment Propagation deliverable (PROJECT_PLAN.md Section 3b), not
+  something to invent unilaterally in the feature store. Flagged as an
+  observation, not built.
+- **Self-check**: with Track D's browser tool now working, checked for
+  other curl-only-verified behaviors beyond the CORS fix itself. Tested
+  three real candidates: trailing-slash redirects (307 responses do carry
+  `Access-Control-Allow-Origin`, confirmed via curl), the custom NaN-
+  sanitizing exception handler's responses, and 401 auth-failure responses
+  — all three correctly carry CORS headers. No new gap found, but this
+  doesn't prove nothing else exists; flagging as checked, not exhaustive.
+
+## Kohli/Agilitas resolution (2026-08-10)
+
+**Decision: left `is_sponsored = false`, not resolved to `true`, with the
+reasoning documented here rather than silently picking one.**
+
+Checked whether the full caption is available before deciding, per
+instruction:
+- Track A root-caused the truncation (a real bug: `opencli instagram user`
+  truncates captions to exactly 100 chars) and fixed it in code
+  (`origin/track-a-data-infra` commit "Reddit two-mode strategy,
+  diversified target list, full-caption fix").
+- **The fix has not yet been applied to any existing row** — checked
+  directly, the most recent `instagram_posts.fetched_at` across the entire
+  table predates that fix commit. Checked Track A's raw run logs from that
+  commit for any leftover full text too (`ig_run_output.log`) — confirms
+  brand-lead detection happened but doesn't contain caption text.
+- **This is systemic, not a single post**: found a second real post from
+  the same account describing the same "one8" brand relationship
+  ("A new chapter for @one8world Made stronger by a partnership that's
+  always meant the most..."), also truncated at exactly 100 characters.
+  Every Instagram caption currently in the DB was fetched before the fix.
+
+Given the full text is confirmed unavailable (not just unchecked), and the
+visible truncated text in both posts reads as describing an ongoing/
+co-founded brand relationship rather than a one-off paid post (real-world:
+Kohli/one8 is a genuine co-founder relationship with Agilitas, not
+independently confirmable from this data alone) — labeling it `true` would
+be a guess dressed as a finding. Per PROJECT_PLAN.md Section 1's precision-
+first framing (a wrong positive poisons a real training label; a missed
+positive is just absent signal), the safer default holds until real text
+exists.
+
+**Concrete unblock path**: once Track A re-scrapes Instagram content (their
+fix is code-complete, just not yet run), call `POST /labeling/run?force=true`
+to re-examine every Instagram row against corrected text — this is exactly
+why `force` was added this round. Recommend Track A prioritize an
+Instagram re-scrape given this is a plausible source of GAIL's first real
+sponsorship training pair.
 
 ## Weeks 9-10 update summary
 
@@ -340,14 +427,19 @@ the raw inputs those need instead.
   fix (`origin/track-a-data-infra` "Fix cross-platform creator-ID syncing")
   stops new duplicates but doesn't retroactively merge existing ones.
 - `GET /feature-store/edges/co-occurrence` → list of `CollaborationEdge`
-  (same shape as `/edges/collaborations`, different source signal). **New,
-  real as of 2026-08-10** — closes what was flagged as a genuine gap
-  through Weeks 5-8. Resolved from `reddit_post_creators` (Track A's
-  many-to-many junction: a Reddit post can relate to multiple creators,
-  most commonly because they share a community subreddit like
-  r/badminton). Two creators linked to the same post → an edge, weighted by
-  count of shared posts, both directions. Verified against real data: PV
-  Sindhu / Saina Nehwal co-occur on 5 real r/badminton posts.
+  (same shape as `/edges/collaborations`, different source signal). Resolved
+  from `reddit_post_creators` (Track A's many-to-many junction: a Reddit
+  post can relate to multiple creators, most commonly because they share a
+  community subreddit like r/badminton). Two creators linked to the same
+  post → an edge, weighted by count of shared posts, both directions.
+  **Currently empty against real data** — the code is real and was
+  verified against real data when built (2026-08-10, PV Sindhu / Saina
+  Nehwal co-occurring on 5 r/badminton posts), but Track A then purged 88%
+  of that Reddit data as topically-irrelevant noise (measured: those posts
+  didn't actually mention the creators they were credited to). Confirmed
+  the feature store self-heals automatically (recomputes from live DB
+  state every request, nothing cached) — real edges will return once
+  Track A's new two-mode Reddit collection produces genuine co-occurrences.
 - `GET /feature-store/edges/sponsorships` → list of `SponsorshipEdge`
   (`creator_id`, `brand_id`, `content_id`, `platform`). Populated once
   `is_sponsored` is set — see the labeling pipeline below. Currently empty
@@ -369,15 +461,23 @@ Unit-tested against synthetic data (`backend/tests/test_feature_store.py`,
 scraped content — Track A's real target list has grown to 10 creators, 97
 total content rows across all three platforms as of 2026-08-10.
 
-### Labeling pipeline (`is_sponsored`, new Weeks 7-8)
+### Labeling pipeline (`is_sponsored`, Weeks 7-8, extended Weeks 11-13)
 
-`POST /labeling/run` (requires `X-API-Key` if configured) — scans every
-`youtube_videos`/`instagram_posts`/`reddit_posts` row where `is_sponsored
-IS NULL`, sets it to a real `true`/`false` (not left null), and records
-matched phrases in `sponsorship_raw_matches`. Idempotent-safe: only
-processes rows still null, so re-running after new content lands only
-touches the new rows. No trigger/webhook wiring it automatically yet —
-invoke manually (or from a script) after Track A lands new content.
+`POST /labeling/run` (requires `X-API-Key` if configured) — default mode
+scans every `youtube_videos`/`instagram_posts`/`reddit_posts` row where
+`is_sponsored IS NULL`, sets it to a real `true`/`false` (not left null),
+and records matched phrases in `sponsorship_raw_matches`. No trigger/webhook
+wiring it automatically yet — invoke manually (or from a script) after
+Track A lands new content.
+
+`POST /labeling/run?force=true` reprocesses **every** row regardless of
+current value — added Weeks 11-13. Needed because Track A's upsert never
+touches `is_sponsored`/`sponsorship_raw_matches` (Track C's columns), so if
+Track A corrects a row's source text after it was already labeled, the
+default mode would never re-examine it (no longer null → permanently
+skipped). Use this after Track A does a corrective re-scrape of
+already-labeled content — see the Kohli/Agilitas resolution above for the
+concrete case this was built for.
 
 Response: `{ youtube_videos: {checked, labeled_sponsored}, instagram_posts: {...}, reddit_posts: {...} }`.
 
@@ -389,47 +489,36 @@ PROJECT_PLAN.md Section 1's own framing — `#ad`, `#sponsored`, `#spon`,
 real word boundary so it can't fire inside an unrelated longer word/hashtag.
 
 **This is the sole source of GAIL's treatment labels (PROJECT_PLAN.md
-Section 1), so precision was validated deliberately, not just "it finds
-#ad"** — `backend/tests/test_labeling.py`, 21 tests, split across:
+Section 1), so precision is validated deliberately at every scale increase,
+not just "it finds #ad" once** — `backend/tests/test_labeling.py` +
+`test_labeling_router.py`, 26 tests, split across:
 - Positive cases covering every convention above.
 - **Decoys targeting the exact regex risks a naive substring match would
   fall into**: `#adventure`/`#adidas` (must not match `#ad`), "advice"
   (must not match standalone "ad"), "spontaneous" (must not match
-  "spon-con"), a brand name mentioned with no disclosure language, and a
+  "spon-con"), a brand name mentioned with no disclosure language, a
   genuinely ambiguous "institutional partnership" phrasing (university
   affiliation, not a brand deal).
-- **Two decoys pulled verbatim from real scraped content** (ATHLEAN-X
-  YouTube descriptions, live DB, 2026-08-09): a 4600+ character
-  self-promotional video description (own website/product links, zero
-  actual sponsorship) and a professional-credentials bio (former team,
-  university) — both correctly produce no match.
+- **Real decoys pulled verbatim from live scraped content**, added across
+  two rounds as the dataset grew: (Weeks 7-8, ATHLEAN-X) a 4600+ character
+  self-promotional video description and a professional-credentials bio;
+  (Weeks 11-13, found by scanning the ~400-row dataset for anything
+  containing sponsor/partner/collab/affiliate keywords, not just checking
+  obvious cases) "in collaboration with" (event-hosting, must not match "in
+  partnership with"), vague ongoing-relationship language ("a partnership
+  that's..."), "was my sponsor" (personal patronage, wrong direction vs.
+  "sponsored by"), "batting partner" (sports terminology).
+- **Force-relabel behavior** (`test_labeling_router.py`): default mode
+  skips already-labeled rows even if their text changed; `force=true`
+  reprocesses and picks up the new text.
 - Run against all real content in the live DB, re-run as new content
-  landed: **97/97 rows checked as of 2026-08-10, 0 labeled sponsored, 0
-  confirmed false positives.** Idempotent — re-running only processes
-  newly-null rows, so this number will keep growing safely as Track A's
-  collection continues.
+  landed and the target list grew: **422/422 rows checked as of
+  2026-08-10 (up from 97 the prior round), 0 labeled sponsored, 0
+  confirmed false positives.**
 
-**Open precision/recall edge case, flagged not resolved (2026-08-10):**
-Track B found a real Instagram post (`instagram_posts.post_id
-'DaDJji0DY_x'`, Virat Kohli) with `brand_id` populated (Agilitas, via
-Track A's brand-extraction lead-generation pass — expected, that pass is
-deliberately coarser than this labeler, see Track A's SCHEMA.md) but
-`is_sponsored = false`. Caption: *"2 years back I joined hands with
-Agilitas to build a dream - one8. On 21st June we turned this audac"* —
-**the stored caption is itself truncated by Track A's scraper** (cuts off
-mid-word, before wherever any disclosure tag would appear if one exists).
-Two real, unresolved questions, not silently decided either way:
-1. Should "joined hands with...to build [product]" (describing what looks
-   like a co-founded brand, not a one-off paid post) count as the same
-   `is_sponsored` treatment as `#ad`/"sponsored by"? Arguably a different,
-   possibly *stronger* and more sustained brand relationship for GAIL's
-   spillover purposes — but adding a pattern for "joined hands with" risks
-   new false positives on unrelated collaboration/charity phrasing that
-   isn't a paid disclosure. Not added without a team decision on scope.
-2. The caption truncation is a Track A data-completeness issue, not
-   something this labeler can work around — whatever the real full caption
-   says (including any actual `#ad`-style tag) is currently invisible to
-   both this pipeline and to a human reading it.
+See the "Kohli/Agilitas resolution" section above for the one open
+precision/recall edge case and the documented reasoning for leaving it
+`false` rather than guessing.
 
 Text scrubbing (`app/text_processing.py::scrub_text` — URLs, HTML tags,
 `@mentions` removed, whitespace collapsed) and temporal normalization
@@ -526,20 +615,20 @@ thesis capstone backend.
   despite being documented as an enum — tightened to
   `Literal["low", "medium", "high"]`.
 
-## What's real vs. placeholder (as of 2026-08-10)
+## What's real vs. placeholder (as of 2026-08-10, Weeks 11-13)
 
 | Piece | Status |
 |---|---|
 | FastAPI app, all routes, request/response validation | Real, working |
-| CORS | Real as of 2026-08-10 (see incident above) — was missing entirely before |
+| CORS | Real, confirmed by Track D in an actual browser — see incident above |
 | DB models matching Track A's live schema (incl. `brands`, `creator_related_accounts`, `reddit_post_creators`) | Real, working (re-diff if their schema changes) |
-| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified — connected to the live Supabase instance, 10 real creators / 97 content rows as of 2026-08-10 |
+| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified — connected to the live Supabase instance, 16 real creators / 422 content rows as of 2026-08-10 |
 | Track C-owned table migrations (`fusionscore`, `riskalert`) | Real, tracked in `backend/migrations/` after the incident — no longer relying on `create_all()` for schema evolution |
 | Ingestion upsert logic (8 endpoints) | Real, working, but secondary path (see breaking-change note #3) |
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
-| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/edge data (collaborations, co-occurrence, sponsorships all real now), verified against real scraped content; text scrubbed before staging; CLIP/BERT embeddings intentionally not computed here (Track B, Weeks 9-10); `reputation_score` is the one remaining genuine gap — see feature-store section |
-| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data.** 97/97 real rows labeled, 0 confirmed false positives, precision-validated against real decoy text plus synthetic near-misses. One open edge case flagged (not resolved) — see labeling section |
+| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/collaboration/sponsorship edge data; `co_occurs_with` real but currently empty (Track A purged the noisy signal it was built from, self-healed automatically, see Weeks 11-13 note); CLIP/BERT embeddings intentionally not computed here (Track B); `reputation_score` is the one remaining genuine gap |
+| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data, re-validated at 4x scale.** 422/422 real rows labeled, 0 confirmed false positives, precision-validated against real decoy text at two dataset sizes. One open edge case, documented resolution — see Kohli/Agilitas section |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |
