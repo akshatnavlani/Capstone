@@ -8,6 +8,7 @@
   {
     "name": "Neeraj Chopra",
     "category": "athlete",
+    "youtube_handle": "neerajchopra1",
     "instagram_handle": "neeraj____chopra",
     "reddit_handles": ["Athletics", "olympics"]
   },
@@ -26,6 +27,7 @@
   {
     "name": "Sania Mirza",
     "category": "athlete",
+    "youtube_handle": "servingitupwithsania",
     "instagram_handle": "mirzasaniar",
     "reddit_handles": ["tennis"]
   },
@@ -51,6 +53,7 @@
   {
     "name": "Cristiano Ronaldo",
     "category": "athlete",
+    "youtube_handle": "cristiano",
     "instagram_handle": "cristiano",
     "reddit_handles": ["soccer"]
   }

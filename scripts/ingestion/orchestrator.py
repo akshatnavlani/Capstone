@@ -29,6 +29,7 @@ import time
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 
 import yaml
 
@@ -37,6 +38,24 @@ from instagram_comment_extract import parse_comments
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("orchestrator")
+
+# Per-creator post cap. Was hardcoded at 5 through Weeks 5-8, which was the real
+# reason every creator sat at 10-29% of the 1,000-datapoint floor — NOT the
+# session/throughput ceiling (real call volume never came close to it). Raised on
+# explicit user sign-off 2026-08-10 to close the volume gap.
+DEFAULT_POST_CAP = 40
+
+# Recency window. PROJECT_PLAN.md/the original doc scoped "last 6 months" and stated
+# the principle "the newer the data the better" — treated as a ROLLING window relative
+# to today, not the literal Jan-Jun 2026 dates from the original doc (it's August now,
+# so those fixed dates would already be going stale). Posts older than this are skipped
+# rather than counted toward the cap, so raising the cap doesn't pad the dataset with
+# stale content.
+DEFAULT_RECENCY_DAYS = 183
+
+
+def recency_cutoff(days: int = DEFAULT_RECENCY_DAYS) -> datetime:
+    return datetime.now(timezone.utc) - timedelta(days=days)
 
 
 def load_env():
@@ -146,9 +165,13 @@ def brand_id_for_text(cur, text: str | None) -> str | None:
 class PlatformWorker:
     platform_name = "base"
 
-    def __init__(self, rate_limiter: RateLimiter, dry_run: bool = False):
+    def __init__(self, rate_limiter: RateLimiter, dry_run: bool = False,
+                  post_cap: int = DEFAULT_POST_CAP, recency_days: int = DEFAULT_RECENCY_DAYS):
         self.rate_limiter = rate_limiter
         self.dry_run = dry_run
+        self.post_cap = post_cap
+        self.cutoff = recency_cutoff(recency_days)
+        self.skipped_stale = 0
 
     def run_batch(self, creators: list[Creator], conn) -> None:
         for creator in creators:
@@ -208,8 +231,11 @@ class YouTubeWorker(PlatformWorker):
         conn.commit()
 
         self.rate_limiter.wait()
+        # maxResults caps at 50 per YouTube API; post_cap above that would need
+        # pageToken paging (not implemented — 40 fits in one page).
         playlist_resp = youtube_api_get(
-            "playlistItems", playlistId=uploads_playlist, part="contentDetails", maxResults=10,
+            "playlistItems", playlistId=uploads_playlist, part="contentDetails",
+            maxResults=min(self.post_cap, 50),
         )
         video_ids = [i["contentDetails"]["videoId"] for i in playlist_resp.get("items", [])]
         if not video_ids:
@@ -219,8 +245,21 @@ class YouTubeWorker(PlatformWorker):
         videos_resp = youtube_api_get(
             "videos", id=",".join(video_ids), part="snippet,statistics,contentDetails",
         )
+        kept = 0
         for v in videos_resp.get("items", []):
             vs, vstats = v["snippet"], v["statistics"]
+            # Recency filter — skip (don't count toward the cap) anything older than
+            # the rolling window, so a raised cap pulls MORE RECENT posts rather than
+            # padding with stale ones. publishedAt is RFC3339 ("2026-08-04T19:48:02Z").
+            published = vs.get("publishedAt")
+            if published:
+                try:
+                    if datetime.fromisoformat(published.replace("Z", "+00:00")) < self.cutoff:
+                        self.skipped_stale += 1
+                        continue
+                except ValueError:
+                    pass  # unparseable date — keep rather than silently drop
+            kept += 1
             with conn.cursor() as cur:
                 brand_id = brand_id_for_text(cur, f"{vs.get('title', '')} {vs.get('description', '')}")
                 cur.execute(
@@ -243,8 +282,12 @@ class YouTubeWorker(PlatformWorker):
 
             self.rate_limiter.wait()
             try:
+                # 100 is the API max per page. Raised from 20 — comments are the
+                # single biggest contributor to per-creator datapoint counts, and
+                # commentThreads costs 1 quota unit regardless of maxResults, so
+                # this is a 5x yield increase for zero extra quota cost.
                 comments_resp = youtube_api_get(
-                    "commentThreads", videoId=v["id"], part="snippet", maxResults=20, order="relevance",
+                    "commentThreads", videoId=v["id"], part="snippet", maxResults=100, order="relevance",
                 )
             except Exception as e:
                 log.info("Comments disabled or unavailable for video %s: %s", v["id"], e)
@@ -263,7 +306,8 @@ class YouTubeWorker(PlatformWorker):
                          c.get("publishedAt"), c.get("likeCount")),
                     )
             conn.commit()
-        log.info("YouTube: %s -> %d videos", handle, len(videos_resp.get("items", [])))
+        log.info("YouTube: %s -> %d videos kept (%d skipped as older than the %s cutoff)",
+                  handle, kept, self.skipped_stale, self.cutoff.date())
 
 
 class InstagramWorker(PlatformWorker):
@@ -308,7 +352,8 @@ class InstagramWorker(PlatformWorker):
         # date directly — use THAT for post metadata and brand extraction, and use
         # `browser extract` only for what it's uniquely good for: comment text.
         self.rate_limiter.wait()
-        listing = run_opencli("instagram", "user", handle, "--limit", "5", "-f", "yaml")
+        listing = run_opencli("instagram", "user", handle, "--limit", str(self.post_cap),
+                               "-f", "yaml", timeout=90)
         posts_meta = listing if isinstance(listing, list) else []
 
         self.rate_limiter.wait()
@@ -320,27 +365,55 @@ class InstagramWorker(PlatformWorker):
         # different runs (not just cold-vs-warm cache; re-ran kingjames twice in a
         # row and got different results). Padding the retry budget rather than
         # assuming a fixed scroll count is reliable.
-        found = None
-        max_attempts = 5
-        for attempt in range(max_attempts):
+        #
+        # With the cap raised from 5 to 40, one screenful is no longer enough — the
+        # grid only renders ~8-12 links initially, so keep scrolling until we have
+        # post_cap distinct links or the count stops growing (hit the end of the
+        # profile, or lazy-load stalled). Bounded so a stalled grid can't loop forever.
+        post_paths: list[str] = []
+        stalls = 0
+        for _ in range(self.post_cap):  # generous upper bound on scroll rounds
             try:
                 found = run_opencli("browser", session, "find", "--css",
-                                     'a[href*="/reel/"], a[href*="/p/"]', "--limit", "8")
-                break
+                                     'a[href*="/reel/"], a[href*="/p/"]',
+                                     "--limit", str(self.post_cap * 2))
+                entries = [e["attrs"]["href"] for e in found.get("entries", [])]
             except RuntimeError:
-                if attempt == max_attempts - 1:
-                    raise
-                run_opencli("browser", session, "scroll", "down")
-                run_opencli("browser", session, "wait", "time", "3")
-        post_paths = list(dict.fromkeys(e["attrs"]["href"] for e in found.get("entries", [])))
+                entries = []
+            before = len(post_paths)
+            post_paths = list(dict.fromkeys(post_paths + entries))
+            if len(post_paths) >= self.post_cap:
+                break
+            stalls = stalls + 1 if len(post_paths) == before else 0
+            if stalls >= 3:
+                log.info("Instagram: %s grid stopped growing at %d links", handle, len(post_paths))
+                break
+            run_opencli("browser", session, "scroll", "down")
+            run_opencli("browser", session, "wait", "time", "3")
+        if not post_paths:
+            raise RuntimeError(f"no post links found for {handle} after scrolling")
 
         # `instagram user` (metadata) and `browser find` (URLs) are two SEPARATE
         # calls with no shared ID — matched positionally (both list recent posts
         # newest-first). Not guaranteed aligned if a new post landed between the two
         # calls; best-effort, not a hard guarantee, flagged rather than silently
         # trusted. min() so a mismatch in count doesn't index past either list.
-        for i, path in enumerate(post_paths[:5]):
+        kept = 0
+        for i, path in enumerate(post_paths[:self.post_cap]):
             meta = posts_meta[i] if i < len(posts_meta) else {}
+            # Recency filter — meta["date"] is "M/D/YYYY" (e.g. "8/3/2026"). Skipped
+            # posts don't consume budget or get written, so a raised cap pulls more
+            # RECENT posts rather than padding with stale ones. Posts with no usable
+            # date are kept (can't prove they're stale) rather than silently dropped.
+            raw_date = meta.get("date")
+            if raw_date:
+                try:
+                    if datetime.strptime(raw_date, "%m/%d/%Y").replace(tzinfo=timezone.utc) < self.cutoff:
+                        self.skipped_stale += 1
+                        continue
+                except ValueError:
+                    pass
+            kept += 1
             post_url = f"https://www.instagram.com{path}"
             post_id = path.strip("/").split("/")[-1]
             self.rate_limiter.wait()
@@ -392,6 +465,8 @@ class InstagramWorker(PlatformWorker):
                     )
             conn.commit()
             log.info("Instagram: %s post %s -> %d comments", handle, post_id, len(comments))
+        log.info("Instagram: %s -> %d posts kept (%d skipped as older than the %s cutoff, %d links found)",
+                  handle, kept, self.skipped_stale, self.cutoff.date(), len(post_paths))
         run_opencli("browser", session, "close")
 
 
@@ -452,13 +527,26 @@ class RedditWorker(PlatformWorker):
         # unlike comment authors (potentially 100+/run, correctly still stubs-only
         # for rate-limit/cost reasons per instruction).
         self.rate_limiter.wait()
-        posts = run_opencli("reddit", "subreddit", handle, "-f", "yaml")
+        # --sort new (not the default "hot"): with a recency window in play, "hot" can
+        # surface highly-upvoted posts of any age, which the filter would then mostly
+        # discard — sorting by new means the cap and the window pull in the same
+        # direction instead of fighting each other.
+        posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
+                             "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
         if not isinstance(posts, list):
             return
-        for post in posts[:5]:
+        kept = 0
+        for post in posts[:self.post_cap]:
             post_id = post.get("id")
             if not post_id:
                 continue
+            # Recency filter — created_utc is an epoch int.
+            created = post.get("created_utc")
+            if isinstance(created, (int, float)):
+                if datetime.fromtimestamp(created, timezone.utc) < self.cutoff:
+                    self.skipped_stale += 1
+                    continue
+            kept += 1
             with conn.cursor() as cur:
                 if post.get("author"):
                     self.rate_limiter.wait()
@@ -494,7 +582,8 @@ class RedditWorker(PlatformWorker):
 
             self.rate_limiter.wait()
             self._fetch_comments(post_id, conn)
-        log.info("Reddit: r/%s -> %d posts", handle, len(posts[:5]))
+        log.info("Reddit: r/%s -> %d posts kept (%d skipped as older than the %s cutoff, %d returned)",
+                  handle, kept, self.skipped_stale, self.cutoff.date(), len(posts))
 
     def _fetch_comments(self, post_id: str, conn) -> None:
         rows = run_opencli("reddit", "read", post_id, "-f", "yaml")
@@ -685,6 +774,12 @@ def main():
                                                "run, so all platform sub-agents share one creator_id "
                                                "per real person instead of each creating their own.")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--post-cap", type=int, default=DEFAULT_POST_CAP,
+                         help=f"Max posts fetched per creator (default {DEFAULT_POST_CAP}). Posts "
+                              "outside the recency window are skipped without consuming this budget.")
+    parser.add_argument("--recency-days", type=int, default=DEFAULT_RECENCY_DAYS,
+                         help=f"Rolling recency window in days (default {DEFAULT_RECENCY_DAYS} "
+                              "≈ 6 months). Posts older than this are skipped.")
     args = parser.parse_args()
 
     conn = None if args.dry_run else get_connection()
@@ -719,7 +814,10 @@ def main():
                       h if args.platform != "reddit" else [h]}
             creators.append(get_or_create_creator(conn, h, "other", **kwargs))
 
-    worker = WORKERS[args.platform](RateLimiter(), dry_run=args.dry_run)
+    worker = WORKERS[args.platform](RateLimiter(), dry_run=args.dry_run,
+                                     post_cap=args.post_cap, recency_days=args.recency_days)
+    log.info("Running %s with post_cap=%d, recency cutoff=%s",
+              args.platform, worker.post_cap, worker.cutoff.date())
     worker.run_batch(creators, conn)
 
 
