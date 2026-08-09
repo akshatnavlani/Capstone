@@ -113,3 +113,32 @@ if __name__ == "__main__":
     print(f"{len(found)} comments parsed")
     for c in found:
         print(c)
+
+
+# Caption regex — the post's own caption sits right after the SECOND occurrence of the
+# author's profile link (the first is the avatar image link) and a relative-time marker
+# ("6w", "2d", "1h"), and runs until the first comment's avatar image block begins.
+_CAPTION_RE_TMPL = r"\]\(/{user}/\)\s*\n+\s*\d+[smhdwy]\s*\n+(.*?)(?=\n\s*\[!\[|\Z)"
+
+
+def parse_caption(markdown: str, username: str) -> str | None:
+    """Full post caption from a `browser extract` markdown dump.
+
+    Why this exists: `opencli instagram user` truncates captions to exactly 100
+    characters in its listing output. That silently cost real signal — Track C flagged
+    the Virat Kohli / Agilitas caption as truncated while deciding whether it is a
+    valid sponsorship training pair, and brand extraction was also matching against
+    only the first 100 chars. The page extract (already fetched for comments) carries
+    the complete text, so there is no extra request cost to getting it right.
+
+    Returns None when the pattern doesn't match, so callers can fall back to the
+    truncated listing caption rather than losing the field entirely.
+    """
+    if not markdown or not username:
+        return None
+    pattern = re.compile(_CAPTION_RE_TMPL.format(user=re.escape(username)), re.DOTALL)
+    m = pattern.search(markdown)
+    if not m:
+        return None
+    caption = re.sub(r"\s*\n\s*", " ", m.group(1)).strip()
+    return caption or None

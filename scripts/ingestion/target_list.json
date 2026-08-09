@@ -3,58 +3,114 @@
     "name": "Virat Kohli",
     "category": "athlete",
     "instagram_handle": "virat.kohli",
-    "reddit_handles": ["Cricket", "indiancricket"]
+    "reddit_handles": ["ViratKohli", "KingKohli"],
+    "reddit_topic_subs": ["Cricket", "IndianCricket", "ipl"]
   },
   {
     "name": "Neeraj Chopra",
     "category": "athlete",
     "youtube_handle": "neerajchopra1",
     "instagram_handle": "neeraj____chopra",
-    "reddit_handles": ["Athletics", "olympics"]
+    "reddit_handles": [],
+    "reddit_topic_subs": ["Athletics", "olympics", "india"]
   },
   {
     "name": "PV Sindhu",
     "category": "athlete",
     "instagram_handle": "pvsindhu1",
-    "reddit_handles": ["badminton"]
+    "reddit_handles": [],
+    "reddit_topic_subs": ["badminton", "india"]
   },
   {
     "name": "Saina Nehwal",
     "category": "athlete",
     "instagram_handle": "nehwalsaina",
-    "reddit_handles": ["badminton"]
+    "reddit_handles": [],
+    "reddit_topic_subs": ["badminton", "india"]
   },
   {
     "name": "Sania Mirza",
     "category": "athlete",
     "youtube_handle": "servingitupwithsania",
     "instagram_handle": "mirzasaniar",
-    "reddit_handles": ["tennis"]
+    "reddit_handles": [],
+    "reddit_topic_subs": ["tennis", "india"]
   },
   {
     "name": "MC Mary Kom",
     "category": "athlete",
     "instagram_handle": "mcmary.kom",
-    "reddit_handles": ["Boxing"]
-  },
-  {
-    "name": "Ranveer Allahbadia",
-    "category": "fitness_influencer",
-    "youtube_handle": "BeerBiceps",
-    "instagram_handle": "beerbiceps"
+    "reddit_handles": [],
+    "reddit_topic_subs": ["Boxing", "india"]
   },
   {
     "name": "LeBron James",
     "category": "athlete",
-    "youtube_handle": null,
     "instagram_handle": "kingjames",
-    "reddit_handles": ["lebron", "lakers"]
+    "reddit_handles": ["lebron"],
+    "reddit_topic_subs": ["nba", "lakers"]
   },
   {
     "name": "Cristiano Ronaldo",
     "category": "athlete",
     "youtube_handle": "cristiano",
     "instagram_handle": "cristiano",
-    "reddit_handles": ["soccer"]
+    "reddit_handles": [],
+    "reddit_topic_subs": ["soccer", "football"]
+  },
+  {
+    "name": "Ranveer Allahbadia",
+    "category": "fitness_influencer",
+    "youtube_handle": "BeerBiceps",
+    "instagram_handle": "beerbiceps",
+    "reddit_handles": [],
+    "reddit_topic_subs": ["india", "IndianYoutubers"]
+  },
+
+  {
+    "name": "Bhuvan Bam",
+    "category": "lifestyle_influencer",
+    "youtube_handle": "BBKiVines",
+    "instagram_handle": "bhuvan.bam22",
+    "reddit_handles": [],
+    "reddit_topic_subs": ["IndianYoutubers", "india"]
+  },
+  {
+    "name": "CarryMinati",
+    "category": "lifestyle_influencer",
+    "youtube_handle": "CarryMinati",
+    "instagram_handle": "carryminati",
+    "reddit_handles": ["CarryMinati"],
+    "reddit_topic_subs": ["IndianYoutubers", "IndianGaming"]
+  },
+  {
+    "name": "Prajakta Koli",
+    "category": "lifestyle_influencer",
+    "youtube_handle": "MostlySane",
+    "instagram_handle": "mostlysane",
+    "reddit_handles": [],
+    "reddit_topic_subs": ["IndianYoutubers", "india"]
+  },
+  {
+    "name": "Technical Guruji",
+    "category": "other",
+    "youtube_handle": "TechnicalGuruji",
+    "reddit_handles": [],
+    "reddit_topic_subs": ["IndianYoutubers", "india"]
+  },
+  {
+    "name": "Mumbiker Nikhil",
+    "category": "lifestyle_influencer",
+    "youtube_handle": "MumbikerNikhil",
+    "reddit_handles": [],
+    "reddit_topic_subs": ["IndianYoutubers", "india"]
+  },
+  {
+    "name": "Guru Mann",
+    "category": "fitness_influencer",
+    "youtube_handle": "GuruMannFitness",
+    "instagram_handle": "gurumann",
+    "reddit_handles": [],
+    "reddit_topic_subs": ["indianfitness", "india"]
   }
 ]

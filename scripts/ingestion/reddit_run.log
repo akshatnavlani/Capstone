@@ -1,0 +1,202 @@
+2026-08-09 21:08:57,825 INFO Running reddit with post_cap=40, recency cutoff=2026-02-07
+2026-08-09 21:09:13,084 INFO Reddit: post 1vjstd0 -> 0 comments
+2026-08-09 21:09:23,995 INFO Reddit: post 1vjq0vp -> 0 comments
+2026-08-09 21:09:35,973 INFO Reddit: post 1vjpy6d -> 27 comments
+2026-08-09 21:09:47,377 INFO Reddit: post 1vjo2tu -> 30 comments
+2026-08-09 21:09:57,764 INFO Reddit: post 1vjo2tl -> 18 comments
+2026-08-09 21:10:07,244 INFO Reddit: post 1vjmmal -> 11 comments
+2026-08-09 21:10:15,146 INFO Reddit: post 1vjlxw8 -> 1 comments
+2026-08-09 21:10:23,137 INFO Reddit: post 1vjkgum -> 0 comments
+2026-08-09 21:10:33,918 INFO Reddit: post 1vjkguc -> 19 comments
+2026-08-09 21:10:42,762 INFO Reddit: post 1vjkgu5 -> 8 comments
+2026-08-09 21:10:51,947 INFO Reddit: post 1vjkgu0 -> 22 comments
+2026-08-09 21:11:05,524 INFO Reddit: post 1vjiy0o -> 8 comments
+2026-08-09 21:11:14,334 INFO Reddit: post 1vjheo0 -> 10 comments
+2026-08-09 21:11:22,569 INFO Reddit: post 1vjh8sp -> 9 comments
+2026-08-09 21:11:33,490 INFO Reddit: post 1vjgvfg -> 22 comments
+2026-08-09 21:11:43,739 INFO Reddit: post 1vjek0b -> 34 comments
+2026-08-09 21:11:53,875 INFO Reddit: post 1vjaxts -> 9 comments
+2026-08-09 21:12:03,551 INFO Reddit: post 1vj7n1l -> 20 comments
+2026-08-09 21:12:11,979 INFO Reddit: post 1vj59jj -> 5 comments
+2026-08-09 21:12:21,084 INFO Reddit: post 1vj4gcw -> 2 comments
+2026-08-09 21:12:31,303 INFO Reddit: post 1vj40n5 -> 23 comments
+2026-08-09 21:12:40,603 INFO Reddit: post 1vj3cmv -> 8 comments
+2026-08-09 21:12:50,285 INFO Reddit: post 1vj0ns6 -> 9 comments
+2026-08-09 21:13:02,742 INFO Reddit: post 1vj092r -> 45 comments
+2026-08-09 21:13:14,432 INFO Reddit: post 1viyxdi -> 38 comments
+2026-08-09 21:13:25,978 INFO Reddit: post 1viy7pa -> 18 comments
+2026-08-09 21:13:34,749 INFO Reddit: post 1viy7de -> 3 comments
+2026-08-09 21:13:44,595 INFO Reddit: post 1vixvci -> 3 comments
+2026-08-09 21:13:54,071 INFO Reddit: post 1vixleo -> 3 comments
+2026-08-09 21:14:16,347 INFO Reddit: post 1vixc8t -> 1 comments
+2026-08-09 21:14:27,107 INFO Reddit: post 1vix2ug -> 4 comments
+2026-08-09 21:14:46,990 ERROR Failed for Virat Kohli (Cricket) on reddit — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 589, in process_creator
+    self._fetch_comments(post_id, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 594, in _fetch_comments
+    rows = run_opencli("reddit", "read", post_id, "-f", "yaml")
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 129, in run_opencli
+    raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+RuntimeError: opencli reddit read 1vix1xw -f yaml failed: ok: false
+error:
+  code: UNKNOWN
+  message: |-
+    TypeError: Failed to fetch
+        at <anonymous>:53:25
+        at <anonymous>:396:9
+  exitCode: 1
+# AutoFix: re-run with --trace=retain-on-failure for trace artifact
+# opencli reddit read --trace retain-on-failure
+
+2026-08-09 21:14:49,991 ERROR Failed for Neeraj Chopra (Athletics) on reddit — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 539, in process_creator
+    posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
+                         "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 129, in run_opencli
+    raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+RuntimeError: opencli reddit subreddit Athletics --sort new --limit 40 -f yaml failed: ok: false
+error:
+  code: UNKNOWN
+  message: |-
+    TypeError: Failed to fetch
+        at <anonymous>:37:21
+        at <anonymous>:51:3
+  exitCode: 1
+# AutoFix: re-run with --trace=retain-on-failure for trace artifact
+# opencli reddit subreddit --trace retain-on-failure
+
+2026-08-09 21:14:53,117 ERROR Failed for PV Sindhu (badminton) on reddit — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 539, in process_creator
+    posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
+                         "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 129, in run_opencli
+    raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+RuntimeError: opencli reddit subreddit badminton --sort new --limit 40 -f yaml failed: ok: false
+error:
+  code: UNKNOWN
+  message: |-
+    TypeError: Failed to fetch
+        at <anonymous>:37:21
+        at <anonymous>:51:3
+  exitCode: 1
+# AutoFix: re-run with --trace=retain-on-failure for trace artifact
+# opencli reddit subreddit --trace retain-on-failure
+
+2026-08-09 21:14:56,256 ERROR Failed for Saina Nehwal (badminton) on reddit — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 539, in process_creator
+    posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
+                         "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 129, in run_opencli
+    raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+RuntimeError: opencli reddit subreddit badminton --sort new --limit 40 -f yaml failed: ok: false
+error:
+  code: UNKNOWN
+  message: |-
+    TypeError: Failed to fetch
+        at <anonymous>:37:21
+        at <anonymous>:51:3
+  exitCode: 1
+# AutoFix: re-run with --trace=retain-on-failure for trace artifact
+# opencli reddit subreddit --trace retain-on-failure
+
+2026-08-09 21:14:59,001 ERROR Failed for Sania Mirza (tennis) on reddit — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 539, in process_creator
+    posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
+                         "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 129, in run_opencli
+    raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+RuntimeError: opencli reddit subreddit tennis --sort new --limit 40 -f yaml failed: ok: false
+error:
+  code: UNKNOWN
+  message: |-
+    TypeError: Failed to fetch
+        at <anonymous>:37:21
+        at <anonymous>:51:3
+  exitCode: 1
+# AutoFix: re-run with --trace=retain-on-failure for trace artifact
+# opencli reddit subreddit --trace retain-on-failure
+
+2026-08-09 21:15:02,113 ERROR Failed for MC Mary Kom (Boxing) on reddit — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 539, in process_creator
+    posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
+                         "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 129, in run_opencli
+    raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+RuntimeError: opencli reddit subreddit Boxing --sort new --limit 40 -f yaml failed: ok: false
+error:
+  code: UNKNOWN
+  message: |-
+    TypeError: Failed to fetch
+        at <anonymous>:37:21
+        at <anonymous>:51:3
+  exitCode: 1
+# AutoFix: re-run with --trace=retain-on-failure for trace artifact
+# opencli reddit subreddit --trace retain-on-failure
+
+2026-08-09 21:15:05,000 ERROR Failed for LeBron James (lakers) on reddit — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 539, in process_creator
+    posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
+                         "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 129, in run_opencli
+    raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+RuntimeError: opencli reddit subreddit lakers --sort new --limit 40 -f yaml failed: ok: false
+error:
+  code: UNKNOWN
+  message: |-
+    TypeError: Failed to fetch
+        at <anonymous>:37:21
+        at <anonymous>:51:3
+  exitCode: 1
+# AutoFix: re-run with --trace=retain-on-failure for trace artifact
+# opencli reddit subreddit --trace retain-on-failure
+
+2026-08-09 21:15:08,054 ERROR Failed for Cristiano Ronaldo (soccer) on reddit — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 539, in process_creator
+    posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
+                         "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 129, in run_opencli
+    raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
+RuntimeError: opencli reddit subreddit soccer --sort new --limit 40 -f yaml failed: ok: false
+error:
+  code: UNKNOWN
+  message: |-
+    TypeError: Failed to fetch
+        at <anonymous>:37:21
+        at <anonymous>:51:3
+  exitCode: 1
+# AutoFix: re-run with --trace=retain-on-failure for trace artifact
+# opencli reddit subreddit --trace retain-on-failure
+

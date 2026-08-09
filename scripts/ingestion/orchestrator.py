@@ -34,7 +34,7 @@ from datetime import datetime, timedelta, timezone
 import yaml
 
 from brand_extraction import extract_brand_mentions
-from instagram_comment_extract import parse_comments
+from instagram_comment_extract import parse_caption, parse_comments
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("orchestrator")
@@ -82,7 +82,24 @@ class Creator:
     category: str
     youtube_handle: str | None = None
     instagram_handle: str | None = None
+    # CREATOR-SPECIFIC subreddits (r/ViratKohli) — feed can be taken broadly.
     reddit_handles: list[str] = field(default_factory=list)
+    # GENERAL/TOPIC subreddits (r/ipl, r/tennis) — must be SEARCHED for the creator's
+    # name, never taken as a whole feed. See migration 20260810000000 for the measured
+    # 0%-relevance evidence behind this split.
+    reddit_topic_subs: list[str] = field(default_factory=list)
+
+
+def mentions_creator(text: str, creator_name: str) -> bool:
+    """Does this text plausibly refer to this creator?
+
+    Deliberately lenient (any distinctive name token, not the full name) — real posts
+    say "Kohli", "Sindhu", "CarryMinati" far more often than the full formal name.
+    Short tokens are dropped so initials/particles ("MC", "PV") don't match everything.
+    """
+    hay = (text or "").lower()
+    tokens = [t.lower().strip(".") for t in creator_name.split() if len(t) > 3]
+    return any(t in hay for t in tokens) if tokens else False
 
 
 class RateLimiter:
@@ -428,7 +445,13 @@ class InstagramWorker(PlatformWorker):
             markdown = extracted["content"] if isinstance(extracted, dict) else str(extracted)
 
             with conn.cursor() as cur:
-                caption = meta.get("caption")
+                # `opencli instagram user` truncates captions to exactly 100 chars.
+                # The page extract we already fetched for comments has the full text —
+                # prefer it, fall back to the truncated listing value. Track C hit this
+                # directly: the Kohli/Agilitas caption was cut mid-sentence while they
+                # were deciding whether it's a valid sponsorship training pair, and
+                # brand extraction was only ever seeing the first 100 chars.
+                caption = parse_caption(markdown, handle) or meta.get("caption")
                 brand_id = brand_id_for_text(cur, caption)
                 # meta["date"] is "M/D/YYYY" (e.g. "8/3/2026") — to_date with an
                 # explicit format string, not implicit cast, since Postgres's default
@@ -442,7 +465,9 @@ class InstagramWorker(PlatformWorker):
                          comment_count, posted_at, brand_id)
                     values (%s,%s,%s,%s,%s,%s,%s,to_date(%s,'MM/DD/YYYY'),%s)
                     on conflict (post_id) do update set
-                        caption=coalesce(excluded.caption, instagram_posts.caption),
+                        caption=case when length(coalesce(excluded.caption,'')) >
+                                          length(coalesce(instagram_posts.caption,''))
+                                     then excluded.caption else instagram_posts.caption end,
                         media_type=coalesce(excluded.media_type, instagram_posts.media_type),
                         posted_at=coalesce(excluded.posted_at, instagram_posts.posted_at),
                         like_count=excluded.like_count, comment_count=excluded.comment_count,
@@ -519,32 +544,65 @@ class RedditWorker(PlatformWorker):
     platform_name = "reddit"
 
     def _handle_for(self, creator: Creator) -> str | None:
-        return creator.reddit_handles[0] if creator.reddit_handles else None
+        # A creator is workable on Reddit if it has EITHER kind of source.
+        if creator.reddit_handles:
+            return creator.reddit_handles[0]
+        return creator.reddit_topic_subs[0] if creator.reddit_topic_subs else None
 
     def process_creator(self, creator: Creator, handle: str, conn) -> None:
-        # Note on "target creator" profile depth for Reddit: unlike YouTube/Instagram,
-        # `creators.reddit_handles` is a list of SUBREDDITS (fan/team communities
-        # ABOUT the creator — see SCHEMA.md), not the creator's own Reddit username in
-        # most cases (most athletes/influencers don't personally post on Reddit).
-        # There is usually no personal account to profile-enrich for the target
-        # itself. The closest meaningful analog with real bot-detection value: the
-        # POST AUTHORS in the creator's subreddit(s) — a small, bounded set (<=5/run),
-        # unlike comment authors (potentially 100+/run, correctly still stubs-only
-        # for rate-limit/cost reasons per instruction).
+        # Two collection modes (Weeks 11-13 change — see migration 20260810000000):
+        #
+        #  1. reddit_handles     = CREATOR-SPECIFIC subs (r/ViratKohli). The sub exists
+        #     because of this creator, so the feed is taken broadly — and deliberately
+        #     NOT name-filtered, since posts there often say "he"/"the king" rather
+        #     than the creator's name, and filtering would discard real signal.
+        #  2. reddit_topic_subs  = GENERAL subs (r/ipl, r/tennis). Taking these feeds
+        #     broadly was measured at ~0% creator relevance (0/41 r/tennis posts
+        #     mentioned Sania Mirza, etc.), so instead SEARCH the sub for the creator's
+        #     name and additionally verify each hit really mentions them — search
+        #     relevance ranking alone returns loose matches.
+        collected = 0
+        for sub in creator.reddit_handles:
+            collected += self._collect(creator, sub, conn, mode="creator_sub")
+        for sub in creator.reddit_topic_subs:
+            collected += self._collect(creator, sub, conn, mode="topic_search")
+        log.info("Reddit: %s -> %d posts across %d creator-sub(s) + %d topic sub(s)",
+                  creator.name, collected, len(creator.reddit_handles),
+                  len(creator.reddit_topic_subs))
+
+    def _collect(self, creator: Creator, sub: str, conn, mode: str) -> int:
         self.rate_limiter.wait()
-        # --sort new (not the default "hot"): with a recency window in play, "hot" can
-        # surface highly-upvoted posts of any age, which the filter would then mostly
-        # discard — sorting by new means the cap and the window pull in the same
-        # direction instead of fighting each other.
-        posts = run_opencli("reddit", "subreddit", handle, "--sort", "new",
-                             "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+        try:
+            if mode == "creator_sub":
+                # --sort new (not the default "hot"): with a recency window in play,
+                # "hot" surfaces highly-upvoted posts of any age which the filter then
+                # discards — new makes cap and window pull the same direction.
+                posts = run_opencli("reddit", "subreddit", sub, "--sort", "new",
+                                     "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+            else:
+                posts = run_opencli("reddit", "search", creator.name,
+                                     "--subreddit", sub, "--sort", "new",
+                                     "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+        except RuntimeError as e:
+            log.warning("Reddit %s r/%s for %s failed: %s", mode, sub, creator.name,
+                         str(e)[:120])
+            return 0
         if not isinstance(posts, list):
-            return
+            return 0
+
         kept = 0
+        irrelevant = 0
         for post in posts[:self.post_cap]:
             post_id = post.get("id")
             if not post_id:
                 continue
+            # Relevance gate — topic-sub hits only. Reddit search ranks by relevance
+            # but still returns loose matches, so verify the creator is actually named.
+            if mode == "topic_search":
+                blob = f"{post.get('title','')} {post.get('selftext','')}"
+                if not mentions_creator(blob, creator.name):
+                    irrelevant += 1
+                    continue
             # Recency filter — created_utc is an epoch int.
             created = post.get("created_utc")
             if isinstance(created, (int, float)):
@@ -566,7 +624,7 @@ class RedditWorker(PlatformWorker):
                     on conflict (post_id) do update set score=excluded.score, num_comments=excluded.num_comments,
                         brand_id=coalesce(excluded.brand_id, reddit_posts.brand_id), fetched_at=now()
                     """,
-                    (post_id, handle, creator.creator_id, post.get("author"), post.get("title"),
+                    (post_id, sub, creator.creator_id, post.get("author"), post.get("title"),
                      post.get("selftext"), post.get("created_utc"), post.get("upvotes"),
                      post.get("comments"), brand_id),
                 )
@@ -587,8 +645,9 @@ class RedditWorker(PlatformWorker):
 
             self.rate_limiter.wait()
             self._fetch_comments(post_id, conn)
-        log.info("Reddit: r/%s -> %d posts kept (%d skipped as older than the %s cutoff, %d returned)",
-                  handle, kept, self.skipped_stale, self.cutoff.date(), len(posts))
+        log.info("Reddit[%s] r/%s for %s -> %d kept (%d off-topic, %d stale, %d returned)",
+                  mode, sub, creator.name, kept, irrelevant, self.skipped_stale, len(posts))
+        return kept
 
     def _fetch_comments(self, post_id: str, conn) -> None:
         rows = run_opencli("reddit", "read", post_id, "-f", "yaml")
@@ -641,7 +700,7 @@ def get_connection():
     return psycopg2.connect(database_url)
 
 
-def get_or_create_creator(conn, name: str, category: str, **handles) -> Creator:
+def get_or_create_creator(conn, name: str, category: str, replace_reddit: bool = False, **handles) -> Creator:
     """Idempotent across ALL provided handles (youtube_handle, instagram_handle,
     reddit_handles), not just whichever one happened to be passed first.
 
@@ -661,6 +720,7 @@ def get_or_create_creator(conn, name: str, category: str, **handles) -> Creator:
     yt = handles.get("youtube_handle")
     ig = handles.get("instagram_handle")
     reddit_handles = handles.get("reddit_handles") or []
+    topic_subs = handles.get("reddit_topic_subs") or []
 
     with conn.cursor() as cur:
         row = None
@@ -697,11 +757,16 @@ def get_or_create_creator(conn, name: str, category: str, **handles) -> Creator:
                     category = case when category = 'other' then %s else category end,
                     youtube_handle = coalesce(youtube_handle, %s),
                     instagram_handle = coalesce(instagram_handle, %s),
-                    reddit_handles = (select array(select distinct unnest(reddit_handles || %s))),
+                    reddit_handles = case when %s then %s
+                        else (select array(select distinct unnest(reddit_handles || %s))) end,
+                    reddit_topic_subs = case when %s then %s
+                        else (select array(select distinct unnest(reddit_topic_subs || %s))) end,
                     updated_at = now()
                 where creator_id = %s
                 """,
-                (name, category, yt, ig, reddit_handles, creator_id),
+                (name, category, yt, ig,
+                 replace_reddit, reddit_handles, reddit_handles,
+                 replace_reddit, topic_subs, topic_subs, creator_id),
             )
         else:
             # No row matched any handle. Best-effort name-collision check before
@@ -723,23 +788,24 @@ def get_or_create_creator(conn, name: str, category: str, **handles) -> Creator:
                 )
             cur.execute(
                 """
-                insert into creators (name, category, youtube_handle, instagram_handle, reddit_handles)
-                values (%s,%s,%s,%s,%s)
+                insert into creators (name, category, youtube_handle, instagram_handle, reddit_handles, reddit_topic_subs)
+                values (%s,%s,%s,%s,%s,%s)
                 returning creator_id
                 """,
-                (name, category, yt, ig, reddit_handles),
+                (name, category, yt, ig, reddit_handles, topic_subs),
             )
             creator_id = cur.fetchone()[0]
     conn.commit()
 
     with conn.cursor() as cur:
         cur.execute(
-            "select name, category, youtube_handle, instagram_handle, reddit_handles from creators where creator_id = %s",
+            "select name, category, youtube_handle, instagram_handle, reddit_handles, reddit_topic_subs from creators where creator_id = %s",
             (creator_id,),
         )
-        r_name, r_category, r_yt, r_ig, r_reddit = cur.fetchone()
+        r_name, r_category, r_yt, r_ig, r_reddit, r_topic = cur.fetchone()
     return Creator(creator_id=str(creator_id), name=r_name, category=r_category,
-                    youtube_handle=r_yt, instagram_handle=r_ig, reddit_handles=r_reddit or [])
+                    youtube_handle=r_yt, instagram_handle=r_ig, reddit_handles=r_reddit or [],
+                    reddit_topic_subs=r_topic or [])
 
 
 def seed_creators(conn, target_list: list[dict]) -> dict[str, Creator]:
@@ -751,11 +817,16 @@ def seed_creators(conn, target_list: list[dict]) -> dict[str, Creator]:
     """
     result = {}
     for entry in target_list:
+        # Curated list is AUTHORITATIVE for Reddit sources — replace, don't merge.
+        # Merge-only semantics made it impossible to RECLASSIFY a sub from
+        # creator-specific to topic (real bug: after the Weeks 11-13 split, Sania
+        # Mirza still had r/tennis listed as creator-specific from the old seeding).
         c = get_or_create_creator(
-            conn, entry["name"], entry["category"],
+            conn, entry["name"], entry["category"], replace_reddit=True,
             youtube_handle=entry.get("youtube_handle"),
             instagram_handle=entry.get("instagram_handle"),
             reddit_handles=entry.get("reddit_handles", []),
+            reddit_topic_subs=entry.get("reddit_topic_subs", []),
         )
         result[entry["name"]] = c
         log.info("Seeded creator %s -> %s (yt=%s ig=%s reddit=%s)",
@@ -805,6 +876,9 @@ def main():
         handle_field = "reddit_handles" if args.platform == "reddit" else f"{args.platform}_handle"
         for entry in target_list:
             value = entry.get(handle_field)
+            if args.platform == "reddit":
+                # Reddit creators are workable from EITHER source kind.
+                value = value or entry.get("reddit_topic_subs")
             if not value:
                 continue
             creators.append(get_or_create_creator(
@@ -812,6 +886,7 @@ def main():
                 youtube_handle=entry.get("youtube_handle"),
                 instagram_handle=entry.get("instagram_handle"),
                 reddit_handles=entry.get("reddit_handles", []),
+                reddit_topic_subs=entry.get("reddit_topic_subs", []),
             ))
     elif not args.dry_run and args.handles:
         for h in args.handles:
