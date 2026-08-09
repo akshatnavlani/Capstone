@@ -303,6 +303,22 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   `Optional`/unpopulated in their ingestion schemas, matching Track A's
   real DB. No longer open.
 
+## Cross-track check (2026-08-09, fourth pass — late addition)
+
+Track C pushed further commits after the real-data pull above: the actual
+`is_sponsored` labeling pipeline now exists and ran for real (`POST
+/labeling/run`, 21/21 real content rows labeled, 0 false positives — 21
+matches the exact real content count: 10 YouTube videos + 5 Instagram posts
++ 6 Reddit posts). Not yet re-pulled/re-validated this session (found late,
+after this round's real-data work was already done) — worth checking next
+session whether any of those 21 rows are actually `is_sponsored=true` (0
+brand-extraction hits earlier suggests probably not yet, but don't assume).
+Track C also fixed a latent bug in their own `build_collaboration_edges`
+(non-deterministic handle-collision resolution) found while re-checking
+their feature store against live data — not yet triggered against real
+rows, but good to know the collaboration-edge path had its own bug fixed
+independently.
+
 ## Cross-track check (2026-08-09, third pass)
 
 Checked Track A's creator cross-platform dedup bug fix (`supabase/
