@@ -7,11 +7,28 @@ this file below; live row counts are in `DATA_COLLECTION_STATUS.md` Section 5.
 
 This is the "Hermes agent or equivalent automation" from the original Capstone doc:
 something that queues targets, calls the right scraper per platform, and merges
-results into the DB. It does not have to be the specific `hermes-agent` app already
-installed on this machine (`C:\Users\Sonic\AppData\Local\hermes`) — that looks like a
-general personal-agent tool unrelated to this project, and I'm not wiring into it
-without you asking, since it's your own environment. The design below is a standalone
-script that could later be scheduled by anything (cron, that Hermes app, n8n, etc.).
+results into the DB.
+
+## Scheduling: Windows Task Scheduler, not Hermes (decided 2026-08-10)
+
+Investigated `C:\Users\Sonic\AppData\Local\hermes` directly once given permission to.
+Findings: it has a `cronjob` tool, but the tool's own status output lists it under
+"missing requirements" (not set up). More importantly, Hermes's core agent loop is
+currently broken independent of anything in this project — running its CLI hits
+`HTTP 403` from its own LLM provider backend (`chatgpt.com/backend-api/codex/`,
+i.e. its configured API key/billing, not anything related to Capstone). Scheduling a
+script that doesn't need an LLM at all (`orchestrator.py` is plain Python + subprocess
+calls) through a chat-agent tool whose own auth is currently broken is fragile for no
+benefit — so used **Windows Task Scheduler** instead: task `CapstoneDataIngestion`,
+daily at 10:00 AM, running `scripts/ingestion/run_pipeline.ps1` (all three platforms
+sequentially against `target_list.json`, logged to `scripts/ingestion/logs/`).
+
+**Real constraint, not fully hands-off:** the Instagram/Reddit legs go through OpenCLI,
+which needs Chrome open and logged in (`OPENCLI_PROFILE`) at run time — a scheduled
+task can't launch/log-into Chrome itself. YouTube's official-API leg has no such
+requirement. 10 AM was picked as a plausible time Chrome would already be open; this
+is a real limitation of the design, not something Task Scheduler or Hermes could fix
+either way, given OpenCLI's session model.
 
 ## Design
 
