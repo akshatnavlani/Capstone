@@ -227,6 +227,23 @@ class RedditPost(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+class RedditPostCreator(SQLModel, table=True):
+    """Many-to-many junction (added by Track A 2026-08-10, migration
+    20260810000000_reddit_post_creators_junction.sql): a Reddit post can
+    legitimately relate to multiple creators (most commonly because
+    `creators.reddit_handles` is often a shared community subreddit, e.g.
+    r/badminton, not creator-exclusive). `reddit_posts.creator_id` stays as
+    a "first seen by" marker only -- this table is the source of truth for
+    which creators a post relates to. This is also the real signal behind
+    the feature store's `co_occurs_with` edges: two creators linked to the
+    same post is genuine platform co-occurrence, not fabricated."""
+
+    __tablename__ = "reddit_post_creators"
+
+    post_id: str = Field(foreign_key="reddit_posts.post_id", primary_key=True)
+    creator_id: uuid.UUID = Field(foreign_key="creators.creator_id", primary_key=True, index=True)
+
+
 # ---- Track C-owned tables (migration ownership: init_db() creates these) ----
 
 class FusionScore(SQLModel, table=True):

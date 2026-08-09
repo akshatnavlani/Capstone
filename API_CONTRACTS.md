@@ -39,6 +39,32 @@ yet confirmed by an actual browser** — ask Track D to re-test now that this
 is pushed, since they have the working browser tool and this session
 doesn't.
 
+## Weeks 9-10 update summary
+
+(Original Weeks 9-10 target -- cross-platform identity linking -- was
+already done by Track A in Weeks 7-8 out of urgency, no Track C action
+needed there. This round was the CORS fix above plus:)
+
+- **New:** `GET /feature-store/edges/co-occurrence` — `co_occurs_with`
+  edges, previously an open gap ("no signal exists"), now real. Track A
+  added `reddit_post_creators` (a many-to-many junction: a Reddit post can
+  relate to multiple creators, most commonly because
+  `creators.reddit_handles` is often a shared community subreddit like
+  r/badminton, not creator-exclusive) — confirmed live with real data, not
+  just schema: PV Sindhu and Saina Nehwal co-occur on 5 real posts via
+  r/badminton. `reputation_score` re-checked against Track A's latest work
+  (creator-ID dedup, Reddit profile enrichment) — still no source column
+  anywhere, still open, not force-fixed.
+- Re-ran `POST /labeling/run` against the now-much-larger real dataset (97
+  content rows, up from 21) — 76 newly-landed rows labeled, still 0
+  sponsored (matches Track A's brand-extraction pipeline finding 0 hits
+  independently). All 97 real content rows now have a real
+  `true`/`false` `is_sponsored`, zero remaining `null`.
+- Confirmed Track B is already consuming `/feature-store/*` directly and
+  successfully (`ml/feature_extraction.py::RawCreatorRecord` mirrors
+  `CreatorFeatureRecord` exactly, per their GRAPH_SCHEMA.md) — no contract
+  drift found on their side.
+
 ## Weeks 7-8 update summary
 
 - **New:** `POST /labeling/run` — the actual disclosure-tag (`is_sponsored`)
@@ -311,31 +337,35 @@ the raw inputs those need instead.
   rows in production (two rows both claiming reddit handle "lebron"); their
   fix (`origin/track-a-data-infra` "Fix cross-platform creator-ID syncing")
   stops new duplicates but doesn't retroactively merge existing ones.
+- `GET /feature-store/edges/co-occurrence` → list of `CollaborationEdge`
+  (same shape as `/edges/collaborations`, different source signal). **New,
+  real as of 2026-08-10** — closes what was flagged as a genuine gap
+  through Weeks 5-8. Resolved from `reddit_post_creators` (Track A's
+  many-to-many junction: a Reddit post can relate to multiple creators,
+  most commonly because they share a community subreddit like
+  r/badminton). Two creators linked to the same post → an edge, weighted by
+  count of shared posts, both directions. Verified against real data: PV
+  Sindhu / Saina Nehwal co-occur on 5 real r/badminton posts.
 - `GET /feature-store/edges/sponsorships` → list of `SponsorshipEdge`
   (`creator_id`, `brand_id`, `content_id`, `platform`). Populated once
   `is_sponsored` is set — see the labeling pipeline below. Currently empty
-  against real data because no real disclosure text has been found yet
-  (21/21 real content rows checked, 0 sponsored), not because the pipeline
-  hasn't run.
+  against real data because no real disclosure text has been found yet in
+  any of the 97 real content rows checked (0 sponsored), not because the
+  pipeline hasn't run — matches Track A's brand-extraction pipeline
+  independently finding 0 hits too.
 
-**Known gaps, flagged not fabricated:**
+**Remaining known gap, flagged not fabricated:**
 - `reputation_score`: Track B's schema expects this in the creator metadata
   segment, but **no Track A table has a reputation_score source column
-  anywhere** (re-checked against Track A's latest work as of 2026-08-09 —
-  their creator-ID dedup fix and Reddit profile enrichment don't touch
-  this). Open cross-track item — needs either a new Track A column or a
-  defined derivation formula.
-- `co_occurs_with` edges (platform co-occurrence, PROJECT_PLAN.md Section
-  3a): not built. Track A's schema still has no signal for "these creators
-  appeared together in the same content" (no co-starring/tagging table).
-  Would need either a new ingestion field or inference from data not
-  currently collected.
+  anywhere** (re-checked against Track A's latest work as of 2026-08-10 —
+  their creator-ID dedup fix, Reddit profile enrichment, and the new
+  `reddit_post_creators` junction don't touch this). Open cross-track item
+  — needs either a new Track A column or a defined derivation formula.
 
 Unit-tested against synthetic data (`backend/tests/test_feature_store.py`,
-9 tests) and verified end-to-end through the live HTTP API against real
-scraped content (Track A ran their first live bulk collection this week —
-59 Instagram profiles, 113 Reddit profiles, 10 YouTube videos as of
-2026-08-09).
+11 tests) and verified end-to-end through the live HTTP API against real
+scraped content — Track A's real target list has grown to 10 creators, 97
+total content rows across all three platforms as of 2026-08-10.
 
 ### Labeling pipeline (`is_sponsored`, new Weeks 7-8)
 
@@ -371,9 +401,12 @@ Section 1), so precision was validated deliberately, not just "it finds
   self-promotional video description (own website/product links, zero
   actual sponsorship) and a professional-credentials bio (former team,
   university) — both correctly produce no match.
-- Already run against all real content in the live DB: **21/21 rows
-  checked, 0 labeled sponsored, 0 false positives** (matches manual
-  verification against the same rows before the pipeline existed).
+- Run against all real content in the live DB, re-run as new content
+  landed: **97/97 rows checked as of 2026-08-10, 0 labeled sponsored, 0
+  false positives** (0 sponsored matches Track A's independent
+  brand-extraction pipeline also finding 0 hits). Idempotent — re-running
+  only processes newly-null rows, so this number will keep growing safely
+  as Track A's collection continues.
 
 Text scrubbing (`app/text_processing.py::scrub_text` — URLs, HTML tags,
 `@mentions` removed, whitespace collapsed) and temporal normalization
@@ -470,19 +503,20 @@ thesis capstone backend.
   despite being documented as an enum — tightened to
   `Literal["low", "medium", "high"]`.
 
-## What's real vs. placeholder (as of 2026-08-09, Weeks 7-8)
+## What's real vs. placeholder (as of 2026-08-10)
 
 | Piece | Status |
 |---|---|
 | FastAPI app, all routes, request/response validation | Real, working |
-| DB models matching Track A's live schema (incl. `brands`, `creator_related_accounts`) | Real, working (re-diff if their schema changes) |
-| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified — connected to the live Supabase instance with real content now landing (Track A's first live bulk collection this week) |
-| Track C-owned table migrations (`fusionscore`, `riskalert`) | Real, tracked in `backend/migrations/` after the incident above — no longer relying on `create_all()` for schema evolution |
+| CORS | Real as of 2026-08-10 (see incident above) — was missing entirely before |
+| DB models matching Track A's live schema (incl. `brands`, `creator_related_accounts`, `reddit_post_creators`) | Real, working (re-diff if their schema changes) |
+| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified — connected to the live Supabase instance, 10 real creators / 97 content rows as of 2026-08-10 |
+| Track C-owned table migrations (`fusionscore`, `riskalert`) | Real, tracked in `backend/migrations/` after the incident — no longer relying on `create_all()` for schema evolution |
 | Ingestion upsert logic (8 endpoints) | Real, working, but secondary path (see breaking-change note #3) |
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
-| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/edge data, verified against real scraped content; text now scrubbed before staging; CLIP/BERT embeddings intentionally not computed here (Track B, Weeks 9-10); `reputation_score` and `co_occurs_with` are genuine gaps, not placeholders — see feature-store section |
-| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, built and run against live data** (Weeks 7-8) — see labeling section. 21/21 real rows labeled, 0 false positives, precision-validated against real decoy text plus synthetic near-misses |
+| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/edge data (collaborations, co-occurrence, sponsorships all real now), verified against real scraped content; text scrubbed before staging; CLIP/BERT embeddings intentionally not computed here (Track B, Weeks 9-10); `reputation_score` is the one remaining genuine gap — see feature-store section |
+| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data.** 97/97 real rows labeled, 0 false positives, precision-validated against real decoy text plus synthetic near-misses |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |

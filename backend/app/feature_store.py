@@ -17,18 +17,24 @@ one-hot) that doesn't require a trained model to compute.
 Known gaps, flagged rather than fabricated:
 - `reputation_score`: Track B's ml/schema.py expects this in the metadata
   segment, but no Track A table has a reputation_score source column
-  anywhere (checked SCHEMA.md 2026-08-09). Always None here until a real
-  source is defined -- open cross-track item, see API_CONTRACTS.md.
-- `co_occurs_with` edges (platform co-occurrence, PROJECT_PLAN.md Section
-  3a): Track A's schema has no signal for "these creators appeared
-  together in the same content" (no co-starring/tagging table). Not built
-  here -- would require either a new Track A ingestion field or inferring
-  it from something not yet collected. Flagged, not fabricated.
+  anywhere (re-checked 2026-08-10 against Track A's latest work -- still
+  true). Always None here until a real source is defined -- open
+  cross-track item, see API_CONTRACTS.md.
 - `sponsors`/`sponsored_by` edges depend on `is_sponsored` being populated
   -- that's `app/labeling.py`, added Weeks 7-8. Run `POST /labeling/run`
   before expecting non-empty sponsorship edges.
+
+`co_occurs_with` edges (platform co-occurrence, PROJECT_PLAN.md Section
+3a) are now REAL, added 2026-08-10: Track A added `reddit_post_creators`
+(a many-to-many junction -- a Reddit post can relate to multiple creators,
+most commonly because `creators.reddit_handles` is often a shared
+community subreddit like r/badminton, not creator-exclusive). Two creators
+linked to the same post is genuine content co-occurrence. Confirmed real,
+not just schema: as of 2026-08-10 there are 5 real posts linking PV Sindhu
+and Saina Nehwal via r/badminton.
 """
 
+import itertools
 import math
 import uuid
 from collections import defaultdict
@@ -41,6 +47,7 @@ from app.models import (
     InstagramPost,
     InstagramProfile,
     RedditPost,
+    RedditPostCreator,
     YouTubeChannel,
     YouTubeVideo,
 )
@@ -225,6 +232,38 @@ def build_collaboration_edges(session: Session) -> list[CollaborationEdge]:
         if target_id and target_id != row.creator_id:
             pair = tuple(sorted((str(row.creator_id), str(target_id))))
             pair_weights[pair] += 1
+
+    edges = []
+    for (a, b), weight in pair_weights.items():
+        edges.append(CollaborationEdge(source_creator_id=uuid.UUID(a), target_creator_id=uuid.UUID(b), weight=float(weight)))
+        edges.append(CollaborationEdge(source_creator_id=uuid.UUID(b), target_creator_id=uuid.UUID(a), weight=float(weight)))
+    return edges
+
+
+def build_co_occurrence_edges(session: Session) -> list[CollaborationEdge]:
+    """`(creator, co_occurs_with, creator)`, both directions, per Track B's
+    ml/schema.py. Real signal added by Track A 2026-08-10:
+    `reddit_post_creators` links a Reddit post to every creator it relates
+    to (a post can relate to multiple creators when they share a community
+    subreddit, e.g. r/badminton) -- two creators linked to the same post is
+    genuine platform co-occurrence. Weight = number of distinct posts the
+    pair co-occurs on.
+
+    Returns `CollaborationEdge` (same shape as collaborates_with) since the
+    wire shape is identical -- the edge *type* is what differs, and that's
+    which endpoint/field this came from, not something encoded per-row.
+    """
+    pair_weights: dict[tuple[str, str], int] = defaultdict(int)
+
+    creators_by_post: dict[str, set[uuid.UUID]] = defaultdict(set)
+    for row in session.exec(select(RedditPostCreator)).all():
+        creators_by_post[row.post_id].add(row.creator_id)
+
+    for creator_ids in creators_by_post.values():
+        if len(creator_ids) < 2:
+            continue
+        for a, b in itertools.combinations(sorted(creator_ids, key=str), 2):
+            pair_weights[(str(a), str(b))] += 1
 
     edges = []
     for (a, b), weight in pair_weights.items():

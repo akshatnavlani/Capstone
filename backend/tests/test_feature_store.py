@@ -1,7 +1,6 @@
-"""Tests for app/feature_store.py against synthetic data -- real scraped
-data doesn't exist yet (Track A's tables are still empty as of 2026-08-09),
-so synthetic data is the correct validation method at this stage, same
-approach Track A/B used for their own Weeks 1-4 modules.
+"""Tests for app/feature_store.py against synthetic data -- validated
+separately against real live scraped content too (see API_CONTRACTS.md),
+same two-track approach Track A/B used for their own modules.
 """
 
 import uuid
@@ -16,6 +15,7 @@ from app.models import (
     InstagramPost,
     InstagramProfile,
     RedditPost,
+    RedditPostCreator,
     YouTubeChannel,
     YouTubeVideo,
 )
@@ -150,6 +150,55 @@ def test_non_collaborator_relation_types_are_ignored(session):
     session.commit()
 
     assert feature_store.build_collaboration_edges(session) == []
+
+
+def test_co_occurrence_edges_from_shared_reddit_post(session):
+    # Mirrors the real scenario found live 2026-08-10: PV Sindhu and Saina
+    # Nehwal both linked to the same r/badminton posts via
+    # reddit_post_creators (a post can relate to multiple creators when
+    # they share a community subreddit).
+    a = Creator(name="CreatorA")
+    b = Creator(name="CreatorB")
+    unrelated = Creator(name="Unrelated")
+    session.add(a)
+    session.add(b)
+    session.add(unrelated)
+    session.commit()
+    session.refresh(a)
+    session.refresh(b)
+    session.refresh(unrelated)
+
+    session.add(RedditPost(post_id="p1", subreddit="r/badminton"))
+    session.add(RedditPost(post_id="p2", subreddit="r/badminton"))
+    session.commit()
+
+    session.add(RedditPostCreator(post_id="p1", creator_id=a.creator_id))
+    session.add(RedditPostCreator(post_id="p1", creator_id=b.creator_id))
+    session.add(RedditPostCreator(post_id="p2", creator_id=a.creator_id))
+    session.add(RedditPostCreator(post_id="p2", creator_id=b.creator_id))
+    session.commit()
+
+    edges = feature_store.build_co_occurrence_edges(session)
+
+    pairs = {(e.source_creator_id, e.target_creator_id): e.weight for e in edges}
+    assert pairs[(a.creator_id, b.creator_id)] == 2.0  # co-occur on 2 posts
+    assert pairs[(b.creator_id, a.creator_id)] == 2.0  # both directions
+    assert len(edges) == 2
+    assert unrelated.creator_id not in {c for pair in pairs for c in pair}
+
+
+def test_co_occurrence_edges_empty_when_no_post_has_multiple_creators(session):
+    a = Creator(name="CreatorA")
+    session.add(a)
+    session.commit()
+    session.refresh(a)
+
+    session.add(RedditPost(post_id="p1", subreddit="r/solo"))
+    session.commit()
+    session.add(RedditPostCreator(post_id="p1", creator_id=a.creator_id))
+    session.commit()
+
+    assert feature_store.build_co_occurrence_edges(session) == []
 
 
 def test_sponsorship_edges_empty_until_is_sponsored_populated(session):
