@@ -178,6 +178,11 @@ class PlatformWorker:
             handle = self._handle_for(creator)
             if not handle:
                 continue
+            # Reset per-creator so the log line reports THIS creator's skips, not a
+            # running total across the batch (real reporting bug found reading the
+            # first full run's output — "29 skipped" repeated for creators that had
+            # skipped nothing).
+            self.skipped_stale = 0
             try:
                 self.process_creator(creator, handle, conn)
             except Exception:
