@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Virat Kohli",
+    "category": "athlete",
+    "instagram_handle": "virat.kohli",
+    "reddit_handles": ["Cricket", "indiancricket"]
+  },
+  {
+    "name": "Neeraj Chopra",
+    "category": "athlete",
+    "instagram_handle": "neeraj____chopra",
+    "reddit_handles": ["Athletics", "olympics"]
+  },
+  {
+    "name": "PV Sindhu",
+    "category": "athlete",
+    "instagram_handle": "pvsindhu1",
+    "reddit_handles": ["badminton"]
+  },
+  {
+    "name": "Saina Nehwal",
+    "category": "athlete",
+    "instagram_handle": "nehwalsaina",
+    "reddit_handles": ["badminton"]
+  },
+  {
+    "name": "Sania Mirza",
+    "category": "athlete",
+    "instagram_handle": "mirzasaniar",
+    "reddit_handles": ["tennis"]
+  },
+  {
+    "name": "MC Mary Kom",
+    "category": "athlete",
+    "instagram_handle": "mcmary.kom",
+    "reddit_handles": ["Boxing"]
+  },
+  {
+    "name": "Ranveer Allahbadia",
+    "category": "fitness_influencer",
+    "youtube_handle": "BeerBiceps",
+    "instagram_handle": "beerbiceps"
+  },
+  {
+    "name": "LeBron James",
+    "category": "athlete",
+    "youtube_handle": null,
+    "instagram_handle": "kingjames",
+    "reddit_handles": ["lebron", "lakers"]
+  },
+  {
+    "name": "Cristiano Ronaldo",
+    "category": "athlete",
+    "instagram_handle": "cristiano",
+    "reddit_handles": ["soccer"]
+  }
+]

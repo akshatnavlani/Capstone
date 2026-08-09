@@ -529,22 +529,38 @@ def get_or_create_creator(conn, name: str, category: str, **handles) -> Creator:
         if row is None and ig:
             cur.execute("select creator_id from creators where instagram_handle = %s", (ig,))
             row = cur.fetchone()
-        if row is None and reddit_handles:
-            cur.execute("select creator_id from creators where reddit_handles && %s", (reddit_handles,))
-            row = cur.fetchone()
+        # Deliberately NOT matching on reddit_handles overlap — real bug found running
+        # the actual target-list seed (2026-08-10): "badminton" is a generic
+        # sport-wide subreddit both PV Sindhu and Saina Nehwal are (correctly)
+        # associated with, and the `&&` overlap check merged Saina Nehwal into PV
+        # Sindhu's row because they share that one community subreddit. Unlike
+        # youtube_handle/instagram_handle (a unique account per real person),
+        # reddit_handles is a list of communities ABOUT a creator, which multiple
+        # different real people can legitimately share — never a valid identity key.
 
         if row is not None:
             creator_id = row[0]
+            # Also refresh name/category, but ONLY when the existing row's category
+            # is the 'other' placeholder ad-hoc `--handles` runs use (e.g. a prior
+            # `--handles kingjames` test run named the row "kingjames" literally).
+            # Real bug found seeding the curated target list (2026-08-10): merging
+            # correctly combined LeBron James's handles onto the existing row, but
+            # left name/category stale ("kingjames"/"other") since only handle
+            # columns were updated — a curated seed's name/category is authoritative
+            # and should win over an ad-hoc placeholder, but should NOT silently
+            # overwrite a name a previous *curated* seed already set correctly.
             cur.execute(
                 """
                 update creators set
+                    name = case when category = 'other' then %s else name end,
+                    category = case when category = 'other' then %s else category end,
                     youtube_handle = coalesce(youtube_handle, %s),
                     instagram_handle = coalesce(instagram_handle, %s),
                     reddit_handles = (select array(select distinct unnest(reddit_handles || %s))),
                     updated_at = now()
                 where creator_id = %s
                 """,
-                (yt, ig, reddit_handles, creator_id),
+                (name, category, yt, ig, reddit_handles, creator_id),
             )
         else:
             # No row matched any handle. Best-effort name-collision check before
