@@ -52,10 +52,15 @@ def make_dummy_hetero_data(
     data["creator", "co_occurs_with", "creator"].edge_index = cooccur_index
     data["creator", "co_occurs_with", "creator"].edge_attr = cooccur_attr
 
-    num_sponsor_edges = max(1, num_brands * 2)
-    brand_idx = torch.randint(0, num_brands, (num_sponsor_edges,), generator=gen)
-    creator_idx = torch.randint(0, num_creators, (num_sponsor_edges,), generator=gen)
-    data["brand", "sponsors", "creator"].edge_index = torch.stack([brand_idx, creator_idx], dim=0)
-    data["creator", "sponsored_by", "brand"].edge_index = torch.stack([creator_idx, brand_idx], dim=0)
+    # num_brands=0 is a real case (e.g. loading real data before any brands
+    # exist, per GRAPH_SCHEMA.md) -- torch.randint(0, 0, ...) raises, so
+    # skip sponsor-edge generation entirely rather than forcing a phantom
+    # minimum of 1. empty_hetero_data() already leaves these as (2,0).
+    if num_brands > 0:
+        num_sponsor_edges = max(1, num_brands * 2)
+        brand_idx = torch.randint(0, num_brands, (num_sponsor_edges,), generator=gen)
+        creator_idx = torch.randint(0, num_creators, (num_sponsor_edges,), generator=gen)
+        data["brand", "sponsors", "creator"].edge_index = torch.stack([brand_idx, creator_idx], dim=0)
+        data["creator", "sponsored_by", "brand"].edge_index = torch.stack([creator_idx, brand_idx], dim=0)
 
     return data

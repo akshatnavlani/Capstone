@@ -36,6 +36,19 @@ def test_weighted_creator_edges_are_symmetric_with_matching_weight():
             assert weight_by_pair[(dst, src)] == w, f"{edge_type}: mismatched weight for ({src},{dst})"
 
 
+def test_dummy_hetero_data_with_zero_brands_does_not_crash():
+    # Regression test: found while loading real data (0 real brands exist
+    # as of 2026-08-09) -- num_brands=0 used to crash with
+    # "RuntimeError: random_ expects 'from' to be less than 'to'" because
+    # sponsor-edge generation forced a minimum of 1 edge even with no
+    # brands to reference.
+    data = make_dummy_hetero_data(num_creators=3, num_brands=0, avg_degree=0)
+    data.validate(raise_on_error=True)
+    assert data["brand"].x.shape == (0, BRAND_FEATURE_DIM)
+    assert data["brand", "sponsors", "creator"].edge_index.shape == (2, 0)
+    assert data["creator", "sponsored_by", "brand"].edge_index.shape == (2, 0)
+
+
 def test_gat_forward_pass_produces_expected_shapes():
     num_creators, num_brands = 6, 3
     data = make_dummy_hetero_data(num_creators=num_creators, num_brands=num_brands)
