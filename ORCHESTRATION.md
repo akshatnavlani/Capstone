@@ -210,3 +210,48 @@ python scripts/ingestion/orchestrator.py --platform reddit --handles lebron
 Real run so far (2026-08-09): 3 creators, 10 YouTube videos + 200 comments, 5 Instagram
 posts + 71 comments, 6 Reddit posts + 135 comments — all live in Supabase. See
 `DATA_COLLECTION_STATUS.md` Section 5 for the up-to-date table.
+
+## Per-platform sub-agents are NOT a safe parallel axis for browser platforms (2026-08-11)
+
+**Real incident, not theoretical.** Weeks 9-10 dispatched one sub-agent per platform
+(YouTube/Instagram/Reddit) concurrently. Result:
+
+- YouTube: clean (119 videos, 2,746 comments) — it uses the official Data API, no browser.
+- Instagram: 4 of 9 creators succeeded.
+- Reddit: **0 of 8 creators succeeded** — every one failed with
+  `TypeError: Failed to fetch` from the OpenCLI browser bridge.
+
+The interleaved log timeline shows why. Reddit's entire batch collapsed inside a
+22-second window (21:14:46 → 21:15:08) *while the Instagram run was actively driving
+the same browser*; Instagram then recovered and kept succeeding at 21:15:39, 21:17:31,
+21:19:07. Chrome never crashed (12 processes still alive afterward).
+
+**Root cause: Instagram and Reddit are different *platforms* but share one
+Chrome/OpenCLI session.** "One sub-agent per platform" looks like an independent axis
+and isn't — the real axis is the *browser session*, and there is exactly one. This is
+the same constraint as the long-standing "don't run multiple sub-agents against one
+platform" rule, just one level up: it's not per-platform, it's per-session.
+
+**Rule going forward:** YouTube may run concurrently with anything (own API, own quota).
+**Instagram and Reddit must be serialized against each other.** `run_pipeline.ps1`
+already does this correctly (sequential loop) — only the sub-agent dispatch path had
+the flaw. Re-running Reddit alone afterward collected cleanly with zero fetch errors,
+confirming contention rather than a Reddit-side problem.
+
+### Secondary finding: the scroll-until-full change made Instagram more brittle
+
+The Weeks 9-10 grid-scroll loop raises `no post links found after scrolling` when it
+finds nothing, where the previous code silently took whatever the first screenful had.
+Under browser contention that converted a degraded-but-partial result into a total
+per-creator failure (5 of 9 Instagram creators). The hard failure is arguably more
+honest than silently under-collecting, but it should degrade rather than abort —
+worth revisiting.
+
+### Third finding: Instagram grid stalls at ~12 links for most profiles
+
+Even successful creators mostly yielded 12 posts against a cap of 40 ("12 links
+found"); only `virat.kohli` reached the cap (48 links found). The stall-detector is
+firing early on most profiles, so Instagram is under-yielding independently of the
+contention issue. This — not the post cap — is now the binding constraint on Instagram
+volume, and is the place a dedicated scraping backend (e.g. Apify, if it ever becomes
+reachable) would genuinely help.
