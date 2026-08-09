@@ -1,27 +1,32 @@
 # Data Collection Status — Track A (Data/Infra)
 
-Last updated: 2026-08-10. This is the real, verified state of the scraping backend on
+Last updated: 2026-08-11. This is the real, verified state of the scraping backend on
 this machine — not a plan. Re-run `agent-reach doctor --json` / `opencli doctor` before
 trusting this if it's more than a couple weeks old.
 
-## 0. Apify — BLOCKED, flagged for the user directly (2026-08-10)
+## 0. Apify — STILL BLOCKED after a session restart (re-checked 2026-08-11)
 
-Instructed this week to use Apify directly ("now enabled as a connector, no signup
-needed") for Instagram/Reddit comment coverage. Checked directly, thoroughly, before
-attempting anything: no Apify MCP server (`ListMcpResourcesTool` — nothing), no
-`apify` CLI on PATH, no `apify_client` Python package installed, no `APIFY_TOKEN` or
-similar in the environment (`env | grep -i apify` — nothing), no config file anywhere
-under this user's home directory. **Apify is not actually reachable from this session,
-despite the instruction that it would be.** This matches a corroborating pattern from
-Track D's memory the same day (a user claim that "Docker Desktop is now installed and
-claude-in-chrome is now connected" also turned out not to be reachable from that
-session when checked directly) — a statement that something is "now available"
-describes intent/what was done on the user's end, not a guarantee this sandbox picked
-it up. Not pursued further (creating an Apify account myself wasn't authorized and
-wasn't the instruction — the instruction assumed it already existed here). Comment
-coverage for this week's real run continued via the existing OpenCLI/browser-extract
-path instead (see Section 8) — real, working, but with the known truncation cap on
-very high-engagement posts still unresolved.
+**Re-checked after the user restarted the session specifically to make Apify
+reachable. It is still not reachable.** Verified independently, not assumed:
+`ToolSearch` for apify/actor/scraper tools — nothing; `ListMcpResourcesTool` — only
+Notion resources; `env | grep -i apify` — nothing; `apify` CLI not on PATH;
+`apify_client` Python package not installed; `~/.claude.json` `mcpServers` — empty
+list; no apify config anywhere under the home directory.
+
+**The restart did deliver something** — the `claude-in-chrome` browser tools appeared
+in this session's deferred-tool list, which weren't there before. So the restart
+worked; it just didn't bring Apify. That distinction matters and is exactly the
+refined lesson already recorded in memory from Track D's parallel experience:
+**don't treat a bundle of "X and Y are now unblocked" as one status to accept or
+reject together — verify each claimed unblock independently, since they resolve on
+different timelines even when reported together.**
+
+Not pursued further: creating an Apify account/token myself was never the
+instruction (which assumed one already existed here) and isn't authorized. Comment
+coverage this round therefore continued on the existing OpenCLI/browser-extract path.
+**This turned out not to block the round's actual goal** — see Section 9; the volume
+gap was closed by the post-cap fix, not by better comment extraction. Apify would
+still help with the separate, still-unsolved high-engagement-post truncation cap.
 
 ## 1. What's actually installed on this machine
 
@@ -332,3 +337,81 @@ Confirmed via read-only queries: no evidence of Instagram/Reddit data
 cross-contaminating each other despite both routing through the same underlying
 OpenCLI/Chrome daemon (a risk flagged before dispatching sub-agents) — row ownership
 by platform/creator checked out cleanly.
+
+## 9. Weeks 9-10 — VOLUME round (2026-08-11). Cap raised 5 -> 40, NOT freezing v1.
+
+PROJECT_PLAN.md's Week 9-10 row says "freeze v1 dataset". **Deliberately not doing
+that this round** — at 10-29% of the 1,000-datapoint floor, freezing would lock in a
+dataset too thin for real GAIL training. Volume first; freeze once the floor is
+actually reachable.
+
+### The fix: post cap was the whole problem, exactly as diagnosed
+
+Raised `DEFAULT_POST_CAP` 5 -> 40 (user sign-off), now configurable via `--post-cap`.
+Added a rolling recency window (`--recency-days`, default 183 ≈ 6 months) so the extra
+budget pulls *more recent* posts instead of padding with stale ones — the original
+doc's "last 6 months" treated as rolling relative to today rather than its literal
+Jan-Jun 2026 dates, per its own stated principle "the newer the data the better".
+
+Per-platform specifics:
+- **YouTube**: filters on `publishedAt`; also raised `commentThreads` `maxResults`
+  20 -> 100. That's a 5x comment-yield increase for **zero** extra quota cost, since
+  `commentThreads.list` costs 1 unit regardless of page size.
+- **Instagram**: filters on the listing date; the grid scrape now scrolls until it has
+  `post_cap` links instead of taking the first screenful (~8-12 links), with a
+  stall-detector so a profile with fewer posts doesn't loop forever.
+- **Reddit**: switched to `--sort new`. With a recency window in play, the default
+  `hot` surfaces high-scoring posts of *any* age which the filter then discards — new
+  makes the cap and the window pull in the same direction.
+
+### Adversarial self-check — the filter genuinely applies, verified 3 ways
+
+Not assumed from "0 skipped" on the first run (which is ambiguous — could equally mean
+a broken filter):
+1. **Deliberate tight-window test**: same creator (BeerBiceps), `--recency-days 14` —
+   skipped 10 of 40 videos. A no-op filter would have skipped 0.
+2. **Real-data variation**: across the full run, per-creator skips varied exactly as
+   the creators' real posting histories predict — Neeraj Chopra kept only 11 of 40
+   (posts infrequently), Cristiano 17, while BeerBiceps/Sania kept all 40 (post daily).
+3. **Independent DB check**: `select count(*) from youtube_videos where published_at <
+   '2026-02-07'` -> **0**.
+
+Also found and fixed a real reporting bug while reading the run output: `skipped_stale`
+was an instance counter never reset between creators, so the per-creator log line was
+printing a running batch total ("29 skipped" for creators that skipped nothing).
+
+### Real YouTube yield (before -> after)
+
+| | Before (cap 5) | After (cap 40) |
+|---|---|---|
+| Channels | 2 | 5 |
+| Videos | 20 | **119** |
+| Comments | 250 | **2,746** |
+
+Per-creator: Cristiano Ronaldo 17 videos/1,616 comments (**1,633 datapoints — over the
+1,000 floor from YouTube alone**), Ranveer Allahbadia 41/461, Sania Mirza 40/258,
+Neeraj Chopra 11/211. Yield scaled better than linearly with the cap because the
+comment-page increase compounds with it.
+
+### YouTube handle coverage: 1/9 -> 4/9, and an honest limit
+
+Verified every candidate against the real API rather than guessing — **4 of 5 guessed
+handles resolved to unrelated or fan channels** (same failure mode as the
+`whitneysimmons` and `neeraj_chopra1` incidents in prior rounds; the pattern is now
+thoroughly established: never trust a handle from training knowledge).
+
+Added: Neeraj Chopra `@neerajchopra1` (274K subs; corroborated by a management contact
+email matching the one in his already-verified Instagram bio), Sania Mirza
+`@servingitupwithsania` (68K, her real show channel), Cristiano Ronaldo `@cristiano`
+(82.9M).
+
+**Not added, and this is a real finding rather than a search failure:** Virat Kohli,
+PV Sindhu, Saina Nehwal, and LeBron James genuinely appear to have **no official
+personal YouTube channel** — searches surface only fan channels (15-20K subs, a
+handful of videos) and, for LeBron, org channels (his foundation, his podcast) rather
+than a personal one. Indian cricket/badminton stars are Instagram-first; their YouTube
+presence lives on broadcaster channels (BCCI, Star Sports) that aren't creator-owned
+and would misattribute engagement. MC Mary Kom had a plausible `@marykomofficial`
+(5,020 subs) but with zero corroborating evidence, so it was **left out rather than
+guessed at** — the cost of a wrong handle (polluting a real creator's data with a
+stranger's) is much higher than the cost of a missing one.
