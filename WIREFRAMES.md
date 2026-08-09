@@ -1,18 +1,33 @@
 # Frontend Wireframes & API Field Expectations (Track D)
 
-Status: Weeks 5-6 deliverable. See `PROJECT_PLAN.md` Section 5 (Application
+Status: Weeks 7-8 deliverable. See `PROJECT_PLAN.md` Section 5 (Application
 Layer) for the feature list this implements.
 
-**Cross-track note (2026-08-09, re-checked same day as a second pass):**
-Track C shipped a **second, same-day breaking change** to `API_CONTRACTS.md`
-after Track D's Weeks 3-4 reconciliation: `creator_unique_id: str` →
-`creator_id: uuid.UUID`, plus `reddit_handle` (singular) → `reddit_handles`
-(array), plus a new `estimated_cost` field, once Track A's real schema
-existed to reconcile against. **Re-checked and re-reconciled below** — do
-not trust the Weeks 3-4 version of this doc, it's now stale in multiple
-places. Always `git fetch origin && git show origin/track-c-fusion-backend:backend/app/schemas.py`
-fresh before trusting any field name here, since this is now the second time
-it's changed same-week.
+**Cross-track note (2026-08-09/10, re-checked a third time):** re-verified
+against `origin/track-c-fusion-backend` commit `ec9833d` (Weeks 5-6).
+`BrandRecommendationRequest`/`InfluencerRecommendation` are **unchanged**
+since the Round 2 break below. `AlertResponse`/`AlertCreate` gained
+`propagated_from_creator_id` (nullable uuid) — this is now **committed**,
+not the uncommitted WIP flagged last round — reconciled below (Round 3).
+Track C's actual disclosure-tag (`is_sponsored`) labeling pipeline has
+**not shipped yet** as of this check (still flagged "still open" in their
+own Weeks 5-6 notes) — nothing to reconcile there yet, and it likely won't
+change `/recommendations`' response shape even once it ships, since
+`is_sponsored` is an ingestion-side field, not part of
+`InfluencerRecommendation`. Always
+`git fetch origin && git show origin/track-c-fusion-backend:backend/app/schemas.py`
+fresh before trusting any field name here — this is the third time in three
+sessions the contract has moved.
+
+**Live data note:** as of this session, Track A's real scraped data has
+started landing in the shared Supabase DB (confirmed via
+`GET /feature-store/creators` and a real `/recommendations` query —
+real creators now include `athleanx`, `kingjames`, `lebron`). `is_mock_data`
+can now be `true` for two different reasons: no `Creator` rows at all
+(falls back to the 3 named mock creators), or real creators exist but at
+least one has no stored `FusionScore` yet (falls back to placeholder
+0.5/0.5/0.5 per-creator) — both still correctly surfaced by the existing
+`is_mock_data` banner, no UI change needed for this.
 
 ## Tech stack decision
 
@@ -98,10 +113,11 @@ Fetches `GET {NEXT_PUBLIC_API_BASE_URL}/alerts` on mount. Current shape:
 ```ts
 interface AlertResponse {
   id: number;
-  creator_id: string; // uuid — renamed from creator_unique_id same-day as the recommendation-endpoint rename
+  creator_id: string; // uuid
   severity: "low" | "medium" | "high"; // AlertCreate now enforces this as a strict Literal server-side; AlertResponse itself still types it as plain `str` on the read side, not tightened — assume the 3 values in practice
   reason: string;
   source: string; // e.g. "sentiment_propagation"
+  propagated_from_creator_id: string | null; // new (Round 3, committed) — see below
   created_at: string;
   resolved: boolean;
 }
@@ -116,18 +132,15 @@ checked `backend/app/routers/alerts.py` directly — `POST /alerts`
 "include resolved" toggle in the UI would currently be inert — didn't build
 one. Revisit if Track C ships a resolve endpoint.
 
-**Propagation-source field:** still **not present** on `AlertResponse` as
-of the last committed state on `origin/track-c-fusion-backend`
-(`ad96e4f`). While re-testing this round, found Track C's live worktree had
-an **uncommitted, in-progress** `propagated_from_creator_id` field on the
-`RiskAlert` model (`backend/app/models.py`) — confirms they're actively
-building this now (matches the Weeks 5-6 ask), but it's not committed/
-pushed yet, and the live Supabase table doesn't have the column yet either
-(hit a live `UndefinedColumn` 500 testing `POST`/`GET /alerts` against it —
-Track C's own migration-drift bug, not touched, not Track D's lane).
-**Re-check `AlertResponse` again once this lands on their branch** — don't
-build UI against the uncommitted field, and don't assume it's stable until
-it's actually pushed and the live table is migrated.
+**Propagation-source field: now real and wired in.** `propagated_from_creator_id`
+(nullable uuid) landed as committed, pushed code in Track C's Weeks 5-6
+work — the migration-drift 500 flagged last round is resolved (verified
+live: `POST`/`GET /alerts` with the field both round-trip correctly against
+the real Supabase DB). `MonitoringPage` now shows "propagated from
+collaborator: {id}" whenever it's non-null. Per Track C's schema comment,
+expect it to stay `null` in practice until their Weeks 14-15 Sentiment
+Propagation work ships — the UI element exists and is tested, just not
+populated by real alerts yet.
 
 ## 4. Explainability (`/explainability`)
 
@@ -163,11 +176,14 @@ in the UI rather than a bare "coming soon."
 
 **Verified:** `next build` with `output: "standalone"` produces
 `.next/standalone/server.js` correctly (re-checked this round, still true).
-**Still not verified:** `docker build`/`docker run` themselves — no Docker
-CLI in this environment. Asked the user this round whether to get Docker
-into this session or have them run it and report back, since this needs
-real verification before Weeks 22-23's deployment, not just a Dockerfile
-that should work on paper.
+**Still not verified:** `docker build`/`docker run` themselves. User said
+Docker Desktop was installed this round — checked directly (bash `docker
+--version`, PowerShell `Get-Command`/`Test-Path` for the usual install
+location, running-process check) and it is **not actually reachable from
+this session**: not on PATH, no install directory found, no docker
+process running. Flagged back to the user rather than assumed working —
+third time this has been asked about, still genuinely blocked on this
+session's environment, not on anyone forgetting to ask.
 
 ## Field-name mismatch history
 
@@ -202,5 +218,13 @@ away:
 | 13 | *(no equivalent)* | `estimated_cost: number \| null` — new, now surfaced in the dashboard UI |
 | 14 | `MonitoringAlert.propagated_from_influencer_id` — flagged open, not built | Still doesn't exist on the **committed** contract; **in-progress uncommitted** on Track C's live worktree as `propagated_from_creator_id`, currently causing a live-DB 500 for them (schema drift, their bug). Re-check once pushed. |
 
-No open questions requiring Track D action right now beyond re-checking
-#14 once Track C pushes it.
+### Round 3 (Weeks 5-6 real contract → Weeks 7-8 real contract, 2026-08-09/10)
+
+Not a break this time — `propagated_from_creator_id` (flagged as WIP in
+Round 2) is now committed and wired in:
+
+| # | Weeks 5-6 (Track D built against this) | Weeks 7-8 real contract |
+|---|---|---|
+| 15 | `AlertResponse` had no propagation field | `AlertResponse.propagated_from_creator_id: uuid \| null` — committed, live-tested (POST+GET round-trip verified against real Supabase), UI now surfaces it |
+
+No open questions requiring Track D action right now.

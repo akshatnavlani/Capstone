@@ -26,9 +26,10 @@ export default function MonitoringPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Monitoring &amp; Alerts</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Risk flags and sentiment alerts, driven by the Temporal branch&apos;s
-          sentiment propagation output (once wired in — see backend
-          &quot;source&quot; field for what generated each alert).
+          Risk flags and sentiment alerts. Each alert shows what generated it
+          (&quot;source&quot;) and, once the Temporal branch&apos;s sentiment
+          propagation ships, which collaborator&apos;s controversy it
+          propagated from.
         </p>
       </div>
 
@@ -55,6 +56,11 @@ export default function MonitoringPage() {
               <h2 className="mt-2 text-sm font-medium">creator: {alert.creator_id}</h2>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{alert.reason}</p>
               <p className="mt-1 text-xs text-zinc-500">source: {alert.source}</p>
+              {alert.propagated_from_creator_id && (
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  propagated from collaborator: {alert.propagated_from_creator_id}
+                </p>
+              )}
             </li>
           ))}
         </ul>

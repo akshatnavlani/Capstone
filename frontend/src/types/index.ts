@@ -1,7 +1,6 @@
 // Mirrors Track C's backend/app/schemas.py exactly (re-checked against
-// origin/track-c-fusion-backend on 2026-08-09, after their same-day breaking
-// change: creator_unique_id: str -> creator_id: uuid.UUID). See WIREFRAMES.md
-// for the full mismatch history.
+// origin/track-c-fusion-backend commit ec9833d, 2026-08-09/10). See
+// WIREFRAMES.md for the full mismatch history.
 
 export interface ScoreBreakdown {
   spillover_score: number; // 0-1
@@ -53,6 +52,10 @@ export interface AlertResponse {
   severity: AlertSeverity;
   reason: string;
   source: string;
+  // Added by Track C 2026-08-09 ahead of Weeks 14-15 Sentiment Propagation.
+  // The creator whose controversy caused this alert to propagate here, if any.
+  // Expected to stay null until the Sentiment Propagation branch ships.
+  propagated_from_creator_id: string | null;
   created_at: string;
   resolved: boolean;
 }
