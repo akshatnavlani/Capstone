@@ -8,8 +8,27 @@ channel between sessions, only git.
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
-Base URL (local dev): `http://127.0.0.1:8000`. Basic auth now exists (see
-"Auth" section below) — off by default, opt-in via `API_KEY`.
+Base URL (local dev): `http://127.0.0.1:8000`. Basic auth now exists — see
+the **Auth** section below — off by default, opt-in via `API_KEY`.
+
+## ⚠️ Incident (2026-08-09): `POST /alerts` was returning 500 against the real DB
+
+Fixed same-day, but flagging prominently since it may explain a live 500
+Track D or anyone else hit. `RiskAlert.propagated_from_creator_id` was
+added to `models.py` in the Weeks 5-6 commit, but `init_db()`'s
+`create_all()` only creates tables that don't already exist — it silently
+does **not** alter existing ones. Since `riskalert` already existed in the
+live Supabase DB from Weeks 3-4, the new column never actually reached the
+real table, even though the ORM model claimed it did. Every `POST /alerts`
+against the real DB failed with `psycopg2.errors.UndefinedColumn` until
+caught here. Confirmed via `information_schema.columns` before/after, plus
+a real insert/delete round-trip. Fixed with a real migration
+(`backend/migrations/0002_add_alerts_propagated_from.sql`, applied directly
+against the live DB) instead of just editing the model again — see that
+folder's README for the new rule this establishes: schema changes to an
+*existing* Track C-owned table now require a hand-written migration file,
+not just a `models.py` edit. Also diffed `fusionscore`'s live columns
+against its model as a sanity check — no drift there.
 
 ## Weeks 5-6 update summary
 
