@@ -4,12 +4,29 @@ Owner: Track C (Fusion+Backend). Updated whenever the contract changes — treat
 edits to this file as high-signal for Tracks A/B/D, since there's no live
 channel between sessions, only git.
 
-**Status as of 2026-08-09 (Weeks 3-4 update):** all endpoints below are live
+**Status as of 2026-08-09 (Weeks 5-6 update):** all endpoints below are live
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
-Base URL (local dev): `http://127.0.0.1:8000`. No auth yet — add before any
-non-local deployment.
+Base URL (local dev): `http://127.0.0.1:8000`. Basic auth now exists (see
+"Auth" section below) — off by default, opt-in via `API_KEY`.
+
+## Weeks 5-6 update summary
+
+- **New:** `GET /feature-store/creators`, `GET /feature-store/edges/collaborations`,
+  `GET /feature-store/edges/sponsorships` — the DB → feature-store pipeline
+  for Track B, see its own section below.
+- **New:** `POST /ingestion/creators/related-accounts` — was missing an
+  ingestion path even though the `Brand`/collaboration-edge logic needed to
+  read it.
+- **`product_category` / `platform_preference` filtering in
+  `/recommendations` is now real** (was still-open as of the Weeks 3-4
+  version of this doc).
+- **`AlertResponse`/`AlertCreate` gained `propagated_from_creator_id`**
+  (nullable uuid) — added ahead of the Weeks 14-15 Sentiment Propagation
+  work landing, per Track D's flag that the freeform `source` string alone
+  would force a second breaking change later.
+- **Basic auth added**, opt-in via `API_KEY` env var, off by default.
 
 ---
 
@@ -132,19 +149,31 @@ Response: `{ query, results: [InfluencerRecommendation...], is_mock_data }`
 }
 ```
 
-**Filtering/ranking behavior (real as of 2026-08-09, was previously a no-op stub):**
+**Filtering/ranking behavior (fully real as of 2026-08-09):**
 - **Budget** — hard filter. `estimated_cost = max(youtube subscriber_count,
   instagram follower_count) * 0.5 INR` — a **placeholder rate**, no real
   rate-card data exists yet. Candidates with no reach data at all aren't
   excluded (cost unknown, not assumed zero or infinite).
-- **`target_region` / `target_demographic`** — soft filters. A creator is
-  excluded only if we *have* text signal for them (`youtube_channels.country`
-  /`.description`, `instagram_profiles.bio`) and it does **not** match
-  (case-insensitive substring). Creators with no signal data at all are kept
-  — with scraping still ramping up, a hard requirement would return empty
-  result sets for almost every query right now.
-- **`product_category` / `platform_preference`** — still accepted and
-  echoed only, not filtered on. Still open, out of scope for this pass.
+- **`platform_preference`** — hard filter. Creator must have a handle on at
+  least one requested platform. Unlike the soft filters below, "no handle
+  on this platform" is a directly known fact, not missing data.
+- **`target_region` / `target_demographic` / `product_category`** — soft
+  filters. A creator is excluded only if we *have* text signal for them
+  (`youtube_channels.country`/`.description`, `instagram_profiles.bio`, or
+  — for `product_category` — the creator's own `category`) and it does
+  **not** keyword-match. Creators with no signal data at all are kept — with
+  scraping still ramping up, a hard requirement would return empty result
+  sets for almost every query right now.
+  - Matching is **keyword-overlap** (any word ≥3 chars in the query appears
+    in the combined signal text), not whole-phrase substring — a
+    whole-phrase requirement almost never matches real bio/description text.
+  - **Gotcha found during regression testing:** if the query itself has no
+    extractable keywords (e.g. a 1-2 char string), that must be treated as
+    "can't judge" and skip the filter, not as a confirmed mismatch — an
+    earlier draft of this logic conflated the two and wrongly excluded
+    every creator with *any* signal whenever the query was too short to
+    yield a keyword. Fixed before this landed; flagging so nobody
+    reintroduces it while touching this code later.
 - Ordering is always by `final_score` descending among eligible candidates.
 - Falls back to 3 mock creators (FitWithPriya/GymBro/YogaGuru) when the
   `creators` table is empty; falls back to a placeholder 0.5/0.5/0.5 fusion
@@ -153,8 +182,15 @@ Response: `{ query, results: [InfluencerRecommendation...], is_mock_data }`
 
 ### Ingestion (secondary/manual write path — see breaking-change note above)
 
+Requires `X-API-Key` if `API_KEY` is configured (see "Auth" below).
+
 - `POST /ingestion/creators` — list of `CreatorIngest`. Upserts by `creator_id`
   (generated server-side if omitted).
+- `POST /ingestion/creators/related-accounts` — list of
+  `CreatorRelatedAccountIngest`. Upserts by the table's real unique
+  constraint `(creator_id, platform, handle)`. This is the source table for
+  the feature store's `collaborates_with` edges (see below) — added
+  Weeks 5-6, was missing before even though the edge logic needed it.
 - `POST /ingestion/youtube/channels` — list of `YouTubeChannelIngest`. Upserts
   by `channel_id`.
 - `POST /ingestion/youtube/videos` — list of `YouTubeVideoIngest`. Upserts by
@@ -168,9 +204,59 @@ Response: `{ query, results: [InfluencerRecommendation...], is_mock_data }`
 - `POST /ingestion/reddit/posts` — list of `RedditPostIngest`. Upserts by
   `post_id`. `is_sponsored`/`sponsorship_raw_matches` optional/nullable.
 
-All seven return `{ received, created, updated }`. Full field lists in
+All eight return `{ received, created, updated }`. Full field lists in
 `backend/app/schemas.py` — they mirror Track A's real table columns exactly
 (see SCHEMA.md), so cross-reference there for anything not shown here.
+**Reminder:** `InstagramProfileIngest`/`YouTubeChannelIngest`/etc. all accept
+an optional `creator_id` — if you omit it, the row never links back to its
+creator (`creator_id` stays null), which silently breaks anything that joins
+on it (recommendation filtering, feature-store aggregation). Always pass it
+when you have it.
+
+### Feature store (DB → Track B's `ml/schema.py` input shape, new Weeks 5-6)
+
+Read-only. Transforms Track A's raw tables into the shape Track B's GAIL
+branch needs — see `backend/app/feature_store.py` for the full writeup,
+this is a summary. **Does not compute CLIP/BERT embeddings** (that's Track
+B's Weeks 9-10 deliverable, confirmed via their GRAPH_SCHEMA.md) — stages
+the raw inputs those need instead.
+
+- `GET /feature-store/creators` → list of `CreatorFeatureRecord`:
+  `creator_id`, `name`, `category`, `category_one_hot` (order matches Track
+  B's `ml/schema.py::CREATOR_CATEGORIES` exactly), `log_subscriber_count`,
+  `engagement_rate` (both computed from real data when available),
+  `reputation_score` (**always null** — see gap below), `raw_text` /
+  `thumbnail_urls` (staged for Track B's embedding step), `is_stub` (true
+  if there's nothing to embed yet).
+- `GET /feature-store/edges/collaborations` → list of `CollaborationEdge`
+  (`source_creator_id`, `target_creator_id`, `weight`). Both directions
+  populated per Track B's `ml/schema.py` requirement. Resolved from
+  `creator_related_accounts` rows with `relation_type = "frequent_collaborator"`
+  — `handle` there is free text, not a FK, so resolution is a
+  case-insensitive match against every creator's own handles (`@`/`u/`/`r/`
+  stripped). Rows that don't resolve are silently skipped, not an error —
+  expect this until many more creators are seeded.
+- `GET /feature-store/edges/sponsorships` → list of `SponsorshipEdge`
+  (`creator_id`, `brand_id`, `content_id`, `platform`). Empty until
+  `is_sponsored` is populated (Track C's own Weeks 7-8 deliverable) —
+  expected, not a bug.
+
+**Known gaps, flagged not fabricated:**
+- `reputation_score`: Track B's schema expects this in the creator metadata
+  segment, but **no Track A table has a reputation_score source column
+  anywhere** (checked SCHEMA.md 2026-08-09). Open cross-track item — needs
+  either a new Track A column or a defined derivation formula.
+- `co_occurs_with` edges (platform co-occurrence, PROJECT_PLAN.md Section
+  3a): not built. Track A's schema has no signal for "these creators
+  appeared together in the same content" (no co-starring/tagging table).
+  Would need either a new ingestion field or inference from data not
+  currently collected.
+
+Unit-tested against synthetic data (`backend/tests/test_feature_store.py`,
+8 tests) and verified end-to-end through the live HTTP API — real scraped
+data doesn't exist yet (Track A's tables still empty as of 2026-08-09), so
+this is the same validation approach Track A/B used for their own
+Weeks 1-4 modules.
 
 ### Fusion Layer score (Track B → this API)
 
@@ -189,13 +275,35 @@ not calibrated against held-out historical outcomes.
 
 ### Monitoring / alerts
 
-`POST /alerts` — body: `{ creator_id (uuid), severity, reason, source }`.
-**`severity` is now a strict enum** (`"low" | "medium" | "high"`) — Weeks
+`POST /alerts` (requires `X-API-Key` if configured) — body:
+```json
+{ "creator_id": "...", "severity": "high", "reason": "...", "source": "sentiment_propagation", "propagated_from_creator_id": null }
+```
+**`severity` is a strict enum** (`"low" | "medium" | "high"`) — Weeks
 1-2 accepted any string; found via adversarial testing that this let
 `"catastrophic_meltdown"` through undetected. Default `source="sentiment_propagation"`.
 
+**`propagated_from_creator_id`** (nullable uuid, new Weeks 5-6): if this
+alert exists because risk propagated from *another* creator's controversy
+(PROJECT_PLAN.md Section 3b/5), that creator's id — added ahead of the
+Weeks 14-15 Sentiment Propagation work landing so the shape is right when
+Track D builds against it now, instead of forcing a second breaking change
+later. Expect this to stay `null` until then.
+
 `GET /alerts?creator_id=...&include_resolved=false` → list of alerts, newest
-first. This is what Track D's monitoring/alerts UI should poll.
+first (no auth required). This is what Track D's monitoring/alerts UI should poll.
+
+### Auth (new Weeks 5-6)
+
+Basic shared-secret auth via `X-API-Key` header, **off by default**. Set
+`API_KEY` in `backend/.env` to enable — once set, all `/ingestion/*`
+endpoints, `POST /scores/compute`, and `POST /alerts` require a matching
+header (401 otherwise). Every `GET` endpoint and `POST /recommendations`
+never require it — deliberately, since brand users and Track D's dashboard
+need to read without a shared secret. This is intentionally minimal (one
+shared key, no per-track keys or roles) — flagged as missing twice before
+this, closing the basic gap rather than over-building auth for a 4-person
+thesis capstone backend.
 
 ---
 
@@ -237,20 +345,20 @@ first. This is what Track D's monitoring/alerts UI should poll.
   despite being documented as an enum — tightened to
   `Literal["low", "medium", "high"]`.
 
-## What's real vs. placeholder (as of 2026-08-09)
+## What's real vs. placeholder (as of 2026-08-09, Weeks 5-6)
 
 | Piece | Status |
 |---|---|
 | FastAPI app, all routes, request/response validation | Real, working |
-| DB models matching Track A's live schema | Real, working (re-diff if their schema changes) |
-| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified as of 2026-08-09 — connected to the live Supabase instance, confirmed `db_connected: true` and successfully queried all of Track A's real tables (all empty, matches their scraping-still-blocked status) |
-| Ingestion upsert logic | Real, working, but secondary path (see breaking-change note #3) |
+| DB models matching Track A's live schema (incl. `brands`, `creator_related_accounts`) | Real, working (re-diff if their schema changes) |
+| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified — connected to the live Supabase instance, confirmed `db_connected: true` and successfully queried all of Track A's real tables (all empty, matches their scraping-still-blocked status) |
+| Ingestion upsert logic (8 endpoints) | Real, working, but secondary path (see breaking-change note #3) |
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
-| Recommendation budget/region/demographic filtering | Real (see above), heuristic-based (placeholder cost rate, substring text match) |
-| `product_category` / `platform_preference` filtering | Not implemented — still open |
+| Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
+| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/edge data; CLIP/BERT embeddings intentionally not computed here (Track B, Weeks 9-10); `reputation_score` and `co_occurs_with` are genuine gaps, not placeholders — see feature-store section |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
 | Disclosure-tag (`is_sponsored`) labeling pipeline | Not built — Weeks 7-8 deliverable, contract shape is correct now though |
-| Auth | None |
+| Auth | Basic (shared `API_KEY`), off by default — see Auth section |
 
 ## Running locally
 

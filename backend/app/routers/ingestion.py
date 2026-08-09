@@ -18,9 +18,11 @@ import uuid
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
+from app.auth import require_api_key
 from app.database import get_session
 from app.models import (
     Creator,
+    CreatorRelatedAccount,
     InstagramPost,
     InstagramProfile,
     RedditPost,
@@ -30,6 +32,7 @@ from app.models import (
 )
 from app.schemas import (
     CreatorIngest,
+    CreatorRelatedAccountIngest,
     IngestionResponse,
     InstagramPostIngest,
     InstagramProfileIngest,
@@ -39,7 +42,7 @@ from app.schemas import (
     YouTubeVideoIngest,
 )
 
-router = APIRouter(prefix="/ingestion", tags=["ingestion"])
+router = APIRouter(prefix="/ingestion", tags=["ingestion"], dependencies=[Depends(require_api_key)])
 
 
 def _upsert_by_pk(session: Session, model, pk_field: str, payload: list) -> IngestionResponse:
@@ -78,6 +81,36 @@ def ingest_creators(payload: list[CreatorIngest], session: Session = Depends(get
             updated += 1
         else:
             session.add(Creator(**data))
+            created += 1
+
+    session.commit()
+    return IngestionResponse(received=len(payload), created=created, updated=updated)
+
+
+@router.post("/creators/related-accounts", response_model=IngestionResponse)
+def ingest_creator_related_accounts(
+    payload: list[CreatorRelatedAccountIngest], session: Session = Depends(get_session)
+) -> IngestionResponse:
+    """Upserts by the table's real unique constraint (creator_id, platform,
+    handle) -- the source table for feature_store.py's collaborates_with
+    edges."""
+    created = updated = 0
+    for item in payload:
+        data = item.model_dump()
+        existing = session.exec(
+            select(CreatorRelatedAccount).where(
+                CreatorRelatedAccount.creator_id == item.creator_id,
+                CreatorRelatedAccount.platform == item.platform,
+                CreatorRelatedAccount.handle == item.handle,
+            )
+        ).first()
+
+        if existing:
+            existing.relation_type = data["relation_type"]
+            session.add(existing)
+            updated += 1
+        else:
+            session.add(CreatorRelatedAccount(**data))
             created += 1
 
     session.commit()

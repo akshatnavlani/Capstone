@@ -81,6 +81,13 @@ class CreatorIngest(BaseModel):
     notes: Optional[str] = None
 
 
+class CreatorRelatedAccountIngest(BaseModel):
+    creator_id: uuid.UUID
+    platform: Literal["youtube", "instagram", "reddit"]
+    handle: str
+    relation_type: Optional[Literal["team", "league", "frequent_collaborator", "fan_page", "family"]] = None
+
+
 class YouTubeChannelIngest(BaseModel):
     channel_id: str
     creator_id: Optional[uuid.UUID] = None
@@ -194,6 +201,17 @@ class AlertCreate(BaseModel):
     severity: Literal["low", "medium", "high"]
     reason: str
     source: str = Field(default="sentiment_propagation")
+    propagated_from_creator_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description=(
+            "If this alert exists because risk propagated from another creator's "
+            "controversy (Section 3b Sentiment Propagation / Section 5 Monitoring), "
+            "that creator's id. Null for alerts sourced directly from this creator. "
+            "Added 2026-08-09 ahead of the Weeks 14-15 Sentiment Propagation work "
+            "landing, so Track D doesn't need a second breaking change later -- "
+            "expect this to stay null until then."
+        ),
+    )
 
 
 class AlertResponse(BaseModel):
@@ -202,8 +220,42 @@ class AlertResponse(BaseModel):
     severity: str
     reason: str
     source: str
+    propagated_from_creator_id: Optional[uuid.UUID] = None
     created_at: datetime
     resolved: bool
+
+
+# ---- Feature store (DB -> Track B's ml/schema.py input shape) --------------
+# See backend/app/feature_store.py for the transformation logic and the
+# known-gaps writeup (reputation_score, co_occurs_with).
+
+class CreatorFeatureRecord(BaseModel):
+    creator_id: uuid.UUID
+    name: str
+    category: Optional[str] = None
+    category_one_hot: list[int] = Field(description="Order matches Track B's ml/schema.py CREATOR_CATEGORIES exactly")
+    log_subscriber_count: Optional[float] = None
+    engagement_rate: Optional[float] = None
+    reputation_score: Optional[float] = Field(
+        default=None,
+        description="Always null currently -- no Track A table has a reputation_score source column. Open cross-track item, see API_CONTRACTS.md.",
+    )
+    raw_text: str = Field(description="Staged for Track B's Weeks 9-10 BERT embedding step -- not embedded here")
+    thumbnail_urls: list[str] = Field(description="Staged for Track B's Weeks 9-10 CLIP embedding step -- not embedded here")
+    is_stub: bool = Field(description="True if there's no text/thumbnail data yet to embed")
+
+
+class CollaborationEdge(BaseModel):
+    source_creator_id: uuid.UUID
+    target_creator_id: uuid.UUID
+    weight: float = Field(description="Count of matched frequent_collaborator relations between this pair")
+
+
+class SponsorshipEdge(BaseModel):
+    creator_id: uuid.UUID
+    brand_id: uuid.UUID
+    content_id: str
+    platform: Literal["youtube", "instagram", "reddit"]
 
 
 # ---- Health -----------------------------------------------------------------

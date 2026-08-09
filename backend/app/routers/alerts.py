@@ -11,6 +11,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
+from app.auth import require_api_key
 from app.database import get_session
 from app.models import RiskAlert
 from app.schemas import AlertCreate, AlertResponse
@@ -18,7 +19,7 @@ from app.schemas import AlertCreate, AlertResponse
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 
-@router.post("", response_model=AlertResponse)
+@router.post("", response_model=AlertResponse, dependencies=[Depends(require_api_key)])
 def create_alert(payload: AlertCreate, session: Session = Depends(get_session)) -> AlertResponse:
     record = RiskAlert(**payload.model_dump())
     session.add(record)

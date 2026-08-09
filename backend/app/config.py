@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +15,15 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     database_url: str = "sqlite:///./fusion_backend.db"
+
+    # Shared-secret API key for write endpoints (ingestion, scores/compute,
+    # POST /alerts). Unset (None/empty) = auth disabled -- local dev stays
+    # frictionless by default. Set API_KEY in .env to enable; callers send
+    # it as the X-API-Key header. Deliberately basic (one shared secret, no
+    # per-track keys/roles) -- flagged as missing twice, closing the gap
+    # now rather than letting it become real technical debt, but full
+    # per-track auth is out of scope for a 4-person thesis capstone backend.
+    api_key: Optional[str] = None
 
     # Fusion Layer weights (PROJECT_PLAN.md Section 4):
     # final_score = w1*spillover + w2*sentiment_risk + w3*creator_feature

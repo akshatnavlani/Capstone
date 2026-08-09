@@ -10,14 +10,21 @@ What changed 2026-08-09 (was previously a no-op stub, see API_CONTRACTS.md):
 - budget: hard filter via `estimated_cost` (a placeholder followers/subscribers
   * flat-rate heuristic -- no real rate-card data exists yet). Candidates with
   unknown reach data aren't excluded (can't compute a cost for them).
-- target_region / target_demographic: soft filters. A creator is excluded
-  only if we HAVE text signal for them (youtube_channels.country/description,
-  instagram_profiles.bio) and it does NOT match. Creators with no signal data
-  at all are kept -- with Weeks 3-4 scraping still ramping up, most creators
-  won't have this data yet, and a hard requirement would return empty result
-  sets for almost every query.
-- product_category and platform_preference are still accepted/echoed only,
-  not filtered on -- out of scope for this pass, flagged as still-open below.
+- target_region / target_demographic / product_category: soft filters. A
+  creator is excluded only if we HAVE text signal for them
+  (youtube_channels.country/description, instagram_profiles.bio, or --
+  for product_category -- creator.category itself) and it does NOT match.
+  Creators with no signal data at all are kept -- with Weeks 3-4 scraping
+  still ramping up, most creators won't have this data yet, and a hard
+  requirement would return empty result sets for almost every query.
+  Matching is keyword-overlap (any word >=3 chars in the query appears in
+  the combined signal text), not whole-phrase substring -- a whole-phrase
+  match almost never hits real bio/description text (added 2026-08-09,
+  was whole-phrase-only before, which meant target_demographic in practice
+  never excluded anything).
+- platform_preference: hard filter -- creator must have a handle on at
+  least one of the requested platforms. Unlike the soft filters above,
+  "no handle on this platform" is a directly known fact, not missing data.
 """
 
 import uuid
@@ -54,11 +61,42 @@ _MOCK_CREATORS = [
 ]
 
 
-def _text_matches(query: str | None, texts: list[str | None]) -> bool:
+def _extract_keywords(query: str | None) -> list[str]:
     if not query:
+        return []
+    return [w for w in query.lower().split() if len(w) >= 3]
+
+
+def _keyword_overlap(keywords: list[str], texts: list[str | None]) -> bool:
+    """True if any of `keywords` appears in the combined `texts`.
+
+    Keyword-overlap, not whole-phrase substring: a query like "18-24 fitness
+    enthusiasts" almost never appears verbatim in real bio/description text,
+    so whole-phrase matching effectively never fires. Deliberately crude
+    (no stemming/stopwords) -- a placeholder pending real NLP matching.
+
+    Callers must treat an empty `keywords` list (query too short/unmatchable,
+    e.g. "x") as "can't judge" and skip filtering, NOT as a confirmed
+    mismatch -- returning False here for that case would otherwise get
+    misread as "doesn't match" and wrongly exclude everyone. Found via
+    regression testing on 2026-08-09 (test payloads used a 1-char
+    product_category, which excluded every real result).
+    """
+    if not keywords:
         return False
-    q = query.lower()
-    return any(t and q in t.lower() for t in texts)
+    combined = " ".join(t.lower() for t in texts if t)
+    return any(k in combined for k in keywords)
+
+
+def _has_preferred_platform(creator: Creator, platforms: list[str] | None) -> bool:
+    if not platforms:
+        return True
+    handles = {
+        "youtube": creator.youtube_handle,
+        "instagram": creator.instagram_handle,
+        "reddit": creator.reddit_handles,
+    }
+    return any(handles.get(p.lower()) for p in platforms)
 
 
 def _to_recommendation(
@@ -122,6 +160,9 @@ def get_recommendations(
     } if not using_mock_creators and creator_ids else {}
 
     any_score_missing = False
+    region_keywords = _extract_keywords(request.target_region)
+    demographic_keywords = _extract_keywords(request.target_demographic)
+    category_keywords = _extract_keywords(request.product_category)
 
     eligible: list[InfluencerRecommendation] = []
     for creator in creators:
@@ -135,6 +176,10 @@ def get_recommendations(
         if estimated_cost is not None and estimated_cost > request.budget:
             continue
 
+        # --- platform_preference filter (hard: no handle = directly known fact) ---
+        if not _has_preferred_platform(creator, request.platform_preference):
+            continue
+
         # --- region-proxy filter (soft: only exclude on a confirmed mismatch) ---
         region_signals = [
             youtube_channel.country if youtube_channel else None,
@@ -142,7 +187,7 @@ def get_recommendations(
             instagram_profile.bio if instagram_profile else None,
         ]
         has_region_signal = any(region_signals)
-        if request.target_region and has_region_signal and not _text_matches(request.target_region, region_signals):
+        if region_keywords and has_region_signal and not _keyword_overlap(region_keywords, region_signals):
             continue
 
         # --- demographic-proxy filter (soft, same policy) ---
@@ -151,8 +196,20 @@ def get_recommendations(
             youtube_channel.description if youtube_channel else None,
         ]
         has_demographic_signal = any(demographic_signals)
-        if request.target_demographic and has_demographic_signal and not _text_matches(
-            request.target_demographic, demographic_signals
+        if demographic_keywords and has_demographic_signal and not _keyword_overlap(
+            demographic_keywords, demographic_signals
+        ):
+            continue
+
+        # --- product_category filter (soft, same policy) ---
+        category_signals = [
+            creator.category.replace("_", " ") if creator.category else None,
+            youtube_channel.description if youtube_channel else None,
+            instagram_profile.bio if instagram_profile else None,
+        ]
+        has_category_signal = any(category_signals)
+        if category_keywords and has_category_signal and not _keyword_overlap(
+            category_keywords, category_signals
         ):
             continue
 

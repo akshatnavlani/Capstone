@@ -97,6 +97,23 @@ class Creator(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=utcnow)
 
 
+class CreatorRelatedAccount(SQLModel, table=True):
+    """Non-owned related handles (team/fan/collaborator pages) -- the raw
+    signal the feature store's collaborates_with edge is built from. Note
+    `handle` is a free-text platform handle, NOT a foreign key to another
+    `creators` row -- resolving it to a real creator_id (when possible) is
+    feature_store.py's job, not guaranteed at the DB level."""
+
+    __tablename__ = "creator_related_accounts"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    creator_id: uuid.UUID = Field(foreign_key="creators.creator_id", index=True)
+    platform: str  # youtube | instagram | reddit
+    handle: str
+    relation_type: Optional[str] = None  # team | league | frequent_collaborator | fan_page | family
+    created_at: datetime = Field(default_factory=utcnow)
+
+
 class YouTubeChannel(SQLModel, table=True):
     __tablename__ = "youtube_channels"
 
@@ -236,6 +253,7 @@ class RiskAlert(SQLModel, table=True):
     severity: str  # low, medium, high
     reason: str
     source: str  # e.g. "sentiment_propagation", "manual"
+    propagated_from_creator_id: Optional[uuid.UUID] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=utcnow)
     resolved: bool = False
 

@@ -10,6 +10,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
+from app.auth import require_api_key
 from app.config import settings
 from app.database import get_session
 from app.fusion import compute_fusion_score
@@ -19,7 +20,7 @@ from app.schemas import FusionScoreComputeRequest, FusionScoreResponse, ScoreBre
 router = APIRouter(prefix="/scores", tags=["scores"])
 
 
-@router.post("/compute", response_model=FusionScoreResponse)
+@router.post("/compute", response_model=FusionScoreResponse, dependencies=[Depends(require_api_key)])
 def compute_score(payload: FusionScoreComputeRequest, session: Session = Depends(get_session)) -> FusionScoreResponse:
     final_score, confidence_low, confidence_high, risk_adjustment, breakdown = compute_fusion_score(
         payload.spillover_score, payload.sentiment_risk_score, payload.creator_feature_score

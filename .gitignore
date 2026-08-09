@@ -8,3 +8,5 @@ backend/**/__pycache__/
 backend/.env
 backend/*.db
 backend/*.sqlite3
+backend/.pytest_cache/
+backend/**/.pytest_cache/
