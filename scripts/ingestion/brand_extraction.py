@@ -37,6 +37,11 @@ _EXPLICIT_PATTERNS = [
     re.compile(r"(?i:sponsored by)\s+" + _BRAND_NAME),
     re.compile(r"(?i:thanks to)\s+" + _BRAND_NAME + r"\s+(?i:for )(?i:sponsoring|partnering)"),
     re.compile(r"(?i:paid partnership with)\s+" + _BRAND_NAME),
+    # Added 2026-08-10 from a real caption (Virat Kohli, "I joined hands with
+    # Agilitas to build a dream") — the original pattern set was built from generic
+    # Western disclosure phrasing and missed this, found only by testing against
+    # real Indian-athlete captions rather than synthetic examples.
+    re.compile(r"(?i:joined hands with)\s+" + _BRAND_NAME),
 ]
 
 # Disclosure hashtags — confirm the post IS a sponsorship, but don't name the brand.

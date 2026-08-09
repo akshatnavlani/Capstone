@@ -297,6 +297,20 @@ class InstagramWorker(PlatformWorker):
             )
         conn.commit()
 
+        # Real bug found+fixed 2026-08-10, after 40 real posts across 8 real creators
+        # all came back with ZERO brand hits: instagram_posts was never storing
+        # caption/likes/comment_count/media_type at all (only post_id/username/
+        # creator_id/brand_id), and brand extraction ran against the first 2000 chars
+        # of RAW `browser extract` markdown — which starts with the avatar image's
+        # (very long) CDN URL and nav boilerplate, not the caption. The caption could
+        # easily fall outside that window, or get diluted by irrelevant alt-text.
+        # `opencli instagram user` gives clean, structured caption/likes/comments/type/
+        # date directly — use THAT for post metadata and brand extraction, and use
+        # `browser extract` only for what it's uniquely good for: comment text.
+        self.rate_limiter.wait()
+        listing = run_opencli("instagram", "user", handle, "--limit", "5", "-f", "yaml")
+        posts_meta = listing if isinstance(listing, list) else []
+
         self.rate_limiter.wait()
         session = f"orc_{handle}"
         run_opencli("browser", session, "open", f"https://www.instagram.com/{handle}/")
@@ -320,7 +334,13 @@ class InstagramWorker(PlatformWorker):
                 run_opencli("browser", session, "wait", "time", "3")
         post_paths = list(dict.fromkeys(e["attrs"]["href"] for e in found.get("entries", [])))
 
-        for path in post_paths[:5]:
+        # `instagram user` (metadata) and `browser find` (URLs) are two SEPARATE
+        # calls with no shared ID — matched positionally (both list recent posts
+        # newest-first). Not guaranteed aligned if a new post landed between the two
+        # calls; best-effort, not a hard guarantee, flagged rather than silently
+        # trusted. min() so a mismatch in count doesn't index past either list.
+        for i, path in enumerate(post_paths[:5]):
+            meta = posts_meta[i] if i < len(posts_meta) else {}
             post_url = f"https://www.instagram.com{path}"
             post_id = path.strip("/").split("/")[-1]
             self.rate_limiter.wait()
@@ -330,14 +350,28 @@ class InstagramWorker(PlatformWorker):
             markdown = extracted["content"] if isinstance(extracted, dict) else str(extracted)
 
             with conn.cursor() as cur:
-                brand_id = brand_id_for_text(cur, markdown[:2000])  # caption is near the top
+                caption = meta.get("caption")
+                brand_id = brand_id_for_text(cur, caption)
+                # meta["date"] is "M/D/YYYY" (e.g. "8/3/2026") — to_date with an
+                # explicit format string, not implicit cast, since Postgres's default
+                # date parsing assumes DMY/YMD depending on server locale and would
+                # silently misread US-style M/D/Y for some dates (e.g. 8/3 could be
+                # read as day=8 month=3 instead of month=8 day=3).
                 cur.execute(
                     """
-                    insert into instagram_posts (post_id, username, creator_id, brand_id)
-                    values (%s,%s,%s,%s)
-                    on conflict (post_id) do update set fetched_at=now(), brand_id=coalesce(excluded.brand_id, instagram_posts.brand_id)
+                    insert into instagram_posts
+                        (post_id, username, creator_id, caption, media_type, like_count,
+                         comment_count, posted_at, brand_id)
+                    values (%s,%s,%s,%s,%s,%s,%s,to_date(%s,'MM/DD/YYYY'),%s)
+                    on conflict (post_id) do update set
+                        caption=coalesce(excluded.caption, instagram_posts.caption),
+                        media_type=coalesce(excluded.media_type, instagram_posts.media_type),
+                        posted_at=coalesce(excluded.posted_at, instagram_posts.posted_at),
+                        like_count=excluded.like_count, comment_count=excluded.comment_count,
+                        fetched_at=now(), brand_id=coalesce(excluded.brand_id, instagram_posts.brand_id)
                     """,
-                    (post_id, handle, creator.creator_id, brand_id),
+                    (post_id, handle, creator.creator_id, caption, meta.get("type"),
+                     meta.get("likes"), meta.get("comments"), meta.get("date"), brand_id),
                 )
                 comments = parse_comments(markdown)
                 for c in comments:
