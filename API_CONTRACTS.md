@@ -56,10 +56,12 @@ needed there. This round was the CORS fix above plus:)
   (creator-ID dedup, Reddit profile enrichment) — still no source column
   anywhere, still open, not force-fixed.
 - Re-ran `POST /labeling/run` against the now-much-larger real dataset (97
-  content rows, up from 21) — 76 newly-landed rows labeled, still 0
-  sponsored (matches Track A's brand-extraction pipeline finding 0 hits
-  independently). All 97 real content rows now have a real
-  `true`/`false` `is_sponsored`, zero remaining `null`.
+  content rows, up from 21) — 76 newly-landed rows labeled, still 0 hit any
+  disclosure-tag pattern. All 97 real content rows now have a real
+  `true`/`false` `is_sponsored`, zero remaining `null`. **Not the same as
+  "0 real sponsorships"** — see the flagged edge case below (a real
+  Kohli/Agilitas post with a brand match but no disclosure-tag match, real
+  caption truncated by Track A's scraper before any possible tag).
 - Confirmed Track B is already consuming `/feature-store/*` directly and
   successfully (`ml/feature_extraction.py::RawCreatorRecord` mirrors
   `CreatorFeatureRecord` exactly, per their GRAPH_SCHEMA.md) — no contract
@@ -349,10 +351,10 @@ the raw inputs those need instead.
 - `GET /feature-store/edges/sponsorships` → list of `SponsorshipEdge`
   (`creator_id`, `brand_id`, `content_id`, `platform`). Populated once
   `is_sponsored` is set — see the labeling pipeline below. Currently empty
-  against real data because no real disclosure text has been found yet in
-  any of the 97 real content rows checked (0 sponsored), not because the
-  pipeline hasn't run — matches Track A's brand-extraction pipeline
-  independently finding 0 hits too.
+  against real data — none of the 97 real content rows matched a
+  disclosure-tag pattern, though at least one (`brand_id`-linked, no
+  disclosure-tag match) is a flagged open edge case, not a confirmed
+  true-negative — see the labeling pipeline section.
 
 **Remaining known gap, flagged not fabricated:**
 - `reputation_score`: Track B's schema expects this in the creator metadata
@@ -403,10 +405,31 @@ Section 1), so precision was validated deliberately, not just "it finds
   university) — both correctly produce no match.
 - Run against all real content in the live DB, re-run as new content
   landed: **97/97 rows checked as of 2026-08-10, 0 labeled sponsored, 0
-  false positives** (0 sponsored matches Track A's independent
-  brand-extraction pipeline also finding 0 hits). Idempotent — re-running
-  only processes newly-null rows, so this number will keep growing safely
-  as Track A's collection continues.
+  confirmed false positives.** Idempotent — re-running only processes
+  newly-null rows, so this number will keep growing safely as Track A's
+  collection continues.
+
+**Open precision/recall edge case, flagged not resolved (2026-08-10):**
+Track B found a real Instagram post (`instagram_posts.post_id
+'DaDJji0DY_x'`, Virat Kohli) with `brand_id` populated (Agilitas, via
+Track A's brand-extraction lead-generation pass — expected, that pass is
+deliberately coarser than this labeler, see Track A's SCHEMA.md) but
+`is_sponsored = false`. Caption: *"2 years back I joined hands with
+Agilitas to build a dream - one8. On 21st June we turned this audac"* —
+**the stored caption is itself truncated by Track A's scraper** (cuts off
+mid-word, before wherever any disclosure tag would appear if one exists).
+Two real, unresolved questions, not silently decided either way:
+1. Should "joined hands with...to build [product]" (describing what looks
+   like a co-founded brand, not a one-off paid post) count as the same
+   `is_sponsored` treatment as `#ad`/"sponsored by"? Arguably a different,
+   possibly *stronger* and more sustained brand relationship for GAIL's
+   spillover purposes — but adding a pattern for "joined hands with" risks
+   new false positives on unrelated collaboration/charity phrasing that
+   isn't a paid disclosure. Not added without a team decision on scope.
+2. The caption truncation is a Track A data-completeness issue, not
+   something this labeler can work around — whatever the real full caption
+   says (including any actual `#ad`-style tag) is currently invisible to
+   both this pipeline and to a human reading it.
 
 Text scrubbing (`app/text_processing.py::scrub_text` — URLs, HTML tags,
 `@mentions` removed, whitespace collapsed) and temporal normalization
@@ -516,7 +539,7 @@ thesis capstone backend.
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
 | Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/edge data (collaborations, co-occurrence, sponsorships all real now), verified against real scraped content; text scrubbed before staging; CLIP/BERT embeddings intentionally not computed here (Track B, Weeks 9-10); `reputation_score` is the one remaining genuine gap — see feature-store section |
-| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data.** 97/97 real rows labeled, 0 false positives, precision-validated against real decoy text plus synthetic near-misses |
+| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data.** 97/97 real rows labeled, 0 confirmed false positives, precision-validated against real decoy text plus synthetic near-misses. One open edge case flagged (not resolved) — see labeling section |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |
