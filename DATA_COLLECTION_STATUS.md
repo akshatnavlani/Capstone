@@ -1,8 +1,27 @@
 # Data Collection Status — Track A (Data/Infra)
 
-Last updated: 2026-08-09. This is the real, verified state of the scraping backend on
+Last updated: 2026-08-10. This is the real, verified state of the scraping backend on
 this machine — not a plan. Re-run `agent-reach doctor --json` / `opencli doctor` before
 trusting this if it's more than a couple weeks old.
+
+## 0. Apify — BLOCKED, flagged for the user directly (2026-08-10)
+
+Instructed this week to use Apify directly ("now enabled as a connector, no signup
+needed") for Instagram/Reddit comment coverage. Checked directly, thoroughly, before
+attempting anything: no Apify MCP server (`ListMcpResourcesTool` — nothing), no
+`apify` CLI on PATH, no `apify_client` Python package installed, no `APIFY_TOKEN` or
+similar in the environment (`env | grep -i apify` — nothing), no config file anywhere
+under this user's home directory. **Apify is not actually reachable from this session,
+despite the instruction that it would be.** This matches a corroborating pattern from
+Track D's memory the same day (a user claim that "Docker Desktop is now installed and
+claude-in-chrome is now connected" also turned out not to be reachable from that
+session when checked directly) — a statement that something is "now available"
+describes intent/what was done on the user's end, not a guarantee this sandbox picked
+it up. Not pursued further (creating an Apify account myself wasn't authorized and
+wasn't the instruction — the instruction assumed it already existed here). Comment
+coverage for this week's real run continued via the existing OpenCLI/browser-extract
+path instead (see Section 8) — real, working, but with the known truncation cap on
+very high-engagement posts still unresolved.
 
 ## 1. What's actually installed on this machine
 
@@ -239,15 +258,77 @@ last self-check.
 - [x] ~~Instagram comment-text gap~~ — resolved via `opencli browser extract` +
   `scripts/ingestion/instagram_comment_extract.py` (Section 4b).
 - [x] ~~Wire the orchestrator~~ — done and run for real (Section 5).
-- [ ] Follower-floor enforcement + handle verification before ingestion (Section 5) —
-  real gap found this session, not fixed.
-- [ ] Prove the brands pipeline against a real positive case (a genuinely sponsored
-  post, verified before fetching) — 0 hits so far isn't proof the pipeline is broken,
-  but it's also not proof it works end-to-end (Section 5).
+- [x] ~~Prove the brands pipeline against a real positive case~~ — done 2026-08-10,
+  see Section 8 (Virat Kohli / Agilitas).
+- [ ] Follower-floor enforcement + handle verification before ingestion — still open.
 - [ ] Pagination past truncation (Reddit `read`'s ~68-90 comment cap, Instagram
   `browser extract`'s initial-render cap) — scoped, not solved.
 - [ ] Decide whether Reddit runs via OpenCLI (desktop, Chrome must stay open) or
   `rdt-cli` (headless, cookie-based, unattended) — OpenCLI is now proven to work, so
   this is a convenience/uptime tradeoff, not a functionality question anymore.
-- [ ] Real load test — all real runs so far are small batches (5-10 items/platform),
-  not sustained operation; CAPTCHA/ban thresholds still unknown in practice.
+- [ ] Real load test — Section 8's run got up to ~35 min continuous for Reddit before
+  finishing; still short of true sustained/multi-hour operation. CAPTCHA/ban
+  thresholds still unknown in practice.
+- [ ] **Raise the hardcoded 5-post-per-creator cap** (`orchestrator.py`, both
+  `InstagramWorker` and `RedditWorker`) — see Section 8, this is the real lever for
+  closing the 1,000-datapoints/entity gap, not more accounts.
+
+## 8. Weeks 7-8 real bulk run (2026-08-10) — volume-vs-floor, honestly
+
+Dispatched 3 model:sonnet sub-agents (one per platform, per this week's orchestrator
+architecture) against the curated target list (`target_list.json`). All three
+genuinely completed (see `ORCHESTRATION.md` for the real bugs found running them).
+
+### Real per-creator datapoint totals (posts + comments, all platforms)
+
+| Creator | YT posts/comments | IG posts/comments | Reddit posts/comments | **Total** |
+|---|---|---|---|---|
+| LeBron James | 0/0 | 6/122 | 6/158 | **292** |
+| Sania Mirza | 0/0 | 5/70 | 5/184 | **264** |
+| Virat Kohli | 0/0 | 5/149 | 5/63 | **222** |
+| MC Mary Kom | 0/0 | 5/97 | 5/140 | **247** |
+| Ranveer Allahbadia | 10/50 | 5/130 | 0/0 | **195** |
+| Cristiano Ronaldo | 0/0 | 0/0 (failed, see below) | 5/201 | **206** |
+| PV Sindhu | 0/0 | 5/67 | 5/59 | **136** |
+| Neeraj Chopra | 0/0 | 5/71 | 5/43 | **124** |
+| Saina Nehwal | 0/0 | 5/33 | 5/59 (via junction table fix) | **102** |
+
+**Honest assessment: every real creator is well below the 1,000-datapoint floor —
+highest is LeBron at 292 (~29%), lowest is Saina Nehwal at 102 (~10%).**
+
+**But this is NOT primarily a session/throughput-ceiling problem.** Checked directly:
+both `InstagramWorker` and `RedditWorker` hardcode `posts[:5]` / `post_paths[:5]` —
+this pilot run only ever fetched 5 posts/platform/creator by design, not because the
+account/session ceiling was hit. Real call volume this run was well within the
+~370-540 calls/hour sustained figure from the Weeks 5-6 pilot, and none of the
+sessions ran anywhere near continuously for an hour. **The real lever for closing this
+gap is raising the per-creator post-fetch cap, not the multi-account fallback held in
+reserve since Weeks 1-2.** Recommend trying that first (a config change, zero new
+account/ban risk) before considering multi-account, which the original plan explicitly
+gated on user sign-off. Not raised in this session — flagging for a decision, not
+deciding unilaterally to change scraping volume this far into the run.
+
+### Real bugs found running the actual bulk collection
+
+1. **Reddit shared-subreddit data loss (serious, fixed):** `reddit_posts.creator_id`
+   is single-valued, but `creators.reddit_handles` is often a generic subreddit
+   (r/badminton) shared by multiple creators. PV Sindhu and Saina Nehwal both map to
+   r/badminton; since `post_id` is a global PK, Sindhu's worker won the upsert and
+   Saina Nehwal got **zero** reddit posts credited — not duplicates, actual silent
+   data loss. Fixed with a `reddit_post_creators` many-to-many junction table,
+   backfilled from existing data and wired into the orchestrator going forward. See
+   `ORCHESTRATION.md`.
+2. **Instagram `selector_not_found` at broader scale than previously seen:** 5 of 9
+   creators failed with the same error this run (neeraj____chopra, pvsindhu1,
+   mirzasaniar, kingjames, cristiano) — worse than the earlier single-creator
+   (cristiano-only) flakiness from Weeks 5-6. Sustained-load reliability degrading
+   over a long run is a real, still-open concern (see open items).
+3. Two of the sub-agents' own process-exit monitors were themselves buggy (a
+   PowerShell profile banner made a `grep -q .` liveness check always true) — caught
+   and self-corrected by the Reddit sub-agent mid-run, not something I had to fix.
+
+### Cross-track note
+Confirmed via read-only queries: no evidence of Instagram/Reddit data
+cross-contaminating each other despite both routing through the same underlying
+OpenCLI/Chrome daemon (a risk flagged before dispatching sub-agents) — row ownership
+by platform/creator checked out cleanly.
