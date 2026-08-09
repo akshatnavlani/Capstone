@@ -7,11 +7,12 @@ need to consume. Deliberately does NOT compute CLIP/BERT embeddings itself
 GRAPH_SCHEMA.md's "What Track A needs to produce" section and
 PROJECT_PLAN.md Section 6 row 9-10, which assigns "Run CLIP + BERT feature
 extraction across dataset" to Track B, not Track C). This module stages the
-raw inputs those embeddings need (text, thumbnail URLs) plus the numeric/
-categorical metadata segment of Track B's creator feature vector
-(`ml/schema.py` CREATOR_METADATA_DIM = log_subscriber_count + engagement_rate
-+ reputation_score + category one-hot) that doesn't require a trained model
-to compute.
+text/thumbnail inputs those embeddings need -- text scrubbed per Section 2
+(`app/text_processing.py::scrub_text`, added Weeks 7-8) so Track B gets
+cleaner BERT input -- plus the numeric/categorical metadata segment of
+Track B's creator feature vector (`ml/schema.py` CREATOR_METADATA_DIM =
+log_subscriber_count + engagement_rate + reputation_score + category
+one-hot) that doesn't require a trained model to compute.
 
 Known gaps, flagged rather than fabricated:
 - `reputation_score`: Track B's ml/schema.py expects this in the metadata
@@ -23,8 +24,9 @@ Known gaps, flagged rather than fabricated:
   together in the same content" (no co-starring/tagging table). Not built
   here -- would require either a new Track A ingestion field or inferring
   it from something not yet collected. Flagged, not fabricated.
-- `sponsors`/`sponsored_by` edges will be empty until `is_sponsored` is
-  populated (Track C's own Weeks 7-8 deliverable) -- expected, not a bug.
+- `sponsors`/`sponsored_by` edges depend on `is_sponsored` being populated
+  -- that's `app/labeling.py`, added Weeks 7-8. Run `POST /labeling/run`
+  before expecting non-empty sponsorship edges.
 """
 
 import math
@@ -43,6 +45,7 @@ from app.models import (
     YouTubeVideo,
 )
 from app.schemas import CollaborationEdge, CreatorFeatureRecord, SponsorshipEdge
+from app.text_processing import scrub_text
 
 # Must match Track B's ml/schema.py CREATOR_CATEGORIES exactly (confirmed via
 # git show origin/track-b-ml-core:ml/schema.py, 2026-08-09) -- order matters,
@@ -145,7 +148,7 @@ def build_creator_features(session: Session) -> list[CreatorFeatureRecord]:
         for p in posts[:_MAX_CONTENT_ITEMS]:
             if p.caption:
                 raw_text_parts.append(p.caption)
-        raw_text = " ".join(raw_text_parts)
+        raw_text = scrub_text(" ".join(raw_text_parts))
 
         thumbnail_urls = [v.thumbnail_url for v in videos[:_MAX_CONTENT_ITEMS] if v.thumbnail_url]
         thumbnail_urls += [p.thumbnail_url for p in posts[:_MAX_CONTENT_ITEMS] if p.thumbnail_url]
@@ -175,19 +178,43 @@ def build_collaboration_edges(session: Session) -> list[CollaborationEdge]:
     against every other creator's own handles. Rows that don't resolve to a
     known creator (most won't, until far more creators are seeded) are
     silently skipped, not an error.
+
+    Ambiguous handles (the same normalized handle claimed by 2+ creator
+    rows) are treated as unresolvable, not resolved to whichever creator
+    happened to be seen last while building the lookup map. This matters
+    for real, not just hypothetical, reasons: confirmed live on 2026-08-09
+    that Track A's pre-fix creator-dedup bug (see their "Fix cross-platform
+    creator-ID syncing" commit) left real duplicate rows in production --
+    two separate `creators` rows both claiming reddit handle "lebron". Their
+    fix stops new duplicates but doesn't retroactively merge old ones, so
+    this code can't assume handles are unique across creators even after
+    the fix landed. Silently picking one would produce a real, wrong edge
+    the moment creator_related_accounts starts getting populated for
+    affected creators (empty today, so not yet actually wrong -- but it
+    would have been the next time someone touched this code without
+    checking, so fixed now instead of leaving it as a landmine).
     """
     creators = session.exec(select(Creator)).all()
     if not creators:
         return []
 
-    handle_maps: dict[str, dict[str, uuid.UUID]] = {"youtube": {}, "instagram": {}, "reddit": {}}
+    # Two-pass: collect every creator_id per normalized handle first, so we
+    # can drop ambiguous (multi-owner) handles before doing any resolution.
+    raw_handle_owners: dict[str, dict[str, set[uuid.UUID]]] = {
+        "youtube": defaultdict(set), "instagram": defaultdict(set), "reddit": defaultdict(set)
+    }
     for c in creators:
         if c.youtube_handle:
-            handle_maps["youtube"][_normalize_handle(c.youtube_handle)] = c.creator_id
+            raw_handle_owners["youtube"][_normalize_handle(c.youtube_handle)].add(c.creator_id)
         if c.instagram_handle:
-            handle_maps["instagram"][_normalize_handle(c.instagram_handle)] = c.creator_id
+            raw_handle_owners["instagram"][_normalize_handle(c.instagram_handle)].add(c.creator_id)
         for h in c.reddit_handles:
-            handle_maps["reddit"][_normalize_handle(h)] = c.creator_id
+            raw_handle_owners["reddit"][_normalize_handle(h)].add(c.creator_id)
+
+    handle_maps: dict[str, dict[str, uuid.UUID]] = {
+        platform: {handle: owners.pop() for handle, owners in owners_by_handle.items() if len(owners) == 1}
+        for platform, owners_by_handle in raw_handle_owners.items()
+    }
 
     pair_weights: dict[tuple[str, str], int] = defaultdict(int)
     related = session.exec(

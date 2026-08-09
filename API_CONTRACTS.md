@@ -4,12 +4,34 @@ Owner: Track C (Fusion+Backend). Updated whenever the contract changes — treat
 edits to this file as high-signal for Tracks A/B/D, since there's no live
 channel between sessions, only git.
 
-**Status as of 2026-08-09 (Weeks 5-6 update):** all endpoints below are live
+**Status as of 2026-08-09 (Weeks 7-8 update):** all endpoints below are live
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
 Base URL (local dev): `http://127.0.0.1:8000`. Basic auth now exists — see
 the **Auth** section below — off by default, opt-in via `API_KEY`.
+
+## Weeks 7-8 update summary
+
+- **New:** `POST /labeling/run` — the actual disclosure-tag (`is_sponsored`)
+  labeling pipeline, see its own section below. Already run against the
+  live DB: 21/21 real content rows labeled (0 false positives on real data).
+- Text scrubbing (`app/text_processing.py::scrub_text`) now applied to the
+  feature store's `raw_text` before staging it for Track B's BERT step —
+  not a wire-shape change, just better content.
+- **Fixed a real latent bug in `build_collaboration_edges`**, found while
+  re-checking the feature store against live data per this round's
+  instructions: ambiguous handles (the same handle claimed by 2+ creator
+  rows — confirmed live, from Track A's pre-fix creator-dedup bug) were
+  previously resolved to whichever creator got processed last while
+  building the lookup map, silently and non-deterministically. Now treated
+  as unresolvable instead. Wasn't yet causing a wrong result (
+  `creator_related_accounts` was empty at the time), but would have the
+  moment it wasn't.
+- `reputation_score` / `co_occurs_with` gaps (flagged Weeks 5-6): re-checked
+  against Track A's latest work (creator-ID dedup fix, Reddit profile
+  enrichment) — neither is addressed by it. Still open, no new derivable
+  signal found. Not force-fixed with an invented formula.
 
 ## ⚠️ Incident (2026-08-09): `POST /alerts` was returning 500 against the real DB
 
@@ -254,28 +276,84 @@ the raw inputs those need instead.
   — `handle` there is free text, not a FK, so resolution is a
   case-insensitive match against every creator's own handles (`@`/`u/`/`r/`
   stripped). Rows that don't resolve are silently skipped, not an error —
-  expect this until many more creators are seeded.
+  expect this until many more creators are seeded. **Ambiguous handles**
+  (the same handle claimed by 2+ creator rows) are also treated as
+  unresolvable rather than arbitrarily picking one — confirmed live
+  2026-08-09 that Track A's pre-fix creator-dedup bug left real duplicate
+  rows in production (two rows both claiming reddit handle "lebron"); their
+  fix (`origin/track-a-data-infra` "Fix cross-platform creator-ID syncing")
+  stops new duplicates but doesn't retroactively merge existing ones.
 - `GET /feature-store/edges/sponsorships` → list of `SponsorshipEdge`
-  (`creator_id`, `brand_id`, `content_id`, `platform`). Empty until
-  `is_sponsored` is populated (Track C's own Weeks 7-8 deliverable) —
-  expected, not a bug.
+  (`creator_id`, `brand_id`, `content_id`, `platform`). Populated once
+  `is_sponsored` is set — see the labeling pipeline below. Currently empty
+  against real data because no real disclosure text has been found yet
+  (21/21 real content rows checked, 0 sponsored), not because the pipeline
+  hasn't run.
 
 **Known gaps, flagged not fabricated:**
 - `reputation_score`: Track B's schema expects this in the creator metadata
   segment, but **no Track A table has a reputation_score source column
-  anywhere** (checked SCHEMA.md 2026-08-09). Open cross-track item — needs
-  either a new Track A column or a defined derivation formula.
+  anywhere** (re-checked against Track A's latest work as of 2026-08-09 —
+  their creator-ID dedup fix and Reddit profile enrichment don't touch
+  this). Open cross-track item — needs either a new Track A column or a
+  defined derivation formula.
 - `co_occurs_with` edges (platform co-occurrence, PROJECT_PLAN.md Section
-  3a): not built. Track A's schema has no signal for "these creators
+  3a): not built. Track A's schema still has no signal for "these creators
   appeared together in the same content" (no co-starring/tagging table).
   Would need either a new ingestion field or inference from data not
   currently collected.
 
 Unit-tested against synthetic data (`backend/tests/test_feature_store.py`,
-8 tests) and verified end-to-end through the live HTTP API — real scraped
-data doesn't exist yet (Track A's tables still empty as of 2026-08-09), so
-this is the same validation approach Track A/B used for their own
-Weeks 1-4 modules.
+9 tests) and verified end-to-end through the live HTTP API against real
+scraped content (Track A ran their first live bulk collection this week —
+59 Instagram profiles, 113 Reddit profiles, 10 YouTube videos as of
+2026-08-09).
+
+### Labeling pipeline (`is_sponsored`, new Weeks 7-8)
+
+`POST /labeling/run` (requires `X-API-Key` if configured) — scans every
+`youtube_videos`/`instagram_posts`/`reddit_posts` row where `is_sponsored
+IS NULL`, sets it to a real `true`/`false` (not left null), and records
+matched phrases in `sponsorship_raw_matches`. Idempotent-safe: only
+processes rows still null, so re-running after new content lands only
+touches the new rows. No trigger/webhook wiring it automatically yet —
+invoke manually (or from a script) after Track A lands new content.
+
+Response: `{ youtube_videos: {checked, labeled_sponsored}, instagram_posts: {...}, reddit_posts: {...} }`.
+
+**Detection approach** (`backend/app/labeling.py`): regex-based, matching
+PROJECT_PLAN.md Section 1's own framing — `#ad`, `#sponsored`, `#spon`,
+`#paidpartnership`, "sponsored by", "paid partnership", "paid promotion",
+"in partnership with", "brought to you by", plus common misspellings
+("sponser"/"sponsered", "spon-con"/"spon con"). Every pattern requires a
+real word boundary so it can't fire inside an unrelated longer word/hashtag.
+
+**This is the sole source of GAIL's treatment labels (PROJECT_PLAN.md
+Section 1), so precision was validated deliberately, not just "it finds
+#ad"** — `backend/tests/test_labeling.py`, 21 tests, split across:
+- Positive cases covering every convention above.
+- **Decoys targeting the exact regex risks a naive substring match would
+  fall into**: `#adventure`/`#adidas` (must not match `#ad`), "advice"
+  (must not match standalone "ad"), "spontaneous" (must not match
+  "spon-con"), a brand name mentioned with no disclosure language, and a
+  genuinely ambiguous "institutional partnership" phrasing (university
+  affiliation, not a brand deal).
+- **Two decoys pulled verbatim from real scraped content** (ATHLEAN-X
+  YouTube descriptions, live DB, 2026-08-09): a 4600+ character
+  self-promotional video description (own website/product links, zero
+  actual sponsorship) and a professional-credentials bio (former team,
+  university) — both correctly produce no match.
+- Already run against all real content in the live DB: **21/21 rows
+  checked, 0 labeled sponsored, 0 false positives** (matches manual
+  verification against the same rows before the pipeline existed).
+
+Text scrubbing (`app/text_processing.py::scrub_text` — URLs, HTML tags,
+`@mentions` removed, whitespace collapsed) and temporal normalization
+(`normalize_to_utc` — naive timestamps assumed UTC, aware ones properly
+converted) also added this round (PROJECT_PLAN.md Section 2). Scrubbing is
+wired into the feature store's `raw_text` staging; normalization is a
+utility available for any datetime handling, though Postgres `timestamptz`
+columns already normalize to UTC internally for anything already in the DB.
 
 ### Fusion Layer score (Track B → this API)
 
@@ -364,19 +442,21 @@ thesis capstone backend.
   despite being documented as an enum — tightened to
   `Literal["low", "medium", "high"]`.
 
-## What's real vs. placeholder (as of 2026-08-09, Weeks 5-6)
+## What's real vs. placeholder (as of 2026-08-09, Weeks 7-8)
 
 | Piece | Status |
 |---|---|
 | FastAPI app, all routes, request/response validation | Real, working |
 | DB models matching Track A's live schema (incl. `brands`, `creator_related_accounts`) | Real, working (re-diff if their schema changes) |
-| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified — connected to the live Supabase instance, confirmed `db_connected: true` and successfully queried all of Track A's real tables (all empty, matches their scraping-still-blocked status) |
+| DB (SQLite local fallback / real Supabase Postgres via `DATABASE_URL`) | Both real and verified — connected to the live Supabase instance with real content now landing (Track A's first live bulk collection this week) |
+| Track C-owned table migrations (`fusionscore`, `riskalert`) | Real, tracked in `backend/migrations/` after the incident above — no longer relying on `create_all()` for schema evolution |
 | Ingestion upsert logic (8 endpoints) | Real, working, but secondary path (see breaking-change note #3) |
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
-| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/edge data; CLIP/BERT embeddings intentionally not computed here (Track B, Weeks 9-10); `reputation_score` and `co_occurs_with` are genuine gaps, not placeholders — see feature-store section |
+| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/edge data, verified against real scraped content; text now scrubbed before staging; CLIP/BERT embeddings intentionally not computed here (Track B, Weeks 9-10); `reputation_score` and `co_occurs_with` are genuine gaps, not placeholders — see feature-store section |
+| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, built and run against live data** (Weeks 7-8) — see labeling section. 21/21 real rows labeled, 0 false positives, precision-validated against real decoy text plus synthetic near-misses |
+| Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
-| Disclosure-tag (`is_sponsored`) labeling pipeline | Not built — Weeks 7-8 deliverable, contract shape is correct now though |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |
 
 ## Running locally

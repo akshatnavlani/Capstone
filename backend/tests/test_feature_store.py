@@ -113,6 +113,30 @@ def test_collaboration_edge_skipped_when_handle_does_not_resolve(session):
     assert feature_store.build_collaboration_edges(session) == []
 
 
+def test_ambiguous_handle_across_two_creators_is_unresolvable(session):
+    # Real scenario, not hypothetical: confirmed live on 2026-08-09 that a
+    # pre-fix Track A bug left two separate creator rows both claiming
+    # reddit handle "lebron". A naive last-write-wins handle map would
+    # silently resolve to whichever creator happened to be seen last --
+    # this must instead treat the handle as unresolvable for both.
+    dup1 = Creator(name="DupCreatorOne", reddit_handles=["lebron"])
+    dup2 = Creator(name="DupCreatorTwo", reddit_handles=["lebron"])
+    third = Creator(name="ThirdCreator", reddit_handles=["thirdhandle"])
+    session.add(dup1)
+    session.add(dup2)
+    session.add(third)
+    session.commit()
+    session.refresh(third)
+
+    session.add(CreatorRelatedAccount(
+        creator_id=third.creator_id, platform="reddit", handle="lebron", relation_type="frequent_collaborator",
+    ))
+    session.commit()
+
+    # Should NOT resolve to either dup1 or dup2 -- the handle is ambiguous.
+    assert feature_store.build_collaboration_edges(session) == []
+
+
 def test_non_collaborator_relation_types_are_ignored(session):
     a = Creator(name="CreatorA", youtube_handle="@CreatorA")
     b = Creator(name="CreatorB", youtube_handle="@CreatorB")

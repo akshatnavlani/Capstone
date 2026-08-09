@@ -225,6 +225,19 @@ class AlertResponse(BaseModel):
     resolved: bool
 
 
+# ---- Labeling pipeline (is_sponsored, PROJECT_PLAN.md Section 2) -----------
+
+class LabelingPlatformResult(BaseModel):
+    checked: int = Field(description="Rows with is_sponsored IS NULL that were processed")
+    labeled_sponsored: int = Field(description="Of those, how many were labeled True")
+
+
+class LabelingRunResponse(BaseModel):
+    youtube_videos: LabelingPlatformResult
+    instagram_posts: LabelingPlatformResult
+    reddit_posts: LabelingPlatformResult
+
+
 # ---- Feature store (DB -> Track B's ml/schema.py input shape) --------------
 # See backend/app/feature_store.py for the transformation logic and the
 # known-gaps writeup (reputation_score, co_occurs_with).
@@ -240,7 +253,7 @@ class CreatorFeatureRecord(BaseModel):
         default=None,
         description="Always null currently -- no Track A table has a reputation_score source column. Open cross-track item, see API_CONTRACTS.md.",
     )
-    raw_text: str = Field(description="Staged for Track B's Weeks 9-10 BERT embedding step -- not embedded here")
+    raw_text: str = Field(description="Scrubbed (URLs/HTML/mentions removed, Section 2) and staged for Track B's Weeks 9-10 BERT embedding step -- not embedded here")
     thumbnail_urls: list[str] = Field(description="Staged for Track B's Weeks 9-10 CLIP embedding step -- not embedded here")
     is_stub: bool = Field(description="True if there's no text/thumbnail data yet to embed")
 
