@@ -477,6 +477,19 @@ class RedditWorker(PlatformWorker):
                      post.get("selftext"), post.get("created_utc"), post.get("upvotes"),
                      post.get("comments"), brand_id),
                 )
+                # reddit_posts.creator_id is single-valued and can only ever credit
+                # whichever creator's worker wrote the row first — real bug found
+                # 2026-08-10 when PV Sindhu and Saina Nehwal both map to r/badminton
+                # and Saina silently got zero posts. reddit_post_creators is the real
+                # many-to-many source of truth; always insert here regardless of
+                # whether this post_id already existed under a different creator.
+                cur.execute(
+                    """
+                    insert into reddit_post_creators (post_id, creator_id)
+                    values (%s,%s) on conflict do nothing
+                    """,
+                    (post_id, creator.creator_id),
+                )
             conn.commit()
 
             self.rate_limiter.wait()
