@@ -361,6 +361,40 @@ class InstagramWorker(PlatformWorker):
         run_opencli("browser", session, "close")
 
 
+def enrich_reddit_profile(cur, username: str) -> None:
+    """Full profile enrichment via `opencli reddit user` — real command, confirmed
+    working (2026-08-10). Note: `-f json` crashed on this account's emoji fields
+    ("⭐ Yes"); `-f yaml` handles it fine, matching the encoding lesson from the
+    Instagram pipeline (subprocess text decoding needs UTF-8, not assumed-safe ASCII).
+    Falls back to a bare username stub on any fetch error (private/suspended/deleted
+    accounts, rate limits) rather than failing the whole post.
+    """
+    try:
+        rows = run_opencli("reddit", "user", username, "-f", "yaml")
+        prof = {r["field"]: r["value"] for r in rows} if isinstance(rows, list) else {}
+        created = prof.get("Account Created")
+        cur.execute(
+            """
+            insert into reddit_profiles (username, account_created_at, comment_karma, link_karma)
+            values (%s, nullif(%s,'-')::timestamptz, %s, %s)
+            on conflict (username) do update set
+                account_created_at = coalesce(excluded.account_created_at, reddit_profiles.account_created_at),
+                comment_karma = coalesce(excluded.comment_karma, reddit_profiles.comment_karma),
+                link_karma = coalesce(excluded.link_karma, reddit_profiles.link_karma),
+                fetched_at = now()
+            """,
+            (username, created,
+             int(prof["Comment Karma"]) if prof.get("Comment Karma", "").lstrip("-").isdigit() else None,
+             int(prof["Post Karma"]) if prof.get("Post Karma", "").lstrip("-").isdigit() else None),
+        )
+    except Exception:
+        log.warning("Reddit profile enrichment failed for u/%s — falling back to stub", username)
+        cur.execute(
+            "insert into reddit_profiles (username) values (%s) on conflict (username) do nothing",
+            (username,),
+        )
+
+
 class RedditWorker(PlatformWorker):
     """Deliberately leaner than YouTube/Instagram — Reddit is community context here,
     not the primary sponsorship-disclosure source (see module docstring). Unlike
@@ -374,6 +408,15 @@ class RedditWorker(PlatformWorker):
         return creator.reddit_handles[0] if creator.reddit_handles else None
 
     def process_creator(self, creator: Creator, handle: str, conn) -> None:
+        # Note on "target creator" profile depth for Reddit: unlike YouTube/Instagram,
+        # `creators.reddit_handles` is a list of SUBREDDITS (fan/team communities
+        # ABOUT the creator — see SCHEMA.md), not the creator's own Reddit username in
+        # most cases (most athletes/influencers don't personally post on Reddit).
+        # There is usually no personal account to profile-enrich for the target
+        # itself. The closest meaningful analog with real bot-detection value: the
+        # POST AUTHORS in the creator's subreddit(s) — a small, bounded set (<=5/run),
+        # unlike comment authors (potentially 100+/run, correctly still stubs-only
+        # for rate-limit/cost reasons per instruction).
         self.rate_limiter.wait()
         posts = run_opencli("reddit", "subreddit", handle, "-f", "yaml")
         if not isinstance(posts, list):
@@ -384,10 +427,8 @@ class RedditWorker(PlatformWorker):
                 continue
             with conn.cursor() as cur:
                 if post.get("author"):
-                    cur.execute(
-                        "insert into reddit_profiles (username) values (%s) on conflict (username) do nothing",
-                        (post["author"],),
-                    )
+                    self.rate_limiter.wait()
+                    enrich_reddit_profile(cur, post["author"])
                 brand_id = brand_id_for_text(cur, f"{post.get('title', '')} {post.get('selftext', '')}")
                 cur.execute(
                     """
@@ -460,65 +501,156 @@ def get_connection():
 
 
 def get_or_create_creator(conn, name: str, category: str, **handles) -> Creator:
-    """Idempotent on youtube_handle/instagram_handle via the real unique partial
-    indexes (migration 20260809020000) — a prior version relied on a bare `ON
-    CONFLICT DO NOTHING` with no matching constraint, which silently inserted a
-    duplicate creator row on every rerun (found running a real pilot, not
-    hypothetical — see that migration's comment for the data-corruption it caused).
-    Reddit-only creators (no youtube/instagram handle) aren't covered by a unique
-    constraint here — `reddit_handles` is an array, dedup would need its own
-    constraint; falls back to a plain name lookup for that case, best-effort only.
+    """Idempotent across ALL provided handles (youtube_handle, instagram_handle,
+    reddit_handles), not just whichever one happened to be passed first.
+
+    Real bug fixed here (2026-08-10, found because the new per-platform sub-agent
+    architecture means YouTube/Instagram/Reddit workers each call this independently
+    for the same real person): the previous version only ever wrote ONE handle column
+    depending on which `if yt / elif ig` branch ran — passing both `youtube_handle`
+    and `instagram_handle` together silently dropped `instagram_handle` entirely, and
+    a creator scraped separately by each platform's worker got 3 unlinked rows.
+
+    Now: look up an existing row by ANY provided handle first (so a platform worker
+    reusing a handle from a pre-seeded multi-platform target list — see
+    `seed_creators()` — finds the same row every other platform's worker uses), then
+    MERGE any newly-provided handles into that row instead of dropping them. Only
+    inserts a new row when no existing row matches any provided handle.
     """
-    yt, ig = handles.get("youtube_handle"), handles.get("instagram_handle")
+    yt = handles.get("youtube_handle")
+    ig = handles.get("instagram_handle")
+    reddit_handles = handles.get("reddit_handles") or []
+
     with conn.cursor() as cur:
+        row = None
         if yt:
+            cur.execute("select creator_id from creators where youtube_handle = %s", (yt,))
+            row = cur.fetchone()
+        if row is None and ig:
+            cur.execute("select creator_id from creators where instagram_handle = %s", (ig,))
+            row = cur.fetchone()
+        if row is None and reddit_handles:
+            cur.execute("select creator_id from creators where reddit_handles && %s", (reddit_handles,))
+            row = cur.fetchone()
+
+        if row is not None:
+            creator_id = row[0]
             cur.execute(
                 """
-                insert into creators (name, category, youtube_handle, reddit_handles)
-                values (%s,%s,%s,%s)
-                on conflict (youtube_handle) where youtube_handle is not null
-                do update set category = excluded.category
-                returning creator_id
+                update creators set
+                    youtube_handle = coalesce(youtube_handle, %s),
+                    instagram_handle = coalesce(instagram_handle, %s),
+                    reddit_handles = (select array(select distinct unnest(reddit_handles || %s))),
+                    updated_at = now()
+                where creator_id = %s
                 """,
-                (name, category, yt, handles.get("reddit_handles", [])),
+                (yt, ig, reddit_handles, creator_id),
             )
-            row = cur.fetchone()
-        elif ig:
-            cur.execute(
-                """
-                insert into creators (name, category, instagram_handle, reddit_handles)
-                values (%s,%s,%s,%s)
-                on conflict (instagram_handle) where instagram_handle is not null
-                do update set category = excluded.category
-                returning creator_id
-                """,
-                (name, category, ig, handles.get("reddit_handles", [])),
-            )
-            row = cur.fetchone()
         else:
-            cur.execute("select creator_id from creators where name = %s", (name,))
-            row = cur.fetchone()
-            if row is None:
-                cur.execute(
-                    "insert into creators (name, category, reddit_handles) values (%s,%s,%s) returning creator_id",
-                    (name, category, handles.get("reddit_handles", [])),
+            # No row matched any handle. Best-effort name-collision check before
+            # creating — per instruction, flag for manual review rather than
+            # auto-merge: a same-name row with different handles MIGHT be the same
+            # real person found via another platform, or might just be a namesake.
+            # Auto-merging a wrong guess would corrupt two different people's data
+            # together, which is worse than a duplicate row waiting for review.
+            cur.execute(
+                "select creator_id, youtube_handle, instagram_handle, reddit_handles from creators where name = %s",
+                (name,),
+            )
+            existing = cur.fetchall()
+            if existing:
+                log.warning(
+                    "Possible duplicate creator by name %r — NOT auto-merged, flagging for "
+                    "manual review. New handles: yt=%s ig=%s reddit=%s. Existing row(s): %s",
+                    name, yt, ig, reddit_handles, existing,
                 )
-                row = cur.fetchone()
+            cur.execute(
+                """
+                insert into creators (name, category, youtube_handle, instagram_handle, reddit_handles)
+                values (%s,%s,%s,%s,%s)
+                returning creator_id
+                """,
+                (name, category, yt, ig, reddit_handles),
+            )
+            creator_id = cur.fetchone()[0]
     conn.commit()
-    return Creator(creator_id=str(row[0]), name=name, category=category, **handles)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            "select name, category, youtube_handle, instagram_handle, reddit_handles from creators where creator_id = %s",
+            (creator_id,),
+        )
+        r_name, r_category, r_yt, r_ig, r_reddit = cur.fetchone()
+    return Creator(creator_id=str(creator_id), name=r_name, category=r_category,
+                    youtube_handle=r_yt, instagram_handle=r_ig, reddit_handles=r_reddit or [])
+
+
+def seed_creators(conn, target_list: list[dict]) -> dict[str, Creator]:
+    """Pre-populate `creators` with full cross-platform handle bundles BEFORE
+    dispatching per-platform sub-agents — this is the primary defense against the
+    3-unlinked-rows problem, not just the merge logic in get_or_create_creator above.
+    Each entry: {"name", "category", "youtube_handle"?, "instagram_handle"?,
+    "reddit_handles"?}. Returns {name: Creator} for the caller to inspect.
+    """
+    result = {}
+    for entry in target_list:
+        c = get_or_create_creator(
+            conn, entry["name"], entry["category"],
+            youtube_handle=entry.get("youtube_handle"),
+            instagram_handle=entry.get("instagram_handle"),
+            reddit_handles=entry.get("reddit_handles", []),
+        )
+        result[entry["name"]] = c
+        log.info("Seeded creator %s -> %s (yt=%s ig=%s reddit=%s)",
+                  entry["name"], c.creator_id, c.youtube_handle, c.instagram_handle, c.reddit_handles)
+    return result
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--platform", choices=WORKERS.keys(), required=True)
-    parser.add_argument("--handles", nargs="+", help="Handles to fetch (uses handle as name too)")
+    parser.add_argument("--seed", help="Path to a curated target-list JSON to seed into `creators` "
+                                        "(full cross-platform handle bundles) and exit. Run this ONCE "
+                                        "before dispatching per-platform sub-agents.")
+    parser.add_argument("--platform", choices=WORKERS.keys())
+    parser.add_argument("--handles", nargs="+",
+                         help="Ad-hoc handles to fetch for --platform (uses handle as name if not "
+                              "pre-seeded). Prefer --target-list once a curated list exists, so "
+                              "cross-platform handles for the same person are looked up, not guessed.")
+    parser.add_argument("--target-list", help="Path to the curated target-list JSON (same file used "
+                                               "with --seed) — looks creators up by THIS platform's "
+                                               "handle, which should already exist from a prior --seed "
+                                               "run, so all platform sub-agents share one creator_id "
+                                               "per real person instead of each creating their own.")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     conn = None if args.dry_run else get_connection()
 
+    if args.seed:
+        with open(args.seed, encoding="utf-8") as f:
+            target_list = json.load(f)
+        seed_creators(conn, target_list)
+        return
+
+    if not args.platform:
+        parser.error("--platform is required unless using --seed")
+
     creators = []
-    if not args.dry_run and args.handles:
+    if not args.dry_run and args.target_list:
+        with open(args.target_list, encoding="utf-8") as f:
+            target_list = json.load(f)
+        handle_field = "reddit_handles" if args.platform == "reddit" else f"{args.platform}_handle"
+        for entry in target_list:
+            value = entry.get(handle_field)
+            if not value:
+                continue
+            creators.append(get_or_create_creator(
+                conn, entry["name"], entry["category"],
+                youtube_handle=entry.get("youtube_handle"),
+                instagram_handle=entry.get("instagram_handle"),
+                reddit_handles=entry.get("reddit_handles", []),
+            ))
+    elif not args.dry_run and args.handles:
         for h in args.handles:
             kwargs = {f"{args.platform}_handle" if args.platform != "reddit" else "reddit_handles":
                       h if args.platform != "reddit" else [h]}
