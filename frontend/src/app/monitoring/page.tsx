@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAlerts } from "@/lib/api";
+import { getAlerts, getCreators } from "@/lib/api";
 import SeverityBadge from "@/components/SeverityBadge";
 import type { AlertResponse } from "@/types";
+
+// Names are resolved best-effort from GET /feature-store/creators. A creator_id
+// with no match (deleted creator, stale test data, or the fetch failing) falls
+// back to the raw id rather than blocking the alert from rendering.
+function resolveName(id: string, namesById: Map<string, string>): string {
+  return namesById.get(id) ?? id;
+}
 
 export default function MonitoringPage() {
   const [alerts, setAlerts] = useState<AlertResponse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [namesById, setNamesById] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     getAlerts()
@@ -19,6 +27,11 @@ export default function MonitoringPage() {
             "?"
         )
       );
+    getCreators()
+      .then((creators) => setNamesById(new Map(creators.map((c) => [c.creator_id, c.name]))))
+      .catch(() => {
+        // Names are supplementary here; a failed fetch just leaves ids unresolved.
+      });
   }, []);
 
   return (
@@ -53,12 +66,12 @@ export default function MonitoringPage() {
                   {new Date(alert.created_at).toLocaleString()}
                 </span>
               </div>
-              <h2 className="mt-2 text-sm font-medium">creator: {alert.creator_id}</h2>
+              <h2 className="mt-2 text-sm font-medium">creator: {resolveName(alert.creator_id, namesById)}</h2>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{alert.reason}</p>
               <p className="mt-1 text-xs text-zinc-500">source: {alert.source}</p>
               {alert.propagated_from_creator_id && (
                 <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                  propagated from collaborator: {alert.propagated_from_creator_id}
+                  propagated from collaborator: {resolveName(alert.propagated_from_creator_id, namesById)}
                 </p>
               )}
             </li>

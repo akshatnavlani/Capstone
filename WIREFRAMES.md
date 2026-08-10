@@ -106,7 +106,19 @@ interface BrandRecommendationResponse {
 Risk badge: still **not** part of the recommendation object — computed
 client-side by cross-referencing `GET /alerts`, grouped by `creator_id`.
 
-## 3. Monitoring & alerts (`/monitoring`)
+**Real-browser-tested against diversified creator types (2026-08-10).**
+Track A added 6 content creators (CarryMinati, Prajakta Koli/MostlySane,
+Mumbiker Nikhil, Bhuvan Bam/BBKiVines, Technical Guruji, Guru Mann) this
+round — all currently full stubs (`is_stub: true`, real content collection
+hasn't landed for them yet). This surfaced a shape not seen in real data
+before: `estimated_reach`/`estimated_cost` genuinely `null` (prior stubs
+like LeBron/Cristiano always had real numbers derived from subscriber/
+follower counts even while empty of content). The dashboard's existing
+`estimated_cost != null` guard already handled this correctly — confirmed
+live in the browser (the "est. cost" line cleanly disappears rather than
+rendering `₹null`), not just re-read from the code. Zero console errors
+across all 5 results and all 4 routes. No frontend changes were needed —
+existing defensive code already covered this real shape.
 
 Fetches `GET {NEXT_PUBLIC_API_BASE_URL}/alerts` on mount. Current shape:
 
@@ -142,6 +154,22 @@ expect it to stay `null` in practice until their Weeks 14-15 Sentiment
 Propagation work ships — the UI element exists and is tested, just not
 populated by real alerts yet.
 
+**Creator-name resolution added this round (2026-08-09/10).** `AlertResponse`
+has no name field (only `creator_id`/`propagated_from_creator_id` uuids) —
+previously flagged as an open ask, not built. With Track A's real data now
+at 10 creators, this stopped being theoretical: the one real alert in the
+live DB renders raw UUIDs with no way to tell who they refer to, and its
+`propagated_from_creator_id` points at a creator that no longer exists in
+the `creators` table (Track C's own Weeks 7-8 smoke-test data, not live
+usage). Added a best-effort client-side resolve: `getCreators()` (new,
+`GET /feature-store/creators`) builds a `creator_id → name` map on mount;
+`resolveName()` falls back to the raw id when a lookup misses (covers both
+a failed fetch and a genuinely orphaned reference like the smoke-test row
+above — verified against the real DB, not just reasoned about). New
+`CreatorSummary` type in `src/types/index.ts` is a minimal subset of
+Track C's `CreatorFeatureRecord` (only `creator_id`/`name`), not a full
+mirror, since that's all this feature needs.
+
 ## 4. Explainability (`/explainability`)
 
 Fleshed out this round (was text-only through Weeks 3-4). Uses the same
@@ -167,6 +195,45 @@ Network-graph visualization + Granger-causality posting-time insights are
 still not built — genuinely blocked on Track B's GAIL branch/graph data,
 which per the timeline doesn't start until weeks 11-13. Said so explicitly
 in the UI rather than a bare "coming soon."
+
+**Checked this round (2026-08-09/10) whether even a minimal version was
+buildable now, given real creator-node data exists.** Confirmed via
+`GET /feature-store/edges/collaborations` against the live DB: still `[]`,
+zero real collaboration edges. This isn't just "still zero as of the last
+check" — grepped Track A's pipeline directly and confirmed **no code writes
+`CreatorRelatedAccount` rows with `relation_type='frequent_collaborator'`
+anywhere**; the value only exists as a comment in the DB schema DDL. So this
+is a two-level blocker, not one: even once Track B's GAIL branch starts
+(weeks 11-13), there's no data source for it to consume unless Track A
+separately builds collaboration-edge detection, which isn't scheduled or
+started. Decided not to build a node-only "network graph" with real
+creators but zero edges — a graph with no relationships would misrepresent
+what the data actually shows, not a minimal-but-honest version of the real
+feature. Kept the current explicit placeholder text as the honest option;
+flagging the two-level blocker for Track A/B to be aware of rather than
+building around it.
+
+**Re-checked Weeks 11-13 (2026-08-10) — still correctly a placeholder, but
+the underlying picture changed twice in one round.** Track C shipped
+`GET /feature-store/edges/co-occurrence` this round using Track A's real
+`reddit_post_creators` data — a genuinely different edge type from
+`collaborates_with` (platform co-occurrence via shared community
+subreddits, not detected "frequent collaborator" relationships), and per
+Track C's own memory it was real and populated at the time they built it
+(PV Sindhu/Saina Nehwal co-occurring on 5 real r/badminton posts). **Live
+DB check this round: `[]`, zero rows.** Traced precisely rather than just
+re-reporting zero: queried `reddit_post_creators` directly — 211 rows
+total, **zero** posts with 2+ distinct creators. Track A's own Weeks 11-13
+relevance-gating fix (correctly purging 88% of noisy Reddit links) removed
+exactly the shared-subreddit overlaps that co-occurrence depends on as a
+side effect of that correctness fix, not a new bug. `collaborates_with`
+(frequent_collaborator) and `sponsorships` (is_sponsored=true) both still
+`[]` too — the latter confirmed still correctly unresolved: the Kohli/
+Agilitas post's caption is **still exactly 100 characters** in the live DB
+despite Track A reporting the truncation fix as shipped (checked the row
+directly, not the changelog — the code fix apparently hasn't been re-run
+against already-stored rows yet). Net: still correctly a placeholder, for
+three converging real reasons, not one static "still blocked."
 
 ## Docker
 
@@ -228,3 +295,32 @@ Round 2) is now committed and wired in:
 | 15 | `AlertResponse` had no propagation field | `AlertResponse.propagated_from_creator_id: uuid \| null` — committed, live-tested (POST+GET round-trip verified against real Supabase), UI now surfaces it |
 
 No open questions requiring Track D action right now.
+
+### CORS blocker found via first real browser test (2026-08-09) — RESOLVED same day
+
+**Track C's backend had no CORS middleware configured** (`backend/app/main.py`
+had no `CORSMiddleware` import or `app.add_middleware(...)` call anywhere).
+Every prior "verified" API integration in this project used `curl`, which
+doesn't enforce CORS, so this never surfaced until an actual browser hit the
+API for the first time this session (the `claude-in-chrome` browser tool
+finally connected after a session restart — see track-d memory). Symptom:
+the browser's `OPTIONS /recommendations` preflight got a bare `405 Method
+Not Allowed` with no `Access-Control-Allow-Origin` header, so the real
+`POST` never left the browser and `/brand-input` showed "Couldn't reach the
+recommendation API." Same root cause blocked `GET /alerts` on `/monitoring`.
+Left untouched at the time per this track's convention of not editing
+another track's code unilaterally — flagged for Track C instead, high
+priority given it blocked the whole product's browser-based usage.
+
+**Fixed by Track C same day** (commit `71e7d85`, "Add CORS middleware --
+no browser could call this API since Weeks 1-2"): standard
+`app.add_middleware(CORSMiddleware, allow_origins=settings.cors_allow_origins_list,
+allow_methods=["*"], allow_headers=["*"])`, origins configurable via
+`cors_allow_origins` setting (defaults to `localhost:3000`/`127.0.0.1:3000`).
+**Re-verified for real the same round**: full browser click-through
+(`/brand-input` → fill form → submit → `/dashboard` renders real results →
+`/explainability` → `/monitoring`) against the live Supabase DB, confirmed
+via real preflight response headers (`access-control-allow-origin:
+http://localhost:3000`) and zero browser console errors across all 4
+routes. This is the first genuinely real (non-curl) end-to-end verification
+this project has had.

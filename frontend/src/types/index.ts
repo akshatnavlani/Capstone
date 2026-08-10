@@ -41,6 +41,13 @@ export interface BrandRecommendationResponse {
   is_mock_data: boolean;
 }
 
+// Subset of Track C's CreatorFeatureRecord (backend/app/schemas.py) -- only
+// the fields needed to resolve a creator_id to a display name on /monitoring.
+export interface CreatorSummary {
+  creator_id: string; // uuid
+  name: string;
+}
+
 export type AlertSeverity = "low" | "medium" | "high";
 
 export interface AlertResponse {
