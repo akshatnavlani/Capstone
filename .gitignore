@@ -3,6 +3,7 @@
 .env
 .venv/
 __pycache__/
+scripts/ingestion/google-service-account.json
 
 # transient run artifacts, not source
 scripts/ingestion/logs/
