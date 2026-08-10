@@ -306,6 +306,48 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   `Optional`/unpopulated in their ingestion schemas, matching Track A's
   real DB. No longer open.
 
+## Real-data status (2026-08-10, Weeks 14-16 check-in — no new build this round)
+
+Fresh session, no memory of prior rounds. Per HANDOFF.md's standing instruction,
+did not trust any doc's claim (including this file's own prior entries) — asked
+the user for the live Supabase `DATABASE_URL` and ran direct read-only SQL against
+the three specific blockers, rather than re-deriving from Track A/C's docs alone.
+
+- **Collaboration edges: still 0.** `SELECT count(*) FROM
+  creator_related_accounts` → 0 (all relation types, not just
+  `frequent_collaborator`). Unchanged since first measured.
+- **Co-occurrence edges: still 0.** `reddit_post_creators` has grown to 346
+  rows (up from 233 last round), but a direct `GROUP BY post_id HAVING
+  count(distinct creator_id) > 1` query returns 0 rows — every post is still
+  linked to exactly one creator. Matches Track C's own concurrent live-DB
+  finding this same day (their Weeks 14-16 memory entry) — two independent
+  checks, same result.
+- **Sponsorships: still 0.** `is_sponsored = true` count is 0 across
+  `youtube_videos`/`instagram_posts`/`reddit_posts` (695 total content rows:
+  252/97/346). Re-checked the Kohli/Agilitas rows specifically (4 Instagram
+  posts mentioning "Agilitas"/"one8", `creator_id
+  c4b20dc1-14f2-48e9-8bd5-7131af29049f`): all still exactly 100 characters,
+  `fetched_at` still 2026-08-09, `is_sponsored=false`. One row does carry a
+  real `brand_id` (Agilitas) — brand-name extraction succeeded — but that's
+  a separate signal from the disclosure-tag `is_sponsored` label, which is
+  what GAIL actually needs. Track A's caption-fix commit (`8b493d1`) is
+  code-complete but Instagram has not been re-scraped since it landed, so
+  the existing rows are still pre-fix text.
+- **Nothing in HANDOFF.md's steps 3-4 unblocks this round** (re-run
+  `scripts/validate_gat_on_real_data.py`'s structural check, or start
+  temporal engagement-delta computation) — both are still gated on data
+  that doesn't exist yet.
+
+**Cross-branch note, not yet actionable for this file:** `main` carries an
+unmerged 2026-08-10 PROJECT_PLAN.md revision pivoting Section 1 from ~15
+deep creators to breadth-over-depth (~1,000 curated creators, 200-400
+datapoints/entity), explicitly adding team/league accounts to attack the
+zero-collaboration-edges blocker documented above. Not yet merged into any
+track's branch and not yet visible in Track A's actual HANDOFF.md (still
+describes the 15-creator list) — flagging since it's the most direct
+planned fix for this doc's oldest open item, worth watching for next round
+rather than assuming it's already in effect.
+
 ## Real-data status (2026-08-10, Weeks 11-13 — second check this round)
 
 Re-checked partway through this round per the user's instruction, since

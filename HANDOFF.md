@@ -1,9 +1,36 @@
 # Handoff — Track B (ML-Core)
 
-Start here. Last updated 2026-08-10, end of the Weeks 11-13 round. If you're
-a fresh session with no memory of prior conversations, read this file
-first, then `GRAPH_SCHEMA.md` (the full technical spec, kept current every
-round) for depth on any item below.
+Start here. Last updated 2026-08-10, end of a Weeks 14-16 check-in round
+(no new build — see "What changed this round" below). If you're a fresh
+session with no memory of prior conversations, read this file first, then
+`GRAPH_SCHEMA.md` (the full technical spec, kept current every round) for
+depth on any item below.
+
+## What changed this round (2026-08-10 check-in)
+
+Nothing built — this was a live-data re-verification round per the prior
+handoff's step 2, plus doc updates. Findings:
+
+- **Re-verified live against the Supabase DB directly** (not from any
+  track's docs): collaboration edges still 0, co-occurrence edges still 0
+  (346 `reddit_post_creators` rows, 0 shared across creators), sponsorships
+  still 0 (695 total content rows, `is_sponsored=true` count 0). Kohli/
+  Agilitas unchanged — still truncated at 100 chars, still `is_sponsored=
+  false`, Instagram not yet re-scraped since Track A's caption-fix commit
+  landed. Full detail in `GRAPH_SCHEMA.md`'s newest "Real-data status"
+  section.
+- **A concurrent Track C session verified the identical result the same
+  day** (their `track_c_backend_weeks14_16` memory) — two independent
+  live-DB checks agree, so this isn't a single-session artifact.
+- **Found (not yet actionable): `main` has an unmerged PROJECT_PLAN.md
+  revision** (2026-08-10) pivoting Section 1 to breadth-over-depth (~1,000
+  curated creators at 200-400 datapoints each, down from ~15 creators at
+  1,000+ each), explicitly targeting the zero-collaboration-edges blocker
+  this doc has carried for 6+ rounds. Not merged into any track branch yet,
+  and Track A's actual HANDOFF.md (2026-08-12, newest doc of any track)
+  still describes working the old 15-creator list — so the pivot is a plan
+  decision, not yet an operational reality. User's direction this round:
+  flag it, don't chase it. Worth checking again next round.
 
 ## Current state (one paragraph)
 
