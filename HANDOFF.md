@@ -131,3 +131,25 @@ Needs `.env` at repo root (gitignored, never committed): `DATABASE_URL`,
 `YOUTUBE_API_KEY`, `OPENCLI_PROFILE`. Instagram/Reddit need **real Chrome** open and
 logged in — **not Arc** (Arc connects but every command hangs; documented in
 `DATA_COLLECTION_STATUS.md`).
+
+---
+
+## ⚠️ INSTAGRAM RATE LIMIT REACHED — HTTP 429 (2026-08-11, Phase 1B pilot)
+
+`opencli instagram profile <any handle>` now returns **HTTP 429**, including for a
+control account (`nasa`), and it persisted across a 20s re-probe. This is a **genuine
+platform rate limit**, categorically different from the `HTTP 400 - make sure you are
+logged in` failures seen intermittently all session — and it matches this file's own
+lesson 1 criterion verbatim: *"a real limit is an HTTP 429 from the platform."*
+
+**What triggered it:** cumulative Instagram request volume in one day — a ~9-hour
+discovery loop, then a 97-post caption backfill, then a 97-post collab/edge pass
+(~200 post-page fetches inside a few hours), then the deepening pilot.
+
+**Consequence: Instagram deepening cannot proceed until this clears.** The Phase 1B
+pilot collected 0 Instagram datapoints for all 4 pilot creators. YouTube (official API,
+independent transport) and Reddit were unaffected and worked normally.
+
+**Before resuming Instagram work:** probe a single `instagram profile nasa` call and
+confirm a real result. Do NOT run a bulk job to "see if it works" — that is what
+accumulated the limit. Back off in hours, not minutes.
