@@ -51,8 +51,17 @@ credit**. **Public deployment is explicitly out of scope until after submission*
 submission is *deployable* (Docker + security), not *deployed*.
 
 The user's stance: *"don't worry about the deadline, work on it as much as we can."* Take that as
-permission to prioritise depth over schedule anxiety — but Review 1 is genuinely close, and it
-rewards **demonstrable examples over completeness**, which changes near-term sequencing.
+permission to prioritise depth over schedule anxiety.
+
+**Review 1 bar, set by the user 2026-08-11: a basic demo with ~100 creators is sufficient.**
+139 candidates already exist on the sheet, so this is comfortably reachable *without* changing
+how data collection works. Explicitly:
+
+> **Do not rush or compromise data collection to hit an earlier demo.** The user's position:
+> *"better the data, better the model, better the project."* Review 1 is a checkpoint, not the
+> goal. Quality of process — relevance verification, honest edge counts, no padding — takes
+> precedence over demo timing. If a choice arises between a denser demo and cleaner data, choose
+> cleaner data.
 
 ---
 
@@ -300,13 +309,14 @@ trains on real data.
 
 | Milestone | Phases that must land | The demo story it tells |
 |---|---|---|
-| **Review 1** (~2–4 wks) | Phase 1 complete + Phase 2 underway | "End-to-end pipeline works on real data: here are real creators, a real graph, real recommendations." Small-but-real beats large-but-broken. |
+| **Review 1** (~2–4 wks) | Phase 1 complete + Phase 2 to **~100 creators** | "End-to-end pipeline works on real data: here are real creators, a real graph, real recommendations." Small-but-real beats large-but-broken. |
 | **Review 2** (~11–13 wks) | Phases 2–4 complete | "GAIL trains on real data, fusion produces real scores, the app works." |
 | **Submission** (~15–17 wks) | Phase 5 (deployable, not deployed) + Phase 6 | Repo + paper + security fixes + Docker. |
 
 ⚠️ **Review 1 is close and rewards examples over completeness.** Phase 1's outputs — the
 interactive graph, a working recommendation flow on real data — *are* the Review 1 demo. Don't
-defer them chasing scale.
+defer them chasing scale. Equally: **~100 creators clears the Review 1 bar, so don't cut corners
+on collection quality to exceed it.** See §1.
 
 ### PHASE 1 — Validation *(now, days not weeks)*
 **Question it answers:** does the pipeline produce the treatment signal GAIL needs?
@@ -430,5 +440,6 @@ nobody checking the table edges derive from; curl-only testing hid the CORS bug 
 - [ ] **Review 1 demo shape** — once Phase 1 lands, decide what specifically gets shown. Likely
       the interactive graph + a live recommendation query on real creators, but worth choosing
       deliberately rather than demoing whatever happens to work.
-- [ ] **Is ~19 creators enough to demo credibly at Review 1,** or should Phase 2 run far enough
-      to show a denser graph first? Track B's Phase 1 sufficiency call informs this.
+- [ ] ~~Is ~19 creators enough to demo credibly at Review 1?~~ **Resolved: ~100 is the bar, and
+      collection quality outranks demo density.** Track B's Phase 1 sufficiency call still
+      matters — but for *model training* viability, not for demo adequacy.
