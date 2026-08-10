@@ -7,15 +7,26 @@ detailed week-by-week history if you need it, but this file is the
 current-state summary — trust it over stale memory entries if they disagree.
 
 Last updated: 2026-08-10, end of a session spanning (compressed, not literal
-calendar weeks) Weeks 1-2 through Weeks 11-13 of the 26-week plan.
+calendar weeks) Weeks 1-2 through Weeks 14-16 of the 26-week plan.
 `API_CONTRACTS.md` at repo root is the living API contract doc — read that
 too before touching any endpoint shape.
+
+**Note for the next session:** `PROJECT_PLAN.md` Section 1 was revised on
+`main` (2026-08-10) but that revision has not been merged into this branch
+yet — the copy in this worktree is still the pre-revision version. The
+real change: data collection pivoted from ~15 deep creators to
+breadth-over-depth (~1,000 curated creators, 200-400 datapoints/entity),
+adding team/league accounts specifically to attack the zero-collaboration-
+edges blocker, via a new identify→curate→deepen Google-Sheets workflow.
+Nothing for Track C to build off this directly yet, but expect creator/
+content volume growth patterns to look different once Track A acts on it.
 
 ## Current state (one paragraph)
 
 A FastAPI + SQLModel backend (`backend/`) is live and connected to the real
-shared Supabase Postgres instance (16 real creators, 422 real content rows
-as of last check — this grows continuously as Track A scrapes). Full API
+shared Supabase Postgres instance (16 real creators, 695 real content rows
+as of last check — 252 YouTube / 97 Instagram / 346 Reddit, grown from 422
+via Track A's background scheduled collection since the last round). Full API
 surface exists and is tested: `/health`, `/recommendations` (real
 budget/region/demographic/product_category/platform_preference filtering,
 not a stub), `/ingestion/*` (8 endpoints, secondary/manual write path —
@@ -43,13 +54,15 @@ source anywhere in the system.
 
 ## Open items
 
-- **Kohli/Agilitas `is_sponsored` edge case — blocked on Track A.** A real
-  Instagram post (and at least one sibling post, same brand relationship)
-  has its caption truncated at exactly 100 chars by a bug Track A already
-  fixed *in code* but hasn't yet re-run against existing rows. Currently
-  labeled `is_sponsored=false` with the reasoning documented in
+- **Kohli/Agilitas `is_sponsored` edge case — still blocked on Track A,
+  re-checked directly against the live DB this round (2026-08-10 Weeks
+  14-16), no change.** Both the original post and its sibling post are
+  still stored at exactly 100 chars, `fetched_at` still 2026-08-09 —
+  Instagram has not been re-scraped since Track A's caption-fix commit.
+  Currently labeled `is_sponsored=false` with the reasoning documented in
   `API_CONTRACTS.md` (search "Kohli/Agilitas"). **Action once Track A
-  re-scrapes Instagram: call `POST /labeling/run?force=true`** to
+  re-scrapes Instagram (check for `fetched_at` timestamps past their fix
+  commit before assuming): call `POST /labeling/run?force=true`** to
   re-examine every Instagram row against corrected text.
 - **`reputation_score` — blocked, no owner.** No table in Track A's schema
   has a source column for this, and none of their recent work has added
@@ -123,7 +136,8 @@ source anywhere in the system.
 ## Exact next steps (in priority order)
 
 1. **Re-check whether Track A has re-scraped Instagram content** (fresh
-   `fetched_at` timestamps past their caption-fix commit). If yes: run
+   `fetched_at` timestamps past their caption-fix commit — still
+   2026-08-09 as of this round, still not re-scraped). If yes: run
    `POST /labeling/run?force=true`, re-evaluate the Kohli/Agilitas case
    with real text, update `API_CONTRACTS.md`'s documented decision either
    way.
@@ -131,7 +145,11 @@ source anywhere in the system.
    Track A's dataset keeps growing — this is now routine maintenance, not
    a one-off task. Check row counts first (`SELECT COUNT(*) FROM
    youtube_videos/instagram_posts/reddit_posts WHERE is_sponsored IS
-   NULL`) to see if it's worth running.
+   NULL`) to see if it's worth running. Just ran this round: 273 newly-
+   landed rows (133 YouTube, 140 Reddit) labeled, still 0 sponsored, all
+   695 real content rows now non-null. Did the broader keyword recall scan
+   too (sponsor/partner/collab/affiliate/#ad) — no new near-miss pattern,
+   all hits fell under already-tested cases.
 3. **Check `origin/track-b-ml-core:GRAPH_SCHEMA.md` fresh** for whether
    real `spillover_score`/`sentiment_risk_score` output exists yet — if
    so, Weeks 14-15's "real Fusion Layer" work unblocks.

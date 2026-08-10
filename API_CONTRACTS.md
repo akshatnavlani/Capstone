@@ -4,7 +4,7 @@ Owner: Track C (Fusion+Backend). Updated whenever the contract changes — treat
 edits to this file as high-signal for Tracks A/B/D, since there's no live
 channel between sessions, only git.
 
-**Status as of 2026-08-10:** all endpoints below are live
+**Status as of 2026-08-10 (Weeks 14-16 round):** all endpoints below are live
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
@@ -36,6 +36,32 @@ uniformly across `/health`, `/recommendations`, `POST /ingestion/creators`,
 
 **CONFIRMED by Track D in a real browser** (first non-curl verification
 this project has had) — the fix works. Closed.
+
+## Weeks 14-16 update summary
+
+- **Re-ran `POST /labeling/run`** (default mode) against the dataset's
+  continued background growth (422 → 695 real content rows — 252 YouTube /
+  97 Instagram / 346 Reddit — grown via Track A's scheduled Task
+  Scheduler runs, independent of any git commit). 273 newly-landed rows
+  labeled (133 YouTube, 140 Reddit; Instagram had 0 unlabeled — already
+  fully labeled from last round). Still 0 hit any disclosure-tag pattern;
+  all 695 rows now have a real non-null `is_sponsored`.
+- **Re-ran the broader keyword recall scan** (sponsor/partner/collab/
+  affiliate/#ad) against the newly-landed text specifically, not just the
+  regex's own hits, per this project's standing precision-first practice.
+  Found several real matches, checked each individually — all fall under
+  patterns already covered by the existing 48-test suite (sports
+  "partner" terminology, event-hosting "in collaboration with", third-
+  person "X sponsored Y" in Reddit commentary about a creator rather than
+  the creator's own disclosure). No new near-miss pattern found, no regex
+  change needed.
+- **Kohli/Agilitas: re-checked directly against the live DB, still
+  blocked, no new finding.** Both the original post and its previously-
+  identified "one8" sibling post are still stored at exactly 100
+  characters (`fetched_at` still 2026-08-09, predating Track A's caption
+  fix). Confirms the resolution below is unchanged — re-verified, not
+  re-asserted. Concrete unblock path (`force=true` after Track A
+  re-scrapes) still stands, still not yet actionable.
 
 ## Weeks 11-13 update summary
 
@@ -512,9 +538,9 @@ not just "it finds #ad" once** — `backend/tests/test_labeling.py` +
   skips already-labeled rows even if their text changed; `force=true`
   reprocesses and picks up the new text.
 - Run against all real content in the live DB, re-run as new content
-  landed and the target list grew: **422/422 rows checked as of
-  2026-08-10 (up from 97 the prior round), 0 labeled sponsored, 0
-  confirmed false positives.**
+  landed and the target list grew: **695/695 rows checked as of
+  2026-08-10 Weeks 14-16 round (up from 422 the prior round), 0 labeled
+  sponsored, 0 confirmed false positives.**
 
 See the "Kohli/Agilitas resolution" section above for the one open
 precision/recall edge case and the documented reasoning for leaving it
@@ -628,7 +654,7 @@ thesis capstone backend.
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
 | Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/collaboration/sponsorship edge data; `co_occurs_with` real but currently empty (Track A purged the noisy signal it was built from, self-healed automatically, see Weeks 11-13 note); CLIP/BERT embeddings intentionally not computed here (Track B); `reputation_score` is the one remaining genuine gap |
-| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data, re-validated at 4x scale.** 422/422 real rows labeled, 0 confirmed false positives, precision-validated against real decoy text at two dataset sizes. One open edge case, documented resolution — see Kohli/Agilitas section |
+| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data, re-validated at 4x scale.** 695/695 real rows labeled, 0 confirmed false positives, precision-validated against real decoy text across multiple dataset sizes. One open edge case, documented resolution — see Kohli/Agilitas section |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |
