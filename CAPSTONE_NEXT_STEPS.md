@@ -364,6 +364,27 @@ interactive graph, a working recommendation flow on real data — *are* the Revi
 defer them chasing scale. Equally: **~100 creators clears the Review 1 bar, so don't cut corners
 on collection quality to exceed it.** See §1.
 
+### PHASE 1B — Deepening before labeling *(sequencing decision, 2026-08-11)*
+
+**Track C waits.** The orchestrator initially proposed running Track C immediately after the
+caption fix; the user pushed back and was right. Recorded because the reasoning generalises:
+
+- The question "does the treatment signal exist" was **already answered** by Track A finding four
+  real disclosures manually — so Track C's re-label answers only the narrower "does the labeler
+  catch them," which isn't urgent.
+- Track C has found **new failure modes at every scale increase** (21 rows → 422 rows surfaced
+  four real near-misses). Validating against 60 captions, then re-validating after deepening
+  multiplies the data, makes the first pass mostly wasted.
+- Deepening will introduce content shapes the current 60 captions don't represent — other media
+  types, YouTube descriptions, Reddit bodies. **Edge cases found after Track C signs off are the
+  expensive kind.**
+- Deepening is the slow, session-bottlenecked, browser-bound step; labeling is a fast DB
+  operation. **Slow-first is correct ordering.**
+- We still have **no per-creator timings**, and every Phase 2 projection depends on them.
+
+Order: A deepens (with a 5-creator pilot checkpoint for timings) → C labels once against
+representative data → B builds the graph → D visualises.
+
 ### PHASE 1 — Validation *(now, days not weeks)*
 **Question it answers:** does the pipeline produce the treatment signal GAIL needs?
 Sequential relay, each step gated on the previous:
