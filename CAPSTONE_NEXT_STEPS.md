@@ -113,6 +113,63 @@ deliberately did not build it rather than ship a second unvalidated mechanism in
 Also worth checking: Instagram's **"tagged people"** on posts, which is separate from caption
 @-mentions and may be where teams actually tag players.
 
+### ✅ RESOLVED 2026-08-11 — the 37 NULL captions were COLLAB POSTS, not contamination
+
+Track A settled this with three independent lines of evidence from real post pages. The decisive
+one: on `virat.kohli`'s live grid, **5 of 7 NULL-caption posts were still present — a higher hit
+rate than with-caption posts (19 of 33)**. Contamination would show the opposite (absent from the
+grid). Also: 11 of 18 probed posts showed the stored creator's handle in the co-author header
+block, and zero showed the pure-contamination signature.
+
+⇒ **Keep them.** On a collab post the caption belongs to the primary author, so a parse anchored
+to the stored creator correctly returns nothing. Recovering them took captions from 60 → 82
+non-null (82/82 distinct, max 1142).
+
+**Bonus finding, unprompted and important:** 3 posts carry Instagram's native **"Paid
+partnership" label**, rendered on the page but entirely absent from caption text. **A
+caption-only labeler structurally cannot see this** — and it's Instagram's own declaration, so
+likely the highest-precision sponsorship signal available. `instagram_posts` has no column for
+it ⇒ **the project's first genuine schema addition.** Split: Track A adds/populates a raw
+observation column (`has_paid_partnership_label`), Track C reads it when computing `is_sponsored`.
+
+### ⚠️ Instagram rate limit hit 2026-08-11 (HTTP 429)
+
+Self-caused and the arithmetic is clear: ~9h discovery loop + 97-post caption backfill + 97-post
+collab pass (~200 post-page fetches in a few hours) + pilot. Affects **any** handle including a
+control. Categorically different from the intermittent `HTTP 400 - make sure you are logged in`
+seen all session.
+
+**Diagnostic from the user: they can browse Instagram normally, logged in as the same account in
+the same browser.** ⇒ rate-based throttle on the automation's request pattern, not an
+account-level block — the recoverable kind. Response: wait, probe with a *single* call, and
+follow `agent-reach`'s documented limits (`.agents/skills/agent-reach/references/social.md`)
+rather than an ad-hoc strategy.
+
+**Consequence for planning:** Instagram is both the slowest platform *and* the only one carrying
+caption/collab/paid-partnership signal. Deepening all 55 on Instagram is not feasible before
+Review 1 — the binding constraint is the rate limit, not time. Agreed plan: **YouTube across all
+55 now** (API-based, unlimited, descriptions never truncated — also the Scenario-D fallback),
+**Reddit second** unattended over days (~7.7 min/creator), **Instagram last** on ~15–20
+high-signal creators with a hard per-day request budget. Depth of signal beats breadth.
+
+### 🔗 Co-author handling — curation, not auto-promotion *(decided 2026-08-11)*
+
+The collab extractor works, but from a 10-post sample it surfaced **18 distinct real co-authors
+and zero were existing creators**, so they resolve to nothing. Many are orgs/brands/politicians
+(`commonwealthsport`, `globalboxingseries`, `naralokesh`) — bulk-promoting them would pollute the
+creator set and re-import the #fitindia-collision problem.
+
+**Decision:** discovered co-authors go to the **Google Sheet as candidates for user review**,
+through the existing curation flow, with provenance in `notes` and signals in the new
+`brand_signals` column. Approved → promoted → the edges light up.
+
+**Key mechanic Track A initially missed:** relationship rows should be written **immediately**
+even when the co-author isn't a creator yet. Track C's resolver matches handles *at resolution
+time*, so an unresolvable row costs nothing, is silently skipped, and **auto-resolves the moment
+the co-author is promoted** — no re-scrape needed. Since these facts cost rate-limited Instagram
+fetches to obtain and are nearly free to store, write them all. Report **rows written and
+resolved separately**; they will now differ, which is correct rather than a problem.
+
 ### 🔗 Possible link between the two gaps — worth checking early
 The 37 still-NULL captions are posts on a creator's grid authored by *someone else* (e.g. on
 `kingjames`: `sixers`, `ljfamfoundation`, `chrisjohnsonhoops`). Two very different explanations,
