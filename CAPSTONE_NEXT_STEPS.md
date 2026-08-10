@@ -38,7 +38,21 @@ branch (lag detection, sentiment propagation) → combined by a Causal Inference
 Fusion Layer (weighted 0–100 score + risk adjustment) → Application Layer (recommendations,
 alerts, explainability graph).
 
-**Timeline:** ~26 weeks, started ~2026-05. Currently ~week 16. **~10 weeks remain.**
+### Timeline & milestones (confirmed with the user 2026-08-11)
+
+| Milestone | When | Requirement |
+|---|---|---|
+| **Review 1** | late Aug – early Sep 2026 | **≥50% complete, with working examples** — ~2–4 weeks away |
+| **Review 2** | late Oct – early Nov 2026 | **80–100% complete** — ~11–13 weeks away |
+| **Final submission** | late Nov – early Dec 2026 | Complete, **security fixes done, deployable** — ~15–17 weeks away |
+
+**Deliverables:** source-code repo + thesis paper are **compulsory**. A live demo earns **extra
+credit**. **Public deployment is explicitly out of scope until after submission** — the bar for
+submission is *deployable* (Docker + security), not *deployed*.
+
+The user's stance: *"don't worry about the deadline, work on it as much as we can."* Take that as
+permission to prioritise depth over schedule anxiety — but Review 1 is genuinely close, and it
+rewards **demonstrable examples over completeness**, which changes near-term sequencing.
 
 ---
 
@@ -282,6 +296,18 @@ trains on real data.
 
 ## 6. THE PLAN — current state → thesis
 
+**Mapped to the three milestones:**
+
+| Milestone | Phases that must land | The demo story it tells |
+|---|---|---|
+| **Review 1** (~2–4 wks) | Phase 1 complete + Phase 2 underway | "End-to-end pipeline works on real data: here are real creators, a real graph, real recommendations." Small-but-real beats large-but-broken. |
+| **Review 2** (~11–13 wks) | Phases 2–4 complete | "GAIL trains on real data, fusion produces real scores, the app works." |
+| **Submission** (~15–17 wks) | Phase 5 (deployable, not deployed) + Phase 6 | Repo + paper + security fixes + Docker. |
+
+⚠️ **Review 1 is close and rewards examples over completeness.** Phase 1's outputs — the
+interactive graph, a working recommendation flow on real data — *are* the Review 1 demo. Don't
+defer them chasing scale.
+
 ### PHASE 1 — Validation *(now, days not weeks)*
 **Question it answers:** does the pipeline produce the treatment signal GAIL needs?
 Sequential relay, each step gated on the previous:
@@ -323,16 +349,23 @@ deepening one creator takes (needed to project feasibility).
 - Confidence bounds from bootstrapped/ensemble variance.
 - Sentiment propagation → risk flags in monitoring.
 
-### PHASE 5 — Application + deployment *(~1–2 weeks, D leads)*
+### PHASE 5 — Deployable + secure *(~1–2 weeks, D leads with C)*
+Note the bar: **deployable, not deployed.** Public hosting is deliberately post-submission.
 - Recommendation UI on real scores; explainability graph with real causal insights.
 - Monitoring/alerts driven by real sentiment propagation.
-- Dockerise the full stack; deploy; smoke-test in a real browser.
+- Dockerise the full stack; verify `docker build`/`run` actually works; smoke-test in a browser.
+- **Security pass — explicitly required for submission:** auth beyond the write-only
+  `X-API-Key`, no credentials in the repo or in chat history, rotate the Supabase password
+  (it was pasted into chat 2026-08-11), review RLS/anon-key exposure on Supabase, dependency
+  audit. Budget real time for this; it's a submission gate, not polish.
 
-### PHASE 6 — Thesis writeup *(~2 weeks, reserve it)*
+### PHASE 6 — Thesis writeup *(~2 weeks, reserve it — compulsory deliverable)*
 - Methodology, results, and a genuinely honest limitations section: observational data,
   disclosure-based treatment labels, dataset scale, India-skewed sample, engagement-per-rupee
   rather than true ROI.
-- Fix the HLD diagram. Prepare the demo.
+- Repo cleanup — it's a compulsory deliverable in its own right, not just the paper's appendix.
+- Fix the HLD diagram (still shows Twitter instead of Instagram).
+- Prepare the live demo (extra credit, worth having given Phase 5 makes it nearly free).
 
 ---
 
@@ -343,10 +376,13 @@ deepening one creator takes (needed to project feasibility).
 plus an interactive causal graph. A complete end-to-end thesis with honest limitations.
 
 **Scenario C — good captions but still 0 sponsorships:** disclosure-tag detection isn't viable
-for this population. **Pivot:** redefine the treatment as *brand-tagged posts* (`brand_id` set)
-regardless of disclosure text. This changes the thesis's treatment definition and **needs the
-user's explicit sign-off.** Still defensible — brand tagging is a real, observable commercial
-relationship — but it must be stated plainly in the writeup, not glossed.
+for this population. **Candidate pivot:** redefine the treatment as *brand-tagged posts*
+(`brand_id` set) regardless of disclosure text. Still defensible — brand tagging is a real,
+observable commercial relationship — but it changes the thesis's treatment definition and must be
+stated plainly in the writeup.
+⛔ **NOT pre-approved. The user explicitly asked to be brought this decision if it happens**,
+with Phase 1's actual numbers in hand. Do not have Track C start building it on a confirmed zero
+— surface the finding and wait.
 
 **Scenario D — captions unfixable:** revisit extraction entirely, or treat Instagram text as
 unusable and lean on YouTube descriptions (which are API-sourced and not truncated).
@@ -381,12 +417,18 @@ nobody checking the table edges derive from; curl-only testing hid the CORS bug 
 
 ---
 
-## 9. Open questions for the user
+## 9. Questions — resolved & open
 
-- [ ] **Hard deadline date?** "~10 weeks" is inferred from a 26-week plan starting ~May; a real
-      submission date would tighten Phase 5/6 reserves.
-- [ ] **What exactly is submitted?** Paper only, or paper + code + live demo + presentation? This
-      determines how much time Phase 6 needs.
-- [ ] **Does the app need real public deployment,** or is a local Docker demo sufficient?
-- [ ] **Scenario C sign-off:** if disclosure labels stay at 0, is redefining treatment as
-      brand-tagged posts acceptable for the thesis?
+**Resolved 2026-08-11:**
+- ✅ **Deadlines:** Review 1 late Aug–early Sep (≥50% + examples), Review 2 late Oct–early Nov
+      (80–100%), submission late Nov–early Dec (complete, secure, deployable). See §1.
+- ✅ **Deliverables:** repo + paper compulsory; live demo = extra credit; public deployment
+      deliberately post-submission.
+- ✅ **Scenario C:** *not* pre-approved — bring the decision back with real numbers.
+
+**Still open:**
+- [ ] **Review 1 demo shape** — once Phase 1 lands, decide what specifically gets shown. Likely
+      the interactive graph + a live recommendation query on real creators, but worth choosing
+      deliberately rather than demoing whatever happens to work.
+- [ ] **Is ~19 creators enough to demo credibly at Review 1,** or should Phase 2 run far enough
+      to show a denser graph first? Track B's Phase 1 sufficiency call informs this.
