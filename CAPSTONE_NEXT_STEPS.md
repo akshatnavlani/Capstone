@@ -38,7 +38,7 @@ branch (lag detection, sentiment propagation) → combined by a Causal Inference
 Fusion Layer (weighted 0–100 score + risk adjustment) → Application Layer (recommendations,
 alerts, explainability graph).
 
-### Timeline & milestones (confirmed with the user 2026-08-11)
+### Timeline & milestones (confirmed with the user on 2026-08-11)
 
 | Milestone | When | Requirement |
 |---|---|---|
@@ -65,35 +65,64 @@ how data collection works. Explicitly:
 
 ---
 
-## 2. THE CENTRAL PROBLEM (read this before anything else)
+## 2. THE CENTRAL PROBLEM — **caption cause RESOLVED, edge cause pivoted** *(updated 2026-08-11 post-Phase-1A)*
 
-**The model has never trained on real data, and the reason is not what it appeared to be.**
+GAIL trains on `(sponsored creator → neighbour engagement change)` pairs, so the effective
+sample size is **sponsorship events**, not creator count. For weeks the team optimised creator
+count, which was never the binding constraint.
 
-GAIL trains on `(sponsored creator → neighbour engagement change)` pairs. So the effective
-sample size is **sponsorship events**, not creator count. Current state:
+### ✅ Cause 1 — captions: FIXED, and the hypothesis was half-wrong
 
-| Metric | Value | Why it matters |
-|---|---|---|
-| Sponsorship events | **0** of 695 content rows | No treatment labels ⇒ nothing to train on |
-| Collaboration edges | **0** | A GNN with no edges is an MLP; the graph premise collapses |
-| Co-occurrence edges | **0** | — |
+**The real root cause was simpler than assumed: one cause, not two bugs.** `parse_caption()` was
+wired in at commit `8b493d1` (2026-08-10 01:19), but all 97 rows were fetched 2026-08-08 →
+2026-08-09 — *entirely before it*. The scraper was already correct; **nothing ever re-scraped the
+stale rows.** The two visible signatures were real but downstream of that one cause:
+- 49 NULL captions correlate perfectly with `media_type IS NULL` (listing-sourced rows, empty
+  metadata dict ⇒ every field None)
+- 48 rows clipped at exactly 100 (`opencli instagram user` truncates at exactly 100)
 
-For weeks the team optimised **creator count**, which was never the binding constraint. Two root
-causes were found on 2026-08-11:
+*(Doc correction: this file previously cited lengths "101, 104" from an orchestrator sample.
+Track A's analysis found a hard ceiling of exactly 100. The discrepancy is unresolved and
+immaterial — the substantive finding, that truncation was deleting end-of-caption disclosures,
+is confirmed by both.)*
 
-1. **Captions are destroyed at scrape time.** Measured sample of `instagram_posts.caption`
-   lengths: `101, 104, 0, 0, 0, 0`. Two separate bugs — a ~100-char truncation, *and* most posts
-   storing no caption at all. Disclosure tags (`#ad`, `#sponsored`, "paid partnership") usually
-   sit at the *end* of long captions, so both bugs delete the treatment signal before Track C's
-   labeler ever sees it. This also means Track B's BERT is embedding fragments/empty strings.
-   ⇒ "0 sponsorships" is very likely a **scraping artifact**, not a fact about Indian creators.
+**Verified live after the fix:** 60 non-null captions, 60 distinct, max 1058 chars, avg 257,
+35 rows >100 chars. 37 remain NULL — see the open decision below.
 
-2. **`creator_related_accounts` has 0 rows and has never been written to by anything, ever.**
-   That table is the designated source for collaboration edges. Track C built the resolver for
-   it long ago. Track A never populated it. Six rounds of "0 edges" was a *population gap*, not a
-   discovery problem.
+**THE SIGNAL IS REAL.** Genuine disclosures now visible that truncation had destroyed:
+`mirzasaniar` "…Milton, a brand that's Made in India… **#ad**" · `virat.kohli` "…@oakleymeta AI
+glasses… **#Ad**" · `virat.kohli` "…**#Ad** #VisitDubai" · `neeraj____chopra` "After two seasons
+as Ambassador… Co-Owner @ubsathleticskidscup". **Every one sits at the END of its caption** —
+exactly where the 100-char cut was landing. This is direct evidence that "0 sponsorships" was a
+scraping artifact. ⇒ **Scenario C is NOT triggered.** Honest read: *signal exists in ~5% of
+captions, now needs Track C to re-label* — not "confirmed zero on good captions."
 
-Everything in Phase 1 below exists to confirm or refute these two.
+### ⚠️ Cause 2 — edges: table populated, but the assumed MECHANISM largely failed
+
+`creator_related_accounts` went 0 → 1 row (1 resolvable edge: `virat.kohli` →
+`royalchallengers.bengaluru`), written correctly with `relation_type='frequent_collaborator'`.
+
+**But the team→player mechanism doesn't work as assumed.** Across 6 promoted team accounts, only
+2 distinct handles were @-tagged in captions at all, neither an existing creator. **IPL/ISL team
+accounts caption with hashtags, not player tags.** The single real edge came from a *creator's*
+caption, not a team post.
+
+**Best unexploited lead:** Instagram's **collab co-author list** ("X and N others"), rendered in
+the page markdown — a genuine, native collaboration fact rather than an inferred one. Track A
+deliberately did not build it rather than ship a second unvalidated mechanism in one round.
+Also worth checking: Instagram's **"tagged people"** on posts, which is separate from caption
+@-mentions and may be where teams actually tag players.
+
+### 🔗 Possible link between the two gaps — worth checking early
+The 37 still-NULL captions are posts on a creator's grid authored by *someone else* (e.g. on
+`kingjames`: `sixers`, `ljfamfoundation`, `chrisjohnsonhoops`). Two very different explanations,
+with opposite implications:
+- **Instagram collab posts** — co-authored, legitimately appear on both grids ⇒ **these ARE the
+  collaboration edges we're missing**, and the NULL captions are a symptom of a signal we want.
+- **Scraper contamination** — suggested/unrelated posts wrongly attributed ⇒ **bad data that
+  inflates a creator's content count and could cause false sponsorship attribution**, and should
+  be removed.
+Distinguishing these is high-value and cheap. Do it before deciding what to do with the 37 rows.
 
 ---
 
@@ -109,17 +138,28 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
-### 3.2 Live DB state (2026-08-11)
+### 3.2 Live DB state — **orchestrator-verified 2026-08-11 after Phase 1A**
 
 | Table | Rows | Note |
 |---|---|---|
-| `creators` | 16 | vs **139** on the sheet — the promote step doesn't exist |
-| `creator_related_accounts` | **0** | never populated; source of collaboration edges |
-| `brands` | 1 | "Agilitas", `source='sponsorship_mention'`, all other fields null |
-| content rows with `brand_id` set | 1 | across all three platform tables |
-| `instagram_posts` | 97 | captions broken (see §2) |
+| `creators` | **55** | was 16. Promote step built: 39 promoted + 16 grandfathered *enriched* (not duplicated), 0 duplicate handles |
+| `creator_related_accounts` | **1** | was 0. 1 resolvable edge; mechanism needs rework (§2) |
+| `brands` | 1 | unchanged — new `@oakleymeta`/Milton mentions not yet through extraction |
+| content rows with `brand_id` set | 1 | unchanged |
+| `instagram_posts` | 97 | **60 captions non-null & distinct, max 1058, avg 257, 35 >100 chars; 37 NULL** |
 | `reddit_post_creators` | 346 | junction table, working |
-| total content rows | 695 | 252 YouTube / 97 IG / 346 Reddit |
+
+**Sheet is now at 55 accepted** (was 19) — the user has reviewed considerably more.
+
+⚠️ **Incident 2026-08-11, resolved:** Track A's first backfill auto-detected each post's author
+instead of anchoring on the known username. Instagram post pages render *suggested* posts, so it
+frequently grabbed a different post's author and caption — writing wrong captions to ~33 of 97
+rows. Caught via distinctive signature (94 rows carrying only 61 distinct captions; one post_id
+reporting two different authors across runs). Cleared and rebuilt with anchored parsing plus a
+URL assertion. **Verified clean: 60/60 distinct.** Root enabler, in Track A's own words: `extract`
+returns a `url` field that was never checked against the requested post — a violation of this
+project's own "verify data arrived, not that code ran" rule, *while fixing an instance of that
+same rule*. Both a good catch and a standing warning.
 
 ### 3.3 Schema — 13 tables + 1 view. **No schema changes needed.**
 
@@ -236,26 +276,31 @@ edges. B builds the tensor and trains.
 
 ### P0 — blocking the thesis's core claim
 
-**P0.1 Captions destroyed at scrape time** *(Track A)*
-Two bugs: ~100-char truncation, and most posts storing nothing. Fix root causes separately (they
-may differ — the empty ones might be a media-type or silent-extraction failure), then **backfill
-all 97 IG rows**, then hand off to Track C to re-label. Verify by re-measuring the length
-distribution, not by confirming the code changed.
+**✅ P0.1 Captions — DONE 2026-08-11.** Root cause was stale rows never re-scraped after the
+parser fix landed, not two separate bugs. Backfilled; 60 distinct captions, real disclosures
+recovered. See §2.
 
-**P0.2 `creator_related_accounts` empty ⇒ 0 edges** *(Track A → C → B)*
-Populate from team→player tagged relationships (Track A already holds ~14 working team accounts).
-Respect the three constraints in §3.3. Then Track C confirms *resolved* edge counts (not rows
-written), then Track B builds the graph.
+**⚠️ P0.2 Collaboration edges — table populated but MECHANISM FAILED** *(Track A → C → B)*
+0 → 1 edge. Team→player tagging doesn't exist on IPL/ISL accounts (they caption with hashtags).
+**Next mechanisms to try, in order:** (1) Instagram collab co-author list ("X and N others") —
+a native, unambiguous collaboration fact; (2) Instagram "tagged people" on posts, distinct from
+caption @-mentions; (3) resolve whether the 37 NULL-caption rows are collab posts (⇒ edges) or
+scraper contamination (⇒ delete). See §2.
 
-**P0.3 Promote-to-DB step does not exist** *(Track A)*
-123 approved/pending candidates are stranded on the sheet with no DB row. Build:
-sheet `approval_status='accepted'` → upsert `creators` (match on handle, reuse the existing
-idempotent `get_or_create_creator`) → `follower_count` to `instagram_profiles`. Without this,
-deepening has nothing to attach to.
+**✅ P0.3 Promote-to-DB — DONE 2026-08-11.** `creators` 16 → 55, upsert semantics correct
+(`athleanx` gained the instagram_handle it had on the sheet but not the DB — exactly the case
+insert-only would have missed), 0 duplicates, `approval_status` untouched.
 
-**P0.4 0 sponsorship events** *(Track C, gated on P0.1)*
-Re-run labeling on real captions. If still ~0 on genuinely-good text ⇒ **methodological pivot**
-(see §7, Scenario C).
+**P0.4 Sponsorship events — signal confirmed, labeling pending** *(Track C, now unblocked)*
+Still 0 in the DB (`is_sponsored` is Track C's to populate) but ≥4 genuine disclosures are now
+present in real captions. **Track C's re-label is the immediate next step**, and those 4 known
+disclosures are a concrete validation target — if the labeler misses them, that's a labeler bug,
+not an absence of signal.
+
+**P0.5 Deepening not completed** *(Track A)* — the full IG→YT→Reddit cycle per approved creator
+did not run; time went to the caption incident. **We still have no per-creator datapoint counts
+or wall-clock timings**, which Phase 2 feasibility projections depend on. Real gap, carried
+forward.
 
 ### P1 — blocking scale or quality
 
@@ -279,9 +324,10 @@ Bare `"mp"` matched "Madhya Pradesh" and silently dropped valid candidates for ~
 Gym chains, clothing brands, booking services pass the keyword filter. Add explicit account-type
 classification: individual / team-or-club (keep) / business-brand (exclude) / media (exclude).
 
-**P1.5 Duplicate creator rows still in prod** *(Track A)*
-Two rows both claim reddit handle `"lebron"`. The dedup fix stopped new duplicates but never
-merged existing ones. Silently produces zero edges for affected creators.
+**~~P1.5 Duplicate creator rows~~ — NOT A PROBLEM.** Track A checked: only one creator claims
+`"lebron"`, and a sweep across all `reddit_handles` found zero duplicated handles. The earlier
+dedup migration already resolved it; this doc's claim was stale. Left here as a record that it
+was checked, not assumed.
 
 **P1.6 Fusion layer has never received a real spillover score** *(B → C)*
 The last unclosed integration seam. Track C's formula uses placeholder weights. Blocked until B
@@ -317,6 +363,27 @@ trains on real data.
 interactive graph, a working recommendation flow on real data — *are* the Review 1 demo. Don't
 defer them chasing scale. Equally: **~100 creators clears the Review 1 bar, so don't cut corners
 on collection quality to exceed it.** See §1.
+
+### PHASE 1B — Deepening before labeling *(sequencing decision, 2026-08-11)*
+
+**Track C waits.** The orchestrator initially proposed running Track C immediately after the
+caption fix; the user pushed back and was right. Recorded because the reasoning generalises:
+
+- The question "does the treatment signal exist" was **already answered** by Track A finding four
+  real disclosures manually — so Track C's re-label answers only the narrower "does the labeler
+  catch them," which isn't urgent.
+- Track C has found **new failure modes at every scale increase** (21 rows → 422 rows surfaced
+  four real near-misses). Validating against 60 captions, then re-validating after deepening
+  multiplies the data, makes the first pass mostly wasted.
+- Deepening will introduce content shapes the current 60 captions don't represent — other media
+  types, YouTube descriptions, Reddit bodies. **Edge cases found after Track C signs off are the
+  expensive kind.**
+- Deepening is the slow, session-bottlenecked, browser-bound step; labeling is a fast DB
+  operation. **Slow-first is correct ordering.**
+- We still have **no per-creator timings**, and every Phase 2 projection depends on them.
+
+Order: A deepens (with a 5-creator pilot checkpoint for timings) → C labels once against
+representative data → B builds the graph → D visualises.
 
 ### PHASE 1 — Validation *(now, days not weeks)*
 **Question it answers:** does the pipeline produce the treatment signal GAIL needs?
