@@ -211,47 +211,91 @@ Real run so far (2026-08-09): 3 creators, 10 YouTube videos + 200 comments, 5 In
 posts + 71 comments, 6 Reddit posts + 135 comments — all live in Supabase. See
 `DATA_COLLECTION_STATUS.md` Section 5 for the up-to-date table.
 
-## Per-platform sub-agents are NOT a safe parallel axis for browser platforms (2026-08-11)
+## PARALLELIZATION RULE (root-caused 2026-08-11, corrected 2026-08-12)
 
-**Real incident, not theoretical.** Weeks 9-10 dispatched one sub-agent per platform
-(YouTube/Instagram/Reddit) concurrently. Result:
+**Read this before dispatching any concurrent sub-agents.**
 
-- YouTube: clean (119 videos, 2,746 comments) — it uses the official Data API, no browser.
+### The incident
+
+Weeks 9-10 dispatched one sub-agent per platform (YouTube/Instagram/Reddit) concurrently:
+
+- YouTube: clean (119 videos, 2,746 comments).
 - Instagram: 4 of 9 creators succeeded.
-- Reddit: **0 of 8 creators succeeded** — every one failed with
-  `TypeError: Failed to fetch` from the OpenCLI browser bridge.
+- Reddit: **0 of 8 creators succeeded** — every one failed `TypeError: Failed to fetch`.
 
-The interleaved log timeline shows why. Reddit's entire batch collapsed inside a
-22-second window (21:14:46 → 21:15:08) *while the Instagram run was actively driving
-the same browser*; Instagram then recovered and kept succeeding at 21:15:39, 21:17:31,
-21:19:07. Chrome never crashed (12 processes still alive afterward).
+Reddit's whole batch collapsed inside a 22-second window (21:14:46 → 21:15:08) *while
+Instagram was actively driving the browser*; Instagram then recovered and kept
+succeeding at 21:15:39, 21:17:31, 21:19:07. Chrome never crashed (12 processes alive
+afterward).
 
-**Root cause: Instagram and Reddit are different *platforms* but share one
-Chrome/OpenCLI session.** "One sub-agent per platform" looks like an independent axis
-and isn't — the real axis is the *browser session*, and there is exactly one. This is
-the same constraint as the long-standing "don't run multiple sub-agents against one
-platform" rule, just one level up: it's not per-platform, it's per-session.
+### Confirmed root cause: tab-lease contention, not a rate limit
 
-**Rule going forward:** YouTube may run concurrently with anything (own API, own quota).
-**Instagram and Reddit must be serialized against each other.** `run_pipeline.ps1`
-already does this correctly (sequential loop) — only the sub-agent dispatch path had
-the flaw. Re-running Reddit alone afterward collected cleanly with zero fetch errors,
-confirming contention rather than a Reddit-side problem.
+The earlier commit message called this a "shared session" problem. That was directionally
+right but imprecise. The actual mechanism, from OpenCLI's own interface:
 
-### Secondary finding: the scroll-until-full change made Instagram more brittle
+- `opencli browser <session> close` = *"Release the current browser session **tab lease**"*.
+- Every site-adapter command carries `--keep-tab <bool>` = *"Keep the browser **tab
+  lease** after the command finishes"*.
+- `opencli doctor` shows one daemon (port 19825) serving named **profiles**.
 
-The Weeks 9-10 grid-scroll loop raises `no post links found after scrolling` when it
-finds nothing, where the previous code silently took whatever the first screenful had.
-Under browser contention that converted a degraded-but-partial result into a total
-per-creator failure (5 of 9 Instagram creators). The hard failure is arguably more
-honest than silently under-collecting, but it should degrade rather than abort —
-worth revisiting.
+So OpenCLI arbitrates browser access through **tab leases issued by a single daemon per
+Chrome profile**. Both workers ran under the same `OPENCLI_PROFILE=s8h98tr4`. The
+Instagram pipeline holds a long-lived named session (`orc_<handle>`) across an
+open → find → scroll → open-post → extract loop, keeping a lease held for extended
+periods. Reddit's `reddit subreddit` adapter call needs its own lease on that same
+profile, can't get one, and the extension's underlying `fetch()` fails — surfacing as
+`TypeError: Failed to fetch`.
 
-### Third finding: Instagram grid stalls at ~12 links for most profiles
+**Ruled out — it was not a rate limit.** Reddit's failures were instantaneous and evenly
+spaced at exactly our own 3s `RateLimiter` gap, with no network wait. A platform rate
+limit arrives as an HTTP 429 from Reddit's servers, not a browser-side fetch TypeError,
+and would not be triggered by Instagram's activity nor leave Instagram unaffected.
 
-Even successful creators mostly yielded 12 posts against a cap of 40 ("12 links
-found"); only `virat.kohli` reached the cap (48 links found). The stall-detector is
-firing early on most profiles, so Instagram is under-yielding independently of the
-contention issue. This — not the post cap — is now the binding constraint on Instagram
-volume, and is the place a dedicated scraping backend (e.g. Apify, if it ever becomes
-reachable) would genuinely help.
+**Not fixable by naming sessions.** OpenCLI docs say to "pick a different name to isolate
+parallel browser work" — but only `opencli browser <session>` accepts a session name.
+Site adapters (`reddit subreddit`, `instagram user`) expose only `--keep-tab`,
+`--site-session`, `--window`; there is no way to isolate *their* leases. So two
+OpenCLI-backed platforms contend no matter how the calling code is arranged.
+
+### The rule
+
+| Combination | Safe? | Why |
+|---|---|---|
+| YouTube ∥ Instagram | **YES** | No shared local resource — verified: `YouTubeWorker` makes zero OpenCLI/browser calls, it's `urllib.request.urlopen` straight to `googleapis.com`. Constraint is a server-side API quota, not a local lease. |
+| YouTube ∥ Reddit | **YES** | Same. |
+| YouTube ∥ (Instagram + Reddit) | **YES** | Same. |
+| **Instagram ∥ Reddit** | **NO** | Both OpenCLI-backed; contend for tab leases on one daemon/profile. |
+| **Any two OpenCLI platforms** | **NO** | Same mechanism — applies to Facebook/Twitter/Xiaohongshu adapters too if ever added. |
+| Two sub-agents ∥ same platform | **NO** | Pre-existing rule (one session, one rate limit) — unchanged. |
+
+**Generalized:** the parallel axis is not the *platform*, it's the **shared local
+resource**. Anything routed through OpenCLI shares one browser bridge and must be
+serialized. Anything with its own independent transport (an HTTP API) can run alongside
+anything else.
+
+**The only real way to parallelize browser work** would be separate Chrome **profiles**
+(separate bridges — `opencli doctor` can genuinely show multiple connected profiles).
+That is the multi-account path, carrying its own ToS/ban exposure, and needs explicit
+user sign-off before being attempted. Not currently done.
+
+### Practical guidance
+
+- `run_pipeline.ps1` is already correct — it loops the three platforms sequentially.
+- Only the *sub-agent dispatch* path had this flaw. When dispatching concurrently, the
+  safe split is: **one sub-agent for YouTube ∥ one sub-agent that does Instagram and
+  Reddit sequentially.**
+- Re-running Reddit alone afterward collected cleanly (8/8 creators, 0 errors),
+  confirming contention rather than any Reddit-side fault.
+
+### Secondary findings from the same incident
+
+**The scroll-until-full change made Instagram more brittle.** The Weeks 9-10 grid-scroll
+loop raises `no post links found after scrolling` when it finds nothing, where earlier
+code silently took whatever the first screenful had. Under contention that converted a
+degraded-but-partial result into a total per-creator failure (5 of 9 creators). The hard
+failure is arguably more honest than silent under-collection, but it should degrade
+rather than abort.
+
+**The Instagram grid stalls at ~12 links on most profiles.** Even successful creators
+mostly yielded 12 posts against a cap of 40; only `virat.kohli` reached the cap (48
+links found). That — not the post cap — is the binding constraint on Instagram volume.
