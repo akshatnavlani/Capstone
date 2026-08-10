@@ -3,3 +3,7 @@
 .env
 .venv/
 __pycache__/
+
+# transient run artifacts, not source
+scripts/ingestion/logs/
+*.log
