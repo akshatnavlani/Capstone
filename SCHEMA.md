@@ -64,6 +64,31 @@ themselves). Content tables carry:
   `is_sponsored` to be populated, or coordinate with Track C if you need it sooner.
 - `sponsorship_raw_matches jsonb` — matched disclosure phrases, kept for auditing the
   labeler's precision (this is why it's flagged load-bearing in the plan).
+- 🔴 **`has_paid_partnership_label boolean` on `instagram_posts` — NEW 2026-08-11,
+  ACTION REQUIRED BY TRACK C.** Migration `20260811000000_paid_partnership_label.sql`,
+  already applied to the live DB.
+  **Why this matters more than a normal column:** Instagram renders a native
+  *"Paid partnership"* label from the post's branded-content metadata, and that string
+  appears **nowhere in the caption text**. A caption-only labeler — which is what
+  `is_sponsored` currently is, and it is the project's *sole* treatment-label source —
+  **structurally cannot see it.** It is plausibly the **highest-precision sponsorship
+  signal available anywhere in this dataset**: it is Instagram's own platform-level
+  declaration of a commercial relationship, not a regex guess over creator-authored
+  prose (no false positive from someone writing "ad" mid-sentence, no miss from a novel
+  disclosure phrasing).
+  **Ownership is unchanged:** Track A writes the raw observation only (we see it while
+  scraping the page); **Track C should read it when computing `is_sponsored`** —
+  labeling stays yours, this column deliberately does not set `is_sponsored` itself.
+  ⚠️ **NULL and FALSE are NOT the same and must not be collapsed:**
+  `NULL` = never observed (row predates the migration or wasn't re-fetched) ·
+  `FALSE` = page *was* fetched and carried no label · `TRUE` = label present.
+  Treating `NULL` as "not sponsored" would silently turn every unmeasured row into a
+  confirmed negative.
+  Also relevant to your re-label: **captions were broken until 2026-08-11** (truncated at
+  exactly 100 chars or missing entirely) and are now backfilled — disclosures sit at the
+  *end* of long captions, which is precisely what the truncation was deleting, so the
+  earlier "0 sponsorship events" figure was a scraping artifact and is worth re-running
+  against.
 - `is_bot_flagged boolean` / `bot_score real` on profile tables — nullable, populated by
   Track B's heuristic bot-detection module (Weeks 7-8 per timeline). Track A supplies
   the raw signals it needs: `follower_count`/`following_count` ratio, `account_created_at`
