@@ -112,6 +112,10 @@ def push_candidates(rows: list[dict] | None = None) -> int:
         row_fields["notes"] = r.get("notes", "")
         row_fields["reddit_topic_subs"] = json.dumps(r.get("reddit_topic_subs", [])) if r.get("reddit_topic_subs") else "[]"
         row_fields["approval_status"] = r.get("approval_status", "")
+        # Brands tagged in bio, discount codes, paid-collab language. Free to capture
+        # (the bio is already read for the relevance check) and predicts which creators
+        # will actually yield sponsorship events.
+        row_fields["brand_signals"] = r.get("brand_signals", "")
         missing = [c for c in header if c not in row_fields]
         if missing:
             raise RuntimeError(f"sheet has columns not handled by this script: {missing}")

@@ -39,6 +39,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 
 import psycopg2
 import yaml
@@ -50,6 +51,15 @@ log = logging.getLogger("collab")
 
 RELATION_TYPE = "frequent_collaborator"  # Track C filters on this exact literal
 SESSION = "collabx"
+
+# Deliberate pacing between posts, added 2026-08-11 after hitting a real Instagram
+# HTTP 429. The first version of this script had NO inter-request gap at all: it ran
+# ~200 post-page fetches (3 opencli calls each) back-to-back across the backfill and
+# collab passes, which is what accumulated the limit. The agent-reach skill's Instagram
+# section is explicit that the response to a 429 is to re-login and REDUCE FREQUENCY,
+# so this is the documented remedy rather than an invented one. orchestrator.py already
+# gates at 3s; this is deliberately slower because we have now actually been limited.
+POST_GAP_SECONDS = 5.0
 
 _OPENCLI = shutil.which("opencli")
 _LINK = re.compile(r"\]\(/([A-Za-z0-9_.]+)/\)")
@@ -145,28 +155,59 @@ def main():
     log.info("analysing %d posts against %d known creators", len(posts), len(known))
 
     edges: set[tuple[str, str]] = set()
+    observed_coauthors: dict[str, list] = {}  # handle -> [(owner_username, post_id), ...]
     caption_fixes = paid_count = failed = 0
 
     for i, (post_id, uname, creator_id) in enumerate(posts, 1):
+        if i > 1:
+            time.sleep(POST_GAP_SECONDS)
         try:
             info = analyse_post(post_id, uname)
         except RuntimeError as e:
             failed += 1
-            log.info("[%d/%d] %s failed: %s", i, len(posts), post_id, str(e)[:70])
+            msg = str(e)
+            log.info("[%d/%d] %s failed: %s", i, len(posts), post_id, msg[:70])
+            # A 429 is the platform telling us to stop, not a per-item hiccup. Abort the
+            # run rather than grinding through the remaining posts and deepening the
+            # limit -- the mistake that caused it in the first place.
+            if "429" in msg:
+                log.warning("HTTP 429 — aborting run immediately to avoid deepening the "
+                             "rate limit. Re-run later; the script is resumable.")
+                break
             continue
 
         if info["paid_partnership"]:
             paid_count += 1
+        if not args.dry_run:
+            # Raw observation only -- Track C owns is_sponsored. Written for every post
+            # actually fetched, so FALSE means "fetched, no label" and NULL keeps
+            # meaning "never observed".
+            with conn.cursor() as cur:
+                cur.execute(
+                    "update instagram_posts set has_paid_partnership_label=%s where post_id=%s",
+                    (bool(info["paid_partnership"]), post_id),
+                )
+            conn.commit()
 
-        # Edges: every co-author that is itself a known creator, in BOTH directions is
-        # NOT written -- only owner->collaborator, matching the table's semantics
-        # (creator_id owns the row, handle names the related account).
+        # Write a row for EVERY observed collaboration, not only the ones that resolve
+        # today. Corrected 2026-08-11 after being (rightly) called over-cautious: Track
+        # C's resolver matches handle text against creators AT RESOLUTION TIME, so a row
+        # for (virat.kohli, instagram, anushkasharma) resolves to nothing now and
+        # AUTO-RESOLVES the moment anushkasharma is promoted -- no re-scrape, no rework.
+        # These facts cost rate-limited Instagram fetches to obtain and are nearly free
+        # to store. Unresolvable rows are silently skipped by the resolver, UNIQUE
+        # prevents duplicates, creator_id is still a valid FK, and nothing touches the
+        # creator set. Discarding them was throwing away expensive data.
         for h in info["coauthors"]:
             hl = h.lower()
-            if hl in known and hl != (uname or "").lower():
+            if hl and hl != (uname or "").lower():
                 edges.add((creator_id, hl))
-                # the reciprocal direction, when that collaborator is also a creator
-                edges.add((known[hl], (uname or "").lower()))
+                # reciprocal direction only when that collaborator IS a creator (we need
+                # a real creator_id to own the row)
+                if hl in known:
+                    edges.add((known[hl], (uname or "").lower()))
+            if hl:
+                observed_coauthors.setdefault(hl, []).append((uname, post_id))
 
         if info["caption"] and not args.dry_run:
             with conn.cursor() as cur:
@@ -200,9 +241,49 @@ def main():
     with conn.cursor() as cur:
         cur.execute("select count(*) from creator_related_accounts")
         total = cur.fetchone()[0]
+        # RESOLVED = rows whose handle matches some OTHER creator's own handle. This is
+        # what Track C's resolver can actually turn into an edge; report it separately
+        # from rows written, because they now legitimately differ.
+        cur.execute("""
+            select count(*) from creator_related_accounts r
+            where r.relation_type = %s
+              and exists (select 1 from creators c
+                          where lower(c.instagram_handle) = lower(r.handle)
+                            and c.creator_id <> r.creator_id)
+        """, (RELATION_TYPE,))
+        resolved = cur.fetchone()[0]
     conn.close()
-    log.info("DONE new_edge_rows=%d table_total=%d caption_fixes=%d paid_partnership_posts=%d failed=%d",
-              written, total, caption_fixes, paid_count, failed)
+    log.info("DONE new_edge_rows=%d table_total=%d RESOLVED=%d caption_fixes=%d paid_partnership_posts=%d failed=%d",
+              written, total, resolved, caption_fixes, paid_count, failed)
+
+    # Co-authors -> sheet for USER REVIEW. Never auto-promoted: many are orgs, brands or
+    # politicians (commonwealthsport, globalboxingseries, naralokesh), and promoting them
+    # wholesale would pollute the creator set and re-import the #fitindia-collision class
+    # of error. They enter the normal curation flow with approval_status BLANK.
+    if observed_coauthors and not args.dry_run:
+        import sheets_sync
+        known_lower = set(known)
+        new = {h: v for h, v in observed_coauthors.items() if h not in known_lower}
+        rows_out = []
+        for h, occurrences in sorted(new.items()):
+            owner, post_id = occurrences[0]
+            rows_out.append({
+                "name": h,
+                "instagram_handle": h,
+                "category": "other",  # best guess; must be a CHECK value if ever promoted
+                "follower_count": "",
+                "notes": f"co-author of @{owner} on post {post_id}"
+                         + (f" (+{len(occurrences)-1} more collab posts)" if len(occurrences) > 1 else ""),
+                "brand_signals": "",
+                "approval_status": "",
+            })
+        try:
+            n = sheets_sync.push_candidates(rows_out)
+            log.info("pushed %d NEW co-author candidates to the sheet for review "
+                      "(%d observed, %d already creators)", n, len(observed_coauthors),
+                      len(observed_coauthors) - len(new))
+        except Exception as e:
+            log.warning("sheet push failed: %s", e)
 
 
 if __name__ == "__main__":
