@@ -153,3 +153,25 @@ independent transport) and Reddit were unaffected and worked normally.
 **Before resuming Instagram work:** probe a single `instagram profile nasa` call and
 confirm a real result. Do NOT run a bulk job to "see if it works" — that is what
 accumulated the limit. Back off in hours, not minutes.
+
+## UNFINISHED: collab pass killed mid-run 2026-08-11 (resume this)
+
+`collab_edges.py` over all 97 posts was **killed at ~83/97**, so its edge INSERT and
+co-author sheet push — both of which run at the END — never executed for that pass.
+
+**What persisted (written incrementally, per-post):** `has_paid_partnership_label` for
+83 of 97 posts (80 false, 3 true, 14 still NULL) and all caption fixes. Verified clean:
+82 non-null captions / 82 distinct.
+
+**What was lost:** edges and co-author candidates from the ~53 posts beyond the first
+paced batch. Current totals (20 edge rows / 2 resolved / 18 sheet candidates) come from
+the earlier 30-post run only.
+
+**To finish:** re-run `python collab_edges.py` (~18 min at the 5s pacing). It is safe to
+re-run — UNIQUE(creator_id, platform, handle) prevents duplicate edges, the caption
+update is guarded by a strictly-longer check, and the sheet push dedups on
+instagram_handle. Do NOT run Reddit concurrently with it.
+
+**Lesson worth keeping:** batch-terminal writes are fragile for long browser jobs. The
+per-post writes (captions, paid-partnership flag) all survived the kill; the
+end-of-run writes did not. Future long passes should flush edges incrementally too.
