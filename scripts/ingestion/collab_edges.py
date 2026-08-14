@@ -145,6 +145,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--only-new", action="store_true",
+                     help="Only posts never scanned before (has_paid_partnership_label IS NULL). "
+                          "Re-scanning already-scanned posts costs ~13s each and adds "
+                          "rate-limit exposure for no new information, since co-authors and "
+                          "the paid-partnership flag don't change retroactively.")
     args = ap.parse_args()
 
     conn = psycopg2.connect(ENV["DATABASE_URL"])
@@ -153,7 +158,9 @@ def main():
                      "where instagram_handle is not null")
         known = {h: cid for h, cid in cur.fetchall()}
         cur.execute("select post_id, username, creator_id from instagram_posts "
-                     "where creator_id is not null order by (caption is null) desc, post_id")
+                     "where creator_id is not null "
+                     + ("and has_paid_partnership_label is null " if args.only_new else "")
+                     + "order by (caption is null) desc, post_id")
         posts = cur.fetchall()
     if args.limit:
         posts = posts[: args.limit]
