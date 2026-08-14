@@ -190,6 +190,10 @@ class PlatformWorker:
         self.cutoff = recency_cutoff(recency_days)
         self.skipped_stale = 0
 
+    def _release_on_failure(self, handle: str) -> None:
+        """No-op by default; only browser-backed workers hold tab leases."""
+        return
+
     def run_batch(self, creators: list[Creator], conn) -> None:
         for creator in creators:
             handle = self._handle_for(creator)
@@ -205,6 +209,12 @@ class PlatformWorker:
             except Exception:
                 log.exception("Failed for %s (%s) on %s — skipping, continuing batch",
                                creator.name, handle, self.platform_name)
+                # Backstop for the tab-lease leak: process_creator may raise from any
+                # browser call after the session is opened, not just the known
+                # no-post-links path. The session name is deterministic
+                # (orc_<handle>), so releasing it here covers every failure route
+                # without restructuring the worker. Harmless when nothing is held.
+                self._release_on_failure(handle)
 
     def _handle_for(self, creator: Creator) -> str | None:
         raise NotImplementedError
@@ -338,6 +348,10 @@ class InstagramWorker(PlatformWorker):
     def _handle_for(self, creator: Creator) -> str | None:
         return creator.instagram_handle
 
+    def _release_on_failure(self, handle: str) -> None:
+        # Mirrors the session name built in process_creator.
+        _release_session(f"orc_{handle}")
+
     def process_creator(self, creator: Creator, handle: str, conn) -> None:
         self.rate_limiter.wait()
         profile_resp = run_opencli("instagram", "profile", handle, "-f", "yaml")
@@ -413,6 +427,15 @@ class InstagramWorker(PlatformWorker):
             run_opencli("browser", session, "scroll", "down")
             run_opencli("browser", session, "wait", "time", "3")
         if not post_paths:
+            # Release the tab lease before bailing. Real bug found 2026-08-14 by
+            # pattern-matching 3 days of unattended scheduled-run logs: this raise sits
+            # BEFORE the `browser close` at the end of the method, and `session` is a
+            # NEW named session per creator (orc_<handle>), so every creator that failed
+            # here leaked a held tab lease and an orphaned tab for the rest of the run.
+            # Across a 13-creator pass that was up to 8 leaked leases. Independently
+            # confirmed the same class of leak by hand: a killed collab run left a stale
+            # `collabx` lease that had to be released manually before Reddit could work.
+            _release_session(session)
             raise RuntimeError(f"no post links found for {handle} after scrolling")
 
         # `instagram user` (metadata) and `browser find` (URLs) are two SEPARATE
@@ -498,6 +521,15 @@ class InstagramWorker(PlatformWorker):
         log.info("Instagram: %s -> %d posts kept (%d skipped as older than the %s cutoff, %d links found)",
                   handle, kept, self.skipped_stale, self.cutoff.date(), len(post_paths))
         run_opencli("browser", session, "close")
+
+
+def _release_session(session: str) -> None:
+    """Best-effort tab-lease release. Never raises — a cleanup failure must not mask the
+    real error that triggered it, and must not abort the rest of the batch."""
+    try:
+        run_opencli("browser", session, "close", timeout=20)
+    except Exception:
+        pass
 
 
 def enrich_reddit_profile(cur, username: str) -> None:
