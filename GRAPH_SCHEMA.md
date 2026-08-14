@@ -306,6 +306,88 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   `Optional`/unpopulated in their ingestion schemas, matching Track A's
   real DB. No longer open.
 
+## Real-data status (2026-08-15, Phase 1 — first real HeteroData built, blocker cleared)
+
+The blocker every prior round in this section reported (0 real edges, 0 real
+sponsorships) is cleared. `main`'s CAPSTONE_NEXT_STEPS.md (rewritten by the
+orchestrator, pulled fresh this round) reports 18 real `is_sponsored=true`
+events (10 with `brand_id` resolved) and 10 real resolved collaboration
+pairs, independently reproduced three times by three different sessions
+(Track A → orchestrator → Track C). Re-verified live, independently, via
+direct SQL against the pooler `DATABASE_URL` before trusting it: confirmed
+exactly — 63 creators, 505 `creator_related_accounts` rows / 10 resolved
+pairs, 18 `is_sponsored=true` rows / 10 with `brand_id`.
+
+**Built and ran `scripts/build_real_hetero_data.py` — the first real
+end-to-end HeteroData, GAT pass, and training attempt this project has had.**
+Real creator features (CLIP+BERT via Track C's `/feature-store/creators`),
+real brand features (direct DB read — see gap below), real
+`collaborates_with` (20 directed edges = 10 pairs), real `co_occurs_with`
+(0, unchanged), real `sponsors`/`sponsored_by` (10 edges from
+`/feature-store/edges/sponsorships`).
+
+**Real structure:** 63 creators, 10 brands. Degree distribution over the
+creator-creator graph (collaborates_with + co_occurs_with combined): 47
+nodes degree 0, 15 nodes degree 1, 1 node degree 5 (Virat Kohli — hub of 4
+of the 10 pairs). **74.6% of creators (47/63) are isolated nodes.** 53
+connected components total, 6 non-trivial (all size 2 except Kohli's, size
+6: PV Sindhu/Kohli/anushkasharma/karanaujla/royalchallengers.bengaluru/
+sporting.beyond). This is the confirmed real shape of the curated set per
+CAPSTONE_NEXT_STEPS §2 — Track A tested and disproved the "more coverage
+closes it" hypothesis (267 more posts scanned, 0 new resolved pairs). Not a
+pipeline bug to chase.
+
+**GAT forward pass + inductive check: PASSED on real topology.** No NaN on
+real features + real sparse structure (0-edge `co_occurs_with` relation
+included). Same trained instance, no retraining, ran cleanly on 15 synthetic
+nodes appended to the real 63/10 graph — the inductive property (Weeks 7-8's
+original finding, previously only checked against synthetic-only graphs)
+now holds against real topology specifically, not just real node features.
+
+**Real brand feature gap, found this round:** all 10 real `brands` rows have
+`category`/`follower_count`/`post_count`/`is_verified`/all three handles
+NULL — Track A's documented scope (brands populated only from
+disclosure-text name extraction) means every brand node's metadata vector is
+currently all-zero except node identity. Not a bug here; flagged for
+whoever eventually wants brand nodes to be distinguishable by feature rather
+than graph position alone.
+
+**Training attempt: ran, but on a placeholder target — real gap found, not
+stubbed silently.** Built the treatment tensor for real (8 of 63 creators
+have a real `is_sponsored=true` event). Then tried to compute the actual
+supervised target (temporal engagement-delta) for the 6 creators with a
+real sponsored neighbor. **Found a new, more specific blocker than "not
+built yet": of Kohli's 4 neighbors and Ronaldo's 1, only 3 have any dated
+Instagram content at all, and for every one of them, EVERY dated post falls
+entirely AFTER their collaborator's sponsorship-event date — none straddle
+it.** Root cause: per-creator scraping depth currently reaches back only
+1-3 months, and the sponsorship events are themselves recent, so the
+"before" window needed for a real delta doesn't exist yet for any
+graph-connected pair. This is a data-coverage timing gap (Track A's), not a
+missing computation — the delta itself is a simple before/after aggregation
+once both sides of an event have dated posts. Ran the training loop anyway
+with an explicit all-zero placeholder target, clearly labeled as a
+**plumbing check only** (confirms `compute_gail_loss`'s four terms — MSE +
+overlap + smoothness + consistency — run to completion with no NaN/crash on
+real sparse structure across 50 epochs), not a real result.
+
+**Sufficiency call (Task 4, direct):** **Not sufficient yet, and the
+binding reason isn't sample size — it's that the real number of computable
+training PAIRS today is 0, not 10.** CAPSTONE_NEXT_STEPS' "10 real
+sponsorship events" describes treatment examples; a GAIL training pair also
+needs a measured outcome (a neighbor's real engagement delta), and none of
+the 10 events currently have one — see the temporal-coverage gap above. This
+is a stronger and more specific finding than "N=10 is underpowered" (which
+would still have been true even if the deltas WERE computable) — it means
+zero real training signal exists right now, full stop. The graph structure
+and GAT plumbing are proven real and correct; what's missing is any real
+observed outcome to train against. Recommend re-checking after Track A's
+Instagram scraping naturally accumulates more historical depth per
+creator (older posts) or enough time passes that new dated posts land after
+existing events — worth flagging upstream to CAPSTONE_NEXT_STEPS' P0.4/P2
+temporal-engagement-delta item, since this specific straddle-the-event
+requirement wasn't previously identified as its own gap.
+
 ## Real-data status (2026-08-10, Weeks 14-16 check-in — no new build this round)
 
 Fresh session, no memory of prior rounds. Per HANDOFF.md's standing instruction,

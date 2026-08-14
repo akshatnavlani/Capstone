@@ -1,36 +1,53 @@
 # Handoff — Track B (ML-Core)
 
-Start here. Last updated 2026-08-10, end of a Weeks 14-16 check-in round
-(no new build — see "What changed this round" below). If you're a fresh
-session with no memory of prior conversations, read this file first, then
-`GRAPH_SCHEMA.md` (the full technical spec, kept current every round) for
-depth on any item below.
+Start here. Last updated 2026-08-15, end of Phase 1's Track B step (per
+`CAPSTONE_NEXT_STEPS.md` §6 "Sequential relay" — the orchestrator's living
+plan doc at repo root, now the project's actual source of truth; read that
+file first, every session, before this one). If you're a fresh session with
+no memory of prior conversations, read `CAPSTONE_NEXT_STEPS.md`, then this
+file, then `GRAPH_SCHEMA.md` (the full technical spec, kept current every
+round) for depth on any item below.
 
-## What changed this round (2026-08-10 check-in)
+## What changed this round (2026-08-15)
 
-Nothing built — this was a live-data re-verification round per the prior
-handoff's step 2, plus doc updates. Findings:
+**The 0-real-edges/0-real-sponsorships blocker that paused every round since
+Weeks 9-10 is cleared** — Track A/C's work landed 10 real collaboration
+pairs and 18 real sponsorship events (10 with `brand_id`). Re-verified live
+via direct SQL before trusting `CAPSTONE_NEXT_STEPS.md`'s numbers; they
+matched exactly. Built the **first real HeteroData end-to-end** (real CLIP+
+BERT creator features, real brand features, real collaborates_with/sponsors
+edges), ran the GAT forward pass + inductive check against it (passed, no
+NaN), and attempted real training. Full detail, numbers, and the direct
+sufficiency call are in `GRAPH_SCHEMA.md`'s newest "Real-data status"
+section (2026-08-15) — summary:
 
-- **Re-verified live against the Supabase DB directly** (not from any
-  track's docs): collaboration edges still 0, co-occurrence edges still 0
-  (346 `reddit_post_creators` rows, 0 shared across creators), sponsorships
-  still 0 (695 total content rows, `is_sponsored=true` count 0). Kohli/
-  Agilitas unchanged — still truncated at 100 chars, still `is_sponsored=
-  false`, Instagram not yet re-scraped since Track A's caption-fix commit
-  landed. Full detail in `GRAPH_SCHEMA.md`'s newest "Real-data status"
-  section.
-- **A concurrent Track C session verified the identical result the same
-  day** (their `track_c_backend_weeks14_16` memory) — two independent
-  live-DB checks agree, so this isn't a single-session artifact.
-- **Found (not yet actionable): `main` has an unmerged PROJECT_PLAN.md
-  revision** (2026-08-10) pivoting Section 1 to breadth-over-depth (~1,000
-  curated creators at 200-400 datapoints each, down from ~15 creators at
-  1,000+ each), explicitly targeting the zero-collaboration-edges blocker
-  this doc has carried for 6+ rounds. Not merged into any track branch yet,
-  and Track A's actual HANDOFF.md (2026-08-12, newest doc of any track)
-  still describes working the old 15-creator list — so the pivot is a plan
-  decision, not yet an operational reality. User's direction this round:
-  flag it, don't chase it. Worth checking again next round.
+- **Real graph is small and 74.6% isolated** (47 of 63 creators, degree 0)
+  — a confirmed structural property of the curated set (Track A tested and
+  disproved "more coverage helps"), not a bug.
+- **GAT + inductive property hold on real topology**, not just real
+  features — new, since prior rounds only had real features with 0 real
+  edges to test structure against.
+- **A NEW, more specific blocker was found, not the same old one:** even
+  though 10 real sponsorship events + 10 real collaboration pairs now
+  exist, **zero real (treatment, neighbor-outcome) training pairs are
+  actually computable today.** The 2 sponsored creators who have a
+  graph-connected neighbor (Kohli, Ronaldo) each have collaborators whose
+  dated posts fall entirely AFTER the sponsorship event — none straddle it,
+  because per-creator scraping depth only reaches back 1-3 months. The
+  temporal engagement-delta computation itself is simple (before/after
+  aggregation) and was exercised with a placeholder target to confirm the
+  training loop runs clean on real sparse structure (50 epochs, no NaN) —
+  but that run is explicitly NOT a real result, per this round's own
+  instruction not to stub-and-call-real. Real training is still blocked,
+  just on a narrower, better-understood thing now.
+- **Direct sufficiency answer (Phase 1's ask):** not sufficient yet — and
+  the reason is that specific 0-real-pairs finding, not merely "N=10 is
+  small." Worth flagging to the orchestrator for `CAPSTONE_NEXT_STEPS.md`'s
+  P0.4/P2 items, since "does the neighbor's data actually straddle the
+  event" wasn't previously checked as its own requirement.
+- New script this round: `scripts/build_real_hetero_data.py` — reusable for
+  the next check (re-run once Track A's scraping depth grows or new events
+  land with time for a "before" window to accumulate after them).
 
 ## Current state (one paragraph)
 
@@ -43,47 +60,63 @@ consistency) → spillover prediction head (`ml/spillover_head.py`) →
 combined loss (`ml/gail_loss.py`) → training loop (`ml/training.py`,
 `ml/gail_model.py` wires it together) → evaluation harness
 (`ml/evaluation.py`). CLIP+BERT feature extraction (`ml/feature_extraction.py`)
-is validated against real scraped data (16 real creators as of the last
-check). **68 tests pass** (`pytest tests/`, ~20-30s). What doesn't work
-yet: nothing can be trained on real data, because the live DB has 0 real
-collaboration/co-occurrence edges and 0 confirmed real sponsorship events —
-see Open Items. Bot detection (`ml/bot_detection.py`) is separately
-complete and unrelated to the training-loop work.
+is validated against real scraped data (63 real creators as of this round).
+**68 tests pass** (`pytest tests/`, ~20-30s). As of 2026-08-15, the full
+GAIL pipeline has also been run once against **real** creators/brands/
+edges/events end-to-end (`scripts/build_real_hetero_data.py`) — the GAT
+forward pass and inductive check are real results; the training-loop run is
+a plumbing check only (placeholder target, see below), not a real result
+yet. Bot detection (`ml/bot_detection.py`) is separately complete and
+unrelated to the training-loop work.
 
 ## Open items (tagged with why)
 
-- **Real collaboration edges: 0.** *Blocked on Track A* —
-  `creator_related_accounts` "frequent_collaborator" data isn't populated.
-- **Real co-occurrence edges: 0 as of my last direct check (2026-08-10).**
-  *Needs re-verification, not a trusted claim* — Track C's own memory
-  claims this "self-healed after Track A's data purge," but I have not
-  independently re-checked that since it was written. **Don't trust either
-  number without a fresh live check** (see Next Steps).
-- **Real sponsorship training pair: 0 confirmed.** *Blocked on a backfill,
-  not a bug* — one real brand-linked post exists (Virat Kohli/Agilitas,
-  genuine partnership caption) but its stored caption is truncated at
-  exactly 100 characters (a scraper limitation Track A already fixed *going
-  forward*, but the existing row was never re-scraped). `is_sponsored` is
-  `false` on it as a result. Will resolve itself once that post (or a
-  similar one) gets re-scraped, or Track C backfills it.
-- **Temporal engagement-delta computation: not started.** *Genuinely
-  blocked, and the single biggest remaining piece* — GAIL needs
-  `(creator, timestamp, engagement before, engagement after)` around a real
-  sponsorship event to build real training pairs; nothing computes this
-  yet, and it can't be meaningfully dummy-data-tested (the whole point is
-  real temporal signal). Build this the moment a real sponsorship event
-  exists.
+- **Real collaboration edges: 10 real pairs (20 directed edges) as of
+  2026-08-15.** *Was blocked on Track A, now cleared* — confirmed via
+  direct SQL this round, matches `CAPSTONE_NEXT_STEPS.md` and two other
+  tracks' independent counts exactly. Structurally sparse (74.6% of 63
+  creators isolated) — a confirmed property of the curated set, not a
+  coverage gap (Track A tested and disproved "more scanning helps").
+- **Real co-occurrence edges: still 0.** Re-confirmed this round via the
+  live `/feature-store/edges/co-occurrence` endpoint. `reddit_post_creators`
+  still has no post linked to 2+ creators.
+- **Real sponsorship events: 18 confirmed (`is_sponsored=true`), 10 with
+  `brand_id` resolved.** *Was blocked, now cleared* — re-verified this
+  round via direct SQL and Track C's `/feature-store/edges/sponsorships`
+  (returns exactly the 10 brand_id-resolved rows). 8 distinct creators are
+  "sponsored" by the broader (any is_sponsored) definition.
+- **Real training PAIRS (treatment + measured neighbor outcome): 0,
+  confirmed this round — the actual current blocker, more specific than
+  the old "0 sponsorships" one.** Of the 8 sponsored creators, only 2
+  (Kohli, Ronaldo) have a graph-connected collaborator at all; for both,
+  every one of that collaborator's dated posts falls entirely AFTER the
+  sponsorship event date — none straddle it, so no real before/after delta
+  exists to compute. Root cause is scraping depth (1-3 months back per
+  creator), not a missing computation. Re-check as Track A's scraping
+  continues to accumulate depth, or as more time passes after existing
+  events. See `GRAPH_SCHEMA.md`'s 2026-08-15 entry for the full per-pair
+  detail table.
+- **Temporal engagement-delta computation: still not built as reusable
+  code**, but no longer purely hypothetical — this round confirmed exactly
+  what data shape it needs (dated posts straddling an event) and confirmed
+  that shape doesn't exist yet for any real pair. Build it for real the
+  moment one real straddling pair exists; a placeholder (all-zero target)
+  was used this round only to plumbing-test the training loop, explicitly
+  not presented as a real result.
 - **Propensity model real-fitting: not started.** *Blocked on real
   treated/untreated examples* — architecturally ready
   (`PropensityScoreModel` in `ml/causal_regularization.py`), just has
   nothing real to fit against yet.
-- **GraphSAGE-vs-GAT: provisionally decided, not 100% closed.** Staying on
-  GAT for production is accepted and PROJECT_PLAN.md Section 3a is already
-  updated to reflect it. Real-*feature-value* validation is done. Real-
-  *graph-structure* validation is still pending — needs real edges to exist
-  first (see above). A fallback custom weighted layer exists either way
-  (`ml/weighted_sage_conv.py`) if GraphSAGE ever becomes wanted for
-  unrelated reasons (large-scale neighbor sampling).
+- **GraphSAGE-vs-GAT: now settled, not just provisional.** Staying on GAT
+  for production is accepted and PROJECT_PLAN.md Section 3a already
+  reflects it. Real-feature-value validation was done Weeks 7-8; real-
+  graph-structure validation (the missing piece) landed this round —
+  `scripts/build_real_hetero_data.py` ran the GAT forward pass and the
+  inductive (new-node) check against the real 63-creator/10-pair graph,
+  both passed with no NaN. A fallback custom weighted layer still exists
+  (`ml/weighted_sage_conv.py`) if GraphSAGE is ever wanted for unrelated
+  reasons (large-scale neighbor sampling), but there's no open validation
+  question left blocking the GAT choice.
 - **`NUM_BRAND_CATEGORIES = 5` (in `ml/schema.py`): a placeholder.** *Needs
   a decision from Track A* — `brands.category` is free-text/nullable with
   no fixed taxonomy defined yet.
@@ -141,31 +174,28 @@ complete and unrelated to the training-loop work.
 
 ## Exact next steps for the next round
 
-1. `git status` (expect clean) and `pytest tests/` fresh (expect 68
-   passing, ~20-30s) before anything else — standard self-check, do this
-   even though last round left things clean.
-2. `git fetch origin` and read Track A's `DATA_COLLECTION_STATUS.md` +
-   Track C's `API_CONTRACTS.md` in full, not just diffed — re-verify the
-   real collaboration/co-occurrence edge counts and the Kohli/Agilitas
-   status **live**, not from this file or from other tracks' memory. Ask
-   the user for the Supabase `DATABASE_URL` if a live pull is needed (see
-   Lesson 5) — it changes each session, was never persisted.
-3. **If real collaboration or co-occurrence edges now exist** (even a
-   handful): re-run `scripts/validate_gat_on_real_data.py` — this is the
-   one thing standing between "provisional" and "settled" on the
-   GAT-vs-GraphSAGE decision. May need updating to also pull co-occurrence
-   edges (it currently only pulls `collaborates_with`).
-4. **If a real sponsorship event now exists** (`is_sponsored=true` with a
-   real `brand_id`): this is the trigger to start building temporal
-   engagement-delta computation — the biggest remaining gap before any
-   real training can happen. Don't build it against dummy data first; the
-   whole point is real temporal signal.
-5. **If neither of the above has changed**: no urgent data-dependent work
-   is unblocked. Reasonable filler: early prep for Weeks 14-15's Sentiment
-   Propagation model (following the same "de-risk against dummy data
-   early" pattern used for the causal regularization and training-loop
-   work), or just report status plainly if genuinely nothing moved — don't
-   manufacture busywork.
-6. Update `GRAPH_SCHEMA.md` and this file together with whatever you find —
+1. Read `CAPSTONE_NEXT_STEPS.md` at repo root FIRST — it's now the
+   project's actual source of truth (the orchestrator's cross-track living
+   doc), supersedes this file and memory when they disagree, and gets
+   rewritten frequently. `git pull origin main` before reading it, since it
+   lives on `main` and this branch doesn't auto-sync.
+2. `git status` (expect clean) and `pytest tests/` fresh (expect 68
+   passing, ~20-30s) — standard self-check.
+3. **Re-check the specific gap this round found: does any real sponsored
+   creator's collaborator now have a dated post straddling the event?**
+   Re-run `scripts/build_real_hetero_data.py`'s delta-probe logic (or the
+   whole script) against a fresh live pull — this is the ONE thing standing
+   between "plumbing checked" and "real training result." If yes even for
+   one pair: build the real temporal engagement-delta computation for real
+   (the shape is now known — before/after aggregation of `like_count`/
+   `comment_count` around `posted_at`) and replace the placeholder target.
+4. **If it's still 0 straddling pairs:** no real training progress is
+   unblocked. Reasonable filler: early prep for Sentiment Propagation
+   (same "de-risk against dummy data early" pattern), or report status
+   plainly — don't manufacture busywork. Consider flagging to the
+   orchestrator whether Track A should prioritize scraping-depth (older
+   posts) for the handful of graph-connected creators specifically, since
+   that's the actual unblock now, not general breadth.
+5. Update `GRAPH_SCHEMA.md` and this file together with whatever you find —
    both are living docs, not append-only logs; correct stale sections
    rather than only adding new ones.
