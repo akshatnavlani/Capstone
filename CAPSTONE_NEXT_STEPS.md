@@ -195,22 +195,23 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
-### 3.2a Live DB state — **Track A verified 2026-08-15, close of Phase 1F** (newest; the 1E table below is superseded)
+### 3.2b Live DB state — **Track C verified 2026-08-15, Phase 1F re-labeling** (newest; supersedes 3.2a's labeling row)
 
 | Table | Rows | Note |
 |---|---|---|
-| `creators` | **63** | +3, all targeted promotions naming the row each resolved |
-| `creator_related_accounts` | **505 rows / 15 resolved / 10 DISTINCT PAIRS** | **report pairs.** 15 resolved rows include reciprocal directions of the same collaboration; deduplicate with `least(name)/greatest(name)` |
-| `instagram_posts` | **1,092** | 31 of 63 creators covered (was 24). **120 unscanned** — a throttle stopped the scan |
-| `instagram_comments` | **13,097** | +1,546 |
-| `has_paid_partnership_label` true | **12** | +1; Track C's highest-precision sponsorship signal |
-| `is_sponsored=true` / with `brand_id` | 11 / 9 | unchanged — Track C hasn't relabelled the new posts yet |
+| `creators` | 63 | unchanged this round |
+| `creator_related_accounts` | 505 rows / 15 resolved / 10 distinct pairs | unchanged; independently reproduced a third time (Track A → orchestrator → Track C, all match). API returns 20 edges = 2 directed edges per pair, not 20 relationships — documented for Track B. |
+| `instagram_posts` | 1,092 | unchanged this round |
+| `is_sponsored=true` (all platforms) | **18** | +7, all Instagram, 0 YouTube/Reddit. Force-relabel (`?force=true`) caught the 267 posts Phase 1F scraped that a default run would have skipped (they default to `is_sponsored=false`, not null). 13 via caption regex, **5 via `has_paid_partnership_label` only** — including one post with a still-empty caption, the case text-only labeling structurally cannot reach. |
+| `is_sponsored=true` with `brand_id` | **10 of 18** | was 9 of 11. `/feature-store/edges/sponsorships` reconciles exactly against this raw count — zero gap between endpoint and data. 8 of 18 still lack `brand_id` — Track A's brand extraction lagging one round behind labeling, expected/routine. |
 | `brands` | 10 | unchanged |
-| Sheet | 488 rows / 131 accepted | grown by co-author candidate pushes |
+| Sheet | 488 rows / 131 accepted | unchanged this round |
 
-**Pairs added this round: 7 → 10. All 3 from targeted promotion; 0 from covering 7 new
-creators.** That is the second independent confirmation that coverage does not add graph
-structure — see the P0.2 rewrite above.
+**Collaboration graph is now a confirmed structural property, stated for Track B's benefit before
+it starts training: 10 real pairs across 63 creators, ~2.4% resolve rate.** Not a bug, not a
+coverage gap — verified twice more this round (Track A's scan of 267 new posts added 0 pairs;
+Track C reproduced the resolver's own logic directly against the DB and got the identical count).
+Track B should expect a small, sparse, but genuinely real graph on its first training attempt.
 
 ### 3.2 ~~Live DB state — orchestrator-verified 2026-08-14 after Phase 1E~~ (SUPERSEDED by 3.2a)
 
