@@ -329,6 +329,20 @@ prevent. It converted a silent-corruption bug into a loud one.
 Supersedes Phase 1E where they disagree. **The square-growth hypothesis is no longer open —
 it was tested properly and it FAILED.** Do not re-open it as "untested".
 
+## 0. Verified totals at close of round (live DB, 2026-08-15)
+
+| Thing | Value | Change |
+|---|---|---|
+| `creators` | **63** | +3 (all targeted promotions) |
+| `creator_related_accounts` | **505 rows** | +189 |
+| **RESOLVED rows** | **15** | +5 |
+| **DISTINCT PAIRS** (report this) | **10** | +3, *all from promotion* |
+| `instagram_posts` | **1,092** | +267 |
+| Creators with IG content | **31 of 63** | +7 |
+| `instagram_comments` | **13,097** | +1,546 |
+| Posts unscanned for co-authors | **120** | throttle stopped the scan |
+| `has_paid_partnership_label` true | **12** | +1 |
+
 ## 1. The throttle test — the correct method, and it passed
 
 Phase 1E's lesson was applied literally: a **sustained 12-request scan**, not a probe.
@@ -435,6 +449,61 @@ entered `creators` and resolved into `creator_related_accounts` as fake "collabo
 edges, corrupting the collaboration-vs-sponsorship distinction GAIL depends on. **User review
 is the only safeguard and it did not catch these** — the targeted-promotion rule caught them
 only because a human-in-the-loop check was applied per candidate.
+
+## 5b. ⚠️ REPORT DISTINCT PAIRS, NOT RESOLVED ROWS — a new counting trap
+
+Standing rule 8 says "row counts ≠ resolved counts". **There is one more level below that,
+and it bit this round:** *resolved rows ≠ distinct pairs.*
+
+After batch 1's scan, RESOLVED rows went **13 → 15** — which reads like coverage finally
+producing edges. It did not. Both new rows are the **reciprocal direction** of pairs that
+already existed:
+
+- `choudharyhitesh005 -> @mcmary.kom` (reverse of `MC Mary Kom -> @choudharyhitesh005`)
+- `piyush.meghwanshi -> @nehwalsaina` (reverse of `Saina Nehwal -> @piyush.meghwanshi`)
+
+Scraping a newly-promoted creator's own grid finds the collaboration from *their* side too.
+**Distinct unordered pairs: 10 before, 10 after. Zero new graph structure.**
+
+This round, cleanly attributed:
+
+| Source | Distinct pairs added |
+|---|---|
+| 3 targeted promotions | **+3** (7 → 10) |
+| Covering 7 new creators (275 posts, 147 scanned, 82 new edge rows) | **0** |
+
+That is a second independent confirmation of §2, on a different creator sample — and it was
+a **pre-registered prediction**: §2's mechanism analysis predicted ~0 before the batch ran.
+
+**Always compute pairs with `least(name)/greatest(name)` de-duplication before reporting
+edge growth.** A bidirectional collaboration is ONE edge to the graph, not two.
+
+## 5c. Batch 1 coverage + the throttle re-trip (2026-08-15)
+
+**Batch 1: 7 of 8 creators, +267 posts.** Coverage **24 → 31 creators**, `instagram_posts`
+825 → 1092, `instagram_comments` 11,551 → 13,097. `@anushkasharma` alone failed — grid stall
+at **0 links**, per-account not systemic (`choudharyhitesh005` scraped normally seconds
+later). The 0-links-at-19s shape suggests the page never finished loading before the scroll
+loop gave up; **the isolated-retry test on her is still pending** and was NOT run because the
+throttle tripped first.
+
+**The throttle re-tripped at post 148 of 267** (`chrome-error://chromewebdata/`). The
+consecutive-failure abort caught it in ~50 seconds. Cumulative Instagram volume for the day
+was the cause, and the arithmetic is again clear: **12 + 347 + 147 ≈ 506 post-page fetches
+(3 opencli calls each), plus 275 posts scraped with comments in batch 1.**
+
+⇒ **Coverage stopped here deliberately** — the instruction was to continue only *if the
+throttle stays clear*, and it did not. **120 posts remain unscanned.** Re-run
+`collab_edges.py --only-new` after a real cooldown (hours). Everything is flushed
+incrementally and safe.
+
+**Also gained:** +1 native paid-partnership post (**12 total**) and 26 caption fixes — real
+new signal for Track C independent of the edge question.
+
+⚠️ The end-of-run **sheet push failed** with `ConnectionResetError 10054`, so batch 1's
+co-author candidates are **on disk in `coauthor_checkpoint.json` but not yet on the sheet**.
+This is the end-of-run-write fragility this file has flagged twice before; the edges
+themselves were flushed incrementally and are safe in the DB.
 
 ## 6. New dead handle
 
