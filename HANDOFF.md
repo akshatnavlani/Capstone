@@ -242,3 +242,37 @@ connected profile was **Arc's**. Arc's failure mode is more insidious than recor
 `instagram profile nasa` returned real data **fast**, while `browser open` hung for 120s.
 Arc can look partially healthy. Always confirm `opencli doctor` shows the intended
 profile before blaming the scraper.
+
+## ✅ Instagram grid-stall RESOLVED in practice (2026-08-14, Phase 1E)
+
+**Discriminating test:** `cristiano` (a both-days failure), fresh session, grid path only →
+**12 → 12 → 24 → 36 links** across successive scrolls. Healthy progressive lazy-load.
+Branch: *succeeds alone* ⇒ cumulative browser state, not per-account page structure.
+
+**Confirmation batch — the 8 creators that failed in the Aug 11/12 logs, re-run with the
+tab-lease fix active:**
+
+| | Before (Aug 11/12) | After (Aug 14) |
+|---|---|---|
+| Stall rate | **8 of 8 failed** (100%) | **0 of 8 failed (0%)** |
+| Links found | 0 | 48 for 7 of 8 (12 for carryminati) |
+| Datapoints | 437 | **4,482 (+4,045)** |
+| Creators with any `instagram_posts` | 10 | **13** |
+| `instagram_posts` | 143 | **401** |
+| Leaked sessions after run | up to 8 | **0** (doctor: single profile, 0.1s connectivity) |
+
+Runtime 1853s for 8 creators (~232s/creator at post_cap=40).
+
+⚠️ **Honest caveat on causality:** Chrome was also restarted that morning, so "leak fix
+working" and "fresh Chrome process" are confounded — this is strong practical evidence
+the stall is gone, NOT proof the leak fix alone caused it. The next unattended scheduled
+run is the real test: it accumulates state across a full pass without a manual restart.
+**If the stall returns there, the leak fix was not sufficient and the cause is something
+that survives it.**
+
+**Caption distinctness note:** the standing check flagged 319 non-null / 316 distinct.
+Investigated rather than assumed — all 3 collisions are 1-2 character EMOJI-ONLY captions
+(two different creators each posting a single emoji). Genuine duplicates, not corruption.
+The corruption signature was *long* (400-1100 char) captions repeated across unrelated
+posts. Worth remembering: interpret the distinctness check with caption LENGTH in mind,
+or trivially-short captions will keep raising false alarms.
