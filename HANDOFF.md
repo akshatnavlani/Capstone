@@ -175,3 +175,70 @@ instagram_handle. Do NOT run Reddit concurrently with it.
 **Lesson worth keeping:** batch-terminal writes are fragile for long browser jobs. The
 per-post writes (captions, paid-partnership flag) all survived the kill; the
 end-of-run writes did not. Future long passes should flush edges incrementally too.
+
+---
+
+## Instagram grid-stall: characterised 2026-08-14 (one leak FIXED, root cause still open)
+
+Diagnosed from 3 days of unattended scheduled-run logs (Aug 11/12/13) — a repeatable
+signal that did not exist when this was a single incident.
+
+**The failure sequence is byte-identical across Aug 11 and Aug 12, in processing order:**
+```
+virat.kohli OK | neeraj____chopra FAIL | pvsindhu1 FAIL | nehwalsaina FAIL
+mirzasaniar FAIL | mcmary.kom OK | kingjames FAIL | cristiano FAIL
+beerbiceps OK | bhuvan.bam22 FAIL | carryminati FAIL | mostlysane OK | gurumann OK
+```
+
+**What this rules OUT (each tested against the logs, not assumed):**
+- *Positional session degradation* — failures are interleaved with successes, not
+  clustered at the end.
+- *Rate limiting / time-of-day* — Aug 11 ran at 10:00, Aug 12 at 23:46; identical result.
+  A rate limit would not reproduce byte-for-byte at different hours.
+- *Follower count / account size* — `cristiano` (678M) fails, `virat.kohli` (272M)
+  succeeds; `mcmary.kom` (2.0M) succeeds, `pvsindhu1` (3.9M) fails.
+- *Account being broken/private* — see next point.
+
+**Cleanly isolated:** `opencli instagram user <handle>` (site adapter) **never failed
+once** across all three days — 0 errors. Only the browser path
+(`browser open` → `find --css 'a[href*="/p/"]'`) returns nothing. So the accounts are
+reachable and the login is valid; the failure is specific to **browser-driven grid
+rendering**. This is the same shape as the documented Arc symptom (site adapters work,
+browser automation hangs/returns nothing), which is worth remembering as a *class* of
+failure, not an Arc-only quirk.
+
+**Aug 13 is a DIFFERENT failure** — 5x `timed out after 30 seconds`, including on
+`instagram profile mirzasaniar`, with no grid-stall at all. That day the browser layer
+was unavailable outright, most likely the same stale/wrong-profile condition hit
+manually on Aug 14 (see below). Do not conflate the two.
+
+**FIXED this round — tab-lease leak on the failure path.** `process_creator` opens a new
+named session per creator (`orc_<handle>`) and closes it only at the END of the method;
+the no-post-links `raise` sits before that close, so **every failed creator leaked a held
+tab lease and an orphaned tab for the rest of the run** — up to 8 leaks in the Aug 12
+pass. Now released explicitly there, plus a deterministic-name backstop in `run_batch`'s
+per-creator `except` covering all other raise paths. Corroborated independently: a
+killed collab run left a stale `collabx` lease that had to be released by hand.
+⚠️ **This is a real leak fix, NOT a proven fix for the stall.** Failures do cluster
+immediately AFTER heavy successful scrapes and then recover, which is consistent with
+leaked leases/orphaned tabs degrading the browser — but that is a hypothesis. It needs
+re-measurement against a real scheduled run before anyone claims the stall is solved.
+
+**Next thing to try** (cheap, high information): run ONE consistently-failing creator
+(e.g. `cristiano`) in **isolation, first call of a fresh session**. If it succeeds alone,
+the cause is cumulative browser state (leases/tabs) and the leak fix likely addresses it.
+If it fails alone too, the cause is per-account page structure and the grid selector
+needs revisiting.
+
+**Also worth building** (documented open item "aborts instead of degrading"): since
+`instagram user` succeeds even when the grid fails, the worker could fall back to the
+listing for post metadata instead of aborting the creator entirely. Caveat to check
+first: the listing reportedly returns no post URLs/IDs, and `post_id` is the PK — so
+confirm whether any usable ID is available before designing the fallback.
+
+**Environment gotcha found the same day:** `OPENCLI_PROFILE` in `.env` went stale.
+Chrome's extension instance re-registered during a 3-day gap and for a period the only
+connected profile was **Arc's**. Arc's failure mode is more insidious than recorded above:
+`instagram profile nasa` returned real data **fast**, while `browser open` hung for 120s.
+Arc can look partially healthy. Always confirm `opencli doctor` shows the intended
+profile before blaming the scraper.
