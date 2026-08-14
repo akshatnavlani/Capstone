@@ -34,6 +34,7 @@ Run: python collab_edges.py [--dry-run] [--limit N]
 """
 
 import argparse
+import json
 import logging
 import os
 import re
@@ -66,6 +67,10 @@ _LINK = re.compile(r"\]\(/([A-Za-z0-9_.]+)/\)")
 _PIC = re.compile(r"!\[([A-Za-z0-9_.]+)'s profile picture\]")
 _AGE_AUTHOR = re.compile(r"\]\(/([A-Za-z0-9_.]+)/\)\s*\n+\s*\d+[smhdwy]\b")
 _PAID = re.compile(r"paid partnership", re.I)
+
+# Co-author provenance checkpoint, rewritten as it grows so an interrupted run still
+# leaves the sheet-push input on disk.
+COAUTHOR_CHECKPOINT = os.path.join(os.path.dirname(__file__), "coauthor_checkpoint.json")
 
 # Path segments that are not usernames
 _NON_USER = {"explore", "reels", "p", "accounts", "directory", "about", "legal", "stories"}
@@ -156,7 +161,7 @@ def main():
 
     edges: set[tuple[str, str]] = set()
     observed_coauthors: dict[str, list] = {}  # handle -> [(owner_username, post_id), ...]
-    caption_fixes = paid_count = failed = 0
+    caption_fixes = paid_count = failed = written = 0
 
     for i, (post_id, uname, creator_id) in enumerate(posts, 1):
         if i > 1:
@@ -198,16 +203,47 @@ def main():
         # to store. Unresolvable rows are silently skipped by the resolver, UNIQUE
         # prevents duplicates, creator_id is still a valid FK, and nothing touches the
         # creator set. Discarding them was throwing away expensive data.
+        # INCREMENTAL FLUSH (2026-08-14). Previously these were accumulated in memory and
+        # written once at the end -- which cost a real run: the 97-post pass was killed at
+        # ~83/97 and every edge it had discovered was lost, because the INSERT never ran.
+        # The per-post writes in that same run (captions, paid-partnership flag) all
+        # survived. So the rule is simply: write when you learn it. An interruption now
+        # costs at most the single post being fetched.
+        post_edges: set[tuple[str, str]] = set()
         for h in info["coauthors"]:
             hl = h.lower()
             if hl and hl != (uname or "").lower():
-                edges.add((creator_id, hl))
+                post_edges.add((creator_id, hl))
                 # reciprocal direction only when that collaborator IS a creator (we need
                 # a real creator_id to own the row)
                 if hl in known:
-                    edges.add((known[hl], (uname or "").lower()))
+                    post_edges.add((known[hl], (uname or "").lower()))
             if hl:
                 observed_coauthors.setdefault(hl, []).append((uname, post_id))
+
+        new_this_post = post_edges - edges
+        edges |= post_edges
+        if new_this_post and not args.dry_run:
+            with conn.cursor() as cur:
+                for cid, h in new_this_post:
+                    cur.execute(
+                        """insert into creator_related_accounts
+                           (creator_id, platform, handle, relation_type)
+                           values (%s,'instagram',%s,%s)
+                           on conflict (creator_id, platform, handle) do nothing""",
+                        (cid, h, RELATION_TYPE),
+                    )
+                    written += cur.rowcount
+            conn.commit()
+
+        # Co-author provenance is checkpointed to disk each time it grows, so a kill
+        # cannot lose the sheet-push input either. Cheap local write, no API cost.
+        if new_this_post and not args.dry_run:
+            try:
+                with open(COAUTHOR_CHECKPOINT, "w", encoding="utf-8") as f:
+                    json.dump({k: v for k, v in observed_coauthors.items()}, f, indent=2)
+            except OSError:
+                pass
 
         if info["caption"] and not args.dry_run:
             with conn.cursor() as cur:
@@ -220,23 +256,8 @@ def main():
                     caption_fixes += 1
             conn.commit()
 
-    log.info("collab co-author edges resolvable: %d", len(edges))
-    for cid, h in sorted(edges, key=lambda x: x[1]):
-        log.info("   creator=%s -> %s", str(cid)[:8], h)
-
-    written = 0
-    if not args.dry_run and edges:
-        with conn.cursor() as cur:
-            for cid, h in edges:
-                cur.execute(
-                    """insert into creator_related_accounts
-                       (creator_id, platform, handle, relation_type)
-                       values (%s,'instagram',%s,%s)
-                       on conflict (creator_id, platform, handle) do nothing""",
-                    (cid, h, RELATION_TYPE),
-                )
-                written += cur.rowcount
-        conn.commit()
+    log.info("distinct collaboration pairs observed: %d (rows newly inserted: %d)",
+              len(edges), written)
 
     with conn.cursor() as cur:
         cur.execute("select count(*) from creator_related_accounts")

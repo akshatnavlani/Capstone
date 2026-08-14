@@ -8,3 +8,4 @@ scripts/ingestion/google-service-account.json
 # transient run artifacts, not source
 scripts/ingestion/logs/
 *.log
+scripts/ingestion/coauthor_checkpoint.json
