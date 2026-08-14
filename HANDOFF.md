@@ -324,6 +324,47 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# ⚠️ DB CONNECTIVITY — `DATABASE_URL` changed 2026-08-14 (affects ALL FOUR TRACKS)
+
+**Symptom:** every `psycopg2.connect()` fails instantly with
+`could not translate host name "db.fhbgbtxdtfluzohxyivg.supabase.co" to address:
+Name or service not known`. It looks like a dead project or bad credentials. It is neither.
+
+**Root cause, diagnosed not guessed:**
+
+| Check | Result |
+|---|---|
+| `getaddrinfo` on other hosts (google.com, `fhbgbtxdtfluzohxyivg.supabase.co`) | ✅ resolves — so DNS/network is fine generally |
+| `Resolve-DnsName db.<ref>.supabase.co -Type A` | **no A record** (SOA only) |
+| `Resolve-DnsName db.<ref>.supabase.co -Type AAAA` | ✅ `2406:da1a:82a:9d01:...` |
+| Direct IPv6 TCP connect to :5432 | ❌ `WinError 10051 — network unreachable` |
+
+⇒ Supabase's **direct** connection host is **IPv6-only**, and this machine lost its IPv6
+route. Nothing about the project, password, or Supabase status changed.
+
+**Fix (applied to Track A's `.env`, one-line DSN swap):** use Supabase's **IPv4 session-mode
+pooler**. Note the username changes to `postgres.<project-ref>`:
+
+```
+DATABASE_URL=postgresql://postgres.fhbgbtxdtfluzohxyivg:<pwd>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+```
+
+Verified working immediately (`select count(*) from creators` → 60, matching the last
+known-good figure). Region `ap-south-1`, port 5432 (session mode; 6543 is transaction mode
+and does not support prepared statements the same way). The old direct line is kept
+commented in `.env` for when IPv6 returns.
+
+**Why this matters beyond Track A:** B/C/D all connect to the same DB with the same style of
+DSN. If any of them reports "database is down" or "host not found", it is almost certainly
+this, not an outage — send them here rather than letting them re-diagnose it.
+
+**Generalisable lesson:** "host not found" was NOT a DNS outage and NOT a credentials
+problem — the name resolved fine, just to an address family with no route. When a hostname
+fails to resolve while everything else resolves, check the *record type* before assuming the
+service is gone.
+
+---
+
 # PHASE 1E — READ THIS FIRST (2026-08-14, most recent round)
 
 Supersedes older sections of this file where they disagree. Every figure below was
