@@ -60,7 +60,17 @@ SESSION = "collabx"
 # section is explicit that the response to a 429 is to re-login and REDUCE FREQUENCY,
 # so this is the documented remedy rather than an invented one. orchestrator.py already
 # gates at 3s; this is deliberately slower because we have now actually been limited.
-POST_GAP_SECONDS = 5.0
+POST_GAP_SECONDS = 8.0
+
+# Abort after this many CONSECUTIVE failures. Added 2026-08-14 after a run burned 106
+# consecutive `page mismatch: got chrome-error://chromewebdata/` failures (posts 66-171)
+# without noticing. That error is Chrome failing to establish the connection at all --
+# a network-layer throttle from sustained request volume, NOT an HTTP 429, so the
+# existing 429 check never fired. It did not self-heal in-run, and it DID clear
+# immediately once the run stopped (the exact failing post loaded fine on retest).
+# Lesson generalised: any long unbroken failure streak means "stop", regardless of which
+# error string it wears.
+MAX_CONSECUTIVE_FAILURES = 5
 
 _OPENCLI = shutil.which("opencli")
 _LINK = re.compile(r"\]\(/([A-Za-z0-9_.]+)/\)")
@@ -168,7 +178,7 @@ def main():
 
     edges: set[tuple[str, str]] = set()
     observed_coauthors: dict[str, list] = {}  # handle -> [(owner_username, post_id), ...]
-    caption_fixes = paid_count = failed = written = 0
+    caption_fixes = paid_count = failed = written = consecutive_failures = 0
 
     for i, (post_id, uname, creator_id) in enumerate(posts, 1):
         if i > 1:
@@ -177,8 +187,16 @@ def main():
             info = analyse_post(post_id, uname)
         except RuntimeError as e:
             failed += 1
+            consecutive_failures += 1
             msg = str(e)
             log.info("[%d/%d] %s failed: %s", i, len(posts), post_id, msg[:70])
+            if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                log.warning("%d consecutive failures — aborting. This is what a throttle "
+                             "looks like when it arrives as connection errors rather than "
+                             "an HTTP 429. It will not self-heal mid-run; stop, let it "
+                             "clear, re-run with --only-new (work already flushed is safe).",
+                             consecutive_failures)
+                break
             # A 429 is the platform telling us to stop, not a per-item hiccup. Abort the
             # run rather than grinding through the remaining posts and deepening the
             # limit -- the mistake that caused it in the first place.
@@ -188,6 +206,7 @@ def main():
                 break
             continue
 
+        consecutive_failures = 0  # a success breaks the streak
         if info["paid_partnership"]:
             paid_count += 1
         if not args.dry_run:
