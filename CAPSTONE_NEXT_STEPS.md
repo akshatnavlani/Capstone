@@ -195,7 +195,24 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
-### 3.2 Live DB state — **orchestrator-verified 2026-08-14 after Phase 1E (brand_id + targeted promotion + coverage)**
+### 3.2a Live DB state — **Track A verified 2026-08-15, close of Phase 1F** (newest; the 1E table below is superseded)
+
+| Table | Rows | Note |
+|---|---|---|
+| `creators` | **63** | +3, all targeted promotions naming the row each resolved |
+| `creator_related_accounts` | **505 rows / 15 resolved / 10 DISTINCT PAIRS** | **report pairs.** 15 resolved rows include reciprocal directions of the same collaboration; deduplicate with `least(name)/greatest(name)` |
+| `instagram_posts` | **1,092** | 31 of 63 creators covered (was 24). **120 unscanned** — a throttle stopped the scan |
+| `instagram_comments` | **13,097** | +1,546 |
+| `has_paid_partnership_label` true | **12** | +1; Track C's highest-precision sponsorship signal |
+| `is_sponsored=true` / with `brand_id` | 11 / 9 | unchanged — Track C hasn't relabelled the new posts yet |
+| `brands` | 10 | unchanged |
+| Sheet | 488 rows / 131 accepted | grown by co-author candidate pushes |
+
+**Pairs added this round: 7 → 10. All 3 from targeted promotion; 0 from covering 7 new
+creators.** That is the second independent confirmation that coverage does not add graph
+structure — see the P0.2 rewrite above.
+
+### 3.2 ~~Live DB state — orchestrator-verified 2026-08-14 after Phase 1E~~ (SUPERSEDED by 3.2a)
 
 | Table | Rows | Note |
 |---|---|---|
