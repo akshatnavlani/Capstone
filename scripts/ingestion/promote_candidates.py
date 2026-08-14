@@ -67,11 +67,31 @@ def parse_list(value) -> list[str]:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--handles", nargs="+", metavar="IG_HANDLE",
+                     help="Promote ONLY these instagram handles (must still be 'accepted' on "
+                          "the sheet). Required by the standing targeted-promotion rule: promote "
+                          "a candidate only when their handle already sits in an unresolved "
+                          "creator_related_accounts row, so the promotion immediately converts a "
+                          "dangling row into a real edge. Without this flag the script promotes "
+                          "EVERY accepted row, which adds creators without adding training pairs.")
     args = ap.parse_args()
 
     rows = sheets_sync.read_rows()
     accepted = [r for r in rows if (r.get("approval_status") or "").strip().lower() == "accepted"]
     log.info("sheet rows=%d accepted=%d", len(rows), len(accepted))
+
+    if args.handles:
+        wanted = {h.strip().lstrip("@").lower() for h in args.handles}
+        accepted = [r for r in accepted
+                     if (clean(r.get("instagram_handle")) or "").lstrip("@").lower() in wanted]
+        found = {(clean(r.get("instagram_handle")) or "").lstrip("@").lower() for r in accepted}
+        missing = wanted - found
+        if missing:
+            # Loud, not silent: a typo or a not-yet-accepted handle would otherwise look
+            # like a successful no-op run.
+            log.error("not accepted on the sheet (or handle typo), NOT promoting: %s",
+                       ", ".join(sorted(missing)))
+        log.info("targeted promotion: %d of the accepted rows selected", len(accepted))
 
     conn = psycopg2.connect(ENV["DATABASE_URL"])
     promoted = enriched = skipped = 0
