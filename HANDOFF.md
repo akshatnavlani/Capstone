@@ -510,6 +510,32 @@ themselves were flushed incrementally and are safe in the DB.
 `@neerajchoprafoundation` — `HTTP 400 - make sure you are logged in`, while other handles
 succeeded in the same session. Add it to the dead list in §6 of Phase 1E.
 
+## 7. NEXT STEPS (supersedes the older "Exact next steps" section further down)
+
+1. **Wait out the throttle — hours, not minutes.** ~506 post fetches went out on 2026-08-15.
+   Test clearance with a **sustained 10-15 request scan** (`--only-new --limit 12`), never a
+   single probe. The test slice is real backlog work, so it is free.
+2. **Finish the 120 unscanned posts** — `python collab_edges.py --only-new`. Resumes safely.
+3. **Re-push batch 1's co-author candidates to the sheet** — the end-of-run push died with
+   `ConnectionResetError`; the data is in `coauthor_checkpoint.json`, not on the sheet.
+4. **Get a user decision on the bridge queue (§3)** — this is now the ONLY lever known to add
+   graph structure. Nothing there is `accepted` on the sheet yet, so the targeted-promotion
+   rule cannot draw from it. Highest value: `@ajinkyarahane`, `@rohitsaraf`, `@jimmysheirgill`,
+   `@taarukraina`.
+5. **Get a user decision on the brand accounts marked `accepted` (§5)** — seven of them, and
+   a bulk promotion would silently corrupt the collaboration/sponsorship distinction.
+6. **Isolated-retry test on `@anushkasharma`** — first call of a fresh session, grid path only,
+   per the discriminating test that resolved the last grid stall. 67.5M followers and a
+   confirmed real Kohli collaborator, so she is worth the retry.
+7. **Do NOT run more Instagram coverage expecting resolved edges.** Tested twice, both
+   negative. Coverage is still worth running for datapoints/captions/sponsorship events —
+   just do not book it as edge work.
+
+⚠️ **CAPSTONE_NEXT_STEPS.md edits from this round are on `track-a-data-infra`, NOT on `main`.**
+Tracks B/C/D pull `origin/main` and will not see the P0.2 correction or the `DATABASE_URL`
+fix until someone merges. Given the documented incident about exactly this, flag it rather
+than assuming it propagated.
+
 ---
 
 # ⚠️ DB CONNECTIVITY — `DATABASE_URL` changed 2026-08-14 (affects ALL FOUR TRACKS)
