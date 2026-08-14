@@ -291,3 +291,32 @@ was a real interruption, which is better evidence.
 pairs went 1 (Kohli↔RCB) → 2. This is direct confirmation that resolved edges are gated
 on Instagram COVERAGE, not on the extraction mechanism: scrape two creators, and any
 collaboration between them resolves automatically.
+
+## ⚠️ Instagram network-layer throttle — and why a single probe MISLEADS (2026-08-14)
+
+A distinct failure mode from the HTTP 429 recorded earlier. It arrives as
+`page mismatch: got chrome-error://chromewebdata/` — Chrome failing to establish the
+connection at all. **No 429 appears anywhere.** So any check keyed on the string "429"
+will not fire, and a naive per-item skip will grind through hundreds of guaranteed
+failures (one run burned 106 consecutive ones, posts 66-171, before being stopped by hand).
+
+**THE LESSON THAT COST A WRONG CALL: one successful probe does not mean the throttle
+cleared.** After stopping the burning run, three probes all passed — the exact failing
+post loaded, `instagram profile nasa` returned data, a non-Instagram control loaded — and
+that was reported as "fully recovered." It was not. Resuming sustained scanning re-tripped
+the throttle within **4 posts (~45 seconds)**. Single requests are served fine while
+sustained request *rate* is still blocked. To test whether it has really cleared, you need
+sustained load or a genuinely long wait — not one call.
+
+**Handling now in `collab_edges.py`:** abort after 5 CONSECUTIVE failures regardless of
+error string (reset on any success), and 8s between posts. On the re-trip this aborted in
+48s instead of ~54 minutes of failures.
+
+**What to do when it happens:** stop, wait properly (hours, not minutes — the earlier 429
+cleared in ~25 min but this one did not clear in ~20), then re-run with `--only-new`.
+Everything already extracted is flushed incrementally and safe. Do NOT probe-and-resume.
+
+**Why this was diagnosable at all:** the URL assertion (`post_id` must appear in the
+returned page URL). Without it the extractor would have silently parsed the chrome-error
+page and written garbage captions — the exact corruption class the assertion was added to
+prevent. It converted a silent-corruption bug into a loud one.
