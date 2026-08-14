@@ -195,7 +195,24 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
-### 3.2 Live DB state — **orchestrator-verified 2026-08-14 after Phase 1E (brand_id + targeted promotion + coverage)**
+### 3.2a Live DB state — **Track A verified 2026-08-15, close of Phase 1F** (newest; the 1E table below is superseded)
+
+| Table | Rows | Note |
+|---|---|---|
+| `creators` | **63** | +3, all targeted promotions naming the row each resolved |
+| `creator_related_accounts` | **505 rows / 15 resolved / 10 DISTINCT PAIRS** | **report pairs.** 15 resolved rows include reciprocal directions of the same collaboration; deduplicate with `least(name)/greatest(name)` |
+| `instagram_posts` | **1,092** | 31 of 63 creators covered (was 24). **120 unscanned** — a throttle stopped the scan |
+| `instagram_comments` | **13,097** | +1,546 |
+| `has_paid_partnership_label` true | **12** | +1; Track C's highest-precision sponsorship signal |
+| `is_sponsored=true` / with `brand_id` | 11 / 9 | unchanged — Track C hasn't relabelled the new posts yet |
+| `brands` | 10 | unchanged |
+| Sheet | 488 rows / 131 accepted | grown by co-author candidate pushes |
+
+**Pairs added this round: 7 → 10. All 3 from targeted promotion; 0 from covering 7 new
+creators.** That is the second independent confirmation that coverage does not add graph
+structure — see the P0.2 rewrite above.
+
+### 3.2 ~~Live DB state — orchestrator-verified 2026-08-14 after Phase 1E~~ (SUPERSEDED by 3.2a)
 
 | Table | Rows | Note |
 |---|---|---|
@@ -234,10 +251,12 @@ HANDOFF.md as a standing lesson, since the same flawed single-probe method was u
 earlier 429 too. The consecutive-failure abort caught the re-trip in 48s instead of ~54 minutes —
 keep that mechanism.
 
-**Outstanding, highest priority for the next Track A round:** 359 unscanned posts. Running
-`collab_edges.py --only-new` after a real cooldown is the actual test of whether resolved edges
-grow super-linearly with coverage (Track A's own prediction, still untested — RESOLVED staying at
-10 reflects unscanned posts, not a disproven hypothesis).
+**~~Outstanding, highest priority for the next Track A round:~~ DONE 2026-08-15 — and the
+answer was NO.** The 359 posts were scanned (0 failures, 70 min); the throttle had genuinely
+cleared, verified by a **sustained 12-request test** rather than the single probe that misled
+the previous round. Resolved edges did **not** grow super-linearly — they did not grow at all
+(316 → 423 rows, RESOLVED 10 → 10). Track A's own prediction is now **disproven, not
+untested**. See the P0.2 rewrite above; do not re-open this as an open question.
 
 **⚠️ Process incident, 2026-08-14:** the orchestrator edited this file after Phase 1C but never
 committed/pushed it — Track A's Phase 1D round pulled `origin/main` and correctly found no trace
@@ -334,6 +353,30 @@ follower_count · reddit_handles · notes · reddit_topic_subs`
 - ⚠️ Known glitch: row `nisha_optimist` has its own username in `approval_status`.
 - Current: 139 rows — **19 accepted, 4 rejected, ~116 unreviewed.**
 
+### 3.4b ⚠️ `DATABASE_URL` CHANGED 2026-08-14 — affects all four tracks
+
+If `psycopg2.connect()` starts failing with
+`could not translate host name "db.fhbgbtxdtfluzohxyivg.supabase.co" to address`, **the
+project is fine and the password is fine.** Supabase's *direct* connection host is
+**IPv6-only** (AAAA record, no A record), and the dev machine lost its IPv6 route — a direct
+IPv6 TCP connect returns `WinError 10051, network unreachable` while every other hostname
+resolves normally.
+
+**Fix — a one-line DSN swap to the IPv4 session-mode pooler** (note the `postgres.<ref>` user):
+
+```
+DATABASE_URL=postgresql://postgres.fhbgbtxdtfluzohxyivg:<pwd>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+```
+
+Verified by Track A 2026-08-14 (`select count(*) from creators` → 60, matching the last
+known-good figure). Applied to Track A's `.env`; **B, C and D must make the same change in
+their own gitignored `.env` files** — this is per-worktree config, not something a commit
+propagates. Keep the old direct line commented for when IPv6 returns.
+
+Lesson worth keeping: "host not found" was neither a DNS outage nor a credentials problem —
+the name resolved fine, just to an address family with no route. Check the DNS *record type*
+before concluding a service is gone.
+
 ### 3.5 Environment / access
 
 | Thing | Detail |
@@ -384,8 +427,35 @@ edges. B builds the tensor and trains.
 parser fix landed, not two separate bugs. Backfilled; 60 distinct captions, real disclosures
 recovered. See §2.
 
-**⚠️ P0.2 Collaboration edges — mechanism now works, bottleneck is Instagram coverage, not
-extraction** *(Track A → C → B)* Team→player tagging is confirmed dead (IPL/ISL accounts caption
+**⚠️ P0.2 — SUPERSEDED 2026-08-15. The bottleneck is NOT Instagram coverage.** The paragraph
+below was written when the coverage hypothesis was untested; Track A has now tested it
+directly and it **failed**. With all 825 posts scanned (0 unscanned, 0 failures), edge rows
+went 316 → 423 while **RESOLVED stayed at 10**. The mechanism it assumed — "each newly
+covered creator can pair with every existing one" — is empirically false for this creator
+set: **only 2.2% of the 407 distinct co-authors observed are creators of ours**, 14 of 24
+covered creators have **zero** in-set co-authors, and the 11 creators newly covered last
+round produced ~250 edge rows and **0** resolved edges.
+
+Real collaborators are overwhelmingly brands, media orgs and adjacent individuals — our
+creators were curated as *people worth recommending*, not as *a set that collaborates with
+itself*. **The lever is creator-set membership of co-authors, not coverage breadth.** Of the
+13 resolved edges now, **7 came from targeted promotion**; coverage's contribution saturated
+once the mutually-collaborative pairs were found.
+
+⇒ **Do not fund another round of Instagram coverage expecting resolved edges to move.**
+Coverage retains independent value (datapoints, captions, sponsorship events for Track C),
+just not this one. The graph-density lever is the **bridge queue**: only 13 of 398 dangling
+handles are referenced by 2+ distinct creators, and those are the only promotions that link
+two covered creators rather than adding a leaf. Detail and the ranked list with brand
+exclusions are in Track A's HANDOFF.md §3 (Phase 1F).
+
+⚠️ **Track B should plan for a sparse collaboration graph.** 2.4% of edge rows resolve; this
+is a structural property of the curated set, not a collection bug.
+
+*Superseded text follows, kept for the record:*
+
+**~~P0.2 Collaboration edges — mechanism now works, bottleneck is Instagram coverage, not
+extraction~~** *(Track A → C → B)* Team→player tagging is confirmed dead (IPL/ISL accounts caption
 with hashtags). Its replacement — Instagram's collab co-author list — works and produced 72 edge
 rows, but only 2 resolve, because resolving requires BOTH co-authors to already be creators with
 Instagram content, and only ~9-12 of 56 creators currently have any `instagram_posts` at all. The
