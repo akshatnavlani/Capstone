@@ -195,18 +195,49 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
-### 3.2 Live DB state — **orchestrator-verified 2026-08-14 after Phase 1D (edges round)**
+### 3.2 Live DB state — **orchestrator-verified 2026-08-14 after Phase 1E (brand_id + targeted promotion + coverage)**
 
 | Table | Rows | Note |
 |---|---|---|
-| `creators` | 56 | unchanged since Phase 1C |
-| `creator_related_accounts` | **72** | **2 resolved** — capped by Instagram coverage (only ~9-12 creators have any instagram_posts), not by the extraction mechanism. See P0.2. |
-| `instagram_posts` | 143 | **134 captions non-null & distinct** — full re-run, 0 dupes/wrong-relation_type/wrong-platform found in sanity checks |
-| `has_paid_partnership_label` | 3 true / 140 false / **0 NULL** | full coverage now, was 60 NULL at Phase 1C |
-| Sheet | 206 rows | 67 co-author candidates awaiting user review (up from 18) |
+| `creators` | **60** | +4, all targeted promotions that each immediately resolved a specific pending edge (see P0.2) |
+| `creator_related_accounts` | **316** | **10 resolved** (independently re-derived by the orchestrator via handle cross-reference, matches Track A's own count exactly) |
+| `instagram_posts` | **825** | 24 of 60 creators now have IG content (was 13). 359 of the 424 new posts were never scanned for co-authors — see throttle note below. |
+| `is_sponsored=true` (Instagram) | **11** | unchanged this round — expected, the new posts weren't scanned |
+| `is_sponsored=true` with `brand_id` set | **9 of 11** | was 1 of 11. Root cause: extractor only matched explicit phrases; the dominant real pattern is a branded hashtag/@mention, which had no rule at all. 2 left deliberately unlinked (ambiguous/empty caption) rather than guessed — correct call given this is the sole treatment-label source. |
+| `brands` | 10 | +1 since the report was written (`optimumnutri`) — background movement, not an error |
+| Reddit co-occurrence | **0, confirmed structural not a bug** | 435 `reddit_post_creators` rows = 435 distinct posts, perfect 1:1. 427 of 435 rows belong to 5 creators; 8 of 13 have exactly 1 row each. Each post is found via a single creator's search, so overlap can't occur without two creators being searched in the *same* subreddit. More per-creator scraping won't fix this — needs a shared-subreddit search strategy, a deliberate mechanism decision. |
+| Sheet | — | 112 of 116 approved rows deliberately NOT promoted (would add creators without adding training pairs) — see the targeted-promotion rule below |
 
 All figures re-verified directly via REST by the orchestrator, independent of Track A's own
-report — every number matched exactly.
+report — every number matched exactly except the `brands` count noted above.
+
+**⚠️ New standing rule — never approve brand/company accounts on the sheet.** Brands
+(e.g. Milton, One8) reach the `brands` table automatically via disclosure-text extraction on
+sponsored content — never via the creator-promotion path. Approving one as a creator would (a)
+have no valid `category` value and (b) let it resolve into `creator_related_accounts` as a false
+"collaboration" edge, corrupting the sponsorship/collaboration distinction GAIL depends on. The
+targeted-promotion mechanic (below) does NOT filter brand vs. person — user review is currently
+the only safeguard.
+
+**⚠️ Targeted-promotion rule (in effect since Phase 1E):** do not bulk-promote approved sheet
+rows. Promote a candidate ONLY if their handle already appears in an unresolved
+`creator_related_accounts` row — i.e. promoting them immediately resolves a specific known edge.
+Report which row each promotion resolved. This is deliberate: general creator growth doesn't
+help Track B until it produces a training pair.
+
+**⚠️ Instagram throttle — real finding, and a verification-method lesson.** Not a 429; it's a
+network-layer `chrome-error://chromewebdata/` failure that a 429-keyed check doesn't catch. A
+**single-request probe after stopping is not a valid clearance test** — Track A confirmed
+recovery with 3 passing single checks, then sustained scanning re-tripped it in 4 posts (~45s).
+Needs a real cooldown (hours, not minutes) before the next sustained scan. Recorded in Track A's
+HANDOFF.md as a standing lesson, since the same flawed single-probe method was used on the
+earlier 429 too. The consecutive-failure abort caught the re-trip in 48s instead of ~54 minutes —
+keep that mechanism.
+
+**Outstanding, highest priority for the next Track A round:** 359 unscanned posts. Running
+`collab_edges.py --only-new` after a real cooldown is the actual test of whether resolved edges
+grow super-linearly with coverage (Track A's own prediction, still untested — RESOLVED staying at
+10 reflects unscanned posts, not a disproven hypothesis).
 
 **⚠️ Process incident, 2026-08-14:** the orchestrator edited this file after Phase 1C but never
 committed/pushed it — Track A's Phase 1D round pulled `origin/main` and correctly found no trace
