@@ -320,3 +320,182 @@ Everything already extracted is flushed incrementally and safe. Do NOT probe-and
 returned page URL). Without it the extractor would have silently parsed the chrome-error
 page and written garbage captions — the exact corruption class the assertion was added to
 prevent. It converted a silent-corruption bug into a loud one.
+
+---
+---
+
+# PHASE 1E — READ THIS FIRST (2026-08-14, most recent round)
+
+Supersedes older sections of this file where they disagree. Every figure below was
+verified directly against the live DB at the close of the round.
+
+## Verified totals (so the next session doesn't rediscover them)
+
+| Thing | Value |
+|---|---|
+| `creators` | **60** |
+| `creator_related_accounts` | **316 rows / 10 RESOLVED** |
+| `instagram_posts` | **825** (24 of 60 creators covered) |
+| `instagram_comments` | 11,551 |
+| `brands` | **10** |
+| `is_sponsored` events | **11** (9 carry `brand_id`) |
+| `reddit_post_creators` | 435 |
+| Captions | 758 non-null / 754 distinct |
+
+WARNING: "RESOLVED" = rows whose `handle` matches ANOTHER creator's own handle, i.e. what
+Track C's resolver can actually turn into an edge. **Always report resolved, not rows.**
+
+WARNING: the 4 duplicate captions are 1-2 char emoji-only (plus one empty). Benign,
+re-verified each round. **Interpret the distinctness check with caption LENGTH in mind** —
+the real corruption signature was *long* captions repeated across unrelated posts.
+
+## 1. brand_id gap — 1/11 to 9/11 (root cause fixed; 2 deliberately left alone)
+
+`brand_extraction.py` only matched explicit disclosure PHRASES ("in partnership with",
+"sponsored by", "joined hands with"). **The dominant disclosure pattern in this dataset is
+a BRANDED HASHTAG** (`#Airtel`, `#Milton`, `#CadburyCelebrations`, `#AmazonPrime`,
+`#VisitDubai`, `#BGMI`) or an `@mention` (`@ewc_en`) — for which there was no rule at all.
+`backfill_brand_ids.py` adds a hashtag/mention proposer ranking candidates by whether the
+token is corroborated in the caption BODY, with an auditable stoplist for generic and
+campaign tags.
+
+Because `is_sponsored` + `brand_id` is the sole treatment-label source (PROJECT_PLAN calls
+it precision-critical), the script PROPOSES but never auto-writes: a reviewed decision
+table records what was checked against each full caption. New unreviewed events are logged
+for review, never linked silently.
+
+**DO NOT "fix" these two by guessing — they are deliberate, not oversights:**
+
+- **`DWTx3_MERRb`** — full caption is 56 chars: "Take it slow. Go with the Flo #ad". The
+  only hashtag is `#ad`; "Flo" may be a brand or wordplay on "flow". The proposer returned
+  NOTHING for it, independently confirming it is unextractable from the text.
+- **`DUkDWOYiL8x`** — caption is **EMPTY (0 chars)**. Labelled purely from Instagram's
+  native paid-partnership label, so there is no disclosure text to extract from at all.
+
+## 2. TARGETED PROMOTION IS A STANDING RULE, NOT A ONE-OFF
+
+**Promote a sheet candidate ONLY if its handle already appears in an unresolved
+`creator_related_accounts` row.** Each such promotion immediately converts a dangling row
+into a real edge, and you can name exactly which one.
+
+This round: of **116 approved** sheet rows, exactly **4** qualified. RESOLVED went 6 to 10,
+precisely +4:
+
+| Promoted | Edge it resolved |
+|---|---|
+| `@worldofsiddharth` | Prajakta Koli -> @worldofsiddharth |
+| `@weareteamindia` | Neeraj Chopra -> @weareteamindia |
+| `@sporting.beyond` | Virat Kohli -> @sporting.beyond |
+| `@karanaujla` | Virat Kohli -> @karanaujla |
+
+**The other 112 approved rows are deliberately NOT promoted. This is not a backlog and
+must not be "caught up".** Bulk-promoting them adds creators without adding training
+pairs — the trade the user explicitly does not want made silently.
+
+The check to run (don't eyeball the sheet):
+
+```sql
+select lower(x.handle)
+from creator_related_accounts x
+where not exists (
+  select 1 from creators c
+  where lower(c.instagram_handle) = lower(x.handle)
+    and c.creator_id <> x.creator_id
+);
+```
+Intersect that with sheet rows whose `approval_status` is exactly `accepted`, minus
+handles that are already creators.
+
+## 3. Reddit co-occurrence — GENUINE ZERO, not fixable by more of the same
+
+**435 rows across 435 distinct posts — a perfect 1:1 ratio.** Not one post is referenced
+by two creators, so there is nothing for Track C's resolver to miss. **A real finding, not
+a bug on either side.**
+
+Structural cause: coverage is concentrated in 5 creators — Virat Kohli 150, LeBron 137,
+Cristiano 59, CarryMinati 41, Athletics 40 = **427 of 435** — while **8 of 13 creators have
+exactly 1 row each**. Each post is discovered via a SINGLE creator's search and attributed
+to that creator alone.
+
+**Scraping more per-creator subreddits will NOT create overlap.** Co-occurrence requires
+two creators searched in the SAME subreddit both matching the SAME post. If co-occurrence
+edges are ever prioritized, that needs a deliberate **shared-subreddit search strategy**,
+not more volume.
+
+## 4. THE INSTAGRAM THROTTLE — read this before touching Instagram
+
+Two DIFFERENT failure modes. Do not conflate them:
+
+- **HTTP 429** (2026-08-11) — the platform explicitly saying stop.
+- **Network-layer throttle** (2026-08-14) — arrives as
+  `page mismatch: got chrome-error://chromewebdata/`, Chrome failing to establish the
+  connection. **NO 429 appears anywhere**, so any check keyed on the string "429" misses it
+  completely. One run burned **106 consecutive failures** (posts 66-171) before being
+  stopped by hand.
+
+**A SINGLE-REQUEST PROBE IS NOT A VALID CLEARANCE TEST. This was proven wrong twice.**
+After stopping the burning run, three probes passed — the exact failing post loaded,
+`instagram profile nasa` returned real data, a non-Instagram control page loaded — and it
+was reported "fully recovered". It was not: resuming sustained scanning re-tripped the
+throttle within **4 posts (~45 seconds)**. Single requests are served fine while sustained
+request RATE is still blocked. The same flawed method was used on the earlier 429 and
+happened to work, which is exactly why it looked trustworthy.
+
+- **Valid test:** sustained scanning surviving past ~4-5 consecutive requests.
+- **Cooldown:** hours, not minutes. (The 429 cleared in ~25 min; this one had NOT cleared
+  after ~20 min.)
+- **Do not probe-and-resume.**
+
+Handling now in `collab_edges.py`: abort after **5 consecutive failures regardless of
+error string** (reset on any success), and **8s between posts**. On the re-trip this
+aborted in 48s instead of ~54 minutes of guaranteed failures.
+
+**Why this was diagnosable at all:** the URL assertion (`post_id` must appear in the
+returned page URL). Without it the extractor would have silently parsed the chrome-error
+page into garbage captions — the exact corruption class the assertion was added to
+prevent. Keep that assertion anywhere a fetched page is parsed.
+
+## 5. THE OUTSTANDING TASK — resume the co-author scan
+
+**359 of 424 newly-covered posts were never scanned for co-authors** (the throttle blocked
+it).
+
+```bash
+cd scripts/ingestion
+python collab_edges.py --only-new
+```
+
+`--only-new` scans only posts with `has_paid_partnership_label IS NULL`. Rows flush
+incrementally, so an interruption costs at most the single post in flight, and re-running
+resumes rather than repeats.
+
+**RESOLVED has stayed at 10 because those 359 posts are UNSCANNED — not because the
+square-growth hypothesis failed.** The hypothesis (resolved edges grow roughly
+quadratically with coverage, since each newly covered creator can pair with every existing
+one) is **untested, not disproven**. This scan is the test. Supporting evidence so far:
+Ronaldo <-> LeBron appeared as an edge the moment both creators' posts were scraped in the
+same round.
+
+**Run it only after the throttle has genuinely cleared, verified by sustained scanning.**
+
+## 6. DEAD HANDLES — stop retrying these
+
+Persistent `HTTP 400 - make sure you are logged in` on `instagram profile`, reproduced
+live while other handles succeed in the same session:
+
+`athleanx` · `technicalguruji` · `delhicapitals` · `punjabkingsipl` ·
+**`weareteamindia`** (new this round) · **`sporting.beyond`** (new this round)
+
+Note: `weareteamindia` and `sporting.beyond` were promoted this round and DO resolve edges
+correctly — edge resolution needs only the `creators` row, not scraped content. They are
+dead for *scraping*, not for *graph* purposes.
+
+## 7. Confirmed working — don't re-litigate
+
+- **Grid-stall fix holds** — 0 stalls across 26 creators since the tab-lease fix.
+  (Causality still confounded with a Chrome restart that morning; the next unattended
+  scheduled run is the real test.)
+- **Incremental flush** — survived a staged kill AND two real interruptions; 120 rows
+  saved in one of them.
+- **Captions** — the orchestrator stores full captions automatically now; verified across
+  three days of unattended scheduled runs, max 2,222 chars.
