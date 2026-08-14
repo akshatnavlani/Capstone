@@ -334,6 +334,30 @@ follower_count · reddit_handles · notes · reddit_topic_subs`
 - ⚠️ Known glitch: row `nisha_optimist` has its own username in `approval_status`.
 - Current: 139 rows — **19 accepted, 4 rejected, ~116 unreviewed.**
 
+### 3.4b ⚠️ `DATABASE_URL` CHANGED 2026-08-14 — affects all four tracks
+
+If `psycopg2.connect()` starts failing with
+`could not translate host name "db.fhbgbtxdtfluzohxyivg.supabase.co" to address`, **the
+project is fine and the password is fine.** Supabase's *direct* connection host is
+**IPv6-only** (AAAA record, no A record), and the dev machine lost its IPv6 route — a direct
+IPv6 TCP connect returns `WinError 10051, network unreachable` while every other hostname
+resolves normally.
+
+**Fix — a one-line DSN swap to the IPv4 session-mode pooler** (note the `postgres.<ref>` user):
+
+```
+DATABASE_URL=postgresql://postgres.fhbgbtxdtfluzohxyivg:<pwd>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+```
+
+Verified by Track A 2026-08-14 (`select count(*) from creators` → 60, matching the last
+known-good figure). Applied to Track A's `.env`; **B, C and D must make the same change in
+their own gitignored `.env` files** — this is per-worktree config, not something a commit
+propagates. Keep the old direct line commented for when IPv6 returns.
+
+Lesson worth keeping: "host not found" was neither a DNS outage nor a credentials problem —
+the name resolved fine, just to an address family with no route. Check the DNS *record type*
+before concluding a service is gone.
+
 ### 3.5 Environment / access
 
 | Thing | Detail |
