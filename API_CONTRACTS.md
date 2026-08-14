@@ -4,7 +4,7 @@ Owner: Track C (Fusion+Backend). Updated whenever the contract changes — treat
 edits to this file as high-signal for Tracks A/B/D, since there's no live
 channel between sessions, only git.
 
-**Status as of 2026-08-10 (Weeks 14-16 round):** all endpoints below are live
+**Status as of 2026-08-14 (post-Phase-1D round):** all endpoints below are live
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
@@ -36,6 +36,97 @@ uniformly across `/health`, `/recommendations`, `POST /ingestion/creators`,
 
 **CONFIRMED by Track D in a real browser** (first non-curl verification
 this project has had) — the fix works. Closed.
+
+## Post-Phase-1D update summary (2026-08-14) — first real sponsorship events
+
+**This is the round that answers the project's central open question: real
+sponsorship events now exist in the data.** Prompted by the orchestrator's
+`CAPSTONE_NEXT_STEPS.md` (commit `d98a068`) after Track A's Phase 1D caption
+fix + `has_paid_partnership_label` schema addition. Every number below was
+independently re-verified against the live DB via direct query, not taken
+from the orchestrator's doc (which was itself already stale by the time this
+round ran — see below).
+
+- **Verified live state myself before trusting any doc.** `instagram_posts`
+  had grown to 401 rows (372 non-null captions, 369 distinct) and
+  `has_paid_partnership_label` to 4 true / 275 false / **122 NULL** — all
+  higher than the orchestrator's same-day figures (401 vs 143, 4 vs 3, and a
+  new 122-NULL gap the orchestrator hadn't seen), confirming Track A's
+  background collection kept running between the orchestrator's snapshot and
+  this session. `creator_related_accounts` was 192 rows, not 72.
+- **Found `has_paid_partnership_label` was not wired into the labeler at
+  all** — `InstagramPost` (`app/models.py`) had no field for it, and
+  `POST /labeling/run` only ever called `detect_sponsorship(caption)`. Added
+  the field to the model and updated `app/routers/labeling.py`: a post with
+  `has_paid_partnership_label=True` is now unconditionally `is_sponsored=True`
+  (audit trail gets a `"native:paid_partnership_label"` marker in
+  `sponsorship_raw_matches`), independent of caption-regex outcome. Added
+  `test_paid_partnership_label_forces_sponsored_even_without_caption_match`
+  (real case: post `DUkDWOYiL8x`, `caption=None`, label=`True` — a
+  caption-only labeler structurally cannot see this). 49/49 tests pass.
+- **Ran `POST /labeling/run?force=true` against the full live dataset.**
+  Before: 0 sponsorship events on every platform (Instagram/YouTube/Reddit
+  all-false or all-null). **After: 11 real sponsorship events, all on
+  Instagram** (`youtube_videos`: 299 checked, 0 sponsored; `instagram_posts`:
+  401 checked, 11 sponsored; `reddit_posts`: 435 checked, 0 sponsored).
+  - **9 of 11** caught by caption-text regex (`#ad`/`#Ad`/`#AD` variants —
+    the caption fix landing means these are now visible past the old
+    100-char truncation).
+  - **2 of 11** caught *only* by `has_paid_partnership_label` — caption
+    regex alone would have missed them. One (`DUkDWOYiL8x`) has no caption
+    text at all. This is exactly the signal the orchestrator flagged as the
+    highest-precision one available, now proven to add real recall a
+    text-only labeler structurally cannot reach.
+- **Broader adversarial recall scan re-run across all three platforms**
+  (sponsor/partner/collab/affiliate/#ad/ambassador/discount code/promo
+  code), not just the regex's own hits. Two YouTube results looked like real
+  undisclosed brand deals on inspection (`WanderOn`-sponsored Ladakh vlogs)
+  but their full descriptions explicitly read *"I want to be upfront about
+  this, they never asked me for this shoutout"* — an explicit **non**-
+  paid disclosure, correctly excluded. All other hits (sports "partner"
+  terminology, "#Collaboration" hashtag on a tech unboxing with no `#ad`,
+  third-person Reddit commentary) fell under already-covered near-miss
+  patterns. No regex change made.
+- **Kohli/Agilitas: the underlying blocker is now resolved — not still
+  blocked, and not stale-re-asserted.** All 5 of the creator's `one8`/
+  `Agilitas` posts are now stored at full length (140-443 chars,
+  `fetched_at` 2026-08-11/12, well past Track A's caption-fix commit) —
+  Instagram *has* been re-scraped since the last round's check. With real
+  full text now available (`"2 years back I joined hands with Agilitas to
+  build a dream - one8... it gives all of us at Agilitas immense
+  courage..."`), and `has_paid_partnership_label=False` on all 5, the
+  `is_sponsored=false` call stands — but now as a **confirmed decision
+  against real complete text**, not a placeholder blocked on missing data.
+  Recorded as resolved in the dedicated section below.
+- **Verified edge resolution against real endpoint output, not just code
+  reading.** `GET /feature-store/edges/collaborations` returns **4 edges**
+  (2 resolved pairs × 2 directions) against 192 `creator_related_accounts`
+  rows — independently reproduces Track A's own "2 resolve" report exactly.
+  Read `build_collaboration_edges()` directly to confirm *why*: both
+  endpoints of a row must already exist as `creators` rows with their own
+  handle set, which is true for only 2 of the 192 rows today — consistent
+  with Track A's explanation (resolution capped by Instagram coverage
+  breadth, not the extraction mechanism).
+- **New finding, not yet in any doc: sponsorship *events* (11) and
+  sponsorship *edges* (1) have sharply diverged.**
+  `GET /feature-store/edges/sponsorships` returns only **1** row, because
+  `build_sponsorship_edges()` requires `brand_id IS NOT NULL` in addition to
+  `is_sponsored=true` — and only 1 of the 11 newly-labeled posts has a
+  `brand_id` resolved (`creator_id` is populated on all 11). This is Track
+  A's brand-extraction step, not a Track C bug — `brands` is populated only
+  from sponsorship-disclosure text (per `CAPSTONE_NEXT_STEPS.md` §3.3), and
+  that extraction evidently hasn't run against this round's newly-labeled
+  rows yet. **Flagging directly: Track B, consuming
+  `/feature-store/edges/sponsorships` as documented, will see 1 usable
+  training pair today, not 11**, until Track A's brand extraction catches
+  up. The `creator_sponsorship_events` DB view shows the same split (11
+  rows, 10 with `brand_id=NULL`).
+- **Confirmed all 4 feature-store endpoints Track B consumes return real,
+  non-empty data** (except co-occurrence, expected-empty, see below):
+  `/feature-store/creators` → 56, `/edges/collaborations` → 4,
+  `/edges/sponsorships` → 1 (see finding above), `/edges/co-occurrence` → 0
+  (still genuinely empty — Track A's Reddit rework is still in progress per
+  their own branch; not a regression, matches the documented open item).
 
 ## Weeks 14-16 update summary
 
@@ -113,10 +204,29 @@ this project has had) — the fix works. Closed.
   — all three correctly carry CORS headers. No new gap found, but this
   doesn't prove nothing else exists; flagging as checked, not exhaustive.
 
-## Kohli/Agilitas resolution (2026-08-10)
+## Kohli/Agilitas resolution (2026-08-10, **closed 2026-08-14**)
 
-**Decision: left `is_sponsored = false`, not resolved to `true`, with the
-reasoning documented here rather than silently picking one.**
+**Decision: `is_sponsored = false`, now confirmed against real complete
+text, not a placeholder pending data.**
+
+Originally left `false` because the only available text was truncated at
+exactly 100 characters (a real `opencli instagram user` bug) — see the
+history below. **Re-checked 2026-08-14**: Instagram has since been
+re-scraped. All 5 of `virat.kohli`'s `one8`/Agilitas posts
+(`DSKdvOwkQsw`, `DaDJji0DY_x`, `DZZ8lRptve1`, `DZHR_3_NcCr`, `DYuLMR3t180`)
+are now stored at full length (140-443 chars, `fetched_at` 2026-08-11/12).
+Full text confirms, in the creator's own words: *"2 years back I joined
+hands with Agilitas to build a dream - one8... it gives all of us at
+Agilitas immense courage..."* — a genuine co-founder/ownership
+relationship, not a one-off paid disclosure. No `#ad`/`#sponsored`/
+"paid partnership" phrase anywhere across all 5, and
+`has_paid_partnership_label=False` on all 5 (Instagram's own native signal
+agrees). Both independent signals now confirm `false` on real data — the
+call is unchanged, but the blocker (missing/truncated text) is resolved,
+not still open.
+
+<details>
+<summary>Original 2026-08-10 reasoning (for history)</summary>
 
 Checked whether the full caption is available before deciding, per
 instruction:
@@ -124,33 +234,24 @@ instruction:
   truncates captions to exactly 100 chars) and fixed it in code
   (`origin/track-a-data-infra` commit "Reddit two-mode strategy,
   diversified target list, full-caption fix").
-- **The fix has not yet been applied to any existing row** — checked
-  directly, the most recent `instagram_posts.fetched_at` across the entire
-  table predates that fix commit. Checked Track A's raw run logs from that
-  commit for any leftover full text too (`ig_run_output.log`) — confirms
-  brand-lead detection happened but doesn't contain caption text.
-- **This is systemic, not a single post**: found a second real post from
-  the same account describing the same "one8" brand relationship
-  ("A new chapter for @one8world Made stronger by a partnership that's
-  always meant the most..."), also truncated at exactly 100 characters.
-  Every Instagram caption currently in the DB was fetched before the fix.
+- The fix had not yet been applied to any existing row at that time —
+  checked directly, the most recent `instagram_posts.fetched_at` across
+  the entire table predated that fix commit.
+- This was systemic, not a single post: a second real post from the same
+  account describing the same "one8" brand relationship was also
+  truncated at exactly 100 characters. Every Instagram caption in the DB
+  at that time was fetched before the fix.
 
-Given the full text is confirmed unavailable (not just unchecked), and the
-visible truncated text in both posts reads as describing an ongoing/
-co-founded brand relationship rather than a one-off paid post (real-world:
-Kohli/one8 is a genuine co-founder relationship with Agilitas, not
-independently confirmable from this data alone) — labeling it `true` would
-be a guess dressed as a finding. Per PROJECT_PLAN.md Section 1's precision-
-first framing (a wrong positive poisons a real training label; a missed
-positive is just absent signal), the safer default holds until real text
-exists.
+Given the full text was confirmed unavailable (not just unchecked), and
+the visible truncated text in both posts read as describing an ongoing/
+co-founded brand relationship rather than a one-off paid post — labeling
+it `true` would have been a guess dressed as a finding. Per
+PROJECT_PLAN.md Section 1's precision-first framing (a wrong positive
+poisons a real training label; a missed positive is just absent signal),
+the safer default held until real text existed. It now does, and confirms
+the same call.
 
-**Concrete unblock path**: once Track A re-scrapes Instagram content (their
-fix is code-complete, just not yet run), call `POST /labeling/run?force=true`
-to re-examine every Instagram row against corrected text — this is exactly
-why `force` was added this round. Recommend Track A prioritize an
-Instagram re-scrape given this is a plausible source of GAIL's first real
-sponsorship training pair.
+</details>
 
 ## Weeks 9-10 update summary
 
@@ -654,7 +755,7 @@ thesis capstone backend.
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
 | Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/collaboration/sponsorship edge data; `co_occurs_with` real but currently empty (Track A purged the noisy signal it was built from, self-healed automatically, see Weeks 11-13 note); CLIP/BERT embeddings intentionally not computed here (Track B); `reputation_score` is the one remaining genuine gap |
-| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data, re-validated at 4x scale.** 695/695 real rows labeled, 0 confirmed false positives, precision-validated against real decoy text across multiple dataset sizes. One open edge case, documented resolution — see Kohli/Agilitas section |
+| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data. First real sponsorship events found: 11 (all Instagram), up from 0.** 1,135/1,135 real rows labeled (299 YouTube / 401 Instagram / 435 Reddit) via `force=true`, now incorporating Instagram's native `has_paid_partnership_label` signal (2 of 11 events caught only by that signal). 0 confirmed false positives. Sponsorship *edges* lag events (1 of 11 has `brand_id` resolved) — Track A's brand-extraction gap, see Post-Phase-1D section. Kohli/Agilitas edge case now closed, not just documented — see Kohli/Agilitas section |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |

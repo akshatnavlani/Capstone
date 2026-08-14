@@ -189,6 +189,7 @@ class InstagramPost(SQLModel, table=True):
     hashtags: list[str] = Field(default_factory=list, sa_column=_string_array_column())
     is_sponsored: Optional[bool] = None
     sponsorship_raw_matches: Optional[list] = Field(default=None, sa_column=Column(JSON))
+    has_paid_partnership_label: Optional[bool] = None
     brand_id: Optional[uuid.UUID] = Field(default=None, foreign_key="brands.brand_id", index=True)
     fetched_at: datetime = Field(default_factory=utcnow)
     created_at: datetime = Field(default_factory=utcnow)

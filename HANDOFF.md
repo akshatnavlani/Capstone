@@ -6,27 +6,34 @@ Memory (`C:\Users\Sonic\.claude\projects\D--Capstone\memory\`) has the
 detailed week-by-week history if you need it, but this file is the
 current-state summary — trust it over stale memory entries if they disagree.
 
-Last updated: 2026-08-10, end of a session spanning (compressed, not literal
-calendar weeks) Weeks 1-2 through Weeks 14-16 of the 26-week plan.
-`API_CONTRACTS.md` at repo root is the living API contract doc — read that
-too before touching any endpoint shape.
+Last updated: 2026-08-14, a session prompted directly by the orchestrator's
+`CAPSTONE_NEXT_STEPS.md` (repo root on `main`, commit `d98a068`) — **read
+that file first**, it supersedes memory and this file's own history when
+they disagree, per its own stated rule. `API_CONTRACTS.md` at repo root is
+the living API contract doc — read that too before touching any endpoint
+shape.
 
-**Note for the next session:** `PROJECT_PLAN.md` Section 1 was revised on
-`main` (2026-08-10) but that revision has not been merged into this branch
-yet — the copy in this worktree is still the pre-revision version. The
-real change: data collection pivoted from ~15 deep creators to
-breadth-over-depth (~1,000 curated creators, 200-400 datapoints/entity),
-adding team/league accounts specifically to attack the zero-collaboration-
-edges blocker, via a new identify→curate→deepen Google-Sheets workflow.
-Nothing for Track C to build off this directly yet, but expect creator/
-content volume growth patterns to look different once Track A acts on it.
+**This round's headline: the project's central open question is answered —
+real sponsorship events now exist (0 → 11, all Instagram).** See
+`API_CONTRACTS.md`'s "Post-Phase-1D update summary" for full detail. Short
+version: `has_paid_partnership_label` (Track A's new schema addition) was
+never wired into the labeler — fixed this round — and the caption-
+truncation fix let 9 more events surface via the existing `#ad` regex.
+Sponsorship *edges* (which need `brand_id`) lag badly behind events (1 of
+11), a new Track-A-owned gap — flag this to the orchestrator/Track A.
+
+**Note:** `PROJECT_PLAN.md` Section 1's breadth-over-depth revision (noted
+last round as unmerged into this branch) is superseded by
+`CAPSTONE_NEXT_STEPS.md`, which is now the actively-maintained cross-track
+source of truth — check that file's own "last verified" date each session
+rather than assuming this note is current.
 
 ## Current state (one paragraph)
 
 A FastAPI + SQLModel backend (`backend/`) is live and connected to the real
-shared Supabase Postgres instance (16 real creators, 695 real content rows
-as of last check — 252 YouTube / 97 Instagram / 346 Reddit, grown from 422
-via Track A's background scheduled collection since the last round). Full API
+shared Supabase Postgres instance (56 real creators, 1,135 real content rows
+as of last check — 299 YouTube / 401 Instagram / 435 Reddit, grown sharply
+via Track A's Phase 1D promote-to-DB + background collection). Full API
 surface exists and is tested: `/health`, `/recommendations` (real
 budget/region/demographic/product_category/platform_preference filtering,
 not a stub), `/ingestion/*` (8 endpoints, secondary/manual write path —
@@ -35,15 +42,25 @@ these entirely**, see gotcha #2 below), `/scores/*` (Fusion Layer formula,
 weights still placeholder pending real GAIL/Temporal output), `/alerts`
 (with a `propagated_from_creator_id` field pre-added for Sentiment
 Propagation), `/feature-store/*` (real transformation pipeline Track B
-actively consumes — creators, collaboration edges, co-occurrence edges,
-sponsorship edges), `/labeling/run` (real disclosure-tag `is_sponsored`
-classifier, precision-validated against real scraped text, not just
-synthetic). CORS is configured and **confirmed working by Track D in an
-actual browser** (not just curl) — this was a real 8-week-invisible gap,
-fixed. Basic auth (`API_KEY` env var) exists, off by default. 48 tests
+actively consumes — creators [56], collaboration edges [4, real],
+co-occurrence edges [0, expected-empty], sponsorship edges [**1** — see
+below, this is now the binding gap]), `/labeling/run` (real disclosure-tag
+`is_sponsored` classifier, now also reading Instagram's native
+`has_paid_partnership_label`, precision-validated against real scraped
+text). CORS is configured and confirmed working by Track D in a real
+browser. Basic auth (`API_KEY` env var) exists, off by default. 49 tests
 pass (`backend/tests/`, `pytest`). Migrations for Track C's own tables
 live in `backend/migrations/` with a README explaining why (see gotcha #1).
 Working tree is clean and fully pushed as of this handoff.
+
+**First real sponsorship events exist: 11, all Instagram, 0 on
+YouTube/Reddit.** But sponsorship *edges* (what Track B's
+`/feature-store/edges/sponsorships` actually returns) are stuck at **1**,
+because `build_sponsorship_edges()` requires `brand_id IS NOT NULL` and
+only 1 of the 11 newly-labeled posts has one — Track A's brand-extraction
+step hasn't caught up to this round's labeling yet. This is now the real
+bottleneck between Track C's work and Track B's first real training pair,
+not disclosure detection.
 
 **What's explicitly still placeholder/not real:** `spillover_score` /
 `sentiment_risk_score` / `creator_feature_score` in the fusion formula are
@@ -54,16 +71,19 @@ source anywhere in the system.
 
 ## Open items
 
-- **Kohli/Agilitas `is_sponsored` edge case — still blocked on Track A,
-  re-checked directly against the live DB this round (2026-08-10 Weeks
-  14-16), no change.** Both the original post and its sibling post are
-  still stored at exactly 100 chars, `fetched_at` still 2026-08-09 —
-  Instagram has not been re-scraped since Track A's caption-fix commit.
-  Currently labeled `is_sponsored=false` with the reasoning documented in
-  `API_CONTRACTS.md` (search "Kohli/Agilitas"). **Action once Track A
-  re-scrapes Instagram (check for `fetched_at` timestamps past their fix
-  commit before assuming): call `POST /labeling/run?force=true`** to
-  re-examine every Instagram row against corrected text.
+- **Kohli/Agilitas `is_sponsored` edge case — CLOSED 2026-08-14.**
+  Instagram has since been re-scraped (all 5 related posts now full-length,
+  `fetched_at` 2026-08-11/12); re-examined with `force=true` against real
+  complete text. Call confirmed unchanged (`is_sponsored=false` — genuine
+  co-founder relationship, no disclosure tag, `has_paid_partnership_label`
+  also `False` on all 5). See `API_CONTRACTS.md`'s Kohli/Agilitas section
+  for the closed writeup. No further action needed on this specific case.
+- **Sponsorship edges lag sponsorship events — new gap, Track A's to
+  close.** 11 real `is_sponsored=true` posts exist but only 1 has a
+  `brand_id`, so `/feature-store/edges/sponsorships` returns 1, not 11.
+  Re-check `brand_id` population on the other 10 next session — if Track
+  A's brand extraction has caught up, no Track C action needed; if not,
+  this is worth surfacing to the orchestrator again.
 - **`reputation_score` — blocked, no owner.** No table in Track A's schema
   has a source column for this, and none of their recent work has added
   one. Track B's `ml/schema.py` expects it in the creator feature vector.
@@ -132,34 +152,45 @@ source anywhere in the system.
    training label; a false negative is just absent signal. Don't "fix" a
    low sponsored-count by loosening the regex patterns — that's the wrong
    direction to optimize in for this specific pipeline.
+6. **A new column another track adds to a shared table does not
+   automatically reach Track C's code.** Track A added
+   `has_paid_partnership_label` to the live `instagram_posts` table, but it
+   sat there unread for at least one full round — `InstagramPost` (the
+   SQLModel class) simply had no field for it, so the ORM never selected
+   it, and `POST /labeling/run` never looked at it. Found only by directly
+   diffing `information_schema.columns` against `app/models.py`, not by
+   trusting either side's docs. When a cross-track doc says a new column
+   exists, verify the *consuming* code reads it, not just that it's
+   present in the DB.
 
 ## Exact next steps (in priority order)
 
-1. **Re-check whether Track A has re-scraped Instagram content** (fresh
-   `fetched_at` timestamps past their caption-fix commit — still
-   2026-08-09 as of this round, still not re-scraped). If yes: run
-   `POST /labeling/run?force=true`, re-evaluate the Kohli/Agilitas case
-   with real text, update `API_CONTRACTS.md`'s documented decision either
-   way.
-2. **Re-run `POST /labeling/run` (default mode is fine) periodically** as
-   Track A's dataset keeps growing — this is now routine maintenance, not
-   a one-off task. Check row counts first (`SELECT COUNT(*) FROM
-   youtube_videos/instagram_posts/reddit_posts WHERE is_sponsored IS
-   NULL`) to see if it's worth running. Just ran this round: 273 newly-
-   landed rows (133 YouTube, 140 Reddit) labeled, still 0 sponsored, all
-   695 real content rows now non-null. Did the broader keyword recall scan
-   too (sponsor/partner/collab/affiliate/#ad) — no new near-miss pattern,
-   all hits fell under already-tested cases.
+1. **Re-check `brand_id` population on the 11 real sponsorship posts.**
+   This round found only 1 of 11 `is_sponsored=true` Instagram posts has a
+   `brand_id`, capping `/feature-store/edges/sponsorships` at 1 real edge
+   even though 11 real events exist. That's Track A's brand-extraction
+   step, not Track C's — check whether it's caught up before assuming this
+   is still a gap.
+2. **Re-run `POST /labeling/run?force=true` periodically** as Track A's
+   dataset keeps growing and existing captions keep getting corrected —
+   this is now routine maintenance. Just ran this round: 0 → 11 real
+   sponsorship events (all Instagram), incorporating the new
+   `has_paid_partnership_label` signal (2 of 11 caught only by that
+   signal). Did the broader keyword recall scan too — no new near-miss
+   pattern beyond two YouTube videos that turned out to be explicit
+   *non*-sponsorship disclosures (correctly excluded).
 3. **Check `origin/track-b-ml-core:GRAPH_SCHEMA.md` fresh** for whether
-   real `spillover_score`/`sentiment_risk_score` output exists yet — if
-   so, Weeks 14-15's "real Fusion Layer" work unblocks.
+   real `spillover_score`/`sentiment_risk_score` output exists yet, and
+   whether Track B has started training against the now-real 11-event
+   `creator_sponsorship_events` view — if so, the "real Fusion Layer" work
+   unblocks.
 4. **Check `origin/track-a-data-infra:SCHEMA.md`** for any new
    `reputation_score`-adjacent column before assuming that gap is still
    open — this project's state changes fast, re-verify don't assume.
 5. If genuinely idle with schedule slack: start on API hardening (rate
-   limiting, more complete input validation) — PROJECT_PLAN.md Section 6
-   assigns this to Track C around Weeks 16-17, buildable ahead of schedule
-   like Track B did with their regularization terms in Weeks 3-4.
+   limiting, more complete input validation) — `CAPSTONE_NEXT_STEPS.md`
+   Phase 5 assigns this to Track C (with D), buildable ahead of schedule
+   like Track B did with their regularization terms early on.
 6. **Before ending any future session**: re-run the fresh-checkout
    verification (disposable `git worktree add --detach` off
    `origin/track-c-fusion-backend`, fresh venv, `pip install -r

@@ -48,6 +48,13 @@ def run_labeling(force: bool = False, session: Session = Depends(get_session)) -
     ig_query = select(InstagramPost) if force else select(InstagramPost).where(InstagramPost.is_sponsored.is_(None))
     for p in session.exec(ig_query).all():
         found, matches = detect_sponsorship(p.caption)
+        # Instagram's own "Paid partnership" declaration is a native,
+        # high-confidence signal independent of (and not always present in)
+        # caption text -- e.g. collab posts with no caption at all still
+        # carry it. Treat it as sponsored regardless of the text match.
+        if p.has_paid_partnership_label:
+            found = True
+            matches = matches + ["native:paid_partnership_label"]
         p.is_sponsored = found
         p.sponsorship_raw_matches = matches or None
         session.add(p)
