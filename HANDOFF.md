@@ -324,6 +324,125 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# PHASE 1F — READ THIS FIRST (2026-08-15, most recent round)
+
+Supersedes Phase 1E where they disagree. **The square-growth hypothesis is no longer open —
+it was tested properly and it FAILED.** Do not re-open it as "untested".
+
+## 1. The throttle test — the correct method, and it passed
+
+Phase 1E's lesson was applied literally: a **sustained 12-request scan**, not a probe.
+Result **12/12, `failed=0`, 168s continuous** — past the ~4-request point where sustained
+scanning re-tripped the throttle last round. It then held clean across the **full 347-post
+run: 0 failures in 70 minutes**. The throttle was genuinely gone, and the sustained test
+said so correctly where a probe would have been unfalsifiable.
+
+Worth keeping: the 12 test requests were **real work from the backlog**, not a throw-away
+probe. A clearance test costs nothing extra if it is the first slice of the job itself.
+
+## 2. THE HYPOTHESIS TEST — negative, and the mechanism is now understood
+
+| | Before | After |
+|---|---|---|
+| Posts unscanned | 359 | **0** |
+| `creator_related_accounts` rows | 316 | **423** (+107) |
+| **RESOLVED** | **10** | **10 (+0)** |
+
+Phase 1E predicted resolved edges grow ~quadratically with coverage, "since each newly
+covered creator can pair with every existing one." **That mechanism is empirically false
+for this creator set**, and the excuse used last round (unscanned posts) is now gone — every
+post is scanned.
+
+The measurements that kill it:
+
+- **407 distinct co-author handles observed; only 9 (2.2%) are creators of ours.**
+- 423 edge rows, **10 resolve (2.4%)**. 385 dangling handles are referenced by exactly one
+  creator — isolated leaves that add no pair.
+- **14 of 24 covered creators have ZERO co-authors inside the creator set.**
+- The 11 creators newly covered last round produced **~250 edge rows and 0 resolved edges**.
+- 24 covered creators offer 552 possible ordered pairs; **8 are realised** (~1.4%).
+
+**Why:** real Instagram collaborators are overwhelmingly **brands, media orgs, and adjacent
+individuals outside the curated set** (`netflix_in`, `starsportsindia`, `primevideoin`,
+`battlegroundsmobilein_official`...). Our 60 creators are curated as *people worth
+recommending*, not as *a group that collaborates with each other*. Famous creators rarely
+co-post with other famous creators; Ronaldo↔LeBron is the exception that made the mechanism
+look general.
+
+**⇒ The lever is creator-set MEMBERSHIP of co-authors, not Instagram coverage.** Of the 10
+resolved edges before this round, **4 came from targeted promotion**; coverage's contribution
+saturated once the mutually-collaborative pairs were found. Scanning more posts from
+already-covered creators has a marginal return of ~0 resolved edges.
+
+**Do not spend another round on Instagram coverage expecting resolved edges to move.**
+Coverage still has independent value (datapoints, captions, sponsorship events for Track C) —
+just not this one.
+
+## 3. Bridge candidates — the ranked, evidence-based promotion queue
+
+Only **13 of 398** dangling handles are referenced by **2+ distinct creators**. These are the
+only promotions that create a *bridge* (linking two already-covered creators) rather than a
+leaf. Ranked, with the brand exclusions already applied:
+
+| Handle | Referenced by | Promote? |
+|---|---|---|
+| `@netflix_in` | Bhuvan Bam + Prajakta Koli + worldofsiddharth | ❌ **BRAND** |
+| `@starsportsindia` | delhi_cricket + kkriders + Sania Mirza | ❌ **BRAND/media** |
+| `@ajinkyarahane` | kkriders + sunrisershyd | ✅ cricketer (`athlete`) |
+| `@rohitsaraf` | Bhuvan Bam + Prajakta Koli | ✅ actor |
+| `@jimmysheirgill` | Prajakta Koli + worldofsiddharth | ✅ actor |
+| `@taarukraina` | Prajakta Koli + worldofsiddharth | ✅ actor |
+| `@mansukhmandviya` | MC Mary Kom + Neeraj Chopra | ⚠️ politician — user call |
+| `@ptushaofficial` | Neeraj Chopra + Saina Nehwal | ⚠️ unverified |
+| `@districtupdates` | Sania Mirza + Virat Kohli | ❌ brand (ticketing) |
+| `@jayantireddylabel` | Sania Mirza + worldofsiddharth | ❌ brand (fashion label) |
+| `@primevideoin` | Bhuvan Bam + worldofsiddharth | ❌ **BRAND** |
+| `@battlegroundsmobilein_official` | Bhuvan Bam + CarryMinati | ❌ **BRAND** (game) |
+| `@delhipremierleaguet20` | delhi_cricket + kkriders | ⚠️ a league — `league` IS a valid category and teams are already creators, so defensible; user call |
+
+**These are NOT yet approved on the sheet.** They need user review first — the targeted-
+promotion rule draws its candidates from `accepted` rows.
+
+## 4. Promoted this round — 3, each naming the row it resolved (RESOLVED 10 → 13)
+
+| Promoted | Edge it resolved | Verified as |
+|---|---|---|
+| `@anushkasharma` | Virat Kohli -> @anushkasharma | real person, 67.5M, verified |
+| `@choudharyhitesh005` | MC Mary Kom -> @choudharyhitesh005 | "Cricketer/Businessman", 1.9M, verified |
+| `@piyush.meghwanshi` | Saina Nehwal -> @piyush.meghwanshi | "Podcaster", real individual (only 1.8k followers) |
+
+Every one checked against its **live bio**, not inferred from the handle.
+
+`promote_candidates.py` now takes `--handles`. It previously had **no way to promote a
+subset** — the only mode was "promote every accepted row", exactly what the standing rule
+forbids. The rule existed with no tooling to obey it.
+
+## 5. ⚠️ BRAND ACCOUNTS ARE MARKED `accepted` ON THE SHEET — flagged, not promoted
+
+12 accepted candidates met the resolution condition. **At least 7 are brand/product
+accounts** and were deliberately left alone:
+
+`@nike` · `@nikebasketball` · `@nikefootball` · `@pumatraining` · `@yonex_sunrise_india` ·
+`@duroflexworld` · `@one8world`
+
+`@one8world` is **named as a brand example in CAPSTONE_NEXT_STEPS.md itself.** Two more were
+excluded on evidence rather than by name: `@saniamirzatennisacademy` is a **business** (live
+bio advertises coaching camps and registrations) and `@neerajchoprafoundation` is an org
+(also a new dead handle — HTTP 400).
+
+**This is a live hazard, not a hypothetical.** Under a bulk promotion these seven would have
+entered `creators` and resolved into `creator_related_accounts` as fake "collaboration"
+edges, corrupting the collaboration-vs-sponsorship distinction GAIL depends on. **User review
+is the only safeguard and it did not catch these** — the targeted-promotion rule caught them
+only because a human-in-the-loop check was applied per candidate.
+
+## 6. New dead handle
+
+`@neerajchoprafoundation` — `HTTP 400 - make sure you are logged in`, while other handles
+succeeded in the same session. Add it to the dead list in §6 of Phase 1E.
+
+---
+
 # ⚠️ DB CONNECTIVITY — `DATABASE_URL` changed 2026-08-14 (affects ALL FOUR TRACKS)
 
 **Symptom:** every `psycopg2.connect()` fails instantly with
