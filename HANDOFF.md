@@ -276,3 +276,18 @@ Investigated rather than assumed — all 3 collisions are 1-2 character EMOJI-ON
 The corruption signature was *long* (400-1100 char) captions repeated across unrelated
 posts. Worth remembering: interpret the distinctness check with caption LENGTH in mind,
 or trivially-short captions will keep raising false alarms.
+
+### Incremental flush proved itself again — this time unplanned (2026-08-14)
+
+The edge-extraction run over the enlarged post set was killed at 280/401 posts after
+~30 minutes. Result: **120 new edge rows survived (72 → 192) and RESOLVED doubled
+(2 → 4)**, plus a 25 KB co-author checkpoint on disk. Under the previous
+end-of-run batching, all 120 rows would have been discarded — which is exactly what
+happened the last time a run was killed. First proof was a deliberate test; this one
+was a real interruption, which is better evidence.
+
+**First new cross-creator edge in the project: Cristiano Ronaldo ↔ LeBron James**
+(both directions), discovered only because their posts had just been scraped. Resolved
+pairs went 1 (Kohli↔RCB) → 2. This is direct confirmation that resolved edges are gated
+on Instagram COVERAGE, not on the extraction mechanism: scrape two creators, and any
+collaboration between them resolves automatically.
