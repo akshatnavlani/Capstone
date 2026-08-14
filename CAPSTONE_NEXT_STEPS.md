@@ -195,18 +195,34 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
-### 3.2 Live DB state — **orchestrator-verified 2026-08-11 after Phase 1A**
+### 3.2 Live DB state — **orchestrator-verified 2026-08-14 after Phase 1D (edges round)**
 
 | Table | Rows | Note |
 |---|---|---|
-| `creators` | **55** | was 16. Promote step built: 39 promoted + 16 grandfathered *enriched* (not duplicated), 0 duplicate handles |
-| `creator_related_accounts` | **1** | was 0. 1 resolvable edge; mechanism needs rework (§2) |
-| `brands` | 1 | unchanged — new `@oakleymeta`/Milton mentions not yet through extraction |
-| content rows with `brand_id` set | 1 | unchanged |
-| `instagram_posts` | 97 | **60 captions non-null & distinct, max 1058, avg 257, 35 >100 chars; 37 NULL** |
-| `reddit_post_creators` | 346 | junction table, working |
+| `creators` | 56 | unchanged since Phase 1C |
+| `creator_related_accounts` | **72** | **2 resolved** — capped by Instagram coverage (only ~9-12 creators have any instagram_posts), not by the extraction mechanism. See P0.2. |
+| `instagram_posts` | 143 | **134 captions non-null & distinct** — full re-run, 0 dupes/wrong-relation_type/wrong-platform found in sanity checks |
+| `has_paid_partnership_label` | 3 true / 140 false / **0 NULL** | full coverage now, was 60 NULL at Phase 1C |
+| Sheet | 206 rows | 67 co-author candidates awaiting user review (up from 18) |
 
-**Sheet is now at 55 accepted** (was 19) — the user has reviewed considerably more.
+All figures re-verified directly via REST by the orchestrator, independent of Track A's own
+report — every number matched exactly.
+
+**⚠️ Process incident, 2026-08-14:** the orchestrator edited this file after Phase 1C but never
+committed/pushed it — Track A's Phase 1D round pulled `origin/main` and correctly found no trace
+of Phase 1C content (still at commit `70cab91`). Not a Track A bug. **Lesson: this file is
+useless to the other three track sessions unless it's actually pushed, every time.**
+
+**Instagram grid-stall — characterized, one real bug fixed, root cause still open.** Byte-identical
+failure sequence reproduced across Aug 11/Aug 12 logs; ruled out (with evidence, not assumption):
+positional degradation, rate-limiting/time-of-day, account size. Isolated to the browser-driven
+grid path specifically (`opencli instagram user` never failed in 3 days; only `browser open` →
+`find --css` returns nothing). **Fixed:** a real tab-lease leak — `process_creator`'s
+no-post-links raise sat before its session close, leaking up to 8 sessions/tabs per bad run.
+Fixed on that path + a deterministic-name backstop in `run_batch`'s except. **Not yet proven** to
+be the actual cause of the stall (that's a hypothesis pending re-measurement) — the discriminating
+test is queued: run a consistently-failing creator (`cristiano`) alone as the first call of a
+fresh session. Aug 13's 5×30s timeouts are a separate bug, recorded separately, not conflated.
 
 ⚠️ **Incident 2026-08-11, resolved:** Track A's first backfill auto-detected each post's author
 instead of anchoring on the known username. Instagram post pages render *suggested* posts, so it
@@ -337,12 +353,15 @@ edges. B builds the tensor and trains.
 parser fix landed, not two separate bugs. Backfilled; 60 distinct captions, real disclosures
 recovered. See §2.
 
-**⚠️ P0.2 Collaboration edges — table populated but MECHANISM FAILED** *(Track A → C → B)*
-0 → 1 edge. Team→player tagging doesn't exist on IPL/ISL accounts (they caption with hashtags).
-**Next mechanisms to try, in order:** (1) Instagram collab co-author list ("X and N others") —
-a native, unambiguous collaboration fact; (2) Instagram "tagged people" on posts, distinct from
-caption @-mentions; (3) resolve whether the 37 NULL-caption rows are collab posts (⇒ edges) or
-scraper contamination (⇒ delete). See §2.
+**⚠️ P0.2 Collaboration edges — mechanism now works, bottleneck is Instagram coverage, not
+extraction** *(Track A → C → B)* Team→player tagging is confirmed dead (IPL/ISL accounts caption
+with hashtags). Its replacement — Instagram's collab co-author list — works and produced 72 edge
+rows, but only 2 resolve, because resolving requires BOTH co-authors to already be creators with
+Instagram content, and only ~9-12 of 56 creators currently have any `instagram_posts` at all. The
+real lever now is Instagram coverage breadth (getting more creators past the grid-stall and
+scraped at all), not further edge-mechanism work. 67 co-author candidates are on the sheet
+awaiting user review — promoting them will raise resolved count once they have Instagram content
+of their own.
 
 **✅ P0.3 Promote-to-DB — DONE 2026-08-11.** `creators` 16 → 55, upsert semantics correct
 (`athleanx` gained the instagram_handle it had on the sheet but not the DB — exactly the case
@@ -447,7 +466,7 @@ representative data → B builds the graph → D visualises.
 Sequential relay, each step gated on the previous:
 
 1. **A** — fix captions (P0.1) + backfill · build promote step (P0.3) · deepen the 19 approved ·
-   write team→player rows (P0.2) · clean duplicates (P1.5)
+   write team→player rows (P0.2)
 2. **C** — verify backfill landed (don't trust "done") · re-run labeling · report events
    before/after · verify resolvers return *resolved* edge counts
 3. **B** — build the first real `HeteroData` · report real structure (degree distribution,
