@@ -300,8 +300,15 @@ def main():
             })
         try:
             n = sheets_sync.push_candidates(rows_out)
+            # NB "already creators" counts observed handles that exist as creators,
+            # which INCLUDES self-references (a creator's own handle appearing in the
+            # header of their own post). Those are correctly excluded from edges, so
+            # this number is NOT an upper bound on resolvable edges -- it briefly read
+            # that way and caused real confusion. Only a co-author appearing on ANOTHER
+            # creator's post can produce a resolvable edge.
             log.info("pushed %d NEW co-author candidates to the sheet for review "
-                      "(%d observed, %d already creators)", n, len(observed_coauthors),
+                      "(%d distinct co-authors observed, %d of them already creators "
+                      "incl. self-references)", n, len(observed_coauthors),
                       len(observed_coauthors) - len(new))
         except Exception as e:
             log.warning("sheet push failed: %s", e)
