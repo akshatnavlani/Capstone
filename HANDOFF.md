@@ -404,6 +404,40 @@ row**, and the human review pass — the actual gate — can act on it.
 vocabulary validated properly before it gates anything. Flagged rather than decided
 unilaterally, per the round's "conservative, reversible" instruction.
 
+### 🚨 SILENT FAILURE FOUND: the sheet had run out of rows
+
+The first smoke test of the new push path failed with:
+`APIError [400]: Range (...!A996:J997) exceeds grid limits. Max rows: 995`
+
+**The sheet had filled its allocated grid exactly — 995 of 995 rows.** An explicit-range
+write does not auto-extend a worksheet, so **every candidate push was failing**, and
+`push_candidates` catches the exception and logs a warning — so it looked like a transient
+network error, not a hard ceiling. Discovery had silently lost the ability to add
+candidates at all. Fixed: `push_candidates` now calls `add_rows()` with 500 rows of
+headroom.
+
+Worth remembering as a class: the last round's "sheet push failed:
+`ConnectionResetError`" warning was read as a network blip. **A warning-and-continue on a
+write path hides a permanent failure just as well as a transient one.**
+
+### Verified evidence that Task 0 works end to end
+
+Two co-author rows pushed after the fix (`approval_status` blank, as required):
+
+```
+gmogtalk                 category: fitness_influencer   (NOT "other")
+  notes: co-author of @gurumann on post DHFdFC4xvJR; grid relevance 4/12 (33%);
+         category: fitness/coaching marker 'Fitness'
+tserieshealthandfitness  category: fitness_influencer
+  notes: co-author of @gurumann on post DK_YDLLSrok; grid relevance 2/8 (25%);
+         category: fitness/coaching marker 'Fitness'
+```
+
+⚠️ **Known limitation visible in that very sample:** `tserieshealthandfitness` is a
+corporate content channel (T-Series), which the brand rules do NOT catch — they key on
+legal-entity suffixes and commerce language, and a company's *content* channel has
+neither. Corporate channels still depend on the human review pass.
+
 ### Brand routing now happens at write time
 Both writers now divert brand accounts to `sheets_sync.append_brand_signal()` on the
 associated creator instead of creating a candidate row. `collab_edges.py` attributes the
