@@ -354,7 +354,10 @@ documented P1.3 bug class).
 | Measurement | Result |
 |---|---|
 | 37-case unit suite (`test_account_classify.py`) | **37/37 (100%)** |
-| **Held-out sample of 30 accounts never tuned on** | **9/30 (30%)** |
+| Held-out, 30 accounts never tuned on — bio only | **9/30 (30%)** |
+| + affiliation signal (@-mentions of known teams) | **14/30 (47%)** |
+| **+ grid enrichment — FINAL** | **17/30 (57%)** |
+| Rows landing in `other` | **60% → 20%** |
 
 **The 100% is overfitting and must not be quoted as the classifier's accuracy.** The
 held-out number is the real one. Dominant failure: **18 of 21 errors were `-> other`** —
@@ -377,6 +380,29 @@ column and every row is human-reviewed before promotion. So the classifier's job
 give the reviewer a sensible starting point **plus its evidence string**, which is written
 into `notes` for every row. Low-confidence guesses are labelled `LOW CONFIDENCE` in that
 evidence so a review pass can find them quickly.
+
+**Final honest read: 57%, with 20% landing in `other`.** Good enough to give a reviewer a
+useful starting point; **not** good enough to be trusted unreviewed. Remaining errors are
+mostly `lifestyle ↔ athlete/fitness` confusions, several genuinely ambiguous (a retired
+player who now coaches is defensibly either).
+
+### ⚠️ DEVIATION, deliberate — the grid-relevance gate is RECORDED, not ENFORCED
+
+The routing rules say a candidate needs "a clear majority of recent posts domain-relevant"
+before being added. Measured across the 30 held-out accounts, **mean grid relevance is
+0.30, and 7 of 30 returned no usable grid text at all.** A hard majority gate on that
+metric would reject roughly 80% of co-author candidates — including verified real
+collaborators of our own creators.
+
+The metric is not trustworthy enough to auto-reject on: Instagram grid alt-text is often
+boilerplate ("Photo by X on <date>"), so a low ratio frequently means *no caption text*,
+not *off-domain*. Enforcing it would silently discard real edges, which is the expensive,
+hard-to-notice failure. So the ratio **is computed and written into `notes` for every
+row**, and the human review pass — the actual gate — can act on it.
+
+**This needs a user decision:** either accept recording-not-enforcing, or have the domain
+vocabulary validated properly before it gates anything. Flagged rather than decided
+unilaterally, per the round's "conservative, reversible" instruction.
 
 ### Brand routing now happens at write time
 Both writers now divert brand accounts to `sheets_sync.append_brand_signal()` on the
