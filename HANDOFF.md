@@ -324,6 +324,43 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# STANDING RULE (2026-08-16) — BRANDS NEVER GET A SHEET ROW
+
+Set by the user. Structural, permanent, **not** a one-time cleanup, and it applies at
+DISCOVERY time rather than at user-review time.
+
+When discovery meets a brand / business / company account — brand-anchored discovery, a
+tagged collaborator that turns out to be a business, an athlete-owned product line:
+
+- **Do NOT create a sheet row / candidate for it.**
+- **DO append it to the `brand_signals` column of whichever creator's row it is associated
+  with** (e.g. the creator whose post tagged it). That column exists for exactly this and is
+  **live on the sheet now** — the plan file still calls it "TO ADD", which is stale.
+- If no associated creator row exists yet, **hold the signal** and attach it once one does.
+
+**Athlete-owned businesses are brands, not creators** (a sneaker line, a nutrition brand).
+They get no creator category at all — reject the row and record the brand signal instead.
+
+**Category guidance that goes with it** (user, 2026-08-16), against the live CHECK values
+`athlete · team · league · fitness_influencer · lifestyle_influencer · other`:
+
+| Real-world thing | Category |
+|---|---|
+| League | `league` |
+| Team / club | `team` |
+| **Sports federation** | `league` — closest fit; no dedicated value exists |
+| Individual coach/trainer posting own content | `fitness_influencer` / `lifestyle_influencer` |
+| **Coaching institution / academy** (organisational, not a person) | `other` — kept for breadth/discovery value (roster-like athlete affiliations), **not** as a standalone recommendation candidate |
+| Athlete-owned business / product line | **none — it is a brand.** Reject + `brand_signals` |
+
+⚠️ **Not yet enforced in code.** `collab_edges.py` still pushes every co-author to the sheet
+regardless of whether it is a business, and `discover_candidates.py` has no account-type
+classifier (P1.4 is still open). Until that lands, this rule is applied by hand each round.
+Wiring it in is the natural next step and was deliberately left out of the 2026-08-16 round,
+which the user scoped to category-fix + promotion only.
+
+---
+
 # PHASE 1F — READ THIS FIRST (2026-08-15, most recent round)
 
 Supersedes Phase 1E where they disagree. **The square-growth hypothesis is no longer open —

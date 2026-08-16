@@ -70,6 +70,68 @@ def read_approval_counts() -> dict[str, int]:
     return counts
 
 
+def update_category(updates: dict[str, str], dry_run: bool = False) -> int:
+    """Rewrite ONLY the `category` cell for the given {instagram_handle: category} rows.
+
+    Built 2026-08-16 to repair 146 accepted rows stuck at category='other'. Deliberately
+    narrow, because the failure modes here are expensive and already documented:
+
+      - `approval_status` is the USER's column and must never be written. This targets a
+        single named column and asserts it is not approval_status before writing.
+      - Row position is resolved by MATCHING THE HANDLE in each row, never by reusing an
+        index from get_all_records(). A stale/offset index would silently rewrite a
+        different creator's category, which nothing downstream would catch — `category`
+        has a CHECK constraint that accepts every value we might wrongly write.
+      - Writes go through batch_update on explicit single-cell ranges, avoiding the
+        native-Table range bug that silently destroyed a real row (see push_candidates).
+
+    Returns the number of cells written. Unknown handles are reported, not skipped
+    silently.
+    """
+    if not updates:
+        return 0
+    ws = _worksheet()
+    values = ws.get_all_values()
+    header = values[0]
+    if "category" not in header or "instagram_handle" not in header:
+        raise RuntimeError(f"sheet header missing required columns: {header}")
+    cat_col = header.index("category")
+    ig_col = header.index("instagram_handle")
+    if header[cat_col] != "category":
+        raise RuntimeError("refusing to write: resolved column is not `category`")
+
+    wanted = {h.strip().lstrip("@").lower(): c for h, c in updates.items()}
+    cells, seen = [], set()
+    for row_i, row in enumerate(values[1:], start=2):
+        if len(row) <= ig_col:
+            continue
+        h = (row[ig_col] or "").strip().lstrip("@").lower()
+        if h not in wanted:
+            continue
+        new = wanted[h]
+        current = (row[cat_col] or "").strip() if len(row) > cat_col else ""
+        seen.add(h)
+        if current == new:
+            continue  # already correct; don't burn a write
+        cells.append((row_i, new, h, current))
+
+    missing = set(wanted) - seen
+    if missing:
+        log_missing = ", ".join(sorted(missing))
+        raise RuntimeError(f"handles not found on the sheet, refusing partial write: {log_missing}")
+
+    if dry_run:
+        for row_i, new, h, current in cells:
+            print(f"[dry-run] row{row_i} @{h}: {current!r} -> {new!r}")
+        return len(cells)
+
+    col_letter = gspread.utils.rowcol_to_a1(1, cat_col + 1).rstrip("1")
+    body = [{"range": f"{col_letter}{row_i}", "values": [[new]]} for row_i, new, _, _ in cells]
+    for i in range(0, len(body), 100):  # chunked: one oversized request can time out
+        ws.batch_update(body[i:i + 100], value_input_option="RAW")
+    return len(cells)
+
+
 def push_candidates(rows: list[dict] | None = None) -> int:
     """Append staged candidates (approval_status blank) to the sheet.
 
