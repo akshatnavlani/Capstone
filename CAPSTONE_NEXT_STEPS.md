@@ -232,7 +232,39 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
-### 3.2a Live DB state — **Track A verified 2026-08-15, close of Phase 1F** (the 1E table below is superseded)
+### 3.2c Live DB state — **Track A verified 2026-08-16, close of Phase 1G** (NEWEST — supersedes 3.2a/3.2b for creators + edges)
+
+| Table | Rows | Note |
+|---|---|---|
+| `creators` | **259** | was 63. Bulk promotion of 258 accepted sheet rows: 196 new, 60 enriched, **0 duplicates/collisions** |
+| `creator_related_accounts` | 505 rows / **157 resolved** / **152 DISTINCT PAIRS** | was 15 resolved / 10 pairs. **No new scraping** — the same 505 rows resolve now that the endpoints are creators |
+| Resolve rate | **31%** | was 2.4% |
+| Creator categories | athlete 95 · fitness_influencer 82 · lifestyle_influencer 38 · team 20 · other 15 · league 9 | 132 of 146 `other` sheet rows were misclassified and corrected |
+| Sheet | 994 rows | 258 accepted / 230 rejected / 506 not-decided. `approval_status` untouched by agents |
+| IG coverage | 31 of 259 creators | **228 creators now have no Instagram content** — deepening is the gap |
+
+🚨 **THE "STRUCTURALLY SPARSE GRAPH" FINDING IS OBSOLETE — Tracks B and C must be told.**
+Both recorded "10 pairs / 2.4% resolve rate, structurally sparse, not a coverage gap" as a
+settled property. It was true *of the 63-creator set* and is now **152 pairs at 31%**. The
+graph was never structurally sparse; its endpoints simply weren't creators yet. Track B in
+particular planned its first training run around a 10-pair graph.
+
+**What this round proves about the lever** (Phase 1F predicted it; this confirms it at scale):
+
+| Action | Distinct pairs added |
+|---|---|
+| Covering 7 new creators (Phase 1F — 275 posts scraped) | **0** |
+| Promoting 196 already-observed co-authors (this round — no scraping at all) | **+142** |
+
+⚠️ **Brands found accepted on the sheet, excluded from promotion and flagged for the user:**
+`sporting.beyond` ("Sporting Beyond Pvt Ltd", a company — **already in `creators`** from a
+Phase 1E targeted promotion and carrying a live resolved edge, so it was left in place rather
+than deleted) and `sportsclaus` (sports media company). Agents **cannot** auto-reject these:
+`approval_status` is the user's column. The brand is instead recorded against the creator it
+was seen on via `brand_signals`. Note `brand_signals` is **live on the sheet now** — §3.4
+below still calls it "TO ADD", which is stale.
+
+### 3.2a Live DB state — **Track A verified 2026-08-15, close of Phase 1F** (superseded by 3.2c for creators/edges)
 
 | Table | Rows | Note |
 |---|---|---|

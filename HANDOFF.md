@@ -324,6 +324,129 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# PHASE 1G — READ THIS FIRST (2026-08-16, most recent round)
+
+Scope was category-fix + promotion only; no deepening. **The Phase 1F prediction was tested
+and it held decisively.**
+
+## 0. Verified totals at close of round (live DB)
+
+| Thing | Before | After |
+|---|---|---|
+| `creators` | 63 | **259** (+196 new, 60 enriched, 0 skipped) |
+| `creator_related_accounts` | 505 rows | 505 rows (unchanged — no scraping) |
+| RESOLVED rows | 15 | **157** |
+| **DISTINCT PAIRS** (report this) | 10 | **152** (+142) |
+| Resolve rate | 2.4% | **31%** |
+| Duplicate handles / names / collisions | — | **0 / 0 / 0** |
+
+## 1. PROMOTION IS THE LEVER — Phase 1F's prediction, now confirmed at scale
+
+Phase 1F found coverage adds no graph structure (7 newly covered creators → **0** new pairs)
+and argued the real lever was **creator-set membership of co-authors**, with 385 dangling
+handles waiting on promotion. This round promoted 196 of them and **142 dangling rows became
+real pairs — with zero new scraping.**
+
+| Action | Distinct pairs added |
+|---|---|
+| Covering 7 new creators (Phase 1F, 275 posts scraped) | **0** |
+| Promoting 196 already-observed co-authors (this round, no scraping) | **+142** |
+
+The pairs are structurally sensible, not artifacts: cricketers ↔ their IPL teams, footballers
+↔ `bengalurufc`, `anushkasharma` ↔ Virat Kohli, `balogun` ↔ LeBron James.
+
+**Consequence for planning: the collaboration graph was never sparse for structural reasons —
+it was sparse because the endpoints weren't creators yet.** Phase 1F's "2.4% resolve rate is
+structural" claim was true *of that creator set* and is now obsolete; do not quote it. Track B
+and Track C both recorded the 10-pair figure — **both need telling it is now 152.**
+
+## 2. Category fix — 132 of 146 were misclassified
+
+| accepted by category | before | after |
+|---|---|---|
+| `athlete` | 17 | **96** |
+| `fitness_influencer` | 73 | **81** |
+| `lifestyle_influencer` | 4 | **38** |
+| `team` | 18 | **21** |
+| `league` | 0 | **8** |
+| `other` | **146** | **14** |
+
+**132 misclassified, 13 genuinely `other`, 1 excluded as a brand.** `approval_status`
+untouched throughout (258/230/506 before and after).
+
+**Root cause, proven not guessed — and it is NOT positional.** `collab_edges.py:320`
+hardcodes `"category": "other"` for every co-author it pushes; at push time it has only a
+handle scraped from a post header and no bio to classify on.
+
+- **144 of 146** `other` rows carry co-author provenance in `notes` (99%)
+- **all 144** accepted co-author-sourced rows are `other` (100%, no exceptions)
+- the only 2 exceptions are `athleanx` / `technicalguruji`, original-seed dead handles
+
+So the "~row 140" boundary is a **provenance boundary**, not a row-index one: rows to ~139
+came from `discover_candidates.py`, everything after from co-author pushes. Second mechanism
+worth fixing: `discover_candidates.py` applies one `--category` hint per **run** (default
+`fitness_influencer`) with no per-account classification at all.
+
+Category propagation to the DB is automatic: `get_or_create_creator` refreshes name/category
+**only when the existing row is `other`**, so promotion repaired the 10 stale DB rows too.
+
+## 3. Profile fetching needs BOTH paths — they fail independently
+
+`opencli instagram profile` served **111 of 146**; the other **35 fail it persistently**
+(`instagram user` fails on them too) yet **load fine via the browser**. That is the exact
+inverse of the documented grid stall, which had the browser failing while the adapter worked.
+⇒ **Treat adapter and browser as independent fallbacks for each other in both directions.**
+Cheap browser probe that avoids a ~10KB page extract:
+
+```
+opencli browser <s> eval "JSON.stringify({d:document.querySelector('meta[name=description]')?.content,t:document.title})"
+```
+returns `"7M Followers, 1,132 Following, 35 Posts - @bronny on Instagram: \"999 LLJW\""`.
+
+⚠️ **Never put `||` in an `eval` argument.** opencli resolves through an npm `.cmd` shim, so
+cmd.exe re-parses the argument and treats `||` as its OR operator — it truncated the JS into
+`SyntaxError: Unexpected end of input` plus a bogus
+`'''' is not recognized as an internal or external command`. Add this to the Windows gotchas
+in lesson 7.
+
+⚠️ **Do not unescape `\"` before `json.loads`** on eval output — it is already valid JSON, and
+bios legitimately contain quotes. That bug failed 5 handles before the consecutive-failure
+abort stopped it, which is the mechanism working.
+
+## 4. Brand accounts caught — 2, excluded and flagged
+
+**`approval_status` is the user's column and agents must never write it**, so a brand found at
+promotion time is **excluded and flagged, never auto-rejected.** Both need a user decision:
+
+| Handle | What it is | Status |
+|---|---|---|
+| `sporting.beyond` | **"Sporting Beyond Pvt Ltd"** — a company | ⚠️ **already a creator** from a Phase 1E targeted promotion, so it predates this rule. Left in place rather than deleted: it carries a resolved edge (`Virat Kohli -> @sporting.beyond`). **User call.** |
+| `sportsclaus` | sports content/media company ("we design the fandom") | accepted and miscategorized `athlete`; excluded from promotion |
+
+Recorded against the creator it was observed on, per the standing rule:
+`virat.kohli.brand_signals = "sporting.beyond (Sporting Beyond Pvt Ltd) - co-author on Virat
+Kohli post; company, not a creator"`.
+
+**Also flagged, outside the fixed scope (rows already had non-`other` categories, so the
+user's review had passed them):**
+- `mfn_mma` — Matrix Fight Night, an **MMA promotion/league**, categorized `fitness_influencer`. Promoted; category is wrong.
+- `sharikfilms` — "Cinematic Storyteller", a filmmaker, categorized `fitness_influencer`.
+- `totalcombatfitness` — a gym (institutional), categorized `fitness_influencer`.
+
+## 5. Next steps
+
+1. **Tell Tracks B and C the graph changed**: 10 pairs → **152**, resolve rate 2.4% → 31%.
+   Both have the old figure written into their notes as a structural fact.
+2. **Deepening loop** (separate prompt) — 228 of 259 creators now have no Instagram content.
+3. **Wire the brand rule into code** — `collab_edges.py` still pushes every co-author,
+   business or not; `discover_candidates.py` still has no account-type classifier (P1.4).
+4. **Fix `collab_edges.py:320`** so co-author pushes stop minting `other` rows; the cheap fix
+   is to classify from the bio at push time, since the co-author's profile is one call away.
+5. **User decisions:** `sporting.beyond` (a company sitting in `creators` with a live edge),
+   and the three miscategorized rows in §4.
+
+---
+
 # STANDING RULE (2026-08-16) — BRANDS NEVER GET A SHEET ROW
 
 Set by the user. Structural, permanent, **not** a one-time cleanup, and it applies at
