@@ -234,6 +234,15 @@ def push_candidates(rows: list[dict] | None = None) -> int:
         # sidesteps the Table's stale auto-detection entirely.
         next_row = len(ws.get_all_values()) + 1
         last_row = next_row + len(to_append) - 1
+
+        # Grow the grid before writing past it. Found 2026-08-17: the sheet filled to its
+        # allocated 995 rows, and every push then failed with
+        #   APIError [400]: Range (...!A996:J997) exceeds grid limits. Max rows: 995
+        # An explicit-range write does NOT auto-extend the sheet, so discovery had
+        # silently stopped being able to add candidates at all.
+        if last_row > ws.row_count:
+            ws.add_rows(last_row - ws.row_count + 500)   # headroom, not one row at a time
+
         last_col_letter = gspread.utils.rowcol_to_a1(1, len(header)).rstrip("1")
         ws.update(f"A{next_row}:{last_col_letter}{last_row}", to_append, value_input_option="RAW")
     return len(to_append)
