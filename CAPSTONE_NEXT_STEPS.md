@@ -465,32 +465,59 @@ edges. B builds the tensor and trains.
 parser fix landed, not two separate bugs. Backfilled; 60 distinct captions, real disclosures
 recovered. See §2.
 
-**⚠️ P0.2 — SUPERSEDED 2026-08-15. The bottleneck is NOT Instagram coverage.** The paragraph
-below was written when the coverage hypothesis was untested; Track A has now tested it
-directly and it **failed**. With all 825 posts scanned (0 unscanned, 0 failures), edge rows
-went 316 → 423 while **RESOLVED stayed at 10**. The mechanism it assumed — "each newly
-covered creator can pair with every existing one" — is empirically false for this creator
-set: **only 2.2% of the 407 distinct co-authors observed are creators of ours**, 14 of 24
-covered creators have **zero** in-set co-authors, and the 11 creators newly covered last
-round produced ~250 edge rows and **0** resolved edges.
+**✅ P0.2 — RETIRED 2026-08-16/17. The graph was never structurally sparse — its endpoints
+just weren't creators yet.** Everything below (2026-08-15) was a real, correctly-verified
+finding *of the 63-creator set at the time* — but it was a snapshot of an unpromoted graph,
+not a structural ceiling, and the next round decisively disproved the "sparse" framing rather
+than confirming it further.
 
-Real collaborators are overwhelmingly brands, media orgs and adjacent individuals — our
-creators were curated as *people worth recommending*, not as *a set that collaborates with
-itself*. **The lever is creator-set membership of co-authors, not coverage breadth.** Of the
-13 resolved edges now, **7 came from targeted promotion**; coverage's contribution saturated
-once the mutually-collaborative pairs were found.
+**What actually happened:** the user reviewed the full sheet backlog (258 accepted, 230
+rejected — every row actually looked at). Bulk-promoting those 258 candidates converted
+**142 previously-dangling `creator_related_accounts` rows into real resolved pairs, using
+zero new scraping** — the rows already existed, their endpoints just weren't `creators` yet.
+Resolve rate: **2.4% → 31%** (157 resolved rows / 505 total, independently re-derived by the
+orchestrator and matched exactly: 152 distinct pairs, up from 10). Compare: covering 7 new
+creators the round before produced 0 new pairs. **Promotion, not coverage, is the lever —
+confirmed decisively now, not just theorized.**
 
-⇒ **Do not fund another round of Instagram coverage expecting resolved edges to move.**
-Coverage retains independent value (datapoints, captions, sponsorship events for Track C),
-just not this one. The graph-density lever is the **bridge queue**: only 13 of 398 dangling
-handles are referenced by 2+ distinct creators, and those are the only promotions that link
-two covered creators rather than adding a leaf. Detail and the ranked list with brand
-exclusions are in Track A's HANDOFF.md §3 (Phase 1F).
+⚠️ **Tracks B and C both built on the old 10-pair figure as a settled structural fact** — Track
+B specifically planned its first real training run around "expect a small, sparse graph."
+That plan needs correcting directly, not just via this doc update — both tracks should be told
+this explicitly before doing anything further with the collaboration graph.
 
-⚠️ **Track B should plan for a sparse collaboration graph.** 2.4% of edge rows resolve; this
-is a structural property of the curated set, not a collection bug.
+**Real bug found in the same round, still unfixed in code (data-only patch applied so far):**
+`collab_edges.py`'s co-author-push path hardcodes `category: "other"` for every handle it adds
+to the sheet (no bio available at push time to classify on), and `discover_candidates.py`
+applies one `--category` hint per whole run rather than per-account. 146 of 258 accepted rows
+were sitting at `category=other` because of this — traced with hard evidence (144 of 146 carry
+co-author provenance, the only 2 exceptions are pre-existing dead-handle rows). Fixed
+*retroactively* for those 146 rows (132 corrected, 13 genuinely `other`, 1 excluded as a
+brand) via a new bio-reading `sheets_sync.update_category()`. **The code paths that caused it
+are unchanged** — any further co-author-push or discovery run will recreate this exact problem
+until the underlying functions do per-account classification at write time, not after.
+
+⇒ Coverage still retains independent value (datapoints, captions, sponsorship events for
+Track C) — just isn't the graph-density lever. The remaining lever, now proven not just
+theorized: continue surfacing dangling co-author handles (collab_edges.py, now the
+highest-confidence discovery mechanism available — it finds people already observed
+collaborating with a creator, not merely predicted to) and get them through user review. The
+bridge-queue framing (only 13 of 398 dangling handles referenced by 2+ creators) is superseded
+by this — promotion converted far more than 13 dangling rows once bulk-authorized. Original
+bridge-queue text, kept for the record, follows:
 
 *Superseded text follows, kept for the record:*
+
+~~Do not fund another round of Instagram coverage expecting resolved edges to move.
+Coverage retains independent value (datapoints, captions, sponsorship events for Track C),
+just not this one. The graph-density lever is the bridge queue: only 13 of 398 dangling
+handles are referenced by 2+ distinct creators, and those are the only promotions that link
+two covered creators rather than adding a leaf. Detail and the ranked list with brand
+exclusions are in Track A's HANDOFF.md §3 (Phase 1F).~~
+
+~~Track B should plan for a sparse collaboration graph. 2.4% of edge rows resolve; this
+is a structural property of the curated set, not a collection bug.~~
+
+*Also superseded, from the round before that:*
 
 **~~P0.2 Collaboration edges — mechanism now works, bottleneck is Instagram coverage, not
 extraction~~** *(Track A → C → B)* Team→player tagging is confirmed dead (IPL/ISL accounts caption
