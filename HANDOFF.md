@@ -331,7 +331,73 @@ prevent. It converted a silent-corruption bug into a loud one.
 Base state confirmed before starting: `creators` **259**, distinct pairs **152**, resolve
 rate 31%. Matches the Phase 1G close exactly, so this round builds on a verified base.
 
-## TASK 1 — co-author extraction (PRIMARY) — IN FLIGHT
+## 🚨 BIGGEST FINDING OF THE ROUND — 69% of posts have NO DATE and NO ENGAGEMENT DATA
+
+Found while trying to answer the report question "any newly-connected creator with a
+sponsorship event that now has data on both sides of the event date". **That question
+cannot currently be answered for most events, and the reason is structural.**
+
+| | total | with `posted_at` |
+|---|---|---|
+| `instagram_posts` | 1,224 | **374 (31%)** |
+| **paid-partnership posts** | 19 | **5** |
+| **`is_sponsored` posts** | 18 | **6** |
+
+**Root cause, established by a perfect correlation, not a guess:** all **850** rows lacking
+`posted_at` ALSO lack `media_type` AND `like_count`. That is the exact signature this
+project already documented for the caption bug — *listing-sourced rows*: the grid listing
+yields a post ID with an empty metadata dict, so every field lands None. **The same
+root-cause class is still live for dates and engagement.**
+
+⚠️ **This is worse than a missing-dates problem.** `like_count` / `comment_count` are NULL
+on the same 850 rows — that is the engagement data GAIL needs to compute before/after
+deltas. So the gap hits both halves of a training pair: no event date to straddle, and no
+engagement series to measure.
+
+**Why this matters more than tonight's edge counts:** CAPSTONE_NEXT_STEPS' Review-1 go/no-go
+criterion is "at least one fully computable training pair — a sponsorship event BOTH
+graph-connected AND with pre-event data on that neighbour." **That metric is currently
+capped by this, not by graph density.** We have 153 pairs and 19 paid-partnership posts,
+but only 5 of those posts even have a date.
+
+**Recoverable?** Almost certainly — the post page and grid alt-text both carry real dates
+("Photo shared by X on August 15, 2026"), and the extractor already visits those pages.
+**Not built tonight**: it is a new backfill mechanism, not on the task list, and the
+conservative overnight call is to prove and document it rather than write to 850 rows
+unattended. **Recommended as the next round's top priority** — it plausibly unblocks the
+Review-1 metric without any new discovery at all, the same shape as last round's promotion
+win (existing rows, missing linkage).
+
+## TASK 1 — co-author extraction (PRIMARY) — SCAN COMPLETE
+
+`collab_edges.py --only-new` over the backlog: **245 posts, 0 failures, 51 minutes.**
+Throttle verified clear beforehand the correct way — **30 sustained browser fetches, 0
+failures**, not a single probe.
+
+| | before | after |
+|---|---|---|
+| Unscanned posts | 245 | **0 — backlog fully cleared** |
+| `creator_related_accounts` | 508 | **567** (+59) |
+| Resolved rows | 157 | **163** (+6) |
+| Distinct pairs | 152 | **153** (+1) |
+| `has_paid_partnership_label` | 12 | **19 (+7)** |
+| Caption fixes | — | 15 |
+
+**+7 paid-partnership posts is the most valuable output** — native Instagram sponsorship
+declarations, the highest-precision treatment signal available, on creators not previously
+known to carry any: **CarryMinati 5, Bhuvan Bam 4, Prajakta Koli 2**. Track C should
+re-label; `is_sponsored` is still 18 and is theirs to update.
+
+⚠️ **Immediate pair yield is LOW (+1) and that is NOT a failure.** New co-authors are not
+creators yet, and this round is explicitly barred from promoting them (`approval_status` is
+the user's column). The payoff is candidates surfaced for the next review pass — precisely
+the mechanism that produced **+142 pairs last round from zero new scraping**. Judge this
+mechanism on candidates surfaced, not on same-night pairs.
+
+**Brand routing confirmed working in production**, from the live log:
+`BRAND eshviv -> brand_signals of @ballerathletik (written)` — a brand diverted to the
+owning creator's `brand_signals` instead of becoming a candidate row, exactly as the
+standing rule requires.
 
 Running `collab_edges.py --only-new` over the 248 posts the deepening loop left unscanned.
 Throttle was verified clear the correct way first: **30 sustained browser fetches with 0
