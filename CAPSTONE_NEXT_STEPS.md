@@ -63,6 +63,43 @@ how data collection works. Explicitly:
 > precedence over demo timing. If a choice arises between a denser demo and cleaner data, choose
 > cleaner data.
 
+### Review-readiness criteria (added 2026-08-16) — raw volume alone does NOT satisfy any of these
+
+This session's central lesson: creator count and row counts are *necessary but not sufficient*.
+The real bottleneck at every stage has turned out to be structural (does an edge resolve, does an
+event have `brand_id`, does a connected neighbor have pre-event history) — not volume. Check the
+structural criteria before declaring a milestone's data "ready," not just the headline counts.
+
+**Review 1 — "basic dry run," the bar for THIS check-in:**
+- [ ] ~100 creators (raw floor, already close)
+- [ ] **At least one (ideally 3-5) fully computable training pair** — a sponsorship event that is
+      BOTH graph-connected to another creator AND has pre-event data on that neighbor. This is the
+      real go/no-go number for a dry run, not event count or edge count in isolation. **Currently
+      0** — see P0.4.
+- [ ] Real collaboration edges comfortably above the current 10 pairs, since only ~20% of sponsored
+      creators end up graph-connected at current density — more edges raises the odds more
+      sponsorship events land on a connected creator.
+- [ ] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a
+      sentiment/reputation signal, even if the full pipeline isn't built yet.
+
+**Review 2 — "GAIL trains for real, fusion produces real scores":**
+- [ ] Sponsorship events: 300+ (established Phase 2 target)
+- [ ] Real resolved edges: 500+ (established Phase 2 target)
+- [ ] A meaningful count of *computable* training pairs (connected + straddling) — dozens at
+      minimum; re-derive this target once Review 1's actual resolve-rate is known, don't assume
+      it scales linearly with event count given the structural sparsity already observed.
+- [ ] Brands with real scraped profile data, not just mention-extracted names
+- [ ] Comment volume sufficient to compute a real per-creator sentiment signal across most of the
+      creator set, not just the best-covered few
+
+**Submission — "complete, deployable":**
+- [ ] Dataset stabilized (no active collection actively invalidating demo state during evaluation)
+- [ ] Data supports both branches (GAIL + Temporal) for the full creator set or an honestly-scoped
+      subset, stated plainly in the thesis rather than silently narrowed
+- [ ] Limitations section grounded in what was actually found this project (observational data,
+      disclosure-based treatment labels, structural graph sparsity, India-skewed sample,
+      engagement-per-rupee not true ROI) — not a generic boilerplate list
+
 ---
 
 ## 2. THE CENTRAL PROBLEM — **caption cause RESOLVED, edge cause pivoted** *(updated 2026-08-11 post-Phase-1A)*
@@ -538,8 +575,23 @@ trains on real data.
 
 ### P2 — known gaps, not yet blocking
 
-- **`reputation_score` has no source anywhere** in the schema *(C flagged, correctly unfabricated)*.
-  Track A's Reddit rework makes a sentiment-derived proxy plausible — Track B's to build if wanted.
+- **⚠️ `reputation_score` / sentiment analysis — reframed 2026-08-16, still unbuilt.** The user
+  clarified the actual intent behind Reddit collection: Reddit's role was never meant to be
+  primarily co-occurrence (graph edges) — its value is unfiltered public opinion per creator,
+  which is what `reputation_score` and the Temporal branch's Sentiment Propagation component
+  need. **Reality check, confirmed against the code**: Reddit's only realized use in the ML
+  pipeline to date IS the co-occurrence junction — sentiment analysis is 0% built, not partially
+  built. This isn't a wrong turn Track A took; the Temporal branch (of the original two-branch
+  design) has simply had zero attention while all focus went to the GAIL branch's "do we have
+  any signal at all" crisis. Not the low-Reddit-volume's cause, though — that's structural (most
+  athletes lack a dedicated subreddit), unrelated to the co-occurrence mechanism.
+  **Bigger opportunity, previously unnoticed:** 19,843 YouTube comments and 13,097 Instagram
+  comments are sitting completely unused for anything, sentiment or otherwise — a larger raw-opinion
+  pool than Reddit's 9,480. **Next step (Track B, Temporal branch, not yet started):** sentiment
+  analysis over `reddit_posts`+`reddit_comments`+`instagram_comments`+`youtube_comments` text per
+  creator, aggregated into `reputation_score` + a time-series signal for Sentiment Propagation.
+  Doesn't block or compete with GAIL/graph work; can start now on whichever creators already have
+  decent comment volume, doesn't need more scraping first.
 - **Temporal engagement-delta computation not built** *(B)* — the largest unbuilt GAIL piece;
   needs real sponsorship timestamps to compute before/after deltas around.
 - **~15-row reconciliation gap** between Track A's own tally (~124) and the live sheet (139).
