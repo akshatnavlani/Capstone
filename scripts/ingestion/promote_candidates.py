@@ -74,11 +74,27 @@ def main():
                           "creator_related_accounts row, so the promotion immediately converts a "
                           "dangling row into a real edge. Without this flag the script promotes "
                           "EVERY accepted row, which adds creators without adding training pairs.")
+    ap.add_argument("--exclude", nargs="+", default=[], metavar="IG_HANDLE",
+                     help="Never promote these handles even though the sheet marks them "
+                          "accepted. Exists for the standing brands-are-not-creators rule: a "
+                          "brand promoted into `creators` resolves into creator_related_accounts "
+                          "as a fake collaboration edge, corrupting the sponsorship-vs-"
+                          "collaboration distinction GAIL depends on. `approval_status` is the "
+                          "user's column and agents must not write it, so a brand found at "
+                          "promotion time is excluded here and flagged, not auto-rejected.")
     args = ap.parse_args()
 
     rows = sheets_sync.read_rows()
     accepted = [r for r in rows if (r.get("approval_status") or "").strip().lower() == "accepted"]
     log.info("sheet rows=%d accepted=%d", len(rows), len(accepted))
+
+    if args.exclude:
+        blocked = {h.strip().lstrip("@").lower() for h in args.exclude}
+        before = len(accepted)
+        accepted = [r for r in accepted
+                     if (clean(r.get("instagram_handle")) or "").lstrip("@").lower() not in blocked]
+        log.warning("EXCLUDED %d accepted row(s) as brand/business accounts: %s",
+                     before - len(accepted), ", ".join(sorted(blocked)))
 
     if args.handles:
         wanted = {h.strip().lstrip("@").lower() for h in args.handles}

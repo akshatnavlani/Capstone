@@ -70,6 +70,44 @@ def read_approval_counts() -> dict[str, int]:
     return counts
 
 
+def append_brand_signal(instagram_handle: str, signal: str, dry_run: bool = False) -> bool:
+    """Append a brand observation to one creator's `brand_signals` cell.
+
+    This is the write side of the standing rule set 2026-08-16: a brand/business account
+    must NOT become its own sheet row/candidate; it is recorded against the creator it
+    was observed on. Appends (semicolon-separated, deduplicated) rather than replacing,
+    since a creator accumulates several brand signals over time.
+
+    Never touches `approval_status`. Returns False if the handle isn't on the sheet or
+    the signal is already recorded.
+    """
+    ws = _worksheet()
+    values = ws.get_all_values()
+    header = values[0]
+    for col in ("brand_signals", "instagram_handle"):
+        if col not in header:
+            raise RuntimeError(f"sheet header missing `{col}`: {header}")
+    bs_col, ig_col = header.index("brand_signals"), header.index("instagram_handle")
+    want = instagram_handle.strip().lstrip("@").lower()
+
+    for row_i, row in enumerate(values[1:], start=2):
+        if len(row) <= ig_col or (row[ig_col] or "").strip().lstrip("@").lower() != want:
+            continue
+        current = (row[bs_col] or "").strip() if len(row) > bs_col else ""
+        parts = [p.strip() for p in current.split(";") if p.strip()]
+        if signal in parts:
+            return False
+        parts.append(signal)
+        new = "; ".join(parts)
+        if dry_run:
+            print(f"[dry-run] row{row_i} @{want} brand_signals: {current!r} -> {new!r}")
+            return True
+        col_letter = gspread.utils.rowcol_to_a1(1, bs_col + 1).rstrip("1")
+        ws.update(f"{col_letter}{row_i}", [[new]], value_input_option="RAW")
+        return True
+    return False
+
+
 def update_category(updates: dict[str, str], dry_run: bool = False) -> int:
     """Rewrite ONLY the `category` cell for the given {instagram_handle: category} rows.
 
