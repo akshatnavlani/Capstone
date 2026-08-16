@@ -331,6 +331,30 @@ prevent. It converted a silent-corruption bug into a loud one.
 Base state confirmed before starting: `creators` **259**, distinct pairs **152**, resolve
 rate 31%. Matches the Phase 1G close exactly, so this round builds on a verified base.
 
+## TASK 1 — co-author extraction (PRIMARY) — IN FLIGHT
+
+Running `collab_edges.py --only-new` over the 248 posts the deepening loop left unscanned.
+Throttle was verified clear the correct way first: **30 sustained browser fetches with 0
+failures** during Task 0 validation, not a single probe.
+
+Interim, mid-run (incremental flush confirmed working — these are live DB reads while the
+process is still going):
+
+| | at launch | mid-run |
+|---|---|---|
+| Unscanned posts | 245 | **117** |
+| `creator_related_accounts` | 508 | **544** (+36) |
+| Resolved rows | 157 | **162** (+5) |
+| **Distinct pairs** | 152 | **153** (+1) |
+
+⚠️ **Expected-but-important: immediate pair yield is LOW, and that is not a failure.** New
+co-authors are not creators yet, and this round is explicitly barred from promoting them
+(`approval_status` is the user's column). The +5 resolved rows come from co-authors who
+already happened to be creators. **Co-author extraction's payoff is surfacing candidates
+whose LATER promotion converts to pairs** — that is precisely the mechanism that produced
++142 pairs last round from zero new scraping. Judge this mechanism on candidates surfaced,
+not on same-night pairs.
+
 ## TASK 0 — category bug fixed in CODE (was data-only)
 
 ### What was actually wrong
