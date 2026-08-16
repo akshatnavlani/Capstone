@@ -469,11 +469,36 @@ of their own.
 (`athleanx` gained the instagram_handle it had on the sheet but not the DB — exactly the case
 insert-only would have missed), 0 duplicates, `approval_status` untouched.
 
-**P0.4 Sponsorship events — signal confirmed, labeling pending** *(Track C, now unblocked)*
-Still 0 in the DB (`is_sponsored` is Track C's to populate) but ≥4 genuine disclosures are now
-present in real captions. **Track C's re-label is the immediate next step**, and those 4 known
+**⚠️ P0.4 — SUPERSEDED 2026-08-16. Events and edges both exist; the real blocker is narrower and
+sharper: zero computable (treatment, neighbor-outcome) training pairs.** Track B built the first
+real `HeteroData` (63 nodes, 10 collaboration pairs, 18 sponsorship events, 10 with `brand_id`)
+and ran a real training attempt. Of the 8 sponsored creators, only **2** (Kohli, Ronaldo) have a
+graph-connected collaborator at all. For both, the orchestrator independently confirmed against
+live `posted_at` values: the collaborator's own dated posts fall **entirely after** the
+sponsorship event, none straddling it —
+
+- Kohli's event: 2026-04-29. Collaborator `royalchallengers.bengaluru`'s earliest dated post:
+  2026-05-31.
+- Ronaldo's event: 2026-07-21. Collaborator LeBron James's earliest dated post: 2026-07-26.
+
+GAIL's training signal is a *before/after* engagement delta on the neighbor, so a pair with no
+pre-event neighbor data is unusable regardless of how many sponsorship events or collaboration
+edges exist. **The real number of computable training pairs today is 0, not 10.** This wasn't
+previously checked as its own requirement — "does the neighbor's data actually straddle the
+event" is a new, distinct condition from "does an edge resolve" or "does an event get labeled."
+
+This is likely a targeted fix, not a structural one: it affects exactly 2 accounts
+(`royalchallengers.bengaluru`, LeBron James), and Instagram grids are reverse-chronological, so
+scraping deeper into just these two accounts' history (past their per-creator recency-window cutoff)
+should recover pre-event posts if they exist. Not yet attempted — the natural next Track A task.
+
+*Superseded text follows, kept for the record:*
+
+~~Sponsorship events — signal confirmed, labeling pending~~ *(Track C, now unblocked)*
+~~Still 0 in the DB (`is_sponsored` is Track C's to populate) but ≥4 genuine disclosures are now
+present in real captions. Track C's re-label is the immediate next step, and those 4 known
 disclosures are a concrete validation target — if the labeler misses them, that's a labeler bug,
-not an absence of signal.
+not an absence of signal.~~
 
 **P0.5 Deepening not completed** *(Track A)* — the full IG→YT→Reddit cycle per approved creator
 did not run; time went to the caption incident. **We still have no per-creator datapoint counts
