@@ -279,11 +279,30 @@ def save_staging(rows: list[dict]) -> None:
         json.dump(rows, f, indent=2, ensure_ascii=False)
 
 
+# Team/league creator handles, populated once per discover() run.
+_KNOWN_ORGS: set[str] = set()
+
+
 def discover(tags: list[str], max_posts_per_tag: int, category_hint: str) -> tuple[list[dict], list[str]]:
     known = load_known_handles()
     staged = load_staging()
     new_rows: list[dict] = []
     retry_later: list[str] = []
+
+    # Team/league handles, loaded once: a bio @-mentioning a known club is often the
+    # only usable signal on a sparse profile.
+    global _KNOWN_ORGS
+    try:
+        import psycopg2
+
+        import account_classify
+        from orchestrator import ENV
+        _conn = psycopg2.connect(ENV["DATABASE_URL"])
+        _KNOWN_ORGS = account_classify.load_known_orgs(_conn)
+        _conn.close()
+    except Exception as e:
+        log.warning("could not load known team/league handles: %s", e)
+        _KNOWN_ORGS = set()
 
     for tag in tags:
         session = f"disc_{tag}"
@@ -324,12 +343,34 @@ def discover(tags: list[str], max_posts_per_tag: int, category_hint: str) -> tup
                 continue
 
             india_note = ", India signal in bio" if check["india_signal"] else ""
+
+            # PER-ACCOUNT CATEGORY (2026-08-17). `category_hint` is a single value for
+            # the WHOLE run, so a run themed "fitness_influencer" labelled every account
+            # it found that way regardless of what the account actually is. It is now a
+            # fallback only, used when the real profile can't be classified.
+            cat, cat_why = category_hint, f"run hint '{category_hint}' (not classified)"
+            try:
+                import account_classify
+                a = account_classify.classify_handle(handle, _KNOWN_ORGS, use_grid=False)
+                if a["category"] == account_classify.BRAND:
+                    # Brands never become candidate rows. No owning creator exists on the
+                    # hashtag path, so the signal is held rather than attached (see the
+                    # standing rule: hold until an associated creator row exists).
+                    log.info("tag=%s: %s is a BRAND (%s) -- not staged as a candidate",
+                              tag, handle, a["evidence"])
+                    continue
+                if a["reachable"] and a["category"] != "other":
+                    cat, cat_why = a["category"], a["evidence"]
+            except Exception as e:
+                log.warning("classify failed for %s: %s -- falling back to run hint", handle, e)
+
             row = {
                 "name": handle,
-                "category": category_hint,
+                "category": cat,
                 "instagram_handle": handle,
                 "follower_count": check["followers"],
-                "notes": f"discovered via #{tag}, {check['followers']} followers{india_note} -- {reason}",
+                "notes": f"discovered via #{tag}, {check['followers']} followers{india_note} "
+                          f"-- {reason}; category: {cat_why}",
                 "approval_status": "",
             }
             new_rows.append(row)

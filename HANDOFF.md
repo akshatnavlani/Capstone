@@ -324,7 +324,70 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
-# PHASE 1G — READ THIS FIRST (2026-08-16, most recent round)
+# PHASE 1H — IN PROGRESS (2026-08-17, autonomous overnight round)
+
+**Live status — updated as the run proceeds, not written at the end.**
+
+Base state confirmed before starting: `creators` **259**, distinct pairs **152**, resolve
+rate 31%. Matches the Phase 1G close exactly, so this round builds on a verified base.
+
+## TASK 0 — category bug fixed in CODE (was data-only)
+
+### What was actually wrong
+Two writers created sheet rows without ever classifying the account:
+- `collab_edges.py` — hardcoded `category: "other"` for every co-author pushed.
+- `discover_candidates.py` — one `--category` hint for a WHOLE run, no per-account logic.
+
+### ⚠️ Correction to the task framing
+The instruction was to reuse "the bio-reading classification logic from
+`sheets_sync.update_category()`". **That function contains no classification logic** — it
+is a *writer* that takes a `{handle: category}` dict and writes cells. Last round's
+categories came from a human reading each bio. There was nothing to reuse, so the missing
+piece was built once, in `account_classify.py`, and imported by both call sites. That
+serves the intent (one approach, not two) rather than the literal wording.
+
+### Honest accuracy measurement — this is the important part
+`account_classify.classify_from_profile()` is a rule-based classifier over name + bio +
+handle, word-boundary matched throughout (bare substring matching is this project's
+documented P1.3 bug class).
+
+| Measurement | Result |
+|---|---|
+| 37-case unit suite (`test_account_classify.py`) | **37/37 (100%)** |
+| **Held-out sample of 30 accounts never tuned on** | **9/30 (30%)** |
+
+**The 100% is overfitting and must not be quoted as the classifier's accuracy.** The
+held-out number is the real one. Dominant failure: **18 of 21 errors were `-> other`** —
+exactly the pileup this task exists to prevent. Cause: real Instagram bios are sparse.
+Ishan Kishan's entire bio is "For business enquiries"; Chris Gayle's is a nickname.
+
+Two evidence-driven improvements followed, each measured rather than assumed:
+
+1. **Affiliation signal** — players @-mention their club, and we already know which
+   handles are teams/leagues because they are creators in our own DB. Resolving those
+   mentions needs no extra fetch. → **14/30 (47%)**.
+2. **Grid enrichment** — the routing rules already require opening the grid for the
+   relevance check, and post captions carry far more signal than a bio. When the bio is
+   inconclusive, the classifier re-runs over bio + grid text.
+
+**Design consequence, stated plainly:** a keyword classifier cannot reliably categorise
+sparse Instagram bios, and no amount of further tuning will make it authoritative. The
+sheet is a **review queue**, not a source of truth — `approval_status` is the user's
+column and every row is human-reviewed before promotion. So the classifier's job is to
+give the reviewer a sensible starting point **plus its evidence string**, which is written
+into `notes` for every row. Low-confidence guesses are labelled `LOW CONFIDENCE` in that
+evidence so a review pass can find them quickly.
+
+### Brand routing now happens at write time
+Both writers now divert brand accounts to `sheets_sync.append_brand_signal()` on the
+associated creator instead of creating a candidate row. `collab_edges.py` attributes the
+signal to the creator whose post the brand co-authored. On the hashtag path there is no
+owning creator, so the brand is skipped and logged (the standing rule's "hold the signal"
+case).
+
+---
+
+# PHASE 1G — (2026-08-16)
 
 Scope was category-fix + promotion only; no deepening. **The Phase 1F prediction was tested
 and it held decisively.**

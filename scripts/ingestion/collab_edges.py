@@ -309,21 +309,69 @@ def main():
     # of error. They enter the normal curation flow with approval_status BLANK.
     if observed_coauthors and not args.dry_run:
         import sheets_sync
+        import account_classify
         known_lower = set(known)
         new = {h: v for h, v in observed_coauthors.items() if h not in known_lower}
+
+        # CLASSIFY EACH CANDIDATE AT WRITE TIME (2026-08-17). This used to write
+        # `category: "other"` unconditionally, which is what put 146 of 258 accepted
+        # rows in 'other' and forced a manual repair pass. Now each handle's real
+        # profile (and grid) decides its category, and brands are diverted to the
+        # owning creator's brand_signals instead of becoming candidate rows.
+        conn2 = psycopg2.connect(ENV["DATABASE_URL"])
+        known_orgs = account_classify.load_known_orgs(conn2)
+        conn2.close()
+
         rows_out = []
+        brands_routed = []
+        consec_unreachable = 0
         for h, occurrences in sorted(new.items()):
             owner, post_id = occurrences[0]
+            provenance = (f"co-author of @{owner} on post {post_id}"
+                           + (f" (+{len(occurrences)-1} more collab posts)"
+                              if len(occurrences) > 1 else ""))
+            try:
+                a = account_classify.classify_handle(h, known_orgs)
+            except Exception as e:
+                log.warning("classify failed for %s: %s — staging as 'other'", h, e)
+                a = {"reachable": False, "category": "other",
+                     "evidence": f"classify error: {e}", "relevance_ratio": 0.0,
+                     "relevant": 0, "total": 0, "followers": "", "name": h}
+
+            # Throttle guard: same consecutive-failure discipline as the post scan.
+            consec_unreachable = 0 if a.get("reachable") else consec_unreachable + 1
+            if consec_unreachable >= MAX_CONSECUTIVE_FAILURES:
+                log.warning("%d consecutive unreachable profiles — stopping classification "
+                             "and pushing what is already classified.", consec_unreachable)
+                break
+
+            if a["category"] == account_classify.BRAND:
+                # NEVER a sheet row. Record against the creator it was observed on.
+                try:
+                    ok = sheets_sync.append_brand_signal(
+                        owner, f"{h} — {a['evidence']}; seen as co-author on {post_id}")
+                    brands_routed.append((h, owner, ok))
+                    log.info("BRAND %s -> brand_signals of @%s (%s)", h, owner,
+                              "written" if ok else "already present / owner not on sheet")
+                except Exception as e:
+                    log.warning("brand_signals write failed for %s: %s", h, e)
+                continue
+
+            rel_note = (f"; grid relevance {a['relevant']}/{a['total']} "
+                         f"({a['relevance_ratio']:.0%})" if a["total"] else
+                        "; grid relevance unavailable")
             rows_out.append({
-                "name": h,
+                "name": a.get("name") or h,
                 "instagram_handle": h,
-                "category": "other",  # best guess; must be a CHECK value if ever promoted
-                "follower_count": "",
-                "notes": f"co-author of @{owner} on post {post_id}"
-                         + (f" (+{len(occurrences)-1} more collab posts)" if len(occurrences) > 1 else ""),
+                "category": a["category"],
+                "follower_count": a.get("followers") or "",
+                "notes": f"{provenance}{rel_note}; category: {a['evidence']}",
                 "brand_signals": "",
                 "approval_status": "",
             })
+        if brands_routed:
+            log.info("routed %d brand account(s) to brand_signals instead of sheet rows",
+                      len(brands_routed))
         try:
             n = sheets_sync.push_candidates(rows_out)
             # NB "already creators" counts observed handles that exist as creators,
