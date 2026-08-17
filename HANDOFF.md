@@ -6,26 +6,48 @@ Memory (`C:\Users\Sonic\.claude\projects\D--Capstone\memory\`) has the
 detailed week-by-week history if you need it, but this file is the
 current-state summary — trust it over stale memory entries if they disagree.
 
-Last updated: 2026-08-15, a session prompted directly by the orchestrator's
-`CAPSTONE_NEXT_STEPS.md` (repo root on `main`, commit `aef6401`, Phase 1F) —
+Last updated: 2026-08-17, a session prompted directly by the orchestrator's
+`CAPSTONE_NEXT_STEPS.md` (repo root on `main`, commit `c71e533`) —
 **read that file first**, it supersedes memory and this file's own history
 when they disagree, per its own stated rule. `API_CONTRACTS.md` at repo root
 is the living API contract doc — read that too before touching any endpoint
 shape.
 
-**This round: routine re-verification, no code changes.** Force-relabeled
-against Track A's now-1,092-row Instagram table (267 new posts since last
-round): sponsorship events **11 → 18**, 10 of 18 now have `brand_id` (was
-9 of 11), `/feature-store/edges/sponsorships` moved **9 → 10**, exactly
-matching the raw `is_sponsored=true AND brand_id IS NOT NULL` count — no
-reconciliation gap. Also independently reproduced Track A's collaboration-
-edge claim (505 rows / 15 resolved / **10 distinct pairs**) directly from
-the live DB and confirmed the API emits 2 directed edges per pair (20
-total), matching Track B's non-`ToUndirected()` graph convention. See
-`API_CONTRACTS.md`'s "Phase 1F re-verification" section for full detail.
-Also applied the `.env` DATABASE_URL pooler fix from
-`CAPSTONE_NEXT_STEPS.md` §3.4b — this worktree's `.env` still had the old
-IPv6-only direct host.
+**⚠️ CORRECTION to last round's headline finding: the "10-pair, 2.4%,
+structurally sparse" collaboration-graph claim below is RETIRED.** It was a
+real, correctly-verified snapshot of an *unpromoted* graph, not a ceiling —
+bulk-promoting 258 reviewed sheet candidates (zero new scraping) converted
+dangling `creator_related_accounts` rows into real pairs. Current, this
+round: **161 distinct resolved pairs** (668 rows, up from 505/10). See
+`CAPSTONE_NEXT_STEPS.md`'s retired-P0.2 section for the full story — don't
+cite "10 pairs" or "2.4%" anywhere again without re-checking first.
+
+**This round's headline: the project's first fully-computable GAIL training
+pair is now real.** `mrbeast` sponsored a post (`Db5rzczsSV5`,
+`#oldnavypartner`, `has_paid_partnership_label=true`, caption text alone
+would NOT have caught it) on 2026-08-12. Confirmed this round, independently,
+all three required conditions: (1) `is_sponsored=true` after relabel — via
+the native signal, not regex; (2) `mrbeast` is graph-connected to
+`CarryMinati` via a real resolved collaboration edge (confirmed live via
+`/feature-store/edges/collaborations`, weight 2.0 both directions); (3)
+CarryMinati has dated posts straddling the event (11 before, 1 after) —
+independently verified by the orchestrator, not re-checked here per this
+round's explicit instruction. **`brand_id` is still NULL on this post** — no
+"Old Navy" brand row exists yet in `brands`, and brand extraction from
+disclosure text is entirely Track A's code (`scripts/ingestion/`), not
+Track C's — confirmed by grepping this backend for any brand-extraction
+logic and finding none. This does not block the computable-pair claim
+(P0.4's definition is graph-connection + straddling data, not `brand_id`),
+but it does mean `/feature-store/edges/sponsorships` still won't include
+this specific event until Track A extracts the brand.
+
+Also: force-relabeled against Track A's now-1,419-row Instagram table (195
+new posts): sponsorship events **18 → 32**, all Instagram. Sponsorship-edges
+endpoint held at **10**, reconciling exactly against the raw
+`brand_id`-populated count (22 of 32 events still lack one — routine lag,
+not a regression). See `API_CONTRACTS.md`'s "Phase 1G" section for full
+detail. `.env` DATABASE_URL pooler fix from last round still in place —
+confirmed working, no action needed.
 
 **Note:** `PROJECT_PLAN.md` Section 1's breadth-over-depth revision (noted
 last round as unmerged into this branch) is superseded by
@@ -36,10 +58,10 @@ rather than assuming this note is current.
 ## Current state (one paragraph)
 
 A FastAPI + SQLModel backend (`backend/`) is live and connected to the real
-shared Supabase Postgres instance (63 real creators, 1,826 real content rows
-as of last check — 299 YouTube / 1,092 Instagram / 435 Reddit, Instagram
-grown sharply via Track A's Phase 1F scanning). Full API surface exists and
-is tested: `/health`, `/recommendations` (real
+shared Supabase Postgres instance (259 real creators, 2,289 real content rows
+as of last check — 315 YouTube / 1,419 Instagram / 555 Reddit, all three
+grown via Track A's ongoing collection, Instagram most sharply). Full API
+surface exists and is tested: `/health`, `/recommendations` (real
 budget/region/demographic/product_category/platform_preference filtering,
 not a stub), `/ingestion/*` (8 endpoints, secondary/manual write path —
 **Track A's real orchestrator writes directly to Postgres and bypasses
@@ -47,42 +69,55 @@ these entirely**, see gotcha #2 below), `/scores/*` (Fusion Layer formula,
 weights still placeholder pending real GAIL/Temporal output), `/alerts`
 (with a `propagated_from_creator_id` field pre-added for Sentiment
 Propagation), `/feature-store/*` (real transformation pipeline Track B
-actively consumes — creators [63], collaboration edges [20 directed = 10
-distinct pairs, real], co-occurrence edges [0, expected-empty, structural
-per Track A's Phase 1E finding], sponsorship edges [**10**, reconciles
-exactly against the raw DB]), `/labeling/run` (real disclosure-tag
-`is_sponsored` classifier, reading Instagram's native
-`has_paid_partnership_label`, precision-validated against real scraped
-text). CORS is configured and confirmed working by Track D in a real
-browser. Basic auth (`API_KEY` env var) exists, off by default. 49 tests
-pass (`backend/tests/`, `pytest`). Migrations for Track C's own tables
-live in `backend/migrations/` with a README explaining why (see gotcha #1).
-Working tree is clean and fully pushed as of this handoff.
+actively consumes — creators [259], collaboration edges [322 directed =
+**161 distinct pairs**, real, up from 10 after bulk promotion], co-occurrence
+edges [0, expected-empty], sponsorship edges [**10**, reconciles exactly
+against the raw DB]), `/labeling/run` (real disclosure-tag `is_sponsored`
+classifier, reading Instagram's native `has_paid_partnership_label`,
+precision-validated against real scraped text). CORS is configured and
+confirmed working by Track D in a real browser. Basic auth (`API_KEY` env
+var) exists, off by default. 49 tests pass (`backend/tests/`, `pytest`).
+Migrations for Track C's own tables live in `backend/migrations/` with a
+README explaining why (see gotcha #1). Working tree is clean and fully
+pushed as of this handoff.
 
-**Sponsorship events: 18, all Instagram, 0 on YouTube/Reddit** (up from 11
-last round, after force-relabeling the 267 Instagram posts Track A scanned
-in Phase 1F). 13 of 18 caught by caption-text regex, 5 caught *only* by the
-native `has_paid_partnership_label` signal. `/feature-store/edges/
-sponsorships` returns **10** (was 1, then 9 once Track A's brand-extraction
-fix landed on the original 11 — this round found it's still only 1 of the
-**7 newly-surfaced** events, so 8 of 18 total events still lack `brand_id`).
-This is expected lag, not a regression — flag again next round if it hasn't
-moved once Track A re-runs brand extraction.
+**Sponsorship events: 32, all Instagram, 0 on YouTube/Reddit** (up from 18
+last round, after force-relabeling the 195 new Instagram posts Track A
+scanned overnight). 15 of 32 caught by caption-text regex (some also
+carrying the native marker), 17 caught *only* by the native
+`has_paid_partnership_label` signal. `/feature-store/edges/sponsorships`
+holds at **10** — reconciles exactly against the raw
+`is_sponsored=true AND brand_id IS NOT NULL` count. 22 of 32 events still
+lack `brand_id`, including the milestone `mrbeast` post below — routine lag
+behind Track A's brand extraction, not a regression.
 
-**Collaboration graph is confirmed genuinely sparse — a structural property
-of the curated creator set, not a coverage or extraction gap.** Track A
-tested this directly: scanning grew from 24→31 of 63 creators covered with
-zero new resolved edges (only 2.2% of observed co-authors are creators in
-our own set). Independently reproduced from the live DB this round: 505
-`creator_related_accounts` rows → 15 resolved → **10 distinct pairs**
-(5 of the 15 are reciprocal directions of a pair already counted). The
-`/feature-store/edges/collaborations` endpoint correctly returns 20 edges
-(2 directed edges per pair, matching Track B's non-`ToUndirected()` graph
-convention) — **Track B: 20 is not 20 relationships, it's 10.** Don't
-expect this number to grow from more Instagram coverage; the lever is the
-"bridge queue" (handles referenced by 2+ creators) per Track A's
-HANDOFF.md, which is a curation decision, not something to build around
-here.
+**The project's first fully-computable GAIL training pair is now real —
+confirmed, not assumed.** `mrbeast`'s `Db5rzczsSV5` (`#oldnavypartner`,
+native-label-only detection, posted 2026-08-12) is `is_sponsored=true`
+after this round's relabel, `mrbeast` is graph-connected to `CarryMinati`
+via a real resolved collaboration edge (verified live, weight 2.0 both
+directions), and CarryMinati has dated posts on both sides of the event
+(orchestrator-verified, not re-checked here). `brand_id` is NULL on this
+post — no "Old Navy" brand row exists yet and brand extraction is entirely
+Track A's code, not Track C's (confirmed via grep, no such logic exists in
+this backend) — so this event won't appear in
+`/feature-store/edges/sponsorships` until Track A extracts it, but that
+does **not** block the computable-pair claim itself.
+
+**⚠️ RETIRED finding, corrected this round: the collaboration graph is NOT
+structurally sparse.** Last round's "10 pairs, 2.4% resolve rate, confirmed
+structural property" claim (both here and in memory) was a real snapshot of
+an *unpromoted* graph, mistaken for a ceiling. The user reviewed the full
+258-candidate sheet backlog and bulk-promoted them; **zero new scraping**
+converted previously-dangling `creator_related_accounts` rows into real
+pairs. Current: **161 distinct pairs** (668 rows total, 322 resolved rows
+before dedup), independently reproduced this round via the same
+handle-resolution logic used every prior round, matching the orchestrator's
+figure exactly. The `/feature-store/edges/collaborations` endpoint needed
+no code change — it recomputes from live DB state on every call, so it
+already reflected the new reality the moment promotion landed. **Still
+report 322 as 161 relationships, not 322** — 2 directed edges per pair,
+unchanged convention.
 
 **What's explicitly still placeholder/not real:** `spillover_score` /
 `sentiment_risk_score` / `creator_feature_score` in the fusion formula are
@@ -101,16 +136,14 @@ source anywhere in the system.
   also `False` on all 5). See `API_CONTRACTS.md`'s Kohli/Agilitas section
   for the closed writeup. No further action needed on this specific case.
 - **Sponsorship edges lag sponsorship events — ongoing, Track A's to
-  close.** 18 real `is_sponsored=true` posts exist, 10 have a `brand_id`
-  (was 9/11 last round — Track A's fix caught up on the original 11 but
-  not yet on the 7 newly-surfaced events). Re-check next session; this is
-  routine lag from Instagram scanning outpacing brand extraction, not a
-  new bug.
-- **Collaboration graph sparsity — confirmed structural, not a bug, don't
-  try to fix it here.** 10 distinct resolved pairs across 63 creators.
-  Track A tested and disproved the "more coverage → more edges" hypothesis
-  directly (Phase 1F). The only real lever is the sheet's bridge-queue
-  curation, which is the user's call, not Track C's to build around.
+  close.** 32 real `is_sponsored=true` posts exist, only 10 have a
+  `brand_id`. Includes the `mrbeast`/Old Navy milestone post specifically
+  (see headline above) — worth checking first next round since it's the
+  highest-value single post to get a brand_id, not just routine lag.
+- **~~Collaboration graph sparsity~~ — RETIRED, do not cite "10 pairs" or
+  "2.4%" again.** Now 161 distinct pairs (668 rows) after bulk promotion of
+  the sheet backlog. If any future doc/memory still says 10, it's stale —
+  re-verify against the live DB, don't trust the cached figure.
 - **`reputation_score` — blocked, no owner.** No table in Track A's schema
   has a source column for this, and none of their recent work has added
   one. Track B's `ml/schema.py` expects it in the creator feature vector.
@@ -192,23 +225,21 @@ source anywhere in the system.
 
 ## Exact next steps (in priority order)
 
-1. **Re-check `brand_id` population on the 8 sponsorship posts still
-   missing it.** This round found 10 of 18 `is_sponsored=true` Instagram
-   posts have a `brand_id`, capping `/feature-store/edges/sponsorships` at
-   10 even though 18 real events exist. That's Track A's brand-extraction
-   step, not Track C's — check whether it's caught up before assuming this
-   is still a gap.
+1. **Re-check `brand_id` on `Db5rzczsSV5` (mrbeast/Old Navy) specifically,
+   not just the aggregate.** This is the project's first computable
+   training pair — once Track A extracts "Old Navy" into `brands` and
+   backfills this post, it becomes visible to
+   `/feature-store/edges/sponsorships` too. Check this post by name before
+   trusting an aggregate `brand_id` count next round.
 2. **Re-run `POST /labeling/run?force=true` periodically** as Track A's
-   dataset keeps growing — this is now routine maintenance. Just ran this
-   round: 11 → 18 real sponsorship events (all Instagram, from 267 newly-
-   scraped posts), 13 of 18 via caption regex, 5 via
-   `has_paid_partnership_label` only. Didn't re-run the broader recall
-   scan this round (no code changed, prior scan still holds) — worth
-   re-running once the dataset grows meaningfully again.
+   dataset keeps growing — routine maintenance. Just ran this round: 18 →
+   32 real sponsorship events (all Instagram, from 195 newly-scraped
+   posts), 15/32 via caption regex, 17/32 via `has_paid_partnership_label`
+   only. Didn't re-run the broader recall scan this round (no code
+   changed) — worth re-running once the dataset grows meaningfully again.
 3. **Check `origin/track-b-ml-core:GRAPH_SCHEMA.md` fresh** for whether
-   real `spillover_score`/`sentiment_risk_score` output exists yet, and
-   whether Track B has started training against the now-real 11-event
-   `creator_sponsorship_events` view — if so, the "real Fusion Layer" work
+   Track B has started training on the now-confirmed-real mrbeast/
+   CarryMinati computable pair — if so, the "real Fusion Layer" work
    unblocks.
 4. **Check `origin/track-a-data-infra:SCHEMA.md`** for any new
    `reputation_score`-adjacent column before assuming that gap is still

@@ -4,7 +4,7 @@ Owner: Track C (Fusion+Backend). Updated whenever the contract changes — treat
 edits to this file as high-signal for Tracks A/B/D, since there's no live
 channel between sessions, only git.
 
-**Status as of 2026-08-15 (post-Phase-1F round):** all endpoints below are live
+**Status as of 2026-08-17 (post-Phase-1G round):** all endpoints below are live
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
@@ -37,7 +37,104 @@ uniformly across `/health`, `/recommendations`, `POST /ingestion/creators`,
 **CONFIRMED by Track D in a real browser** (first non-curl verification
 this project has had) — the fix works. Closed.
 
+## Phase 1G re-verification (2026-08-17) — first computable training pair, sparsity finding retired
+
+Prompted by the orchestrator's `CAPSTONE_NEXT_STEPS.md` rewrite (commit
+`c71e533`), which retired the Phase 1F "structurally sparse, 10 pairs, 2.4%"
+finding directly below. **Read that retraction before trusting anything in
+the "Phase 1F" section further down this file** — it's kept for the record,
+not because it's still current.
+
+**⚠️ Correction, stated first: the collaboration graph is NOT structurally
+sparse.** The Phase 1F finding was real *of the unpromoted 63-creator graph
+at the time*, but was a snapshot mistaken for a ceiling. The user reviewed
+the full 258-candidate sheet backlog and bulk-promoted them — zero new
+scraping, just converting existing dangling `creator_related_accounts` rows
+into resolved pairs by giving their endpoints `creators` rows. Resolve rate:
+**2.4% → 31%** (161 distinct pairs, up from 10). Independently re-derived
+this round via the identical handle-resolution script used every prior
+round — matches the orchestrator's figure exactly. **Any doc, including this
+one further down, or memory citing "10 pairs" is now stale — always
+re-verify against the live DB before citing it.**
+
+**Live-state self-check.** `creators`=259, `creator_related_accounts`=668
+rows, `instagram_posts`=1,419, `has_paid_partnership_label` true=24 — all
+matched the round's briefing exactly. Confirmed the milestone post
+`Db5rzczsSV5` (`mrbeast`) directly: `has_paid_partnership_label=true`,
+`is_sponsored` was `NULL` (not the labeled-`false` case), caption
+`"...#oldnavypartner"` — a hashtag pattern the existing regex list
+(`#ad`/`#sponsored`/`#spon`/`#paidpartnership`/etc.) does not match, making
+this a genuine test of the native-signal-only path, not caption regex.
+
+**Task 1 — force-relabel.** `POST /labeling/run?force=true` against 315
+YouTube / 1,419 Instagram / 555 Reddit. **Events: 18 → 32, all Instagram**,
+YouTube/Reddit still 0 (both grew in row count from Track A's ongoing
+collection but produced no hits). Of the 32: **15 caught by caption-text
+regex** (some also carrying the native marker), **17 caught only by
+`has_paid_partnership_label`** — this round's native-only share (17/32,
+53%) is notably higher than last round's (5/18, 28%), consistent with
+Track A's newer posts increasingly using branded hashtags the regex list
+was never built to catch, rather than explicit "#ad"-style tags.
+
+**Task 2 — the mrbeast/Old Navy post, confirmed explicitly, not buried in
+the aggregate.** Post-relabel: `Db5rzczsSV5` → `is_sponsored=True`,
+`sponsorship_raw_matches=['native:paid_partnership_label']` (regex found
+nothing — confirms the native signal did the work, exactly as predicted).
+`brand_id` is still `NULL` — queried `brands` directly, no "Old Navy" row
+exists yet (10 brand rows total: Agilitas, Airtel, Amazon Prime, BGMI,
+Cadbury, Esports World Cup, Milton, oakleymeta, optimumnutri, Visit Dubai —
+no Old Navy). Grepped this entire backend for brand-extraction logic and
+found none — `brand_id` only ever appears as a field reference
+(`models.py`/`feature_store.py`/`schemas.py`), never assigned from text
+anywhere in Track C's code. **Brand extraction is entirely Track A's
+ownership** (`scripts/ingestion/`, per the track-ownership table), not
+something to build here.
+
+Separately confirmed the graph-connection half of the claim, live: queried
+`creators` for `mrbeast` (`2b23aa86-...`) and `CarryMinati`
+(`c086bf2e-...`), then filtered the live `/feature-store/edges/
+collaborations` response for that exact pair — **found, weight 2.0, both
+directions.** The neighbor-straddle condition (CarryMinati's dated posts on
+both sides of 2026-08-12) was independently verified by the orchestrator
+this round and was explicitly out of scope to re-check here.
+
+**⇒ Yes: the project's first fully-computable GAIL training pair
+(treatment event + graph-connected neighbor + straddling neighbor data) is
+now real**, confirmed independently across all three of Track C's own
+checkable conditions. `brand_id` absence doesn't block this — P0.4's
+computable-pair definition is graph-connection + straddling data, not brand
+identification — but it does mean this specific event stays invisible to
+`/feature-store/edges/sponsorships` until Track A extracts "Old Navy."
+
+**Task 3 — collaboration-edges endpoint against the new 161-pair reality.**
+`GET /feature-store/edges/collaborations` returns **322 edges**. Verified
+programmatically these collapse to exactly **161 distinct undirected
+pairs**, each still appearing in both directions — no code change was
+needed since the endpoint recomputes from live DB state on every call, so
+it already reflected the bulk promotion the moment it landed. **Report as
+161 relationships, not 322** — same 2-directed-edges-per-pair convention as
+before, just at 16x the count.
+
+**Task 4 — sponsorship-edges reconciliation.** `GET /feature-store/edges/
+sponsorships`: **10 → 10** (checked before and after Task 1's relabel — no
+change, since none of the 14 newly-surfaced events got a `brand_id`).
+Reconciled exactly against `SELECT count(*) FROM instagram_posts WHERE
+is_sponsored=true AND brand_id IS NOT NULL` = 10. Zero divergence — the
+same clean reconciliation as every prior round.
+
+**Verification discipline**: reused existing `.venv` and the `.env` pooler
+fix from last round (both still valid), no ephemeral scripts left in the
+repo, no resolver/model code changed this round (verification + relabel
+only), 49/49 tests still pass, working tree clean, merge from `main`
+(commit `c71e533`) will be pushed with this update.
+
 ## Phase 1F re-verification (2026-08-15) — routine, no code changes
+
+**⚠️ RETIRED 2026-08-17 — see the Phase 1G section above.** The "10 distinct
+pairs, structurally sparse, 2.4%" claim throughout this section was real
+*of the unpromoted graph at the time* but was superseded by bulk promotion,
+not by new scraping. Kept below for the historical record only — do not
+cite these figures as current.
 
 Prompted by the orchestrator's `CAPSTONE_NEXT_STEPS.md` rewrite (commit
 `aef6401`) after Track A's Phase 1F round scanned 267 more Instagram posts
@@ -824,8 +921,8 @@ thesis capstone backend.
 | Ingestion upsert logic (8 endpoints) | Real, working, but secondary path (see breaking-change note #3) |
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
-| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/collaboration/sponsorship edge data; collaboration edges genuinely sparse (10 distinct pairs, 20 directed edges — confirmed structural by Track A's Phase 1F test, see Phase 1F section) not a bug; `co_occurs_with` real but currently empty (Track A purged the noisy signal it was built from, self-healed automatically, see Weeks 11-13 note); CLIP/BERT embeddings intentionally not computed here (Track B); `reputation_score` is the one remaining genuine gap |
-| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data. Sponsorship events: 18 (all Instagram), up from 11.** 1,826/1,826 real rows labeled (299 YouTube / 1,092 Instagram / 435 Reddit) via `force=true`, incorporating Instagram's native `has_paid_partnership_label` signal (5 of 18 events caught only by that signal). Sponsorship *edges* (`/feature-store/edges/sponsorships`=10) reconcile exactly against the raw `brand_id`-populated count — 8 of 18 events still lack `brand_id`, routine lag behind Track A's brand extraction, see Phase 1F section. Kohli/Agilitas edge case closed 2026-08-14, not reopened — see Kohli/Agilitas section |
+| Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/collaboration/sponsorship edge data; collaboration edges **161 distinct pairs (322 directed edges)** as of Phase 1G, up from 10 after bulk sheet-backlog promotion — the earlier "structurally sparse" finding is retired, see Phase 1G section; `co_occurs_with` real but currently empty (Track A purged the noisy signal it was built from, self-healed automatically, see Weeks 11-13 note); CLIP/BERT embeddings intentionally not computed here (Track B); `reputation_score` is the one remaining genuine gap |
+| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data. Sponsorship events: 32 (all Instagram), up from 18. First fully-computable GAIL training pair confirmed real (mrbeast→CarryMinati), see Phase 1G section.** 2,289/2,289 real rows labeled (315 YouTube / 1,419 Instagram / 555 Reddit) via `force=true`, incorporating Instagram's native `has_paid_partnership_label` signal (17 of 32 events caught only by that signal). Sponsorship *edges* (`/feature-store/edges/sponsorships`=10) reconcile exactly against the raw `brand_id`-populated count — 22 of 32 events still lack `brand_id` (incl. the mrbeast milestone post), routine lag behind Track A's brand extraction, see Phase 1G section. Kohli/Agilitas edge case closed 2026-08-14, not reopened — see Kohli/Agilitas section |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |
