@@ -63,6 +63,43 @@ how data collection works. Explicitly:
 > precedence over demo timing. If a choice arises between a denser demo and cleaner data, choose
 > cleaner data.
 
+### Review-readiness criteria (added 2026-08-16) — raw volume alone does NOT satisfy any of these
+
+This session's central lesson: creator count and row counts are *necessary but not sufficient*.
+The real bottleneck at every stage has turned out to be structural (does an edge resolve, does an
+event have `brand_id`, does a connected neighbor have pre-event history) — not volume. Check the
+structural criteria before declaring a milestone's data "ready," not just the headline counts.
+
+**Review 1 — "basic dry run," the bar for THIS check-in:**
+- [ ] ~100 creators (raw floor, already close)
+- [ ] **At least one (ideally 3-5) fully computable training pair** — a sponsorship event that is
+      BOTH graph-connected to another creator AND has pre-event data on that neighbor. This is the
+      real go/no-go number for a dry run, not event count or edge count in isolation. **Currently
+      0** — see P0.4.
+- [ ] Real collaboration edges comfortably above the current 10 pairs, since only ~20% of sponsored
+      creators end up graph-connected at current density — more edges raises the odds more
+      sponsorship events land on a connected creator.
+- [ ] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a
+      sentiment/reputation signal, even if the full pipeline isn't built yet.
+
+**Review 2 — "GAIL trains for real, fusion produces real scores":**
+- [ ] Sponsorship events: 300+ (established Phase 2 target)
+- [ ] Real resolved edges: 500+ (established Phase 2 target)
+- [ ] A meaningful count of *computable* training pairs (connected + straddling) — dozens at
+      minimum; re-derive this target once Review 1's actual resolve-rate is known, don't assume
+      it scales linearly with event count given the structural sparsity already observed.
+- [ ] Brands with real scraped profile data, not just mention-extracted names
+- [ ] Comment volume sufficient to compute a real per-creator sentiment signal across most of the
+      creator set, not just the best-covered few
+
+**Submission — "complete, deployable":**
+- [ ] Dataset stabilized (no active collection actively invalidating demo state during evaluation)
+- [ ] Data supports both branches (GAIL + Temporal) for the full creator set or an honestly-scoped
+      subset, stated plainly in the thesis rather than silently narrowed
+- [ ] Limitations section grounded in what was actually found this project (observational data,
+      disclosure-based treatment labels, structural graph sparsity, India-skewed sample,
+      engagement-per-rupee not true ROI) — not a generic boilerplate list
+
 ---
 
 ## 2. THE CENTRAL PROBLEM — **caption cause RESOLVED, edge cause pivoted** *(updated 2026-08-11 post-Phase-1A)*
@@ -195,22 +232,23 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
-### 3.2a Live DB state — **Track A verified 2026-08-15, close of Phase 1F** (newest; the 1E table below is superseded)
+### 3.2b Live DB state — **Track C verified 2026-08-15, Phase 1F re-labeling** (newest; supersedes 3.2a's labeling row)
 
 | Table | Rows | Note |
 |---|---|---|
-| `creators` | **63** | +3, all targeted promotions naming the row each resolved |
-| `creator_related_accounts` | **505 rows / 15 resolved / 10 DISTINCT PAIRS** | **report pairs.** 15 resolved rows include reciprocal directions of the same collaboration; deduplicate with `least(name)/greatest(name)` |
-| `instagram_posts` | **1,092** | 31 of 63 creators covered (was 24). **120 unscanned** — a throttle stopped the scan |
-| `instagram_comments` | **13,097** | +1,546 |
-| `has_paid_partnership_label` true | **12** | +1; Track C's highest-precision sponsorship signal |
-| `is_sponsored=true` / with `brand_id` | 11 / 9 | unchanged — Track C hasn't relabelled the new posts yet |
+| `creators` | 63 | unchanged this round |
+| `creator_related_accounts` | 505 rows / 15 resolved / 10 distinct pairs | unchanged; independently reproduced a third time (Track A → orchestrator → Track C, all match). API returns 20 edges = 2 directed edges per pair, not 20 relationships — documented for Track B. |
+| `instagram_posts` | 1,092 | unchanged this round |
+| `is_sponsored=true` (all platforms) | **18** | +7, all Instagram, 0 YouTube/Reddit. Force-relabel (`?force=true`) caught the 267 posts Phase 1F scraped that a default run would have skipped (they default to `is_sponsored=false`, not null). 13 via caption regex, **5 via `has_paid_partnership_label` only** — including one post with a still-empty caption, the case text-only labeling structurally cannot reach. |
+| `is_sponsored=true` with `brand_id` | **10 of 18** | was 9 of 11. `/feature-store/edges/sponsorships` reconciles exactly against this raw count — zero gap between endpoint and data. 8 of 18 still lack `brand_id` — Track A's brand extraction lagging one round behind labeling, expected/routine. |
 | `brands` | 10 | unchanged |
-| Sheet | 488 rows / 131 accepted | grown by co-author candidate pushes |
+| Sheet | 488 rows / 131 accepted | unchanged this round |
 
-**Pairs added this round: 7 → 10. All 3 from targeted promotion; 0 from covering 7 new
-creators.** That is the second independent confirmation that coverage does not add graph
-structure — see the P0.2 rewrite above.
+**Collaboration graph is now a confirmed structural property, stated for Track B's benefit before
+it starts training: 10 real pairs across 63 creators, ~2.4% resolve rate.** Not a bug, not a
+coverage gap — verified twice more this round (Track A's scan of 267 new posts added 0 pairs;
+Track C reproduced the resolver's own logic directly against the DB and got the identical count).
+Track B should expect a small, sparse, but genuinely real graph on its first training attempt.
 
 ### 3.2 ~~Live DB state — orchestrator-verified 2026-08-14 after Phase 1E~~ (SUPERSEDED by 3.2a)
 
@@ -427,32 +465,59 @@ edges. B builds the tensor and trains.
 parser fix landed, not two separate bugs. Backfilled; 60 distinct captions, real disclosures
 recovered. See §2.
 
-**⚠️ P0.2 — SUPERSEDED 2026-08-15. The bottleneck is NOT Instagram coverage.** The paragraph
-below was written when the coverage hypothesis was untested; Track A has now tested it
-directly and it **failed**. With all 825 posts scanned (0 unscanned, 0 failures), edge rows
-went 316 → 423 while **RESOLVED stayed at 10**. The mechanism it assumed — "each newly
-covered creator can pair with every existing one" — is empirically false for this creator
-set: **only 2.2% of the 407 distinct co-authors observed are creators of ours**, 14 of 24
-covered creators have **zero** in-set co-authors, and the 11 creators newly covered last
-round produced ~250 edge rows and **0** resolved edges.
+**✅ P0.2 — RETIRED 2026-08-16/17. The graph was never structurally sparse — its endpoints
+just weren't creators yet.** Everything below (2026-08-15) was a real, correctly-verified
+finding *of the 63-creator set at the time* — but it was a snapshot of an unpromoted graph,
+not a structural ceiling, and the next round decisively disproved the "sparse" framing rather
+than confirming it further.
 
-Real collaborators are overwhelmingly brands, media orgs and adjacent individuals — our
-creators were curated as *people worth recommending*, not as *a set that collaborates with
-itself*. **The lever is creator-set membership of co-authors, not coverage breadth.** Of the
-13 resolved edges now, **7 came from targeted promotion**; coverage's contribution saturated
-once the mutually-collaborative pairs were found.
+**What actually happened:** the user reviewed the full sheet backlog (258 accepted, 230
+rejected — every row actually looked at). Bulk-promoting those 258 candidates converted
+**142 previously-dangling `creator_related_accounts` rows into real resolved pairs, using
+zero new scraping** — the rows already existed, their endpoints just weren't `creators` yet.
+Resolve rate: **2.4% → 31%** (157 resolved rows / 505 total, independently re-derived by the
+orchestrator and matched exactly: 152 distinct pairs, up from 10). Compare: covering 7 new
+creators the round before produced 0 new pairs. **Promotion, not coverage, is the lever —
+confirmed decisively now, not just theorized.**
 
-⇒ **Do not fund another round of Instagram coverage expecting resolved edges to move.**
-Coverage retains independent value (datapoints, captions, sponsorship events for Track C),
-just not this one. The graph-density lever is the **bridge queue**: only 13 of 398 dangling
-handles are referenced by 2+ distinct creators, and those are the only promotions that link
-two covered creators rather than adding a leaf. Detail and the ranked list with brand
-exclusions are in Track A's HANDOFF.md §3 (Phase 1F).
+⚠️ **Tracks B and C both built on the old 10-pair figure as a settled structural fact** — Track
+B specifically planned its first real training run around "expect a small, sparse graph."
+That plan needs correcting directly, not just via this doc update — both tracks should be told
+this explicitly before doing anything further with the collaboration graph.
 
-⚠️ **Track B should plan for a sparse collaboration graph.** 2.4% of edge rows resolve; this
-is a structural property of the curated set, not a collection bug.
+**Real bug found in the same round, still unfixed in code (data-only patch applied so far):**
+`collab_edges.py`'s co-author-push path hardcodes `category: "other"` for every handle it adds
+to the sheet (no bio available at push time to classify on), and `discover_candidates.py`
+applies one `--category` hint per whole run rather than per-account. 146 of 258 accepted rows
+were sitting at `category=other` because of this — traced with hard evidence (144 of 146 carry
+co-author provenance, the only 2 exceptions are pre-existing dead-handle rows). Fixed
+*retroactively* for those 146 rows (132 corrected, 13 genuinely `other`, 1 excluded as a
+brand) via a new bio-reading `sheets_sync.update_category()`. **The code paths that caused it
+are unchanged** — any further co-author-push or discovery run will recreate this exact problem
+until the underlying functions do per-account classification at write time, not after.
+
+⇒ Coverage still retains independent value (datapoints, captions, sponsorship events for
+Track C) — just isn't the graph-density lever. The remaining lever, now proven not just
+theorized: continue surfacing dangling co-author handles (collab_edges.py, now the
+highest-confidence discovery mechanism available — it finds people already observed
+collaborating with a creator, not merely predicted to) and get them through user review. The
+bridge-queue framing (only 13 of 398 dangling handles referenced by 2+ creators) is superseded
+by this — promotion converted far more than 13 dangling rows once bulk-authorized. Original
+bridge-queue text, kept for the record, follows:
 
 *Superseded text follows, kept for the record:*
+
+~~Do not fund another round of Instagram coverage expecting resolved edges to move.
+Coverage retains independent value (datapoints, captions, sponsorship events for Track C),
+just not this one. The graph-density lever is the bridge queue: only 13 of 398 dangling
+handles are referenced by 2+ distinct creators, and those are the only promotions that link
+two covered creators rather than adding a leaf. Detail and the ranked list with brand
+exclusions are in Track A's HANDOFF.md §3 (Phase 1F).~~
+
+~~Track B should plan for a sparse collaboration graph. 2.4% of edge rows resolve; this
+is a structural property of the curated set, not a collection bug.~~
+
+*Also superseded, from the round before that:*
 
 **~~P0.2 Collaboration edges — mechanism now works, bottleneck is Instagram coverage, not
 extraction~~** *(Track A → C → B)* Team→player tagging is confirmed dead (IPL/ISL accounts caption
@@ -468,11 +533,36 @@ of their own.
 (`athleanx` gained the instagram_handle it had on the sheet but not the DB — exactly the case
 insert-only would have missed), 0 duplicates, `approval_status` untouched.
 
-**P0.4 Sponsorship events — signal confirmed, labeling pending** *(Track C, now unblocked)*
-Still 0 in the DB (`is_sponsored` is Track C's to populate) but ≥4 genuine disclosures are now
-present in real captions. **Track C's re-label is the immediate next step**, and those 4 known
+**⚠️ P0.4 — SUPERSEDED 2026-08-16. Events and edges both exist; the real blocker is narrower and
+sharper: zero computable (treatment, neighbor-outcome) training pairs.** Track B built the first
+real `HeteroData` (63 nodes, 10 collaboration pairs, 18 sponsorship events, 10 with `brand_id`)
+and ran a real training attempt. Of the 8 sponsored creators, only **2** (Kohli, Ronaldo) have a
+graph-connected collaborator at all. For both, the orchestrator independently confirmed against
+live `posted_at` values: the collaborator's own dated posts fall **entirely after** the
+sponsorship event, none straddling it —
+
+- Kohli's event: 2026-04-29. Collaborator `royalchallengers.bengaluru`'s earliest dated post:
+  2026-05-31.
+- Ronaldo's event: 2026-07-21. Collaborator LeBron James's earliest dated post: 2026-07-26.
+
+GAIL's training signal is a *before/after* engagement delta on the neighbor, so a pair with no
+pre-event neighbor data is unusable regardless of how many sponsorship events or collaboration
+edges exist. **The real number of computable training pairs today is 0, not 10.** This wasn't
+previously checked as its own requirement — "does the neighbor's data actually straddle the
+event" is a new, distinct condition from "does an edge resolve" or "does an event get labeled."
+
+This is likely a targeted fix, not a structural one: it affects exactly 2 accounts
+(`royalchallengers.bengaluru`, LeBron James), and Instagram grids are reverse-chronological, so
+scraping deeper into just these two accounts' history (past their per-creator recency-window cutoff)
+should recover pre-event posts if they exist. Not yet attempted — the natural next Track A task.
+
+*Superseded text follows, kept for the record:*
+
+~~Sponsorship events — signal confirmed, labeling pending~~ *(Track C, now unblocked)*
+~~Still 0 in the DB (`is_sponsored` is Track C's to populate) but ≥4 genuine disclosures are now
+present in real captions. Track C's re-label is the immediate next step, and those 4 known
 disclosures are a concrete validation target — if the labeler misses them, that's a labeler bug,
-not an absence of signal.
+not an absence of signal.~~
 
 **P0.5 Deepening not completed** *(Track A)* — the full IG→YT→Reddit cycle per approved creator
 did not run; time went to the caption incident. **We still have no per-creator datapoint counts
@@ -512,8 +602,23 @@ trains on real data.
 
 ### P2 — known gaps, not yet blocking
 
-- **`reputation_score` has no source anywhere** in the schema *(C flagged, correctly unfabricated)*.
-  Track A's Reddit rework makes a sentiment-derived proxy plausible — Track B's to build if wanted.
+- **⚠️ `reputation_score` / sentiment analysis — reframed 2026-08-16, still unbuilt.** The user
+  clarified the actual intent behind Reddit collection: Reddit's role was never meant to be
+  primarily co-occurrence (graph edges) — its value is unfiltered public opinion per creator,
+  which is what `reputation_score` and the Temporal branch's Sentiment Propagation component
+  need. **Reality check, confirmed against the code**: Reddit's only realized use in the ML
+  pipeline to date IS the co-occurrence junction — sentiment analysis is 0% built, not partially
+  built. This isn't a wrong turn Track A took; the Temporal branch (of the original two-branch
+  design) has simply had zero attention while all focus went to the GAIL branch's "do we have
+  any signal at all" crisis. Not the low-Reddit-volume's cause, though — that's structural (most
+  athletes lack a dedicated subreddit), unrelated to the co-occurrence mechanism.
+  **Bigger opportunity, previously unnoticed:** 19,843 YouTube comments and 13,097 Instagram
+  comments are sitting completely unused for anything, sentiment or otherwise — a larger raw-opinion
+  pool than Reddit's 9,480. **Next step (Track B, Temporal branch, not yet started):** sentiment
+  analysis over `reddit_posts`+`reddit_comments`+`instagram_comments`+`youtube_comments` text per
+  creator, aggregated into `reputation_score` + a time-series signal for Sentiment Propagation.
+  Doesn't block or compete with GAIL/graph work; can start now on whichever creators already have
+  decent comment volume, doesn't need more scraping first.
 - **Temporal engagement-delta computation not built** *(B)* — the largest unbuilt GAIL piece;
   needs real sponsorship timestamps to compute before/after deltas around.
 - **~15-row reconciliation gap** between Track A's own tally (~124) and the live sheet (139).
