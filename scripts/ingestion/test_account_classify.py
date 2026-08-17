@@ -58,6 +58,21 @@ CASES = [
     ("mohitvaru", "Mohitt Vaaru", "Advertising & Fashion Photographer Visual storytelling for brands & people", "lifestyle_influencer"),
     ("technicalguruji", "Gaurav Chaudhary", "Engineer by Education, YouTuber by Profession", "lifestyle_influencer"),
 
+    # --- BRAND detection: real escapes found in pushed rows on 2026-08-17
+    ("gocolors", "Go Colors!", "Go Colors! India's leading bottom-wear brand 1200+ styles", BRAND),
+    ("eliore_essentials", "Elioré", "Elioré™ Luxury Fragrances & Beyond.", BRAND),
+
+    # --- BRAND FALSE POSITIVES that a bare "brand"/"label" rule caused, and must not
+    # come back. A false BRAND is the worst error here: it silently drops a real person
+    # instead of sending them to review.
+    ("singer_shaan_label", "Shaan Mukherji", "Label: @shaanmusiclabel", "lifestyle_influencer"),
+    ("mohitvaru_brands", "Mohitt Vaaru",
+     "Advertising & Fashion Photographer Visual storytelling for brands & people",
+     "lifestyle_influencer"),
+    ("vihaan.malhotra.1", "Vihaan Malhotra",
+     "Cricket forever @royalchallengers.bengaluru For brand queries, please drop an email",
+     "athlete"),
+
     # --- genuinely unclassifiable: empty/uninformative bios. 'other' is the HONEST
     # answer here, not a default -- the evidence string must say so.
     ("ranjeet_tiwari", "Ranjeet Tiwari", "", "other"),

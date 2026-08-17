@@ -69,7 +69,28 @@ _BRAND_STRONG = _words(
 _BRAND_COMMERCE = _words(
     "shop now", "buy now", "order now", "free shipping", "use code", "discount code",
     "our products", "official store", "flagship store", "worldwide shipping",
+    # Added 2026-08-17 after inspecting real escapes: @gocolors ("India's leading
+    # bottom-wear brand, 1200+ styles") and @eliore_essentials ("Elioré™ Luxury
+    # Fragrances") both landed as candidate rows.
+    #
+    # ⚠️ The bare words "brand"/"brands"/"label" were tried here first and REVERTED --
+    # they produced false BRANDs on real creators, which is the worst error this module
+    # can make (a false BRAND silently drops a person instead of sending them to review):
+    #   @singer_shaan  "Label: @shaanmusiclabel"          -> a musician's own record label
+    #   @mohitvaru     "storytelling for brands & people" -> a photographer
+    # and "For brand queries" appears in a large share of athlete bios. Product-category
+    # nouns are safe; the bare word is not.
+    "boutique", "couture", "apparel", "footwear", "menswear", "womenswear",
+    "activewear", "sportswear", "cosmetics", "skincare", "fragrances", "eyewear",
+    "jewellery", "jewelry", "showroom", "outlets", "franchise enquiry", "dealership",
 )
+# "brand" only when it reads as a self-description ("India's leading bottom-wear brand"),
+# never as an inbound-enquiry line ("For brand queries").
+_BRAND_PHRASE = re.compile(
+    r"(?:leading|premium|luxury|official|home\s?grown|homegrown|clothing|fashion|"
+    r"lifestyle)[\w\s'’-]{0,25}\bbrand\b|\bbrand\s+of\b", re.I)
+# Trademark/registered symbols are near-decisive and are not word-boundary matchable.
+_BRAND_SYMBOL = re.compile(r"[™®]")
 
 # --- Organisational / institutional (NOT an individual). Ordered before individual
 # checks because an academy bio often also says "coach".
@@ -153,6 +174,12 @@ def classify_from_profile(name: str, bio: str, handle: str = "",
     m = _BRAND_COMMERCE.search(text)
     if m:
         return BRAND, f"BRAND: commerce language '{m.group(0)}'"
+    m = _BRAND_SYMBOL.search(text)
+    if m:
+        return BRAND, f"BRAND: trademark symbol '{m.group(0)}'"
+    m = _BRAND_PHRASE.search(text)
+    if m:
+        return BRAND, f"BRAND: self-describes as a brand ('{m.group(0)[:40]}')"
 
     m = _ATHLETE_STRONG.search(text)
     if m:
