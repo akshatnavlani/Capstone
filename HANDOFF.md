@@ -326,6 +326,33 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 # PHASE 1K — (2026-08-18, stub cleanup + quota rotation + Instagram retry)
 
+## 🎯 COMPUTABLE TRAINING PAIRS 2 → 3 — and YouTube alone produced the third
+
+| Creator | Event date | Neighbour | before | after |
+|---|---|---|---|---|
+| Cristiano Ronaldo | 2026-07-21 | LeBron James | 17 | 179 |
+| **Sania Mirza** | **2026-08-01** | **parikshitbalochi** | **12** | **2** |
+| mrbeast | 2026-08-12 | CarryMinati | 66 | 13 |
+
+`parikshitbalochi` was one of the 15 channels discovered and deepened THIS round. Checked
+where its straddling activity comes from rather than assuming:
+
+```
+parikshitbalochi BEFORE 2026-08-01 — instagram: 0   youtube: 12   reddit: 0
+                 AFTER  2026-08-01 — instagram: 0   youtube:  2   reddit: 0
+```
+
+⇒ **100% YouTube.** The neighbour has no Instagram or Reddit activity at all on either side
+of the event.
+
+**Taken with last round's Reddit-only pair, the pattern is now explicit: of the 3 computable
+pairs, 2 exist ONLY because of non-Instagram data.** Instagram-only straddle checking would
+report 1. The cross-platform check is not a refinement — it is the difference between 1 and 3.
+
+⚠️ **Correction to my own mid-round report:** I stated the new YouTube coverage "didn't add a
+third" — that was measured BEFORE the deepening job finished and is wrong. Re-measuring after
+a background job completes is the discipline that caught it.
+
 ## TASK 1 ✅ — Gujarat Titans stub re-pointed and deleted; creators back to 259
 
 The stub held 1 genuinely-collected Reddit post (*"Absolute Stunning Catch by Gill!"* — Gill
@@ -513,7 +540,8 @@ healthy — so it is the platform limit, not the environment. Tasks 1.2/1.3/1.4 
 All 6 passed the strict rule: `@indiansuperleague` (2.56M), `@jumperaj` (1.02M),
 `@lucknowsupergiants` (750k), `@indian_kushti_tv` (282k), `@inspireinstituteofsport` (26.5k),
 `@jeet_selal` (3.3k). **Deepening completed: `youtube_videos` 579 → 797 (+218), creators with
-video content 19 → 25, `youtube_comments` 25,629, `youtube_handle` 26.** Only `jeet_selal`
+video content 19 → 25, `youtube_comments` 25,629, `youtube_handle` 26.** (Superseded by
+Phase 1K's totals: videos 1,227, comments 37,971, creators with video 39.) Only `jeet_selal`
 lost volume to the recency window (18 kept / 22 stale); the other five returned a full 40.
 
 ⚠️ **Re-checked the pair count after that deepening landed: still 2.** The new YouTube data
