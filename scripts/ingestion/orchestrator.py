@@ -368,6 +368,17 @@ class InstagramWorker(PlatformWorker):
                      post_count, is_verified)
                 values (%s,%s,%s,%s,%s,%s,%s,%s)
                 on conflict (username) do update set
+                    -- full_name/bio were NOT in this update clause, which made them
+                    -- unfillable for any creator whose username had already been inserted
+                    -- by the comment-author path below (username only, ON CONFLICT DO
+                    -- NOTHING). Measured 2026-08-17: 130 of 231 handle-named creators had
+                    -- an instagram_profiles row with an EMPTY full_name, and only 15 of
+                    -- 13,746 profile rows carried a name at all. That empty full_name is
+                    -- what blocks the Reddit topic-sub search, which queries by name.
+                    -- coalesce(excluded, existing) so a later listing-sourced write with a
+                    -- NULL name cannot wipe a good one.
+                    full_name=coalesce(excluded.full_name, instagram_profiles.full_name),
+                    bio=coalesce(excluded.bio, instagram_profiles.bio),
                     follower_count=excluded.follower_count, following_count=excluded.following_count,
                     post_count=excluded.post_count, fetched_at=now(), updated_at=now()
                 """,
