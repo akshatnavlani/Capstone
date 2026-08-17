@@ -100,6 +100,40 @@ structural criteria before declaring a milestone's data "ready," not just the he
       disclosure-based treatment labels, structural graph sparsity, India-skewed sample,
       engagement-per-rupee not true ROI) — not a generic boilerplate list
 
+### 1a. Batch-readiness criteria (added 2026-08-18) — when to stop deepening the current 259 and
+promote the next batch
+
+The user's stated policy: loop data collection on the current creator set until EITHER it's
+genuinely exhausted across all three platforms, or a real sufficiency threshold is hit — whichever
+comes first. Don't promote the next batch before then. Concretely:
+
+**"Exhausted" (stop looping regardless of pair count) — ALL of:**
+- [ ] Every one of the 259 creators has been *attempted* on all 3 platforms — not necessarily
+      successfully, but no creator sits fully untouched on YouTube or Reddit. (Instagram is
+      already effectively maxed given the adapter block; browser-only coverage work counts here.)
+- [ ] Track C has re-run its labeler across the full, now-much-larger YouTube/Reddit content pool
+      — **not yet done**. All 32 known sponsorship events are Instagram-only, which may just
+      reflect that YouTube/Reddit were never checked at meaningful scale, not that the signal
+      isn't there. Do this before declaring the batch exhausted, not after.
+- [ ] Every connected, dated sponsorship event has been checked cross-platform for a straddle
+      (routine now per §5 P0.4, not a manual spot-check).
+- [ ] Computable training pairs have stopped growing for 2 consecutive rounds despite the above
+      being satisfied — the real diminishing-returns signal.
+
+**"Sufficient" (can stop early even if not fully exhausted) — the real target:**
+- [ ] **Computable training pairs ≥ 20** — the bare floor for any legitimate held-out split
+      (established earlier this session). Currently **3**. This is the primary gate; everything
+      else is a means to this end, not an end in itself.
+- [ ] Real resolved collaboration edges: no fixed number, but rising — track it each round as a
+      leading indicator (currently 161 pairs).
+- [ ] Reddit unblocked for a meaningful share of the 231 handle-named creators (real-name
+      backfill via free bio/channel-title sources, gated on Instagram deepening producing names —
+      see §5 P0.5).
+
+Report against this checklist every round, not just raw creator/post/event counts — a round that
+grows posts but doesn't move the pair count or check off one of these boxes hasn't actually made
+the batch more ready.
+
 ---
 
 ## 2. THE CENTRAL PROBLEM — **caption cause RESOLVED, edge cause pivoted** *(updated 2026-08-11 post-Phase-1A)*
