@@ -331,6 +331,48 @@ prevent. It converted a silent-corruption bug into a loud one.
 Base state confirmed before starting: `creators` **259**, distinct pairs **152**, resolve
 rate 31%. Matches the Phase 1G close exactly, so this round built on a verified base.
 
+## 🛑 ROUND ENDED ON A GENUINE HTTP 429 — Instagram budget exhausted for the day
+
+The final deepening batch failed **8 of 8 creators, ~4 seconds apart**, with:
+
+```
+opencli instagram profile mihirahuja_ failed: HTTP 429 - make sure you are logged in
+```
+
+This is the **real platform rate limit**, not the network-layer `chrome-error` throttle and
+not a grid stall — it matches this file's own criterion verbatim (*"a real limit is an HTTP
+429 from the platform"*), and the near-instant, uniform failure across every handle confirms
+it is systemic rather than per-account.
+
+**Response taken, per the standing rules: stopped Instagram work immediately.** No probing,
+no retrying, no "see if it works now". Cooldown is measured in **hours**.
+
+**Observed daily ceiling — useful for planning, this is the largest Instagram day the
+project has had:**
+
+| Activity | Post-page fetches (≈3 opencli calls each) |
+|---|---|
+| Backlog co-author scan | 245 |
+| Resumed scan after kills | 189 + 50 |
+| Scan of newly deepened posts | 195 |
+| Profile + grid fetches for classification | ~230 |
+| Deepening (13 creators × ~40 posts + comments) | ~520 |
+
+Roughly **1,400+ post/profile fetches ≈ 3,000–4,000 opencli calls in one day.** The 429
+arrived after that, which is the first time this project has a rough number for where the
+ceiling sits.
+
+**Nothing else was runnable:** only 1 of 259 creators lacks YouTube content and 0 lack Reddit
+rows — the 248 sheet-promoted creators carry Instagram handles only. So every remaining
+mechanism in the task list (co-author extraction, deepening, follower-graph, roster,
+brand-anchored) is Instagram-bound. **The loop was stopped rather than left ticking**, since
+further ticks could only tempt a probe-and-resume, which this file already documents as the
+wrong move twice over.
+
+**To resume next session:** wait hours, then verify with a **sustained 10-15 request scan**,
+never a single probe. `collab_edges.py --only-new` is safe to run first — it resumes cleanly
+and there were 0 unscanned posts at stop time, so the first new work is a deepening batch.
+
 ## 🎯 FIRST FULLY COMPUTABLE TRAINING PAIR — Review-1 go/no-go moved 0 → 1
 
 CAPSTONE_NEXT_STEPS' Review-1 criterion reads: *"At least one (ideally 3-5) fully computable
