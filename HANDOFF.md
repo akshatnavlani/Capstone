@@ -328,7 +328,39 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
-## 🎯 COMPUTABLE PAIRS: 3 (baseline) → 5
+## 🎯 COMPUTABLE PAIRS: 3 (baseline) → 10
+
+| Creator | src | Event date | Neighbour | before | after |
+|---|---|---|---|---|---|
+| Bhuvan Bam | ig | 2026-05-14 | gurfatehpirzada | 1 | 9 |
+| Bhuvan Bam | ig | 2026-06-11 | gurfatehpirzada | 1 | 9 |
+| Bhuvan Bam | ig | 2026-05-14 | mohitvaru | 1 | 9 |
+| Bhuvan Bam | ig | 2026-06-11 | mohitvaru | 1 | 9 |
+| Cristiano Ronaldo | ig | 2026-07-21 | LeBron James | 17 | 179 |
+| Kerala Blasters | yt | 2026-05-18 | Mumbai City FC | 3 | 37 |
+| Sania Mirza | ig | 2026-08-01 | Parikshit Balochi | 12 | 2 |
+| Virat Kohli | ig | 2026-04-29 | PV Sindhu | 3 | 12 |
+| Virat Kohli | ig | 2026-04-29 | Karan Aujla | 9 | 11 |
+| mrbeast | ig | 2026-08-12 | CarryMinati | 69 | 13 |
+
+### 🔑 THE HIGHEST-YIELD LEVER FOUND SO FAR
+**Deepen the CONTENTLESS NEIGHBOURS of an already-dated event.** Bhuvan Bam had 2 dated
+events and 6 connected neighbours with **zero posts**. Deepening them produced **4 pairs from
+one run** — more than every other mechanism this loop combined.
+
+Why it works, and when it does not: a contentless neighbour gets a *fresh* 40-post window
+(roughly the last few months), which straddles a recent event. A neighbour that already has
+content has a FIXED window, and if that window starts after the event it can never straddle
+it — which is exactly why RCB is unreachable.
+
+**Rule: for a `before=0` near-miss, check the neighbour's `min(posted_at)` against the event
+date. Earlier ⇒ dating its posts can work (Karan Aujla: before 0 → 9). Later, or no posts at
+all ⇒ deepen instead (Bhuvan Bam's neighbours), unless the cap makes it impossible (RCB).**
+
+⚠️ Correction: I predicted `karanaujla` would be unreachable like RCB. **Wrong** — its window
+does extend before 2026-04-29, and grid dating converted it into a pair.
+
+### (superseded) earlier pair list at 5
 
 | Creator | Event src | Date | Neighbour | before | after |
 |---|---|---|---|---|---|
