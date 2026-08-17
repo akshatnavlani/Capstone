@@ -26,6 +26,7 @@ import os
 import shutil
 import subprocess
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
@@ -147,11 +148,60 @@ def run_opencli(*args: str, timeout: int = 30) -> dict | list:
     return yaml.safe_load(result.stdout)
 
 
+# YouTube quota rotation (2026-08-18). search().list costs 100 units against a 10k/day
+# budget PER KEY, so handle discovery burns a key in ~95 searches -- last round exhausted
+# one mid-backlog. Each additional key is its own GCP project with an independent pool.
+#
+# SEQUENTIAL, not round-robin: exhaust key 1, then move to key 2, then key 3. Round-robin
+# would spread every run across all three and burn them out simultaneously, leaving no
+# reserve. Keys come from .env only -- never hardcoded here.
+_YT_KEYS = [k for k in (ENV.get("YOUTUBE_API_KEY"), ENV.get("YOUTUBE_API_KEY_2"),
+                         ENV.get("YOUTUBE_API_KEY_3")) if k]
+_yt_key_idx = 0
+
+
+def youtube_quota_state() -> str:
+    return f"key {_yt_key_idx + 1} of {len(_YT_KEYS)}"
+
+
 def youtube_api_get(endpoint: str, **params) -> dict:
-    params["key"] = ENV["YOUTUBE_API_KEY"]
-    url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{urllib.parse.urlencode(params)}"
-    with urllib.request.urlopen(url, timeout=20) as resp:
-        return json.loads(resp.read())
+    """GET a YouTube Data API endpoint, rotating to the next key on quota exhaustion.
+
+    Only 'quota exceeded' triggers rotation. Any other 403 (bad key, API disabled, referer
+    restriction) is re-raised: silently rotating past a misconfigured key would hide a real
+    setup problem behind a confusing 'all keys exhausted'.
+    """
+    global _yt_key_idx
+    if not _YT_KEYS:
+        raise RuntimeError("no YOUTUBE_API_KEY* found in .env")
+    last_err = None
+    while _yt_key_idx < len(_YT_KEYS):
+        params["key"] = _YT_KEYS[_yt_key_idx]
+        url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{urllib.parse.urlencode(params)}"
+        try:
+            with urllib.request.urlopen(url, timeout=20) as resp:
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            # HTTPError's body is a STREAM and read() consumes it. Reading it here and
+            # re-raising left callers with an empty body, so their own quota checks
+            # silently failed and logged blank warnings for 137 creators. Stash the
+            # decoded text on the exception so a caller can still diagnose.
+            body = e.read().decode("utf-8", "replace")
+            e.body_text = body
+
+            # Rotate on BOTH exhaustion shapes. Measured 2026-08-18: an exhausted search
+            # quota surfaces as **HTTP 429 rateLimitExceeded**, NOT the 403 'quota' this
+            # originally checked for -- so rotation never fired and two entirely healthy
+            # keys went unused while every request failed.
+            exhausted = (e.code == 429) or (e.code == 403 and "quota" in body.lower())
+            if exhausted:
+                log.warning("YouTube key %d/%d exhausted (HTTP %d) — rotating",
+                             _yt_key_idx + 1, len(_YT_KEYS), e.code)
+                _yt_key_idx += 1
+                last_err = e
+                continue
+            raise
+    raise last_err if last_err else RuntimeError("all YouTube keys exhausted")
 
 
 def upsert_brand(cur, name: str) -> str:

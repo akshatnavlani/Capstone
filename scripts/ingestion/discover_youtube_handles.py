@@ -178,11 +178,16 @@ def main() -> None:
                                    maxResults="3")
             spent += SEARCH_COST
         except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", "replace")[:200]
-            if e.code == 403 and "quota" in body.lower():
-                log.error("QUOTA EXHAUSTED mid-run — stopping. %s", body[:120])
+            # youtube_api_get already consumed the stream; it stashes the text on the
+            # exception. Falling back to e.read() would return b"" and make every failure
+            # look identical (that produced 137 blank "search failed" warnings).
+            body = (getattr(e, "body_text", "") or "")[:200]
+            if e.code in (403, 429):
+                log.error("ALL YouTube keys exhausted (last HTTP %d) — stopping cleanly at "
+                           "%d/%d creators. Re-run after the daily reset. %s",
+                           e.code, found + absent, len(todo), body[:100])
                 break
-            log.warning("search failed for %s: %s", name, body[:120])
+            log.warning("search failed for %s: HTTP %d %s", name, e.code, body[:120])
             continue
         except Exception as e:
             log.warning("search error for %s: %s", name, e)

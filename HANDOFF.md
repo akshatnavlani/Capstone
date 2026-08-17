@@ -324,6 +324,103 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# PHASE 1K — (2026-08-18, stub cleanup + quota rotation + Instagram retry)
+
+## TASK 1 ✅ — Gujarat Titans stub re-pointed and deleted; creators back to 259
+
+The stub held 1 genuinely-collected Reddit post (*"Absolute Stunning Catch by Gill!"* — Gill
+is their captain, so real and relevant). Re-pointed to the real creator
+(`Gujarat Titans`, `instagram_handle=gujarat_titans`, `team`), **verified the re-point landed
+before deleting anything** (real creator now 64 `reddit_posts` / 69 links), then re-checked
+the stub against every `creator_id`-bearing table and deleted it.
+
+**`creators` 260 → 259** — the correct baseline restored, and last round's bug fully cleaned.
+
+## TASK 2 ⛔ — Instagram STILL blocked, and the stale-session hypothesis is DISPROVEN
+
+Chrome was fully killed and relaunched with clean tab groups; `opencli doctor` reported the
+extension connected and 0.3s connectivity. The sustained scan still returned **HTTP 429 on 3
+consecutive requests**.
+
+⇒ **The 429 is not stale tab-lease/session state.** That was worth testing and it is now
+ruled out. Tasks 1.2 / 1.3 / 1.4 remain untouched — fourth round blocked, not forced.
+
+### 🔍 NEW: the BROWSER path works while the ADAPTER is throttled
+Tested at the same moment the adapter was returning 429:
+
+```
+opencli instagram user/profile <handle>   -> HTTP 429
+opencli browser open + extract virat.kohli -> real page, 10,099 chars, 4 post links
+```
+
+⇒ The block is **specific to the adapter's API-style requests**, not the account, the login,
+or the browser session — consistent with the user being able to browse Instagram normally.
+
+**Why this does NOT unblock Tasks 1.2–1.4 today, stated plainly:**
+- **1.2** needs `instagram user` for the *listing* side of the caption comparison — that IS
+  the adapter. Blocked by definition.
+- **1.3 / 1.4** both start with an `instagram profile` adapter call in `process_creator`, so
+  a creator fails before the browser grid is ever reached.
+
+**But it is a real route for a future round:** a browser-only collection path would sidestep
+the adapter entirely. That is a deliberate build, not something to improvise unattended.
+
+## TASK 3 ✅ — quota rotation works; the ENTIRE YouTube backlog is now cleared
+
+⚠️ **The first rotation attempt failed completely and silently — worth understanding.**
+It rotated only on `403 + "quota"`, but **an exhausted YouTube search quota surfaces as
+HTTP 429 `rateLimitExceeded`**. So rotation never fired, and **two entirely healthy keys went
+unused** while all 137 creators failed. Two bugs compounded it:
+
+1. `youtube_api_get` called `e.read()` to inspect the body, which **consumes the stream**;
+   re-raising then left callers with an empty body, so their own quota check silently failed
+   and logged 137 blank `search failed for X:` warnings. The body is now stashed on the
+   exception as `body_text`.
+2. Rotation now triggers on **429 OR 403-quota**.
+
+Diagnosed by testing each key independently rather than guessing:
+
+```
+key1  channels: OK   search: HTTP 429 rateLimitExceeded
+key2  channels: OK   search: OK
+key3  channels: OK   search: OK
+```
+
+**After the fix, one run cleared the whole backlog**, rotating 1 → 2 → 3:
+
+| | |
+|---|---|
+| Creators searched this run | **137** |
+| Found (exact-handle-equality + scale) | **15** |
+| Quota spent | 13,813 units across keys 1→2→3 |
+| **Cumulative coverage** | **249 of 249 — backlog CLEARED** |
+| Cumulative found | **30** · needs_review 36 · no confident match 140 · no channel 41 · clash 2 |
+| `creators.youtube_handle` | 26 → **41** |
+
+Examples: `@mrbeast` (513M), `@mumbaiindians` (8.43M), `@keralablasters.` (829k),
+`@mumbaicityfc` (119k), `@nisha_optimist` (103k), `@ohiostatefb` (82.4k).
+
+**Honest read on the 140 `no_confident_match`:** that is 56% of creators, and it is the strict
+rule working as intended after three verification failures last round — a fan channel or a
+namesake is not a match. They are recorded, not lost.
+
+### ✅ Name-persistence fix CONFIRMED WORKING (not assumed)
+Instagram deepening is blocked, so the fix was verified by exercising the exact upsert SQL
+against the live DB, reproducing the real failure sequence:
+
+```
+after comment-author insert (username only) : (None, None)
+after creator-profile upsert                : ('Real Person Name', 'a real bio', 100)
+after a later NULL-name rewrite             : ('Real Person Name', 'a real bio', 200)
+  fills name over a username-only row : PASS
+  NULL write does not wipe good name  : PASS
+```
+
+## TASK 4 — did not run, and should not be implied to have
+
+Reddit was gated on creators gaining a real name, which is gated on Instagram deepening,
+which is blocked. **No Reddit work happened this round.**
+
 # PHASE 1J — (2026-08-17 late, cleanup + backfill + retry round)
 
 ## 🎯 COMPUTABLE TRAINING PAIRS 1 → 2, and REDDIT is what unlocked the second
