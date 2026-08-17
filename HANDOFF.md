@@ -331,6 +331,31 @@ prevent. It converted a silent-corruption bug into a loud one.
 Base state confirmed before starting: `creators` **259**, distinct pairs **152**, resolve
 rate 31%. Matches the Phase 1G close exactly, so this round built on a verified base.
 
+## 🎯 FIRST FULLY COMPUTABLE TRAINING PAIR — Review-1 go/no-go moved 0 → 1
+
+CAPSTONE_NEXT_STEPS' Review-1 criterion reads: *"At least one (ideally 3-5) fully computable
+training pair — a sponsorship event that is BOTH graph-connected to another creator AND has
+pre-event data on that neighbour. **Currently 0**."*
+
+**It is now 1:**
+
+| Creator | Event | Date | Neighbour | posts before | posts after |
+|---|---|---|---|---|---|
+| `mrbeast` | `Db5rzczsSV5` | 2026-08-12 | CarryMinati | **11** | **1** |
+
+**`mrbeast` was deepened THIS ROUND**, by the "creators already in a resolved pair but with
+no content of their own" targeting rule. So that rule did not just win on pairs-per-post —
+it produced the project's first computable training pair.
+
+⚠️ **Honest caveats, none of them small:**
+- **It is 1, against a target of "ideally 3-5".** Not sufficient on its own.
+- The after-side is a single post. Thin for any before/after delta.
+- 11 of the 12 connected dated events have **0** pre-event neighbour data.
+- **These counts only see posts that HAVE `posted_at` — 31% of them.** The metadata gap
+  below is directly suppressing this metric, so the true figure is unknown and probably
+  higher. **Fixing `orchestrator.py:447` is the highest-value action available**, and it is
+  now measurable: re-run this query after the fix and watch the number move.
+
 ## 0. VERIFIED TOTALS (live DB, close of round)
 
 | | start of round | now |
@@ -711,6 +736,29 @@ tserieshealthandfitness  category: fitness_influencer
 corporate content channel (T-Series), which the brand rules do NOT catch — they key on
 legal-entity suffixes and commerce language, and a company's *content* channel has
 neither. Corporate channels still depend on the human review pass.
+
+### FINAL candidate output — 231 new rows, real category spread
+
+| category | count | share |
+|---|---|---|
+| `other` | 76 | **33%** |
+| `athlete` | 48 | 21% |
+| `lifestyle_influencer` | 41 | 18% |
+| `fitness_influencer` | 36 | 16% |
+| `team` | 20 | 9% |
+| `league` | 10 | 4% |
+
+**`other` for co-author rows went 100% → 33%**, i.e. two thirds of new candidates now carry
+a real category with its evidence recorded in `notes`. `approval_status` blank on all 231 —
+verified, never written by an agent. Grid relevance recorded on 214 rows, **mean 0.24**.
+
+**Brand routing: 10 creators now carry `brand_signals`, 128 signals total** — e.g.
+`ballerathletik` 24, `100.rep` 18. Those are 128 brand accounts that did NOT become
+candidate rows, which is exactly the standing rule working at scale rather than by hand.
+
+⚠️ Honest note on the residual 33%: all of those were **reachable** — it is a vocabulary
+limit, not a fetch failure. Bios like "Param Daswani" or "Engine Garam, Dil Naram" carry no
+usable signal, and no keyword set will extract one. The review pass remains the real gate.
 
 ### Brand routing now happens at write time
 Both writers now divert brand accounts to `sheets_sync.append_brand_signal()` on the
