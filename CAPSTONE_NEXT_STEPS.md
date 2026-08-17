@@ -71,14 +71,14 @@ event have `brand_id`, does a connected neighbor have pre-event history) — not
 structural criteria before declaring a milestone's data "ready," not just the headline counts.
 
 **Review 1 — "basic dry run," the bar for THIS check-in:**
-- [ ] ~100 creators (raw floor, already close)
-- [ ] **At least one (ideally 3-5) fully computable training pair** — a sponsorship event that is
-      BOTH graph-connected to another creator AND has pre-event data on that neighbor. This is the
-      real go/no-go number for a dry run, not event count or edge count in isolation. **Currently
-      0** — see P0.4.
-- [ ] Real collaboration edges comfortably above the current 10 pairs, since only ~20% of sponsored
-      creators end up graph-connected at current density — more edges raises the odds more
-      sponsorship events land on a connected creator.
+- [x] ~100 creators (259, well past the floor)
+- [x] **At least one fully computable training pair** — a sponsorship event that is BOTH
+      graph-connected to another creator AND has pre-event data on that neighbor. **DONE
+      2026-08-17**: mrbeast↔CarryMinati, independently confirmed three ways — see P0.4. Ideally
+      grow past 1 (3-5) before calling this fully comfortable; one real example de-risks the
+      pipeline, it doesn't validate a model.
+- [x] Real collaboration edges comfortably above the old 10 pairs — now 161, from bulk-promoting
+      the reviewed sheet backlog, not from coverage. See the retired P0.2 finding above.
 - [ ] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a
       sentiment/reputation signal, even if the full pipeline isn't built yet.
 
@@ -533,28 +533,31 @@ of their own.
 (`athleanx` gained the instagram_handle it had on the sheet but not the DB — exactly the case
 insert-only would have missed), 0 duplicates, `approval_status` untouched.
 
-**⚠️ P0.4 — SUPERSEDED 2026-08-16. Events and edges both exist; the real blocker is narrower and
-sharper: zero computable (treatment, neighbor-outcome) training pairs.** Track B built the first
-real `HeteroData` (63 nodes, 10 collaboration pairs, 18 sponsorship events, 10 with `brand_id`)
-and ran a real training attempt. Of the 8 sponsored creators, only **2** (Kohli, Ronaldo) have a
-graph-connected collaborator at all. For both, the orchestrator independently confirmed against
-live `posted_at` values: the collaborator's own dated posts fall **entirely after** the
-sponsorship event, none straddling it —
+**✅ P0.4 — RESOLVED 2026-08-17. The first fully-computable GAIL training pair is real,
+independently confirmed three separate ways.** Not "should become real" — actually real, as of
+Track C's Phase 1G relabel:
 
-- Kohli's event: 2026-04-29. Collaborator `royalchallengers.bengaluru`'s earliest dated post:
-  2026-05-31.
-- Ronaldo's event: 2026-07-21. Collaborator LeBron James's earliest dated post: 2026-07-26.
+| Condition | Status |
+|---|---|
+| Treatment event correctly labeled | ✅ `Db5rzczsSV5` (mrbeast, 2026-08-12), `is_sponsored=true` via native `paid_partnership_label` signal (caption's `#oldnavypartner` hashtag isn't a pattern the regex labeler catches on its own — the native signal is exactly why it exists) |
+| Real graph connection | ✅ mrbeast ↔ CarryMinati, resolved collaboration edge, both directions |
+| Neighbor data straddles the event | ✅ CarryMinati: 11 dated posts before (through 2026-08-08), 1 after (2026-08-13) |
 
-GAIL's training signal is a *before/after* engagement delta on the neighbor, so a pair with no
-pre-event neighbor data is unusable regardless of how many sponsorship events or collaboration
-edges exist. **The real number of computable training pairs today is 0, not 10.** This wasn't
-previously checked as its own requirement — "does the neighbor's data actually straddle the
-event" is a new, distinct condition from "does an edge resolve" or "does an event get labeled."
+Verified independently three times: Track A found it and reported the raw numbers; the
+orchestrator opened CarryMinati's live Instagram grid directly (via the accessibility tree, not
+just a screenshot) specifically to rule out the pinned-post metadata bug Track A flagged the same
+round, and found no pinned posts — the date data is trusted; Track C confirmed the label and the
+edge from its own side independently. `brand_id` is still NULL on this post (no "Old Navy" row
+exists in `brands` yet) — **this does not block the milestone**, since P0.4's actual definition
+is graph-connection + straddling data, not brand identification. Brand linkage is Track A's
+extraction to close when it gets to it, separately.
 
-This is likely a targeted fix, not a structural one: it affects exactly 2 accounts
-(`royalchallengers.bengaluru`, LeBron James), and Instagram grids are reverse-chronological, so
-scraping deeper into just these two accounts' history (past their per-creator recency-window cutoff)
-should recover pre-event posts if they exist. Not yet attempted — the natural next Track A task.
+⇒ Track B is unblocked to attempt a real training run with an actual computable example, not a
+placeholder target. One real pair is not enough to validate generalization — treat the first
+real run as a pipeline-correctness check (does it run end-to-end on real data, no NaN/crash),
+not a trained model. The collaboration graph is also no longer what it was — 161 distinct pairs,
+not 10 (see the retired-finding note above) — so the graph Track B builds against now looks very
+different from its first attempt.
 
 *Superseded text follows, kept for the record:*
 
