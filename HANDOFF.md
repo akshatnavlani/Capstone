@@ -328,7 +328,20 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
-## 🎯 COMPUTABLE PAIRS: 3 (baseline) → 10
+## 🎯 COMPUTABLE PAIRS: 3 (baseline) → 13 of the 20 target
+
+Cycle 5's full deepening run (5 of 6 creators; `nikkhiladvani` failed and is being retried)
+took pairs 10 → **13**. Instagram attempted 121 → 126 (48.6%), with content 37 → 42 (16.2%).
+
+**IN FLIGHT:** deepening the remaining 8 contentless neighbours of dated events —
+`chennaiyinfc`, `nikkhiladvani`, `anushkasharma`, `nasimamirza`, `portugal`,
+`saniamirzatennisacademy`, `servingitupwithsania`, `suhan.khnofficial`. `chennaiyinfc` and
+`nikkhiladvani` each touch **2** events, so the upper bound on that batch is ~10 more pairs.
+`sporting.beyond` was excluded — a flagged brand (Sporting Beyond Pvt Ltd) and a dead handle.
+
+### The full-list snapshot below is from the 10-pair moment; re-run `loop_stats.py` for live.
+
+## (snapshot at 10 pairs)
 
 | Creator | src | Event date | Neighbour | before | after |
 |---|---|---|---|---|---|
