@@ -73,10 +73,11 @@ structural criteria before declaring a milestone's data "ready," not just the he
 **Review 1 — "basic dry run," the bar for THIS check-in:**
 - [x] ~100 creators (259, well past the floor)
 - [x] **At least one fully computable training pair** — a sponsorship event that is BOTH
-      graph-connected to another creator AND has pre-event data on that neighbor. **DONE
-      2026-08-17**: mrbeast↔CarryMinati, independently confirmed three ways — see P0.4. Ideally
-      grow past 1 (3-5) before calling this fully comfortable; one real example de-risks the
-      pipeline, it doesn't validate a model.
+      graph-connected to another creator AND has pre-event data on that neighbor. **Now at 3**
+      (2026-08-18): mrbeast↔CarryMinati, Ronaldo↔LeBron (Reddit-only straddle), Sania
+      Mirza↔parikshitbalochi (YouTube-only straddle) — see P0.4. Comfortably past the original
+      "at least one" bar; still well below the ~20-pair sufficiency floor (§1a) for anything
+      beyond a pipeline-correctness check.
 - [x] Real collaboration edges comfortably above the old 10 pairs — now 161, from bulk-promoting
       the reviewed sheet backlog, not from coverage. See the retired P0.2 finding above.
 - [ ] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a
@@ -99,6 +100,43 @@ structural criteria before declaring a milestone's data "ready," not just the he
 - [ ] Limitations section grounded in what was actually found this project (observational data,
       disclosure-based treatment labels, structural graph sparsity, India-skewed sample,
       engagement-per-rupee not true ROI) — not a generic boilerplate list
+
+### 1a. Batch-readiness criteria (added 2026-08-18) — when to stop deepening the current 259 and
+promote the next batch
+
+The user's stated policy: loop data collection on the current creator set until EITHER it's
+genuinely exhausted across all three platforms, or a real sufficiency threshold is hit — whichever
+comes first. Don't promote the next batch before then. Concretely:
+
+**"Exhausted" (stop looping regardless of pair count) — ALL of:**
+- [ ] Every one of the 259 creators has been *attempted* on all 3 platforms — not necessarily
+      successfully, but no creator sits fully untouched on YouTube or Reddit. (Instagram is
+      already effectively maxed given the adapter block; browser-only coverage work counts here.)
+- [x] **DONE 2026-08-18.** Track C confirmed (by reading the code, not inferring) that real
+      multi-platform disclosure detection has existed since Weeks 7-8 — the "32, Instagram-only"
+      result reflected zero real signal at the old, much smaller YouTube/Reddit scale, not an
+      unbuilt capability. Re-run at the new scale (1,227 YouTube videos/39 creators, 681 Reddit
+      posts) found 2 new YouTube events (`keralablasters`, via "brought to you by"), 0 on Reddit.
+      Neither creator is graph-connected yet, so no new pair this round — but the mechanism is
+      now confirmed real and current, not a guess.
+- [ ] Every connected, dated sponsorship event has been checked cross-platform for a straddle
+      (routine now per §5 P0.4, not a manual spot-check).
+- [ ] Computable training pairs have stopped growing for 2 consecutive rounds despite the above
+      being satisfied — the real diminishing-returns signal.
+
+**"Sufficient" (can stop early even if not fully exhausted) — the real target:**
+- [ ] **Computable training pairs ≥ 20** — the bare floor for any legitimate held-out split
+      (established earlier this session). Currently **3**. This is the primary gate; everything
+      else is a means to this end, not an end in itself.
+- [ ] Real resolved collaboration edges: no fixed number, but rising — track it each round as a
+      leading indicator (currently 161 pairs).
+- [ ] Reddit unblocked for a meaningful share of the 231 handle-named creators (real-name
+      backfill via free bio/channel-title sources, gated on Instagram deepening producing names —
+      see §5 P0.5).
+
+Report against this checklist every round, not just raw creator/post/event counts — a round that
+grows posts but doesn't move the pair count or check off one of these boxes hasn't actually made
+the batch more ready.
 
 ---
 
@@ -582,31 +620,28 @@ of their own.
 (`athleanx` gained the instagram_handle it had on the sheet but not the DB — exactly the case
 insert-only would have missed), 0 duplicates, `approval_status` untouched.
 
-**✅ P0.4 — RESOLVED 2026-08-17. The first fully-computable GAIL training pair is real,
-independently confirmed three separate ways.** Not "should become real" — actually real, as of
-Track C's Phase 1G relabel:
+**✅ P0.4 — RESOLVED 2026-08-17, GROWN to 3 by 2026-08-18. Real, computable GAIL training pairs
+exist — currently 3, not 1.** `CAPSTONE_NEXT_STEPS.md` sat un-updated after pairs 2 and 3 were
+confirmed (a real process gap — flagged directly to the user, same class of mistake as the
+Phase 1C commit gap earlier this project), which caused Track C's Phase 1H round to correctly
+report what the doc said ("still just 1") rather than current reality. Not Track C's error.
+Current state, each independently verified against the live DB:
 
-| Condition | Status |
-|---|---|
-| Treatment event correctly labeled | ✅ `Db5rzczsSV5` (mrbeast, 2026-08-12), `is_sponsored=true` via native `paid_partnership_label` signal (caption's `#oldnavypartner` hashtag isn't a pattern the regex labeler catches on its own — the native signal is exactly why it exists) |
-| Real graph connection | ✅ mrbeast ↔ CarryMinati, resolved collaboration edge, both directions |
-| Neighbor data straddles the event | ✅ CarryMinati: 11 dated posts before (through 2026-08-08), 1 after (2026-08-13) |
+| # | Creator | Event date | Neighbor | Straddle source | Before / After |
+|---|---|---|---|---|---|
+| 1 | mrbeast | 2026-08-12 | CarryMinati | Instagram | 66 / 13 |
+| 2 | Cristiano Ronaldo | 2026-07-21 | LeBron James | **Reddit only** — 0 IG/YT activity either side | 17 / 179 |
+| 3 | Sania Mirza | 2026-08-01 | parikshitbalochi | **YouTube only** — 0 IG/Reddit activity either side | 12 / 2 |
 
-Verified independently three times: Track A found it and reported the raw numbers; the
-orchestrator opened CarryMinati's live Instagram grid directly (via the accessibility tree, not
-just a screenshot) specifically to rule out the pinned-post metadata bug Track A flagged the same
-round, and found no pinned posts — the date data is trusted; Track C confirmed the label and the
-edge from its own side independently. `brand_id` is still NULL on this post (no "Old Navy" row
-exists in `brands` yet) — **this does not block the milestone**, since P0.4's actual definition
-is graph-connection + straddling data, not brand identification. Brand linkage is Track A's
-extraction to close when it gets to it, separately.
+**2 of 3 pairs exist only because of cross-platform straddle checking** — an Instagram-only check
+would report 1 pair, not 3. This is now the standard measurement (§1a), not a refinement.
+`brand_id` is null on pair 1's event (no blocker — P0.4's definition is graph-connection +
+straddling data, not brand identification).
 
-⇒ Track B is unblocked to attempt a real training run with an actual computable example, not a
-placeholder target. One real pair is not enough to validate generalization — treat the first
-real run as a pipeline-correctness check (does it run end-to-end on real data, no NaN/crash),
-not a trained model. The collaboration graph is also no longer what it was — 161 distinct pairs,
-not 10 (see the retired-finding note above) — so the graph Track B builds against now looks very
-different from its first attempt.
+⇒ Track B is unblocked to attempt a real training run with 3 actual computable examples, not a
+placeholder target or a single point. Still far below the ~20-pair sufficiency floor (§1a) — this
+is a pipeline-correctness check, not a trained, generalizable model. The collaboration graph is
+also no longer what it was — 161 distinct pairs, not 10 (see the retired P0.2 finding above).
 
 *Superseded text follows, kept for the record:*
 
