@@ -88,32 +88,40 @@ def verify(creator_name: str, instagram_handle: str | None, ch: dict,
     custom = (sn.get("customUrl") or "").lstrip("@")
     auto_suffix = bool(re.search(r"-[a-z0-9]{5}$|\d{4}$", custom))
 
-    # 1. CROSS-PLATFORM CORROBORATION — description only. This is the trick that resolved
-    #    Neeraj Chopra previously (his channel listed a management contact matching his
-    #    verified Instagram bio).
-    if instagram_handle:
-        ig_compact = _norm(instagram_handle).replace(" ", "")
-        desc_compact = _norm(desc).replace(" ", "")
-        if ig_compact and ig_compact in desc_compact:
-            return True, f"cross-platform: description references instagram '{instagram_handle}'"
+    # ⚠️ SECOND TIGHTENING, 2026-08-17. Description-corroboration and title-name-matching
+    # were BOTH tried as sufficient conditions and BOTH wrote wrong handles at scale
+    # (45 written, 45 reverted). Concretely, from the live run:
+    #   corroboration-only : fcgoaofficial -> @ubaidmellow (29 subs, no name relationship)
+    #                        chennaiipl    -> @chennaiipl-msd (54 subs, a fan channel)
+    #                        imbhuvi       -> 0 subs, despite 6.3M Instagram followers
+    #   name-match         : _ramandeep.singh_ (a KKR cricketer) -> "AFLM - A venture of
+    #                        CS Ramandeep Singh", a coaching institute. A NAMESAKE.
+    # A fan channel legitimately references the creator's Instagram, and a namesake
+    # legitimately shares the name, so neither signal establishes that a channel is THIS
+    # person's official one.
+    #
+    # AUTO-WRITE now requires the customUrl to be essentially the SAME STRING as the
+    # creator's own handle/name, plus real scale. Fans don't get the exact handle, and
+    # namesakes rarely match a handle exactly. Everything else is returned for review
+    # rather than written -- absence of a confident match is a real finding here.
+    name_c = _norm(creator_name).replace(" ", "")
+    ig_c = _norm(instagram_handle or "").replace(" ", "")
+    url_c = _norm(custom).replace(" ", "")
+    if url_c and (url_c == name_c or url_c == ig_c) and subs >= min_subs and not auto_suffix:
+        return True, (f"exact handle equality '@{custom}' == creator handle "
+                       f"({subs:,} subs)")
 
-    # 2. NAME MATCH — requires a real title match AND plausible scale. A public figure with
-    #    a genuine channel is not sitting at 0 subscribers.
+    # Everything below is EVIDENCE, not proof -- surfaced for a human, never auto-written.
+    hints = []
+    if instagram_handle and ig_c and ig_c in _norm(desc).replace(" ", ""):
+        hints.append("description references the instagram handle")
     ct, tt = _tokens(creator_name), _tokens(title)
-    if ct and tt:
-        overlap = ct & tt
-        # Compact equality catches the very common case where a promoted creator's NAME is
-        # their handle: "__devmeena__" vs channel title "Dev Meena" share no whole tokens,
-        # but are the same string once separators are removed.
-        compact_equal = (_norm(creator_name).replace(" ", "") ==
-                          _norm(title).replace(" ", "") != "")
-        strong = (overlap == ct or overlap == tt or len(overlap) >= 2 or compact_equal)
-        if strong and subs >= min_subs and not auto_suffix:
-            return True, (f"name match '{creator_name}' vs '{title}' "
-                           f"({subs:,} subs, owner-chosen handle)")
-        if strong and (subs < min_subs or auto_suffix):
-            return False, (f"name matched '{title}' but REJECTED: "
-                            f"{subs} subs{', auto-generated handle' if auto_suffix else ''}")
+    if ct and tt and (ct & tt):
+        hints.append(f"title overlap with '{title}'")
+    if hints:
+        return False, (f"NEEDS REVIEW: {'; '.join(hints)} — '{title}' (@{custom}, "
+                        f"{subs:,} subs). Not auto-written: fan channels and namesakes "
+                        f"produce exactly this evidence.")
 
     return False, f"no confident match (best candidate '{title}', {subs} subs)"
 
