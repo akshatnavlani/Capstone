@@ -79,8 +79,19 @@ def main() -> None:
 
     # --- the actual objective
     cur.execute("""
-        with events as (select creator_id, post_id, posted_at from instagram_posts
-                        where (is_sponsored or has_paid_partnership_label) and posted_at is not null),
+        with events as (
+            -- Events must be counted on EVERY platform, not just Instagram. Kerala Blasters'
+            -- 2 sponsorship events live on YouTube ("brought to you by"), and an
+            -- Instagram-only event query silently excluded them -- the same cross-platform
+            -- blind spot already fixed on the NEIGHBOUR side of this calculation.
+            select creator_id, post_id, posted_at from instagram_posts
+            where (is_sponsored or has_paid_partnership_label) and posted_at is not null
+            union all
+            select creator_id, video_id, published_at from youtube_videos
+            where is_sponsored and published_at is not null
+            union all
+            select creator_id, post_id, posted_at from reddit_posts
+            where is_sponsored and posted_at is not null),
         pairs as (select distinct x.creator_id a, c2.creator_id b
                   from creator_related_accounts x
                   join creators c2 on lower(c2.instagram_handle)=lower(x.handle)
