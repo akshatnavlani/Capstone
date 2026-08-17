@@ -360,13 +360,26 @@ graph-connected AND with pre-event data on that neighbour." **That metric is cur
 capped by this, not by graph density.** We have 153 pairs and 19 paid-partnership posts,
 but only 5 of those posts even have a date.
 
-**Recoverable?** Almost certainly — the post page and grid alt-text both carry real dates
-("Photo shared by X on August 15, 2026"), and the extractor already visits those pages.
-**Not built tonight**: it is a new backfill mechanism, not on the task list, and the
-conservative overnight call is to prove and document it rather than write to 850 rows
-unattended. **Recommended as the next round's top priority** — it plausibly unblocks the
-Review-1 metric without any new discovery at all, the same shape as last round's promotion
-win (existing rows, missing linkage).
+**Recoverable? PARTIALLY — and I tested this rather than assuming it.** An earlier draft of
+this section said "almost certainly recoverable". **That was wrong, and the correction
+matters because it changes what the next session should attempt:**
+
+| Route | Result (measured, 2026-08-17) |
+|---|---|
+| Post page (`/p/<id>/` extract) | **0%** — no dates, no relative-age tokens at all |
+| Profile grid alt-text | **~30%** — 3 of 10 entries carried "on August 13, 2026" |
+
+Why the grid is partial: Instagram uses the **caption** as a post's alt-text when one
+exists, and only falls back to "Photo by X on <date>" boilerplate when it doesn't. So the
+posts that expose a date are largely the caption-less ones — close to the inverse of the
+posts we most want dated.
+
+⇒ **Do NOT plan on a cheap grid-based backfill.** It would recover roughly a third, and
+biased toward caption-less posts. A reliable route is **not yet identified** — that is the
+open question, not the backfill itself. Worth checking next: whether the orchestrator's
+post-page path populates `posted_at` on fresh scrapes (374 rows do have it, and they
+correlate exactly with non-NULL `media_type`), which would mean re-scraping the 850
+listing-sourced rows through the metadata path rather than parsing dates out of HTML.
 
 ## TASK 1 — co-author extraction (PRIMARY) — SCAN COMPLETE
 
@@ -393,6 +406,34 @@ creators yet, and this round is explicitly barred from promoting them (`approval
 the user's column). The payoff is candidates surfaced for the next review pass — precisely
 the mechanism that produced **+142 pairs last round from zero new scraping**. Judge this
 mechanism on candidates surfaced, not on same-night pairs.
+
+### Candidates pushed — 59, with the category spread that was the point of Task 0
+
+| category | count |
+|---|---|
+| `other` | **24 (41%)** |
+| `fitness_influencer` | 17 |
+| `lifestyle_influencer` | 9 |
+| `athlete` | 7 |
+| `team` | 2 |
+
+`approval_status` blank on all 59 (verified). Grid relevance recorded on 52 of 59, **mean
+0.20** — consistent with the 0.30 measured in validation, and further evidence that a hard
+majority-relevance gate would reject nearly every candidate.
+
+**Honest read: `other` went 100% → 41% for co-author rows.** Every such row used to be
+`other` unconditionally, so this is a real improvement — but the residue is twice the 20%
+that held-out validation predicted, because production candidates skew toward small
+accounts with emptier bios than the validation sample.
+
+⚠️ **A misclassification found by inspecting the output, not by the tests:**
+`@attirebyajaygandhi` — real profile "Attire by Ajay Gandhi / *Stitching dreams into a
+gorgeous reality!*" — is a **couture brand**, and it landed as `team`. It is both a missed
+BRAND and a wrong category. The brand rules key on legal-entity suffixes and commerce
+language, and this bio has neither. Together with `tserieshealthandfitness`, that is **two
+brand escapes in one night** — the brand detector's recall is clearly weak on
+non-incorporated consumer brands, and human review remains the real gate. Do not treat
+write-time brand routing as sufficient on its own.
 
 **Brand routing confirmed working in production**, from the live log:
 `BRAND eshviv -> brand_signals of @ballerathletik (written)` — a brand diverted to the
