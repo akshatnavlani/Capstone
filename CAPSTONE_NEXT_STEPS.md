@@ -584,6 +584,30 @@ API, no shared browser resource — confirmed safe per §3.6). Reddit's topic-su
 for the same 240+ creators, but must run **sequentially after Instagram**, same tab-lease
 constraint as always.
 
+**✅ Progress 2026-08-18** — YouTube: 45 auto-matched handles caught and audited before sticking
+(3 successive verification-rule failures found and fixed: circular self-match, corroboration-only,
+namesake collision); 9 genuine handles applied, 36 `needs_review`, 44 confirmed absent. 89 of 248
+searched, quota-capped (100 units/search, 10k/day budget) — expected to span several more rounds.
+Instagram: blocked on a sustained 429 (3 consecutive after ~3.5h) — real, not a false alarm from
+`opencli doctor` misreading a disconnected daemon as a throttle (checked separately, cause
+confirmed distinct). Reddit: root cause found, not just a symptom — bulk promotion set
+`creators.name = instagram_handle` for **231 of 264 creators** (topic-sub search queries by
+`name`, so a handle-shaped name returns 0 results — proven directly: `"rohitsharma45"` → 0
+results, `"Rohit Sharma"` → 10). 13 real names already recovered at zero network cost from
+`instagram_profiles.full_name` / `youtube_channels.title`. **Real-name backfill for the remaining
+231 is now the actual blocker for all Reddit work**, not a Reddit-side problem — flagged as the
+next Track A priority given it's foundational (also likely affects any other name-based matching,
+not just Reddit).
+
+**⚠️ Incomplete cleanup, found by the orchestrator, not self-reported.** A separate bug this
+round (`--platform reddit --handles <ig_handle>` treating an Instagram handle as a subreddit) was
+caught and the `reddit_handles` pollution was cleaned — but the bug's `get_or_create_creator`
+path had already created 5 new, fully blank creator rows (name only, no platform handles at all:
+`delhipremierleaguet20`, `karanaujla`, `ptushaofficial`, `gujarat_titans`, `ajinkyarahane` — all
+created at the identical timestamp 2026-08-17 19:46:58, all bridge-queue-shaped names). These
+were never deleted — `creators` is 264 live, not 259. Needs a real DELETE, not just a field
+cleanup, next round.
+
 ### P1 — blocking scale or quality
 
 **P1.1 Discovery ceiling** *(Track A, Phase 2)*
