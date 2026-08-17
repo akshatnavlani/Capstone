@@ -91,16 +91,45 @@ class Creator:
     reddit_topic_subs: list[str] = field(default_factory=list)
 
 
+# Tokens that identify NOBODY on their own. A creator name built only from these (e.g.
+# "Fitness Standards Council", "Indian Super League") cannot be matched token-wise without
+# dragging in unrelated posts -- see mentions_creator.
+_GENERIC_NAME_TOKENS = {
+    "fitness", "standards", "council", "club", "team", "sports", "sport", "academy",
+    "institute", "foundation", "association", "official", "india", "indian", "super",
+    "league", "premier", "cricket", "football", "soccer", "national", "series", "world",
+    "champions", "championship", "united", "city", "state", "school", "centre", "center",
+    "group", "media", "network", "channel", "studio", "productions", "entertainment",
+    "singer", "coach", "trainer", "vlogs", "views", "fan", "fans",
+}
+
+
 def mentions_creator(text: str, creator_name: str) -> bool:
     """Does this text plausibly refer to this creator?
 
     Deliberately lenient (any distinctive name token, not the full name) — real posts
     say "Kohli", "Sindhu", "CarryMinati" far more often than the full formal name.
     Short tokens are dropped so initials/particles ("MC", "PV") don't match everything.
+
+    ⚠️ GENERIC TOKENS ARE EXCLUDED (added 2026-08-18). Leniency is right for a distinctive
+    surname and catastrophic for a generic organisation name. Real damage this caused: the
+    creator "Fitness Standards Council" (a name harvested from a YouTube channel title)
+    matched 11 r/india posts on the bare token "standards"/"council"/"fitness" — including
+    "Democracy is a true Kaliyug construct" and "Bell jar". That is the same false-positive
+    class as the 88% Reddit purge, resurfacing because real-name backfill introduced
+    multi-word generic names that did not exist in the curated set.
+
+    A name made ENTIRELY of generic tokens cannot be matched token-wise at all; it requires
+    the full phrase, which is the only signal that actually identifies it.
     """
     hay = (text or "").lower()
     tokens = [t.lower().strip(".") for t in creator_name.split() if len(t) > 3]
-    return any(t in hay for t in tokens) if tokens else False
+    distinctive = [t for t in tokens if t not in _GENERIC_NAME_TOKENS]
+    if distinctive:
+        return any(t in hay for t in distinctive)
+    # Every token is generic -> demand the whole name as a phrase.
+    full = " ".join(creator_name.lower().split())
+    return bool(full) and full in hay
 
 
 class RateLimiter:

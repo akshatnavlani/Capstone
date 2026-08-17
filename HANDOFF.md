@@ -324,6 +324,84 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# LOOP (2026-08-18) — batch-readiness loop, 30-min cadence. CYCLE 1 COMPLETE
+
+**A fresh session resuming this loop should read THIS section first — it is the live state.**
+
+## Stats: baseline → after cycle 1 (259 creators)
+
+| | baseline | after cycle 1 |
+|---|---|---|
+| Instagram attempted | 121 (46.7%) | 121 (46.7%) |
+| Instagram with content | 36 (13.9%) | 36 (13.9%) |
+| **YouTube attempted** | **259 (100%)** | **259 (100%)** ✅ |
+| YouTube with handle | 41 (15.8%) | 41 (15.8%) — of those 39 deepened (95.1%) |
+| **Reddit attempted** | 36 (13.9%) | **55 (21.2%)** |
+| Reddit with content | 16 (6.2%) | 18 (6.9%) |
+| Reddit NAME-GATED | 215 (83%) | **200 (77%)** |
+| Reddit untouched | 8 (3.1%) | **5 (1.9%)** |
+| **COMPUTABLE PAIRS** | **3** | **4** ✅ |
+| Collaboration edge pairs | 161 | 161 |
+
+## 🎯 4th computable pair — Virat Kohli ↔ PV Sindhu
+
+| Creator | Event | Neighbour | before | after |
+|---|---|---|---|---|
+| Virat Kohli | 2026-04-29 | **PV Sindhu** | 3 | 12 |
+| Cristiano Ronaldo | 2026-07-21 | LeBron James | 17 | 179 |
+| Sania Mirza | 2026-08-01 | Parikshit Balochi | 12 | 2 |
+| mrbeast | 2026-08-12 | CarryMinati | 69 | 13 |
+
+Enabled by the grid date backfill (**62 posts newly dated** this cycle), which gave PV Sindhu
+pre-event activity she previously lacked.
+
+## ⚠️ PHASE 1 CONCLUSION WAS WRONG — REVERTED TO SEQUENTIAL
+
+The burst test said Instagram-on-browser + Reddit-on-adapter don't contend. **Under sustained
+load they do.** Reddit ran cleanly for ~8 minutes, then every search began failing
+(`ok: false`) roughly 4 minutes after the concurrent Instagram browser job started — Mumbai
+Indians, Prajakta Koli, Sania Mirza all failed. The moment the Instagram job finished, the
+*same queries* returned real results immediately.
+
+⇒ **A 3-call burst is not a valid concurrency test**, the same error class as the
+single-probe throttle test this project already learned twice. **Run Instagram → Reddit
+sequentially.** The standing rule stands; my Phase 1 clearance is withdrawn.
+
+## ⚠️ REAL-NAME BACKFILL INTRODUCED A FALSE-POSITIVE CLASS — found and fixed
+
+`mentions_creator` matched ANY name token >3 chars. That is right for a distinctive surname
+and catastrophic for a generic organisation name harvested from a YouTube channel title:
+**"Fitness Standards Council" matched 11 r/india posts** on bare tokens — including
+*"Democracy is a true Kaliyug construct"* and *"Bell jar"*. Same false-positive class as the
+88% Reddit purge, resurfacing because backfilled names are multi-word and generic.
+
+**Fixed**: `_GENERIC_NAME_TOKENS` stoplist; a name made entirely of generic tokens now
+requires the **full phrase**. Verified on 8 cases including the real failures. **Purged the
+10 bad rows** (10 posts, 67 comments, 10 links).
+
+## ⚠️ Two data-integrity items this cycle
+
+1. **Duplicate creator row created and removed.** `--target-list` on Reddit inserted a second
+   `Mumbiker Nikhil` because the original has `instagram_handle=NULL`, so
+   `get_or_create_creator` could not match it. Verified empty across all 10 `creator_id`
+   tables, deleted. `creators` back to **259**. **Creators with NULL instagram_handle are a
+   duplicate-insert hazard on any `--target-list` run.**
+2. **Sub-routing bug caught in dry run before it wrote**: the category fallback sent
+   Philadelphia 76ers / Matthew Dellavedova to r/ipl+r/Cricket and Ohio State Football to
+   r/IndianFootball. Added r/nba routing (proven in-repo via LeBron) and an explicit skip for
+   US college sports and E1 Series. 18 assigned, 3 skipped.
+
+## Reddit yield is poor and worth stating plainly
+Of 38 creators searched, **only 1 produced posts — and those were the false positives**. The
+handle-named ones return 0 by construction; the real-named ones mostly returned nothing
+usable. **Reddit is not currently a productive lever** for this creator set.
+
+## Next cycle should
+- Run Instagram (browser grid dates) and Reddit **sequentially**, never concurrently.
+- Continue grid date backfill — it is what produced the 4th pair.
+- Kerala Blasters roster extraction (once per loop, not yet done).
+- Instagram adapter re-check: still 429 as of last test.
+
 # PHASE 1L — (2026-08-18, agent-reach routing + browser-only pivot)
 
 ## TASK 1 ⛔ — the adapter block is NOT a pacing problem, and that is now settled
