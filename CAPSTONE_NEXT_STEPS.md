@@ -567,10 +567,22 @@ present in real captions. Track C's re-label is the immediate next step, and tho
 disclosures are a concrete validation target — if the labeler misses them, that's a labeler bug,
 not an absence of signal.~~
 
-**P0.5 Deepening not completed** *(Track A)* — the full IG→YT→Reddit cycle per approved creator
-did not run; time went to the caption incident. **We still have no per-creator datapoint counts
-or wall-clock timings**, which Phase 2 feasibility projections depend on. Real gap, carried
-forward.
+**⚠️ P0.5 — RESCOPED 2026-08-18, more serious than previously recorded.** The user's own instinct
+("YT/Reddit deepening feels incomplete") was correct and the orchestrator quantified it directly
+against the live DB: of 259 creators, **257 (99.2%) have an Instagram handle, but only 11 (4.2%)
+have a YouTube handle on file**, and only **10 creators (3.9%) have any YouTube content at all** —
+the same small original set from early phases, untouched since bulk promotion grew the creator
+set 63→259. Reddit has content for 13 creators (5.0%, mostly via the topic-sub name-search
+mechanism, which doesn't strictly need a discovered handle) but the pattern is the same: the
+240+ bulk-promoted creators have essentially never had YouTube or Reddit attempted at all.
+
+This is primarily a **YouTube discovery gap**, not a deepening-capacity problem — almost nobody
+has a handle to deepen in the first place. Fix: search for each handle-less creator's actual
+YouTube channel (by name/known aliases) and populate `youtube_handle` before attempting any
+video fetch. Once found, YouTube deepening is safe to run **in parallel with Instagram** (official
+API, no shared browser resource — confirmed safe per §3.6). Reddit's topic-sub search needs to run
+for the same 240+ creators, but must run **sequentially after Instagram**, same tab-lease
+constraint as always.
 
 ### P1 — blocking scale or quality
 
