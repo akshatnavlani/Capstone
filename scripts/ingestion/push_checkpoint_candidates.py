@@ -41,12 +41,31 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--from-db", action="store_true",
+                     help="Source candidates from creator_related_accounts instead of the "
+                          "checkpoint file. STRONGLY PREFERRED: the checkpoint is REWRITTEN "
+                          "per run, not accumulated, so a run that completes silently "
+                          "discards the co-authors an earlier killed run found. The DB rows "
+                          "are flushed per post and never overwritten, so they are the only "
+                          "durable record. Found 181 recoverable handles this way vs 63 in "
+                          "the checkpoint.")
     args = ap.parse_args()
 
-    with open(CHECKPOINT, encoding="utf-8") as f:
-        checkpoint = json.load(f)
-
     conn = psycopg2.connect(ENV["DATABASE_URL"])
+    if args.from_db:
+        with conn.cursor() as cur:
+            cur.execute("""
+                select lower(x.handle), min(a.instagram_handle), count(*)
+                from creator_related_accounts x
+                join creators a on a.creator_id = x.creator_id
+                group by lower(x.handle)
+            """)
+            # shape matches the checkpoint: {handle: [(owner, post_id), ...]}
+            checkpoint = {h: [(owner, "")] * n for h, owner, n in cur.fetchall()}
+    else:
+        with open(CHECKPOINT, encoding="utf-8") as f:
+            checkpoint = json.load(f)
+
     with conn.cursor() as cur:
         cur.execute("select lower(instagram_handle) from creators where instagram_handle is not null")
         creators = {r[0] for r in cur.fetchall()}
@@ -66,7 +85,7 @@ def main() -> None:
     rows_out, brands, consec = [], [], 0
     for h, occurrences in sorted(pending.items()):
         owner, post_id = occurrences[0]
-        provenance = (f"co-author of @{owner} on post {post_id}"
+        provenance = (f"co-author of @{owner}" + (f" on post {post_id}" if post_id else "")
                        + (f" (+{len(occurrences)-1} more collab posts)"
                           if len(occurrences) > 1 else ""))
         if args.dry_run:
@@ -88,7 +107,7 @@ def main() -> None:
         if a["category"] == account_classify.BRAND:
             try:
                 ok = sheets_sync.append_brand_signal(
-                    owner, f"{h} — {a['evidence']}; seen as co-author on {post_id}")
+                    owner, f"{h} — {a['evidence']}; seen as co-author of @{owner}")
                 brands.append(h)
                 log.info("BRAND %s -> brand_signals of @%s (%s)", h, owner,
                           "written" if ok else "already present / owner not on sheet")
