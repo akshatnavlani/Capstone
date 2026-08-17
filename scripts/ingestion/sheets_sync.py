@@ -25,6 +25,7 @@ not mirrored in this sheet.
 """
 
 import json
+import logging
 import os
 
 import gspread
@@ -34,7 +35,36 @@ SHEET_ID = "1UX9K3gQnh4roMgTi0cy3Sxm82kTLDkZI9w4jJELFVPQ"
 KEY_PATH = os.path.join(os.path.dirname(__file__), "google-service-account.json")
 STAGING_PATH = os.path.join(os.path.dirname(__file__), "candidate_staging.json")
 
+_log = logging.getLogger("sheets_sync")
+
 _SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+
+
+def _retry(fn, *args, _label: str = "", _tries: int = 4, **kwargs):
+    """Retry a Sheets call through transient connection resets.
+
+    Added 2026-08-17 after FOUR `ConnectionResetError(10054)` failures in one night --
+    two of them discarding an entire completed run's worth of candidate pushes. Every
+    call here builds a fresh authorized client (see `_worksheet`), so a batch performs
+    dozens of TLS + auth handshakes and the remote end intermittently closes one.
+    A dropped write on this path is expensive and silent: the caller logs a warning and
+    continues, so the candidates simply never appear and nothing flags it.
+    """
+    import time as _time
+    last = None
+    for attempt in range(_tries):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as e:  # gspread wraps requests' ConnectionError
+            if "ConnectionReset" not in repr(e) and "Connection aborted" not in repr(e):
+                raise
+            last = e
+            wait = 2 ** attempt
+            _log.warning("%s: connection reset (attempt %d/%d), retrying in %ds",
+                          _label or getattr(fn, "__name__", "sheets call"),
+                          attempt + 1, _tries, wait)
+            _time.sleep(wait)
+    raise last
 
 
 def _client() -> gspread.Client:
@@ -53,7 +83,7 @@ def _worksheet():
 
 def read_rows() -> list[dict]:
     """Full sheet content as a list of dicts, keyed by header row."""
-    return _worksheet().get_all_records()
+    return _retry(lambda: _worksheet().get_all_records(), _label="read_rows")
 
 
 def read_approval_counts() -> dict[str, int]:
@@ -71,6 +101,12 @@ def read_approval_counts() -> dict[str, int]:
 
 
 def append_brand_signal(instagram_handle: str, signal: str, dry_run: bool = False) -> bool:
+    """Retry wrapper -- see _append_brand_signal_impl."""
+    return _retry(_append_brand_signal_impl, instagram_handle, signal, dry_run,
+                   _label="append_brand_signal")
+
+
+def _append_brand_signal_impl(instagram_handle: str, signal: str, dry_run: bool = False) -> bool:
     """Append a brand observation to one creator's `brand_signals` cell.
 
     This is the write side of the standing rule set 2026-08-16: a brand/business account
@@ -109,6 +145,11 @@ def append_brand_signal(instagram_handle: str, signal: str, dry_run: bool = Fals
 
 
 def update_category(updates: dict[str, str], dry_run: bool = False) -> int:
+    """Retry wrapper -- see _update_category_impl."""
+    return _retry(_update_category_impl, updates, dry_run, _label="update_category")
+
+
+def _update_category_impl(updates: dict[str, str], dry_run: bool = False) -> int:
     """Rewrite ONLY the `category` cell for the given {instagram_handle: category} rows.
 
     Built 2026-08-16 to repair 146 accepted rows stuck at category='other'. Deliberately
@@ -171,6 +212,11 @@ def update_category(updates: dict[str, str], dry_run: bool = False) -> int:
 
 
 def push_candidates(rows: list[dict] | None = None) -> int:
+    """Retry wrapper -- see _push_candidates_impl."""
+    return _retry(_push_candidates_impl, rows, _label="push_candidates")
+
+
+def _push_candidates_impl(rows: list[dict] | None = None) -> int:
     """Append staged candidates (approval_status blank) to the sheet.
 
     Defaults to reading scripts/ingestion/candidate_staging.json (the local staging
