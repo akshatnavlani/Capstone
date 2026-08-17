@@ -306,6 +306,104 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   `Optional`/unpopulated in their ingestion schemas, matching Track A's
   real DB. No longer open.
 
+## Real-data status (2026-08-17, Phase 1 round 2 — systematic pair enumeration, real target)
+
+Base state grew substantially since 2026-08-15 (63→259 creators, 10→161
+resolved collaboration pairs, 18→32 sponsorship events, still 10 with
+`brand_id`). Re-verified live via direct SQL before building on
+`CAPSTONE_NEXT_STEPS.md` P0.2/P0.4's numbers — matched exactly (259
+creators; 668 `creator_related_accounts` rows / 161 distinct resolved pairs
+via the same ambiguous-handle-dropping resolver logic as Track C's
+`build_collaboration_edges()`; 32 events / 10 with `brand_id`).
+
+**Task 1 — enumerated ALL 32 events, not just the one known pair
+(`scripts/find_computable_training_pairs.py`).** Only mrbeast→CarryMinati
+had been individually checked before. Result:
+
+| # | Sponsored creator | Event date | Neighbor | Platform | Before / After | Avg before → after | Delta |
+|---|---|---|---|---|---|---|---|
+| 1 | Cristiano Ronaldo | 2026-07-21 | LeBron James | reddit | 17 / 162 | 164.9 → 186.4 | +21.6 |
+| 2 | mrbeast | 2026-08-12 | CarryMinati | instagram | 11 / 1 | 929,235.3 → 1,584,116.0 | +654,880.7 |
+| 3 | mrbeast | 2026-08-12 | CarryMinati | reddit | 50 / 12 | 554.1 → 517.3 | -36.8 |
+| 4 | mrbeast | 2026-08-12 | LeBron James | instagram | 12 / 4 | 245,547.4 → 82,599.8 | -162,947.7 |
+| 5 | mrbeast | 2026-08-12 | LeBron James | reddit | 128 / 51 | 197.1 → 152.4 | -44.7 |
+
+**Headline number: 2 distinct events, 5 (event, neighbor, platform)
+triples, 2 distinct neighbor creators with a real computable outcome.**
+Both real edges verified directly against raw `creator_related_accounts`
+rows, not just the resolver's output (LeBron James's own relation rows
+literally include the handle `mrbeast`, resolving via mrbeast's real
+`instagram_handle`; similarly `cristiano` and `carryminati` resolve via
+their own handles).
+
+Of the other 30 events: **28 of 32 have no `posted_at` at all** (a bigger,
+more tractable gap than straddling depth — these can't be checked at all
+until dated), and the remaining events either have 0 graph neighbors or
+neighbors whose dated content doesn't straddle. Full per-event detail in
+the script's stdout output (not reproduced here — see HANDOFF.md for how
+to re-run).
+
+**Task 2 — rebuilt the real HeteroData on the new 259-creator/161-pair
+graph.** Structure changed shape, not just size, vs. 2026-08-15:
+
+| Metric | 2026-08-15 (63 creators) | 2026-08-17 (259 creators) |
+|---|---|---|
+| Isolated nodes | 47 (74.6%) | 94 (36.3%) |
+| Connected components | 53 total, 6 non-trivial | 106 total, 12 non-trivial |
+| Largest non-trivial component | 6 nodes | 53 nodes |
+| Max degree | 5 | 18 |
+| `collaborates_with` edges | 20 | 322 |
+
+Confirms the orchestrator's P0.2 retraction: the graph was never
+structurally sparse in the sense implied — its endpoints just weren't
+promoted to `creators` yet. Real degree distribution now has genuine hubs
+(degree 14-18: LeBron James, mrbeast's collaborator cluster, the
+Kohli/PV Sindhu cricket cluster).
+
+**Task 3 — GAT forward pass + inductive check re-run, not assumed to
+generalize from the sparser first pass.** Both passed again: forward pass
+on 259 creators/10 brands, no NaN; same trained instance ran cleanly on 15
+new nodes appended to the real graph, no retraining, no NaN.
+
+**Task 4 — real (not placeholder) engagement deltas computed, for the
+first time.** The 5 triples above are genuine before/after averages from
+real dated content. `scripts/build_real_hetero_data.py`'s
+`load_real_targets` converts each into a relative lift
+`(after_avg - before_avg) / (before_avg + 1)` and averages across a
+neighbor's triples: CarryMinati ≈ **+0.32** (dominated by the huge
+Instagram post-event spike, partly offset by a small Reddit dip), LeBron
+James ≈ **-0.25** (mixed: up slightly for Ronaldo's event, down for
+mrbeast's, on a small-before/after-count basis). Every other creator (257
+of 259) still gets 0 — "no real signal computed," not "confirmed zero."
+
+**Task 5 — training run, framed honestly.** 50 epochs, no NaN/crash
+(`prediction`/`overlap`/`smoothness`/`consistency` all finite throughout).
+2 real target values is a genuine step up from last round's all-zero
+plumbing check, but is **still a pipeline-correctness check, not a trained
+model** — 2 labeled nodes cannot support a held-out split, cross-validation,
+or any claim about generalization. Loss went from `total=0.0297` (epoch 0)
+to `total=0.00087` (epoch 49), but with N=2 this reflects the model
+memorizing two numbers, not learning a generalizable spillover function —
+stated explicitly so it isn't later mistaken for a real training curve.
+
+**Task 6 — sufficiency call, direct.** Against the round's own reference
+points (~20-30 pairs for a legitimate held-out split, ~50-100 for a
+defensible thesis-level claim): **2 real pairs is far below either bar.**
+Not close to sufficient yet. What would close the gap, in order of
+leverage:
+1. **Fix/backfill `posted_at` on the 28 dateless events** — this is pure
+   data-completeness, not new scraping; even a modest fraction becoming
+   checkable could multiply the real pair count without touching the
+   graph at all.
+2. **Deepen creators already in a resolved pair, not new creators** — per
+   the task brief's reference to Track A's own finding that
+   pairs-per-post is far higher when deepening already-connected creators
+   than random ones (not independently re-verified by this round, taken
+   as given context); the 165 creators with >=1 resolved neighbor are the
+   highest-leverage deepening targets specifically for straddling data.
+3. **More sponsorship events generally** (32 → 300+ is Review 2's own
+   target) — raises the base rate of hits from (1) and (2) both.
+
 ## Real-data status (2026-08-15, Phase 1 — first real HeteroData built, blocker cleared)
 
 The blocker every prior round in this section reported (0 real edges, 0 real

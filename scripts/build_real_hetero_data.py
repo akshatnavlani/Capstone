@@ -1,14 +1,15 @@
-"""Builds and trains against the FIRST real HeteroData object (PHASE 1,
-Track B's step in CAPSTONE_NEXT_STEPS.md section 6 "Sequential relay").
+"""Builds and trains against the real HeteroData object (PHASE 1, Track B's
+step in CAPSTONE_NEXT_STEPS.md section 6 "Sequential relay").
 
-Previous rounds (`validate_gat_on_real_data.py`, Weeks 7-8/9-10) only ever
-had real creator features with zero real edges/sponsorships to attach. As
-of this round the live DB has 10 real collaboration pairs and 10 real
-brand-linked sponsorship events (CAPSTONE_NEXT_STEPS.md section 2, verified
-2026-08-15 by three independent sessions) -- this script is the first one
-that builds the complete real graph: creators, brands, collaborates_with,
-co_occurs_with, sponsors/sponsored_by all from live data, and attempts a
-real training run against it.
+Second run of this script. The first (2026-08-15, 63 creators/10 pairs/10
+events) found 0 computable training pairs and stopped rather than faking a
+result. This round the graph and pair count have both grown substantially
+(259 creators, 161 resolved collaboration pairs, 32 sponsorship events,
+CAPSTONE_NEXT_STEPS.md P0.2/P0.4 as of 2026-08-17) -- run
+`scripts/find_computable_training_pairs.py` FIRST to enumerate every real
+computable (event, neighbor, platform) triple and write
+`computable_pairs.json`; this script consumes that file to build a REAL
+(not placeholder) target tensor for whichever creators have one.
 
 Not a pytest test (needs live network + a running feature-store server +
 real thumbnail fetches) -- one-off/manual, matching the existing
@@ -20,8 +21,9 @@ that script's docstring for the how-to):
     curl http://127.0.0.1:8000/feature-store/edges/collaborations > collab_edges.json
     curl http://127.0.0.1:8000/feature-store/edges/co-occurrence > co_occurrence_edges.json
     curl http://127.0.0.1:8000/feature-store/edges/sponsorships > sponsorship_edges.json
+    .venv\\Scripts\\python.exe scripts\\find_computable_training_pairs.py <dir containing the above>
     .venv\\Scripts\\python.exe scripts\\build_real_hetero_data.py \\
-        creators.json collab_edges.json co_occurrence_edges.json sponsorship_edges.json
+        creators.json collab_edges.json co_occurrence_edges.json sponsorship_edges.json computable_pairs.json
 
 Brand node features and the full (not just brand_id-linked) sponsorship
 event list aren't behind a feature-store endpoint yet, so this script reads
@@ -141,76 +143,54 @@ def load_sponsorship_edges(
     return torch.stack([brand_idx, creator_idx]), torch.stack([creator_idx, brand_idx])
 
 
-def load_treatment_and_check_deltas(
-    database_url: str, creator_id_to_index: dict[str, int], num_creators: int
-) -> tuple[torch.Tensor, list[dict]]:
-    """Treatment tensor: 1.0 for any creator with a real is_sponsored=true
-    event (all 18, not just the 10 with brand_id resolved -- "did this
-    creator get sponsored" is the causal treatment question, and doesn't
-    require the brand link to be true; the brand link is only needed for
-    the schema's separate sponsors/sponsored_by edge type). Also probes,
-    per real content data, whether any sponsored creator's collaborator has
-    real engagement data actually straddling the event date -- the thing
-    ml/training.py's `target` argument needs and nothing in this repo
-    currently computes.
+def load_treatment(database_url: str, creator_id_to_index: dict[str, int], num_creators: int) -> torch.Tensor:
+    """1.0 for any creator with a real is_sponsored=true event (all 32, not
+    just the 10 with brand_id resolved -- "did this creator get sponsored"
+    is the causal treatment question and doesn't require the brand link;
+    that's only needed for the schema's separate sponsors/sponsored_by
+    edge type).
     """
     conn = psycopg2.connect(database_url)
     cur = conn.cursor()
-    cur.execute(
-        "select creator_id::text, brand_id::text, platform, content_id, posted_at "
-        "from creator_sponsorship_events"
-    )
-    events = cur.fetchall()
+    cur.execute("select distinct creator_id::text from creator_sponsorship_events")
+    sponsored_creator_ids = {row[0] for row in cur.fetchall()}
+    conn.close()
 
     treatment = torch.zeros(num_creators, dtype=torch.float32)
-    sponsored_creator_ids = {cid for cid, *_ in events}
     for cid in sponsored_creator_ids:
         if cid in creator_id_to_index:
             treatment[creator_id_to_index[cid]] = 1.0
+    return treatment
 
-    cur.execute(
-        "select id, creator_id::text, platform, handle, relation_type from creator_related_accounts"
-    )
-    related = cur.fetchall()
-    cur.execute("select creator_id::text, youtube_handle, instagram_handle, reddit_handles from creators")
-    handle_rows = cur.fetchall()
-    handle_map = {}
-    for cid, yt, ig, rh in handle_rows:
-        if yt:
-            handle_map[("youtube", yt.lower())] = cid
-        if ig:
-            handle_map[("instagram", ig.lower())] = cid
-        for h in rh or []:
-            handle_map[("reddit", h.lower())] = cid
 
-    findings = []
-    for cid, brand_id, platform, content_id, posted_at in events:
-        if posted_at is None or cid not in sponsored_creator_ids:
-            continue
-        for rel_id, rel_cid, rel_platform, rel_handle, rel_type in related:
-            if rel_cid != cid or rel_type != "frequent_collaborator" or not rel_handle:
-                continue
-            neighbor_id = handle_map.get((rel_platform, rel_handle.lower()))
-            if not neighbor_id or neighbor_id == cid:
-                continue
-            cur.execute(
-                "select min(posted_at), max(posted_at), count(posted_at) from instagram_posts where creator_id::text = %s",
-                (neighbor_id,),
-            )
-            min_dt, max_dt, n = cur.fetchone()
-            straddles = bool(min_dt and min_dt < posted_at < max_dt) if (min_dt and max_dt) else False
-            findings.append(
-                {
-                    "sponsored_creator": cid,
-                    "event_date": str(posted_at),
-                    "neighbor": neighbor_id,
-                    "neighbor_dated_posts": n,
-                    "neighbor_post_range": f"{min_dt} .. {max_dt}",
-                    "straddles_event": straddles,
-                }
-            )
-    conn.close()
-    return treatment, findings
+def load_real_targets(
+    computable_pairs_path: str, creator_id_to_index: dict[str, int], num_creators: int
+) -> tuple[torch.Tensor, list[dict]]:
+    """Real (not placeholder) target tensor, built from
+    `scripts/find_computable_training_pairs.py`'s output. Per computable
+    (event, neighbor, platform) triple, computes a relative engagement
+    lift -- (after_avg - before_avg) / (before_avg + 1) -- so Instagram
+    like-count-scale deltas and Reddit score-scale deltas are comparable on
+    roughly the same axis rather than mixed as raw counts. A neighbor
+    appearing in multiple triples (multiple events and/or platforms) gets
+    the mean of their relative lifts. Every other creator -- the vast
+    majority -- gets 0, which means "no real signal computed", not
+    "confirmed zero effect".
+    """
+    with open(computable_pairs_path, encoding="utf-8") as f:
+        pairs = json.load(f)
+
+    target = torch.zeros(num_creators, dtype=torch.float32)
+    lifts_by_neighbor: dict[str, list[float]] = {}
+    for p in pairs:
+        lift = (p["avg_engagement_after"] - p["avg_engagement_before"]) / (p["avg_engagement_before"] + 1)
+        lifts_by_neighbor.setdefault(p["neighbor_id"], []).append(lift)
+
+    for neighbor_id, lifts in lifts_by_neighbor.items():
+        if neighbor_id in creator_id_to_index:
+            target[creator_id_to_index[neighbor_id]] = sum(lifts) / len(lifts)
+
+    return target, pairs
 
 
 def report_structure(data, id_to_name: dict[int, str]) -> None:
@@ -253,10 +233,10 @@ def report_structure(data, id_to_name: dict[int, str]) -> None:
 
 
 def main() -> int:
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 6:
         print(__doc__)
         return 1
-    creators_path, collab_path, cooccur_path, sponsorship_path = sys.argv[1:5]
+    creators_path, collab_path, cooccur_path, sponsorship_path, computable_pairs_path = sys.argv[1:6]
 
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
@@ -323,8 +303,8 @@ def main() -> int:
     print("PASSED: same trained instance runs on 15 new nodes appended to the REAL graph, "
           "no retraining, no NaN -- inductive property holds on real topology.")
 
-    print("\n--- TASK 3: first real training attempt ---")
-    treatment, delta_findings = load_treatment_and_check_deltas(database_url, creator_id_to_index, num_creators)
+    print("\n--- TASK 4/5: real target from computable pairs, then a training attempt ---")
+    treatment = load_treatment(database_url, creator_id_to_index, num_creators)
     n_sponsored = int(treatment.sum().item())
     print(f"Treatment tensor: {n_sponsored} of {num_creators} creators marked sponsored "
           "(any real is_sponsored=true event, not just brand_id-resolved ones).")
@@ -335,41 +315,35 @@ def main() -> int:
     n_exposed = int(has_neighbor.sum().item())
     print(f"Creators with >=1 sponsored collaborator (real exposure candidates): {n_exposed}")
 
-    print("\nReal engagement-delta probe (sponsored creator -> dated event -> "
-          "collaborator's real content dates):")
-    if not delta_findings:
-        print("  No sponsored creator with BOTH a dated event AND a resolved collaborator exists.")
-    for f in delta_findings:
-        print(f"  {f}")
-    any_straddles = any(f["straddles_event"] for f in delta_findings)
+    target, computable_pairs = load_real_targets(computable_pairs_path, creator_id_to_index, num_creators)
+    n_real_targets = int((target != 0).sum().item())
+    print(f"\nReal computable (event, neighbor, platform) triples: {len(computable_pairs)}")
+    for p in computable_pairs:
+        print(f"  {p['sponsored_creator_name']} ({p['event_platform']}, {p['event_date'][:10]}) -> "
+              f"{p['neighbor_name']} on {p['neighbor_platform']}: "
+              f"{p['n_before']} before (avg={p['avg_engagement_before']:.1f}) / "
+              f"{p['n_after']} after (avg={p['avg_engagement_after']:.1f}), "
+              f"delta={p['delta']:+.1f}")
+    print(f"\n{n_real_targets} of {num_creators} creators have a REAL (non-placeholder) target value "
+          "(relative engagement lift, averaged across their computable triples). Everyone else is 0 "
+          "-- 'no real signal computed', not 'confirmed zero effect'.")
 
-    if not any_straddles:
+    if n_real_targets == 0:
+        print("\nSTILL 0 real targets -- would run as a plumbing check only, not a real result.")
+    else:
         print(
-            "\nGAP CONFIRMED (real, not assumed): of the sponsored creators with a resolved "
-            "collaborator (Virat Kohli x4, Cristiano Ronaldo x1), each has exactly one dated "
-            "sponsorship event, but every one of their collaborators' own dated posts falls "
-            "ENTIRELY AFTER that event's date -- none straddle it. Real temporal "
-            "engagement-delta (before vs. after) is NOT computable from currently scraped data "
-            "for any real sponsored-creator/neighbor pair, because per-creator scraping depth "
-            "only reaches back 1-3 months and the sponsorship events themselves are recent, so "
-            "the two windows don't overlap. This is a genuine data-coverage gap (Track A's "
-            "scraping depth), not a missing computation -- the delta-computation logic itself "
-            "is a straightforward before/after aggregation once dated posts exist on both sides "
-            "of an event."
+            f"\n{n_real_targets} real target(s) exist this round -- this IS a real (if tiny) "
+            "supervised signal, not a placeholder. Framed honestly: this is still a "
+            "pipeline-correctness check (does the loss/backward pass run end-to-end on real "
+            f"data without NaN/crash), NOT a trained, generalizable model -- {n_real_targets} "
+            "labeled node(s) cannot support a held-out split or any claim about generalization."
         )
-        print(
-            "Per the task's own instruction not to quietly stub this and call it real: "
-            "target is set to all-zeros below and the resulting run is a PLUMBING CHECK ONLY "
-            "(confirms the loss/backward pass doesn't crash or NaN on real sparse structure) -- "
-            "it is NOT evidence of any learned spillover effect."
-        )
-    target = torch.zeros(num_creators, dtype=torch.float32)
 
     gail_model = GAILModel(creator_feature_dim=CREATOR_FEATURE_DIM, hidden_channels=16, heads=2)
     config = TrainConfig(epochs=50, lr=1e-2, val_fraction=0.2, seed=0)
     history = train(gail_model, data, treatment, target, config)
 
-    print(f"\nTrained {config.epochs} epochs on the real graph (plumbing check, zero-target).")
+    print(f"\nTrained {config.epochs} epochs on the real graph.")
     print(f"  epoch 0:  {history[0]}")
     print(f"  epoch {config.epochs // 2}: {history[config.epochs // 2]}")
     print(f"  epoch {config.epochs - 1}: {history[-1]}")
@@ -380,8 +354,8 @@ def main() -> int:
     )
     print(f"NaN encountered across {config.epochs} epochs: {any_nan}")
     print("PASSED: full GAIL loss (prediction + overlap + smoothness + consistency) runs on "
-          "real sparse topology (0 co_occurs_with edges, {}-edge collaborates_with graph) "
-          "without crashing or producing NaN.".format(collab_index.size(1)))
+          "the real graph ({}-edge collaborates_with, {}-edge co_occurs_with) "
+          "without crashing or producing NaN.".format(collab_index.size(1), cooccur_index.size(1)))
 
     return 0
 
