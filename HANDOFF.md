@@ -331,6 +331,36 @@ prevent. It converted a silent-corruption bug into a loud one.
 Base state confirmed before starting: `creators` **259**, distinct pairs **152**, resolve
 rate 31%. Matches the Phase 1G close exactly, so this round builds on a verified base.
 
+## TASK 2 — deepening (5 of 6 creators, +195 posts)
+
+Targeted at creators who already sit in a resolved pair but had **no content of their own** —
+scraping them can surface the reciprocal side plus new co-authors.
+
+| | before | after |
+|---|---|---|
+| `instagram_posts` | 1,224 | **1,419** (+195) |
+| Creators with IG content | 31 | **36** |
+| `instagram_comments` | 13,097 | **18,803** |
+
+`jimmysheirgill` failed (grid path) — consistent with it being one of the handles that also
+rejects the `instagram profile` adapter. Not retried.
+
+**This batch is what cracked the metadata bug below** — fresh posts reproduced the 31% rate
+exactly, which disproved the "just re-scrape" fix.
+
+### ⚠️ Killed mid-scan, and the incremental flush earned its keep again
+
+The follow-up co-author scan over those 195 posts was **stopped externally ~6 posts in**
+(0 failures logged, environment healthy afterwards — daemon, extension and Chrome all fine,
+so this was a harness/session kill, not a crash). Work already done survived: **+6 edge rows,
++2 resolved, +1 pair**, all flushed per-post.
+
+**The documented tab-lease leak reproduced exactly.** After the kill, all five named sessions
+(`collabx`, `classify`, `catfix`, `gridtest`, `datetest`) were still holding leases and had
+to be released by hand before resuming — matching the standing lesson that a killed collab
+run strands its lease. **Release leases before resuming after any kill**, or the next run
+degrades against a browser that is still holding tabs.
+
 ## 🚨 BIGGEST FINDING OF THE ROUND — 69% of posts have NO DATE and NO ENGAGEMENT DATA
 
 Found while trying to answer the report question "any newly-connected creator with a
