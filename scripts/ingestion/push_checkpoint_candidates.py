@@ -36,6 +36,25 @@ log = logging.getLogger("ckpt-push")
 CHECKPOINT = os.path.join(os.path.dirname(__file__), "coauthor_checkpoint.json")
 MAX_CONSEC_UNREACHABLE = 5
 
+# Handles already identified as brands. Brands deliberately never get a sheet row, so
+# NOTHING else records that they were dealt with -- without this they stay "pending"
+# forever and every subsequent batch re-fetches, re-classifies and re-writes the same
+# brand signal. Observed live: batch 3 re-routed five brands batch 2 had already done,
+# ~13s of Instagram traffic each, for zero new information.
+ROUTED_BRANDS = os.path.join(os.path.dirname(__file__), "routed_brands.json")
+
+
+def _load_routed() -> set[str]:
+    if os.path.exists(ROUTED_BRANDS):
+        with open(ROUTED_BRANDS, encoding="utf-8") as f:
+            return {h.lower() for h in json.load(f)}
+    return set()
+
+
+def _save_routed(routed: set[str]) -> None:
+    with open(ROUTED_BRANDS, "w", encoding="utf-8") as f:
+        json.dump(sorted(routed), f, indent=1)
+
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -75,10 +94,13 @@ def main() -> None:
     on_sheet = {(r.get("instagram_handle") or "").strip().lstrip("@").lower()
                 for r in sheets_sync.read_rows()}
 
+    routed = _load_routed()
     pending = {h: occ for h, occ in checkpoint.items()
-               if h.lower() not in creators and h.lower() not in on_sheet}
-    log.info("checkpoint=%d  already creators/on sheet=%d  PENDING=%d",
-              len(checkpoint), len(checkpoint) - len(pending), len(pending))
+               if h.lower() not in creators and h.lower() not in on_sheet
+               and h.lower() not in routed}
+    log.info("checkpoint=%d  already creators/on sheet=%d  already-routed brands=%d  PENDING=%d",
+              len(checkpoint), len(checkpoint) - len(pending) - len(routed), len(routed),
+              len(pending))
     if args.limit:
         pending = dict(sorted(pending.items())[: args.limit])
 
@@ -109,6 +131,8 @@ def main() -> None:
                 ok = sheets_sync.append_brand_signal(
                     owner, f"{h} — {a['evidence']}; seen as co-author of @{owner}")
                 brands.append(h)
+                routed.add(h.lower())
+                _save_routed(routed)      # persist immediately, not at end of run
                 log.info("BRAND %s -> brand_signals of @%s (%s)", h, owner,
                           "written" if ok else "already present / owner not on sheet")
             except Exception as e:
