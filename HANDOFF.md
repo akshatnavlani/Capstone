@@ -324,6 +324,76 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# PHASE 1L — (2026-08-18, agent-reach routing + browser-only pivot)
+
+## TASK 1 ⛔ — the adapter block is NOT a pacing problem, and that is now settled
+
+Ran this round through **agent-reach** rather than the prior ad-hoc pattern. Two things came
+out of its guidance:
+
+- `agent-reach doctor` reports Instagram's backends as **`["OpenCLI"]` — the only one.** There
+  was never an alternate route to switch to; the previous four rounds were already on the
+  correct backend.
+- Its substantive advice is *re-login and reduce frequency*, so the retry used **25–50s
+  jittered gaps** with latency/degradation monitoring instead of 4s rapid-fire.
+
+**Result: HTTP 429 on the FIRST request.** Frequency is therefore not the variable — the block
+is persistent and predates this session's traffic. Backed off after 2 consecutive failures
+rather than pushing to a hard block.
+
+## TASK 2 ✅ — browser-only path: partly viable, and the limits are measured not guessed
+
+Validated against **ground truth** (re-fetch posts whose metadata we already hold, compare):
+
+| source | date | like count | comment count |
+|---|---|---|---|
+| **post page** | **0/4** | 2/4 and **WRONG** | **0/4** |
+| **profile grid alt-text** | present for some posts, **4/4 agreed with DB** | — | — |
+
+The post page's like numbers belong to **suggested posts**, not the subject post — DB 172,598
+vs extracted `"8"`; DB 228,603 vs `"3,132"`. **Parsing that page would write corrupt data**, so
+it is reported as not viable rather than forced into a fragile parser.
+
+⇒ New tool `backfill_dates_from_grid.py`: browser-only, conservative jittered pacing, never
+overwrites an existing date (conflicts are reported, not applied).
+
+## TASK 3 ⚠️ — the mechanism works, but it CANNOT REACH the posts that matter
+
+Ran across all 5 priority creators: **19 posts newly dated, 6 conflicts, 0 failures.**
+
+**But 0 of the 14 priority SPONSORED posts got a date, and all 25 sponsored events remain
+dateless.** The predicted ceiling held exactly:
+
+> Instagram uses the **caption** as a post's alt-text when one exists, falling back to
+> "Photo by X on \<date\>" only when it does not. **Sponsored posts essentially always have
+> captions**, so they are precisely the posts this method cannot date.
+
+⇒ **The highest-value target is structurally out of reach of the working path.** The 19 dates
+landed on caption-less posts, which were never the bottleneck. `posted_at` 435 → 454.
+**Computable pairs stay at 3** — unchanged, because a new pair needs a dated *sponsored* event.
+
+### 📐 Grid dates are accurate ±1 day, and the error is systematic
+Across 54 grid-dated entries: **29 agreed exactly, 6 differed by exactly one day, 19 were new.**
+Every single conflict was the grid reading **one day EARLIER** than the DB — never later, never
+by more than a day. That is a **timezone-boundary effect** on posts published near midnight,
+not random noise (posts published mid-day agree exactly).
+
+**Left uncorrected deliberately.** Shifting all 19 by +1 day would be inferring from a 6-sample
+pattern, and the existing dates came from a different source (adapter metadata) whose own
+timezone basis is unverified. For before/after straddle analysis a 1-day bias is immaterial —
+events and neighbour activity are months apart — but it must be stated, not hidden.
+
+### 🔍 Detection-hypothesis check, reported proactively
+The browser path shows **no degradation signals**: 5/5 creator grids fetched cleanly, page
+sizes consistent (9.6–19k chars), no latency drift, no partial payloads, no intermittent
+failures. Treated as *not yet flagged* rather than safe — jittered 2.5–4.5s between scrolls,
+15–30s between creators, back off on two consecutive failures rather than probing for a
+ceiling.
+
+**The asymmetry itself remains the strongest evidence for the behavioural-detection
+hypothesis:** an IP/volume block would hit both paths, and the browser path is completely
+clean while the adapter 429s on request one.
+
 # PHASE 1K — (2026-08-18, stub cleanup + quota rotation + Instagram retry)
 
 ## 🎯 COMPUTABLE TRAINING PAIRS 2 → 3 — and YouTube alone produced the third
