@@ -374,12 +374,58 @@ exists, and only falls back to "Photo by X on <date>" boilerplate when it doesn'
 posts that expose a date are largely the caption-less ones — close to the inverse of the
 posts we most want dated.
 
-⇒ **Do NOT plan on a cheap grid-based backfill.** It would recover roughly a third, and
-biased toward caption-less posts. A reliable route is **not yet identified** — that is the
-open question, not the backfill itself. Worth checking next: whether the orchestrator's
-post-page path populates `posted_at` on fresh scrapes (374 rows do have it, and they
-correlate exactly with non-NULL `media_type`), which would mean re-scraping the 850
-listing-sourced rows through the metadata path rather than parsing dates out of HTML.
+⇒ **Do NOT plan on a cheap grid-based backfill.** It would recover roughly a third, biased
+toward caption-less posts.
+
+### ✅ ROOT CAUSE FOUND — `orchestrator.py:447`, and it is not a parsing problem at all
+
+Fresh scrapes reproduce the gap exactly, which is what cracked it: the deepening batch run
+this round wrote 195 new posts and **only 61 (31%) got a date** — the same ratio as the old
+rows. So re-scraping would NOT have fixed it, and the fix I first suggested was wrong.
+
+Per-creator, the pattern is unmistakable — **~12 of ~40 posts get metadata, every time**:
+
+```
+ajinkyarahane   39 posts, 11 dated      taarukraina  34 posts, 10 dated
+mrbeast         37 posts,  9 dated      ptushaofficial 38 posts, 10 dated
+delhipremierleaguet20 40 posts, 12 dated
+```
+
+The orchestrator builds each post row from **two separate calls matched POSITIONALLY**:
+
+| source | what it gives | how many |
+|---|---|---|
+| `opencli instagram user <handle>` | metadata: `date`, `likes`, `comments`, `type` | **exactly 12** (verified live on 2 handles) |
+| `browser find` after scrolling | post URLs | **up to 40** (the post cap) |
+
+```python
+meta = posts_meta[i] if i < len(posts_meta) else {}     # orchestrator.py:447
+```
+
+Once `i` passes 11, `meta` is `{}` and **every metadata field lands NULL** — `posted_at`,
+`like_count`, `comment_count`, `media_type`. 12/40 = 30%, which matches the observed 31%
+exactly. **The dates were never lost in parsing; they were never fetched.**
+
+⚠️ **SECOND, MORE DANGEROUS BUG IN THE SAME LINE — positional matching is unsafe.** The
+code's own comment admits it: *"Not guaranteed aligned if a new post landed between the two
+calls."* There is a worse and permanent misalignment source it does not mention:
+**Instagram pins up to 3 posts to the top of a profile grid.** Pinned posts appear FIRST in
+`browser find` order but are NOT newest, while `instagram user` lists by recency. On any
+creator with a pinned post, the two lists are offset — so post N is written with post M's
+date and like count. That is **silent cross-post metadata contamination**, the same class as
+the 2026-08-11 caption incident, and nothing downstream would catch it because a wrong-but-
+plausible date raises no error. **Not yet confirmed on real data — it is a code-reading
+finding and needs a targeted check** (compare a stored `posted_at` against the real post
+page for a creator known to pin).
+
+**Fix options, both needing a decision this round could not make unattended:**
+1. Fetch metadata per post from the post page already being opened (the loop opens every
+   post anyway) — correct and alignment-proof, but the page must actually expose the date,
+   and the test above found **no date on the post page**, so this needs solving first.
+2. Raise the listing depth if `instagram user` can be paged beyond 12 — cheapest if possible.
+
+Either way the honest status is: **cause identified precisely, fix not obvious, and the
+positional-matching risk should be treated as a live correctness bug regardless.**
 
 ## TASK 1 — co-author extraction (PRIMARY) — SCAN COMPLETE
 
