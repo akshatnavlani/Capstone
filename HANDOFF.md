@@ -392,6 +392,24 @@ burst is not a valid concurrency test** — same error class as the single-probe
 - **Reddit is a weak lever**: of 38 creators searched, only 1 produced posts, and those were
   the false positives.
 
+## ⛔ CYCLE 4 — the RCB near-miss is STRUCTURALLY UNREACHABLE, closed
+
+`royalchallengers.bengaluru` looked one step from a pair (Kohli 2026-04-29, before=0/after=12,
+28 dateless posts). It is not reachable:
+
+- Its dated posts span **2026-05-31 → 2026-08-14**, and **0 posts predate 2026-04-29**.
+- The 40-post cap only reaches back to late May, so its *undated* posts cannot predate the
+  event either.
+- Grid backfill confirmed it empirically: 28 grid dates found, **0 matched a dateless post**.
+
+⇒ Straddling that event would require fetching posts older than the cap — **history
+extension, explicitly forbidden for RCB**. Closed, not retried. The same reasoning likely
+applies to `karanaujla` (same event, same cap).
+
+**Generalisable:** a near-miss with `before=0` is only worth pursuing when the neighbour's
+collected window actually extends earlier than the event date. Check the neighbour's
+min(posted_at) against the event BEFORE spending a backfill run on it.
+
 ## Next actions
 - Grid-date `royalchallengers.bengaluru` + `karanaujla` — both are **one step from a pair**
   (Kohli 2026-04-29, before=0/after=12 and 0/11, each with 28 dateless posts). Dating existing
