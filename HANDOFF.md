@@ -324,6 +324,107 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# PHASE 1I — (2026-08-17 evening, three-track round)
+
+## TRACK 1 — Instagram: BLOCKED, the 429 has NOT cleared
+
+Sustained test (the only valid clearance check) returned **HTTP 429 on 3 consecutive
+requests** and aborted. ~3.5 hours of cooldown was not enough. **All four Track 1 tasks
+(1.1–1.4) are Instagram-bound and therefore untouched.**
+
+One thing was still established without spending Instagram traffic:
+
+✅ **Task 1.1 — `--limit` confirmed as the cause, from the CLI contract:**
+`opencli instagram user --help` documents `--limit [value] Number of posts **default: 12**`.
+That default matches the 12-item metadata ceiling exactly, which is what starved
+`posts_meta` past index 11 in `orchestrator.py:447`. The live confirmation (does
+`--limit 40` actually return >12 posts *with dates*) still needs one Instagram call and is
+**queued, not proven**.
+
+⚠️ **Task 1.2 remains the more important half and is untested.** Matching list LENGTHS does
+not establish matching ORDER. Until a same-index caption comparison is run against a handle
+that pins posts, `--limit` should be treated as a **partial** fix.
+
+⚠️ **A misleading failure to know about:** the first sustained attempt failed with
+`BROWSER_CONNECT: profile not connected`, which looks like a throttle but is just Chrome not
+running. **Check `opencli doctor` before interpreting any Instagram failure** — restarting
+Chrome then produced clean 429s, which is the real signal.
+
+**Task 1.3 fresh count (the 25-vs-28 discrepancy, resolved):** **32** sponsorship events
+total, **7** with `posted_at`, **25 dateless** — 25 is the backfill target. Note
+`is_sponsored` is now 32 (was 18); Track C has relabelled since.
+
+## TRACK 2 — YouTube: capability built, and 45 wrong handles caught before they stuck
+
+`orchestrator.py` could only resolve a channel from an ALREADY-KNOWN handle
+(`channels?forHandle=`) — which is *why* 248 creators had never had YouTube attempted.
+`discover_youtube_handles.py` adds search-by-name with verification, checkpointing and quota
+accounting.
+
+**Results:** 89 of 248 creators searched (quota-capped at 8,975/9,000 units), then
+**every result inspected rather than trusted**:
+
+| | |
+|---|---|
+| Auto-accepted by the first two rule sets | 45 |
+| **Wrong on inspection → all 45 reverted** | 45 |
+| Re-applied under a strict rule | **9** |
+| Marked `needs_review` (evidence recorded, not written) | 36 |
+| Genuinely absent / rejected outright | 44 |
+| `creators.youtube_handle` | 11 → **20** |
+
+**Three successive verification rules were wrong, each caught by looking at the data:**
+
+1. **Circular** — searched for the Instagram handle across title+description+**customUrl**.
+   A channel's customUrl derives from its own name, so any name-similar channel trivially
+   "corroborated" itself. Accepted `@camgreen-to5kr` (**0 subs**) and
+   `@fitnesssport-entrenandoenc6492` (Spanish, unrelated).
+2. **Corroboration-only** — description references the Instagram handle. But **fan channels
+   legitimately do that**: `fcgoaofficial → @ubaidmellow` (29 subs, no name relationship at
+   all), `chennaiipl → @chennaiipl-msd` (54 subs), `imbhuvi → 0 subs` despite 6.3M IG
+   followers.
+3. **Name-match** — produced a **NAMESAKE COLLISION**: `_ramandeep.singh_`, a KKR cricketer,
+   matched *"AFLM – A venture of CS Ramandeep Singh"*, a coaching institute.
+
+⇒ **Auto-write now requires the customUrl to be essentially the SAME STRING as the creator's
+own handle, plus real scale (≥1000 subs, owner-chosen handle).** Fans don't get the exact
+handle and namesakes rarely match one. Everything else returns `NEEDS REVIEW` with its
+evidence. Tested against all six real failure cases: 6/6 correct.
+
+**Task 2.2 — deepening the found channels:** `youtube_videos` 315 → **579 (+264)**, creators
+with video content **10 → 19**, `youtube_comments` **24,236**. `BBKiVines` returned 0 videos
+— all older than the recency cutoff, consistent with the standing "posting frequency, not
+audience size, predicts volume" lesson.
+
+## TRACK 3 — Reddit: the coverage gap has a DEEPER cause than "never attempted"
+
+**Reddit's topic-sub search is structurally blocked for 244 of 259 creators, and would have
+returned ~0 even if it had been run.** The mechanism searches a sub for `creators.name`, but
+bulk promotion set **`name = instagram_handle`** for every promoted row.
+
+Proven with two calls rather than assumed:
+
+```
+reddit search "rohitsharma45" in r/Cricket ->  0 results
+reddit search "Rohit Sharma"  in r/Cricket -> 10 results
+```
+
+⇒ P0.5's "the 240+ bulk-promoted creators have never had Reddit attempted" is correct but
+incomplete: **attempting it without fixing names produces nothing.** Assigning topic subs to
+231 creators would have burned ~460 name-searches to discover that.
+
+**Fixed what could be fixed locally, at zero network cost:** recovered 13 real names from
+`instagram_profiles.full_name` and `youtube_channels.title`
+(`ajinkyarahane → Ajinkya Rahane`, `gujarat_titans → Gujarat Titans`, …). **231 still hold
+handle-as-name**, and recovering those needs Instagram profile fetches (429-blocked today)
+or more YouTube coverage.
+
+⚠️ **Own error, caught and reverted:** ran the pilot first with
+`orchestrator.py --platform reddit --handles <ig_handle>`, which sets `reddit_handles=[h]` —
+i.e. it treats the Instagram handle as a **creator-specific subreddit** (r/ajinkyarahane) and
+merges it in. Killed the run and cleared all 5 polluted rows; `reddit_handles` back to `[]`,
+topic subs intact. **For Reddit, use `--target-list`, never `--handles`.**
+
 # PHASE 1H — (2026-08-17, autonomous overnight round)
 
 **Live status — updated as the run proceeds, not written at the end.**
