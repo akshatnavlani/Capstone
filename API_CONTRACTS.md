@@ -4,7 +4,7 @@ Owner: Track C (Fusion+Backend). Updated whenever the contract changes — treat
 edits to this file as high-signal for Tracks A/B/D, since there's no live
 channel between sessions, only git.
 
-**Status as of 2026-08-17 (post-Phase-1G round):** all endpoints below are live
+**Status as of 2026-08-18 (post-Phase-1H round):** all endpoints below are live
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
@@ -36,6 +36,89 @@ uniformly across `/health`, `/recommendations`, `POST /ingestion/creators`,
 
 **CONFIRMED by Track D in a real browser** (first non-curl verification
 this project has had) — the fix works. Closed.
+
+## Phase 1H (2026-08-18) — YouTube's first real signal, confirmed not an unbuilt capability
+
+Prompted by `CAPSTONE_NEXT_STEPS.md` §1a (added this round), which flagged
+that all 32 known sponsorship events were Instagram-only and asked whether
+that's a real finding or just YouTube/Reddit never having been checked at
+scale (YouTube alone grew ~10→39 covered creators / 1,227 videos since the
+labeler last ran against it).
+
+**Task 1 — does real multi-platform detection logic exist, verified by
+reading code, not inferred from the zero count.** `app/routers/labeling.py`
+calls the same `detect_sponsorship()` against all three platforms:
+`youtube_videos.title/description`, `instagram_posts.caption`,
+`reddit_posts.title/body` — confirmed by reading the router directly, all
+three branches present since Weeks 7-8, nothing Instagram-only about the
+core function. The regex pattern list in `app/labeling.py` (`#ad`,
+`"sponsored by"`, `"in partnership with"`, `"brought to you by"`, etc.) is
+generic disclosure-convention text, not Instagram-specific — hashtags read
+naturally on Instagram but the phrase patterns apply equally to YouTube
+descriptions or Reddit bodies. The only Instagram-specific logic is the
+`has_paid_partnership_label` native-signal override, which is correctly
+scoped to Instagram since that's an Instagram-only platform feature, not a
+gap. **Conclusion: the "32 events, Instagram-only" result really was zero
+real signal at the old, much-smaller YouTube/Reddit scale — not an
+unbuilt/Instagram-only capability.** No code changes were made or needed
+for Task 1.
+
+**Task 2 — force-relabel, all three platforms.** `POST
+/labeling/run?force=true` against 1,227 YouTube / 1,419 Instagram / 681
+Reddit (YouTube and Reddit both grew substantially since the last labeling
+pass; Instagram unchanged). Results:
+
+| Platform | Before | After | Detection |
+|---|---|---|---|
+| YouTube | 0 | **2** | both via `"brought to you by"` in the video description (plain regex, no native-signal equivalent exists for YouTube) |
+| Instagram | 32 | 32 (unchanged, no new rows) | — |
+| Reddit | 0 | 0 | no hits |
+
+Both new YouTube events are on `keralablasters` (a team account,
+`creator_id=462094a7-a09d-43e5-b457-bb06c9de2229`), published 2026-05-16
+and 2026-05-18. Neither has `brand_id`. **The yield looks structurally
+different by platform, as expected**: Instagram's is dominated by the
+native paid-partnership signal (17 of 32 events caught only that way, none
+of which YouTube/Reddit have an equivalent for), while YouTube's hit came
+from an explicit phrase, and Reddit produced nothing at all — consistent
+with Reddit posts being informal/conversational text rather than
+disclosure-convention-bearing marketing copy.
+
+**Task 3 — checked immediately whether either new event lands on an
+already-graph-connected creator, not buried in the aggregate.**
+`keralablasters` has **zero rows anywhere in `creator_related_accounts`**
+— confirmed two ways: filtering the live
+`/feature-store/edges/collaborations` response for this creator_id (0
+matches), and a direct raw query against `creator_related_accounts` for
+rows where this creator_id is the source (0 rows) — it isn't even a
+dangling/unresolved handle referenced by someone else. **No new
+computable-pair candidate this round.** Real new signal, but currently an
+isolated node in the graph. Flagged in `HANDOFF.md` for a quick recheck
+next round rather than a full relabel, since Track A's ongoing discovery
+work could connect it without any Track C action.
+
+**Task 4 — sponsorship-edges reconciliation.** `GET /feature-store/edges/
+sponsorships`: **10 → 10** (checked before and after Task 2 — unchanged,
+since neither new YouTube event has `brand_id`). Reconciled exactly against
+`SELECT count(*) FROM (youtube_videos UNION instagram_posts UNION
+reddit_posts) WHERE is_sponsored=true AND brand_id IS NOT NULL` = 10. Same
+clean reconciliation as every prior round.
+
+**§1a batch-readiness checklist**: "Track C has re-run its labeler across
+the full YouTube/Reddit content pool" — **done this round**, flagged for
+the orchestrator to check off in `CAPSTONE_NEXT_STEPS.md`. The "all 32
+known sponsorship events are Instagram-only" framing in that same checklist
+is now stale (34 events, 2 YouTube) — flagged alongside it. Computable
+training pairs did not grow this round (still the single mrbeast↔
+CarryMinati pair from Phase 1G) — still well below the 20-pair sufficiency
+bar.
+
+**Verification discipline**: reused existing `.venv` and `.env` DATABASE_URL
+pooler fix (both still valid), no ephemeral scripts left in the repo, no
+resolver/model/labeling code changed this round (verification + relabel
+only — per this round's explicit "don't build new detection patterns"
+instruction), 49/49 tests still pass, working tree clean, merge from `main`
+(commit `dbc79c5`) pushed alongside this update.
 
 ## Phase 1G re-verification (2026-08-17) — first computable training pair, sparsity finding retired
 
@@ -922,7 +1005,7 @@ thesis capstone backend.
 | Fusion formula math | Real formula, placeholder weights/risk-threshold/confidence-margin |
 | Recommendation budget/region/demographic/product_category/platform_preference filtering | Fully real (see above), heuristic-based (placeholder cost rate, keyword-overlap text match) |
 | Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/collaboration/sponsorship edge data; collaboration edges **161 distinct pairs (322 directed edges)** as of Phase 1G, up from 10 after bulk sheet-backlog promotion — the earlier "structurally sparse" finding is retired, see Phase 1G section; `co_occurs_with` real but currently empty (Track A purged the noisy signal it was built from, self-healed automatically, see Weeks 11-13 note); CLIP/BERT embeddings intentionally not computed here (Track B); `reputation_score` is the one remaining genuine gap |
-| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data. Sponsorship events: 32 (all Instagram), up from 18. First fully-computable GAIL training pair confirmed real (mrbeast→CarryMinati), see Phase 1G section.** 2,289/2,289 real rows labeled (315 YouTube / 1,419 Instagram / 555 Reddit) via `force=true`, incorporating Instagram's native `has_paid_partnership_label` signal (17 of 32 events caught only by that signal). Sponsorship *edges* (`/feature-store/edges/sponsorships`=10) reconcile exactly against the raw `brand_id`-populated count — 22 of 32 events still lack `brand_id` (incl. the mrbeast milestone post), routine lag behind Track A's brand extraction, see Phase 1G section. Kohli/Agilitas edge case closed 2026-08-14, not reopened — see Kohli/Agilitas section |
+| **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data, genuinely multi-platform (confirmed by code read, not assumption). Sponsorship events: 34 (32 Instagram + 2 YouTube — YouTube's first-ever real signal), up from 18. First fully-computable GAIL training pair confirmed real (mrbeast→CarryMinati), see Phase 1G section; the 2 new YouTube events are isolated, no graph connection, see Phase 1H section.** 3,327/3,327 real rows labeled (1,227 YouTube / 1,419 Instagram / 681 Reddit) via `force=true`, incorporating Instagram's native `has_paid_partnership_label` signal (17 of 34 events caught only by that signal; YouTube has no native-signal equivalent, caught via plain regex). Sponsorship *edges* (`/feature-store/edges/sponsorships`=10) reconcile exactly against the raw `brand_id`-populated count — 24 of 34 events still lack `brand_id` (incl. the mrbeast milestone post and both YouTube events), routine lag behind Track A's brand extraction, see Phase 1G/1H sections. Kohli/Agilitas edge case closed 2026-08-14, not reopened — see Kohli/Agilitas section |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
 | Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |
