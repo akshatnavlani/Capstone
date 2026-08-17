@@ -324,12 +324,60 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
-# PHASE 1H — IN PROGRESS (2026-08-17, autonomous overnight round)
+# PHASE 1H — (2026-08-17, autonomous overnight round)
 
 **Live status — updated as the run proceeds, not written at the end.**
 
 Base state confirmed before starting: `creators` **259**, distinct pairs **152**, resolve
-rate 31%. Matches the Phase 1G close exactly, so this round builds on a verified base.
+rate 31%. Matches the Phase 1G close exactly, so this round built on a verified base.
+
+## 0. VERIFIED TOTALS (live DB, close of round)
+
+| | start of round | now |
+|---|---|---|
+| `creators` | 259 | **259** (no promotions — correct, review is the user's) |
+| `instagram_posts` | 1,224 | **1,419** (+195) |
+| Creators with IG content | 31 | **36** |
+| `instagram_comments` | 13,097 | **18,803** (+5,706) |
+| Posts unscanned for co-authors | 245 | **0 — fully cleared** |
+| `creator_related_accounts` | 508 | **668** (+160) |
+| Resolved rows | 157 | **181** (+24) |
+| **Distinct pairs** | 152 | **161** (+9) |
+| `has_paid_partnership_label` | 12 | **24** (+12) |
+| Sheet rows | 995 (full!) | **1,066+** |
+
+**Posts with `posted_at`: 435 of 1,419 (31%)** — see the metadata finding below; this is the
+number that actually gates Review 1.
+
+## ⚠️ FIVE SILENT-WRITE FAILURES IN ONE NIGHT — the infrastructure lesson of this round
+
+The end-of-run sheet push failed **five times**: two external kills and **three
+`ConnectionResetError(10054)`**. Every one was silent — the caller logs a warning and
+continues, so candidates simply never appeared and nothing flagged it.
+
+Three separate defects, each found only by checking the data rather than the exit code:
+
+1. **The sheet was FULL** (995 of 995 allocated rows). Explicit-range writes do not extend
+   a worksheet, so every push had been failing. Fixed: `push_candidates` now calls
+   `add_rows()` with headroom.
+2. **`coauthor_checkpoint.json` is REWRITTEN per run, not accumulated.** It held 90 entries
+   before the final 50-post run and 17 after. So a *completing* run silently discards what a
+   *killed* run found — and I only caught it because the recovery script's pending count
+   collapsed between two invocations.
+3. **Sheets calls had no retry**, while each one builds a fresh authorized client (dozens of
+   TLS + auth handshakes per batch). Fixed: `_retry` with backoff on `read_rows`,
+   `push_candidates`, `append_brand_signal`, `update_category`.
+
+⇒ **The durable record is the DATABASE, not the checkpoint file.**
+`creator_related_accounts` rows are flushed per post and never overwritten.
+`push_checkpoint_candidates.py --from-db` recovers co-authors that are neither creators nor
+on the sheet: **181 found that way vs 63 from the checkpoint** — a backlog accumulated
+across every run whose push has ever failed, not just tonight's.
+
+**Standing rule earned:** *a warning-and-continue on a write path hides a permanent failure
+exactly as well as a transient one.* Verify writes by reading the data back, not by checking
+that the code ran — which is this project's oldest recurring lesson, now with three fresh
+instances in one night.
 
 ## TASK 2 — deepening (5 of 6 creators, +195 posts)
 
