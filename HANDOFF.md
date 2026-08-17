@@ -415,8 +415,15 @@ healthy — so it is the platform limit, not the environment. Tasks 1.2/1.3/1.4 
 
 All 6 passed the strict rule: `@indiansuperleague` (2.56M), `@jumperaj` (1.02M),
 `@lucknowsupergiants` (750k), `@indian_kushti_tv` (282k), `@inspireinstituteofsport` (26.5k),
-`@jeet_selal` (3.3k). Deepening: `youtube_videos` 579 → **605+**, creators with video **20**,
-`youtube_handle` **26**.
+`@jeet_selal` (3.3k). **Deepening completed: `youtube_videos` 579 → 797 (+218), creators with
+video content 19 → 25, `youtube_comments` 25,629, `youtube_handle` 26.** Only `jeet_selal`
+lost volume to the recency window (18 kept / 22 stale); the other five returned a full 40.
+
+⚠️ **Re-checked the pair count after that deepening landed: still 2.** The new YouTube data
+did not add a third — the six newly-deepened channels belong to creators who are not
+graph-connected to a dated sponsorship event. Coverage alone does not manufacture pairs;
+it has to land on the right side of an existing edge, which is the same lesson the
+Instagram coverage-vs-promotion experiment produced.
 
 **Reddit — nothing new to run, and that is the honest answer.** The round's criterion was to
 run Reddit for creators that gained a real name in Task 2; Task 2 resolved **0**. Last round's
