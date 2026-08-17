@@ -361,6 +361,25 @@ to be released by hand before resuming — matching the standing lesson that a k
 run strands its lease. **Release leases before resuming after any kill**, or the next run
 degrades against a browser that is still holding tabs.
 
+## 📊 YIELD BY MECHANISM — the actionable comparison from this round
+
+Same mechanism (`collab_edges.py`), two different post populations, very different yield:
+
+| Posts scanned | Source | New distinct pairs |
+|---|---|---|
+| 245 | Backlog of already-covered creators | **+1** |
+| 195 | **Creators deepened *because* they already sat in a resolved pair** | **+7** (so far, scan still running) |
+
+**~17x better pairs-per-post from targeted deepening.** The targeting rule that produced it:
+pick creators who are *already referenced by 2+ other creators* in
+`creator_related_accounts` but have **no content of their own**, then scrape and scan them.
+Their co-authors are disproportionately other creators, so edges resolve immediately instead
+of landing as dangling rows awaiting review.
+
+⇒ **Recommended default for future rounds:** deepen by graph position, not by follower count
+or list order. This is the first mechanism this project has found that produces resolved
+pairs *without* waiting on a user review pass.
+
 ## 🚨 BIGGEST FINDING OF THE ROUND — 69% of posts have NO DATE and NO ENGAGEMENT DATA
 
 Found while trying to answer the report question "any newly-connected creator with a
