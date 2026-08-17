@@ -324,7 +324,85 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
-# LOOP (2026-08-18) — batch-readiness loop, 30-min cadence. CYCLE 1 COMPLETE
+# LOOP (2026-08-18) — batch-readiness loop, 30-min cadence. CYCLES 1-3 DONE
+
+**A fresh session resuming this loop should read THIS section first — it is the live state.**
+
+## 🎯 COMPUTABLE PAIRS: 3 (baseline) → 5
+
+| Creator | Event src | Date | Neighbour | before | after |
+|---|---|---|---|---|---|
+| Virat Kohli | instagram | 2026-04-29 | PV Sindhu | 3 | 12 |
+| mrbeast | instagram | 2026-08-12 | CarryMinati | 69 | 13 |
+| Sania Mirza | instagram | 2026-08-01 | Parikshit Balochi | 12 | 2 |
+| Cristiano Ronaldo | instagram | 2026-07-21 | LeBron James | 17 | 179 |
+| **Kerala Blasters** | **youtube** | **2026-05-18** | **Mumbai City FC** | **3** | **37** |
+
+## Stats: baseline → cycle 3 (259 creators)
+
+| | baseline | now |
+|---|---|---|
+| Instagram attempted | 121 (46.7%) | 121 (46.7%) |
+| Instagram with content | 36 (13.9%) | 37 (14.3%) |
+| **YouTube attempted** | **259 (100%)** ✅ | **259 (100%)** ✅ |
+| Reddit attempted | 36 (13.9%) | 54 (20.8%) |
+| Reddit name-gated | 215 (83%) | 200 (77%) |
+| **COMPUTABLE PAIRS** | **3** | **5** |
+| Collaboration edge pairs | 161 | 163 |
+
+## CYCLE 3 — Kerala Blasters roster extraction WORKED (the loop's own idea, validated)
+
+Deepened `keralablasters` on Instagram (40 posts, 48 links), then ran co-author extraction:
+**edges 0 → 19, of which 2 RESOLVE** — to `chennaiyinfc` and `Mumbai City FC`, rival ISL
+clubs tagged in match posts. That converted KB's previously-orphaned YouTube sponsorship
+events into the **5th computable pair**. Also routed 2 brands (`oppokerala`, `suryadev_tmt`)
+to brand_signals and pushed 15 candidates for review. Real players surfaced but stay dangling
+(`fallou_ndiaye04` etc.) — promotion is the user's call.
+
+## ⚠️ MEASUREMENT BUG FIXED THIS CYCLE — the 5th pair depended on it
+`loop_stats` counted sponsorship events on **Instagram only**, so Kerala Blasters' 2 YouTube
+events were invisible to the pair query — the *same* cross-platform blind spot already fixed
+on the NEIGHBOUR side of the same calculation. The event side is now a UNION across
+Instagram + YouTube + Reddit. **Without this fix the KB pair would not have been counted.**
+
+## CYCLE 2 findings (Instagram mechanics — all three settled)
+- **Adapter partially recovered** after 4 rounds blocked: 4 of 6 sustained requests succeed
+  (mostlysane, taarukraina, ajinkyarahane, kkriders); carryminati and virat.kohli still 429.
+  **Intermittent, not recovered.**
+- **`--limit` does NOT lift the 12-post metadata ceiling.** `--limit 40` returns exactly 12,
+  verified on 2 creators at both values. My earlier "very likely the entire cause" hypothesis
+  was WRONG. With the grid (dates only for caption-less posts) and the post page (no date at
+  all), **the 25 dateless sponsored events are unreachable by every available mechanism.**
+- **Positional-alignment corruption: no evidence.** Built `backfill_meta_by_caption.py`
+  (matches on CAPTION, no ordering assumption) and audited 4 creators: **0 date conflicts in
+  15 caption-verified comparisons.** Small sample; kkriders matched 0 (captions differ).
+
+## ⚠️ PHASE 1 CLEARANCE RETRACTED — run Instagram and Reddit SEQUENTIALLY
+The 3-call burst said browser+adapter don't contend. **Under sustained load they do**: Reddit
+ran clean ~8 min, then every search failed starting ~4 min after a concurrent Instagram
+browser job began; the same queries succeeded immediately once Instagram stopped. **A short
+burst is not a valid concurrency test** — same error class as the single-probe throttle test.
+
+## ⚠️ Standing hazards
+- **Generic names cause Reddit false positives.** "Fitness Standards Council" matched 11
+  unrelated r/india posts on bare tokens. Fixed via `_GENERIC_NAME_TOKENS`; fully-generic
+  names now need the full phrase. 10 bad rows purged.
+- **Creators with NULL instagram_handle duplicate on `--target-list` runs.** A second
+  `Mumbiker Nikhil` was inserted and removed. Watch for this.
+- **Reddit is a weak lever**: of 38 creators searched, only 1 produced posts, and those were
+  the false positives.
+
+## Next actions
+- Grid-date `royalchallengers.bengaluru` + `karanaujla` — both are **one step from a pair**
+  (Kohli 2026-04-29, before=0/after=12 and 0/11, each with 28 dateless posts). Dating existing
+  posts is metadata completion, NOT the disallowed RCB history extension.
+- Deepen Bhuvan Bam's 5 contentless neighbours (gurfatehpirzada, nikkhiladvani, mohitvaru,
+  karanjohar, pratibha_ranta) — all have 0 posts, 0 videos, and no YouTube handle found.
+- Instagram adapter: re-test each cycle; still intermittent.
+
+---
+
+# (earlier) CYCLE 1 DETAIL
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
