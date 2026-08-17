@@ -569,5 +569,132 @@
   "subs": "0",
   "reason": "cross-platform: description references instagram 'imbhuvi'",
   "note": "auto-match not strict enough; requires human confirmation"
+ },
+ "7bc9c22c-9bd7-4d9c-9dd9-cdf5a3828aae": {
+  "name": "Etaki",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Etaki'"
+ },
+ "02a2dbce-ef80-4db9-b68d-1781ae1cd797": {
+  "name": "gujarat_titans",
+  "result": "handle_clash",
+  "reason": "'gujarattitans' already belongs to Gujarat Titans"
+ },
+ "a7adacb6-95ca-498a-b42a-f3a270f282c1": {
+  "name": "indian_fitness_girl",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Indian fitness girl'"
+ },
+ "c1d29dd3-3224-4e5f-8bb6-963694c6a5b5": {
+  "name": "indian_kushti_tv",
+  "result": "found",
+  "handle": "indian_kushti_tv",
+  "subs": "282000",
+  "reason": "exact handle equality '@indian_kushti_tv' == creator handle (282,000 subs)"
+ },
+ "34188b3e-2ba8-41e4-9740-d10e509d550d": {
+  "name": "indianfitqueen",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Kishan fitness'"
+ },
+ "614aeca6-a861-4f0a-a870-663584f88e9e": {
+  "name": "indiansuperleague",
+  "result": "found",
+  "handle": "indiansuperleague",
+  "subs": "2560000",
+  "reason": "exact handle equality '@indiansuperleague' == creator handle (2,560,000 subs)"
+ },
+ "c43211f2-f9d1-43b3-a6e6-7ecccd29b0ad": {
+  "name": "indiayogashala",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Yoga School India'"
+ },
+ "4fe1b9b5-5b3e-4975-863b-677a88bfc75d": {
+  "name": "inspireinstituteofsport",
+  "result": "found",
+  "handle": "inspireinstituteofsport",
+  "subs": "26500",
+  "reason": "exact handle equality '@inspireinstituteofsport' == creator handle (26,500 subs)"
+ },
+ "f68a8fa7-57e3-4d26-b5a9-7d96baf3daeb": {
+  "name": "internationalcupofjoy",
+  "result": "no_channel_found",
+  "reason": "search returned no channels"
+ },
+ "b36794d8-e2e9-455c-a62c-c5c82b26f9e3": {
+  "name": "ishaanphysio",
+  "result": "no_channel_found",
+  "reason": "search returned no channels"
+ },
+ "f3bf2153-6e35-4c13-bf4a-d29b346b5fde": {
+  "name": "ishankishan23",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='ISHAN KISHAN FC'"
+ },
+ "16cc1784-e8f1-47d1-bddf-918bb934eaa9": {
+  "name": "janet.vidhi",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Sunil Kanojiya'"
+ },
+ "ad2c64c2-5027-4d73-bdda-6772f38fb140": {
+  "name": "jeet_selal",
+  "result": "found",
+  "handle": "jeet_selal",
+  "subs": "3340",
+  "reason": "exact handle equality '@jeet_selal' == creator handle (3,340 subs)"
+ },
+ "12fc8607-10d7-455b-9e0b-bd895bba4dad": {
+  "name": "jimmysheirgill",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Jimmy Sheirgill Babbu Maan'"
+ },
+ "a0047de0-7172-4458-a48a-6b065e8c4e6e": {
+  "name": "josbuttler",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Josbuttler Editz™'"
+ },
+ "c95199f2-bd0c-44cc-9ba6-8586fec2a91e": {
+  "name": "jumper_aj_",
+  "result": "found",
+  "handle": "jumperaj",
+  "subs": "1020000",
+  "reason": "exact handle equality '@jumperaj' == creator handle (1,020,000 subs)"
+ },
+ "d14bf7b1-5af4-48db-ad70-8dc5f8243378": {
+  "name": "Karan Aujla",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Karan Aujla new Punjabi songs - Topic'"
+ },
+ "b0173fb6-a769-46cf-92e6-588fc608f1c6": {
+  "name": "karanjohar",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Tyaani By Karan Johar'"
+ },
+ "5c4e7d70-aa12-401f-ba29-3ec74cc3c0df": {
+  "name": "liaml4893",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Preethu empire'"
+ },
+ "80e4b2cf-81d5-453f-bd5a-d4c2f6ca1f92": {
+  "name": "lucknowsupergiants",
+  "result": "found",
+  "handle": "lucknowsupergiants",
+  "subs": "750000",
+  "reason": "exact handle equality '@lucknowsupergiants' == creator handle (750,000 subs)"
+ },
+ "eb137801-5eec-4c96-9e0e-8ebd618e3bda": {
+  "name": "mohitvaru",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Mohit Varu'"
+ },
+ "71e4cffd-f1d0-4765-b34e-f262113398c2": {
+  "name": "ryanwilliams.23",
+  "result": "no_confident_match",
+  "reason": "candidates rejected, best='Ryan Williams 23'"
+ },
+ "2adf4d96-0538-40bc-b242-e21170a571ca": {
+  "name": "sandrenzi",
+  "result": "no_channel_found",
+  "reason": "search returned no channels"
  }
 }

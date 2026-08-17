@@ -324,6 +324,118 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
+# PHASE 1J — (2026-08-17 late, cleanup + backfill + retry round)
+
+## 🎯 COMPUTABLE TRAINING PAIRS 1 → 2, and REDDIT is what unlocked the second
+
+| Creator | Event | Date | Neighbour | before | after |
+|---|---|---|---|---|---|
+| `mrbeast` | Db5rzczsSV5 | 2026-08-12 | CarryMinati | 66 | 13 |
+| **Cristiano Ronaldo** | **DbDp7T4olyC** | **2026-07-21** | **LeBron James** | **17** | **179** |
+
+The Ronaldo↔LeBron pair was **not** computable last round (Instagram-only: before=0). Checked
+where the before-side activity actually comes from rather than assuming:
+
+```
+LeBron activity BEFORE 2026-07-21 —  instagram: 0   youtube: 0   reddit: 17
+```
+
+⇒ **It is computable ONLY because of Reddit data.** That is a direct answer to "can
+YouTube/Reddit coverage surface pairs Instagram alone cannot": **yes, demonstrably.** The
+cross-platform straddle check should be the standard measurement from now on — the
+Instagram-only version undercounts.
+
+## TASK 1 — 4 of 5 blank rows deleted; 1 was NOT empty
+
+These were created by **my own bug last round**, and my cleanup was incomplete: I cleared the
+`reddit_handles` pollution but missed that `get_or_create_creator` had already INSERTED 5
+blank creator rows. The orchestrator caught that, not me.
+
+Verified against **every** table carrying `creator_id` (enumerated from `information_schema`,
+not from memory), plus whether each name is the sole resolver for another creator's edges:
+
+| Row | Verdict |
+|---|---|
+| `ajinkyarahane`, `delhipremierleaguet20`, `karanaujla`, `ptushaofficial` | empty → **DELETED** |
+| `gujarat_titans` | ⚠️ **NOT EMPTY — kept and reported** |
+
+All four deleted rows *are* referenced as handles by other `creator_related_accounts` rows,
+but a real creator owns that `instagram_handle` in each case, so those edges resolve through
+the real creator — deleting the blank row destroys nothing.
+
+⚠️ **`gujarat_titans` holds 1 `reddit_posts` + 1 `reddit_post_creators` row.** `r/gujarat_titans`
+is a genuine subreddit, so the killed `--handles` run collected a real post onto the blank row
+before being stopped. **Needs a decision:** re-point that post to the real `gujarat_titans`
+creator and then delete, or delete both. Not done unilaterally — it is real scraped data.
+
+**`creators`: 264 → 260.**
+
+## TASK 2 — real-name backfill resolved ZERO, and the diagnosis is the useful part
+
+Free sources are **exhausted**: all 13 recoverable names were already taken last round.
+
+| Of the 231 handle-named creators | count |
+|---|---|
+| No `instagram_profiles` row at all | **101** |
+| Row exists but `full_name` is EMPTY | **130** |
+| Row with a usable `full_name` | **0** |
+
+Project-wide, only **15 of 13,746** `instagram_profiles` rows carry a `full_name` at all.
+
+### ✅ Root cause found — a persistence gap, not a data-availability gap
+`instagram_profiles` has **two writers**:
+- the comment-author path inserts **username only** (`ON CONFLICT DO NOTHING`)
+- the creator-profile path *does* pass `full_name`, but its `ON CONFLICT DO UPDATE` refreshed
+  **only the counts**
+
+So any creator whose username was first seen as a **comment author** could never have its name
+filled in — precisely the 130. Fixed: `full_name`/`bio` now use
+`coalesce(excluded, existing)` in the update clause, so a later NULL-bearing write also cannot
+wipe a good name.
+
+**The profile fetch already retrieves the name — it was simply never persisted.** Populating
+the existing 231 still needs Instagram calls (blocked), but every future deepening run now
+fills names for free.
+
+## TASK 3 — Instagram STILL BLOCKED (third round); YouTube advanced; Reddit had nothing new
+
+**Instagram: HTTP 429 on 3 consecutive requests**, with `opencli doctor` reporting the browser
+healthy — so it is the platform limit, not the environment. Tasks 1.2/1.3/1.4 remain untouched.
+**Not forced.**
+
+**YouTube — continued from creator #90:**
+
+| | this run | cumulative |
+|---|---|---|
+| Creators searched | 23 | **112 of 248** |
+| Found (exact-handle-equality + scale) | **6** | **15** |
+| `needs_review` (evidence kept, not written) | — | 36 |
+| No confident match / no channel | 17 | 60 |
+| Quota | 2,320 units, then **daily Search-Queries quota exhausted — stopped cleanly** | |
+
+All 6 passed the strict rule: `@indiansuperleague` (2.56M), `@jumperaj` (1.02M),
+`@lucknowsupergiants` (750k), `@indian_kushti_tv` (282k), `@inspireinstituteofsport` (26.5k),
+`@jeet_selal` (3.3k). Deepening: `youtube_videos` 579 → **605+**, creators with video **20**,
+`youtube_handle` **26**.
+
+**Reddit — nothing new to run, and that is the honest answer.** The round's criterion was to
+run Reddit for creators that gained a real name in Task 2; Task 2 resolved **0**. Last round's
+pilot did finish, though, and its per-sub relevance is worth recording:
+
+| Creator | sub | kept | off-topic |
+|---|---|---|---|
+| Gujarat Titans | r/Cricket | **40** | 0 |
+| Gujarat Titans | r/ipl | 28 | 12 |
+| Delhi Premier League T20 | r/IndianCricket | 16 | 24 |
+| Ajinkya Rahane | r/IndianCricket | 15 | 8 |
+| Ajinkya Rahane | r/Cricket | 11 | 5 |
+| Karan Aujla | r/india, r/IndianMusic | **0** | 0 |
+| P.T.Usha | r/india, r/Athletics | **0** | 5 |
+
+`reddit_post_creators` 435 → **687**, creators with Reddit content 13 → **17**. Yield is
+**highly uneven** — cricket subs are productive, `r/india` and `r/IndianMusic` returned nothing
+usable. Sub choice matters far more than creator count.
+
 # PHASE 1I — (2026-08-17 evening, three-track round)
 
 ## TRACK 1 — Instagram: BLOCKED, the 429 has NOT cleared
