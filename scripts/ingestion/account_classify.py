@@ -395,7 +395,20 @@ def classify_handle(handle: str, known_orgs: set[str] | None = None,
     if cat == "other" and alts:
         cat2, why2 = classify_from_profile(p["name"], p["bio"] + " \n " + " \n ".join(alts),
                                             handle, known_orgs)
-        if cat2 != "other":
+        # ⚠️ A BRAND verdict from GRID TEXT is not admissible (2026-08-18). The brand rules
+        # read product-category nouns ("skincare", "activewear", "sportswear") as evidence
+        # that the ACCOUNT is a brand -- true of a bio, false of a caption, because creators
+        # post about products constantly. Applied to grid text it inverts the meaning and
+        # DROPS real people, which is the worst error this module can make. Real damage:
+        #   brisonfernandes17_ (a Goan footballer) -> BRAND on 'sportswear'
+        #   duamirzaasad       (a person)          -> BRAND on 'skincare'
+        #   abhishekganguly    (a person)          -> BRAND on 'activewear'
+        # Brand determination therefore stays bio/name-only; the grid may only refine the
+        # CREATOR category.
+        if cat2 == BRAND:
+            result["evidence"] = (f"{why} — grid suggested BRAND ('{why2}') but grid text is "
+                                   f"captions, not self-description; ignored")
+        elif cat2 != "other":
             result["category"] = cat2
             result["evidence"] = f"{why2} (from grid, bio was inconclusive)"
     return result

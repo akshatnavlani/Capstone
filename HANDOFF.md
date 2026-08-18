@@ -328,6 +328,31 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
+## ⚠️ CYCLE 11 — FALSE BRAND POSITIVES FROM GRID TEXT, found and fixed
+
+The co-author run's classification pass routed real PEOPLE to `brand_signals`:
+
+```
+brisonfernandes17_  -> BRAND: 'sportswear'   (from grid, bio inconclusive)   a Goan footballer
+duamirzaasad        -> BRAND: 'skincare'     (from grid)                     a person
+abhishekganguly     -> BRAND: 'activewear'   (from grid)                     a person
+```
+
+**Root cause:** the brand rules were being applied to **grid text**, i.e. post captions. A
+product-category noun in a *bio* identifies the account as a brand; the same noun in a
+*caption* just means the creator posts about products — which creators do constantly. Applied
+to captions the rule inverts, and its failure mode is the worst one available: a false BRAND
+**drops a real person** instead of queuing them for review.
+
+**Fixed:** brand determination is now **bio/name only**. The grid may still refine a CREATOR
+category, but a BRAND verdict originating from grid text is rejected and recorded as such.
+Bio-based brand detection verified still working (`Luxury Fragrances`, `leading bottom-wear
+brand` both still BRAND); 42-case suite still 42/42.
+
+⚠️ **Follow-up owed:** the 3 handles above were routed instead of pushed, so they are missing
+from the sheet. Re-run `push_checkpoint_candidates.py --from-db` after the current run
+finishes — it skips anything already on the sheet, so it will pick up exactly these.
+
 ## 🚨 CYCLE 10 — THE SINGLE BLOCKER IS `posted_at`, QUANTIFIED
 
 The co-author run finished: **184 new edge rows, RESOLVED 185 → 203, +21 paid-partnership
