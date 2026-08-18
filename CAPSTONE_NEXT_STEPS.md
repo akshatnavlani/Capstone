@@ -125,11 +125,10 @@ comes first. Don't promote the next batch before then. Concretely:
       being satisfied — the real diminishing-returns signal.
 
 **"Sufficient" (can stop early even if not fully exhausted) — the real target:**
-- [ ] **Computable training pairs ≥ 20** — the bare floor for any legitimate held-out split
-      (established earlier this session). Currently **3**. This is the primary gate; everything
-      else is a means to this end, not an end in itself.
-- [ ] Real resolved collaboration edges: no fixed number, but rising — track it each round as a
-      leading indicator (currently 161 pairs).
+- [x] **DONE 2026-08-18. Computable training pairs ≥ 20** — the bare floor for any legitimate
+      held-out split. **~38, independently confirmed** (see P0.4). The loop's own "Sufficient"
+      stop condition fired for real after 13 cycles, not a premature/false stop.
+- [x] Real resolved collaboration edges: 170, up from 161 — healthy trend, tracked each round.
 - [ ] Reddit unblocked for a meaningful share of the 231 handle-named creators (real-name
       backfill via free bio/channel-title sources, gated on Instagram deepening producing names —
       see §5 P0.5).
@@ -620,23 +619,38 @@ of their own.
 (`athleanx` gained the instagram_handle it had on the sheet but not the DB — exactly the case
 insert-only would have missed), 0 duplicates, `approval_status` untouched.
 
-**✅ P0.4 — RESOLVED 2026-08-17, GROWN to 3 by 2026-08-18. Real, computable GAIL training pairs
-exist — currently 3, not 1.** `CAPSTONE_NEXT_STEPS.md` sat un-updated after pairs 2 and 3 were
-confirmed (a real process gap — flagged directly to the user, same class of mistake as the
-Phase 1C commit gap earlier this project), which caused Track C's Phase 1H round to correctly
-report what the doc said ("still just 1") rather than current reality. Not Track C's error.
-Current state, each independently verified against the live DB:
+**✅ P0.4 — SUFFICIENCY THRESHOLD CLEARED 2026-08-18. Computable GAIL training pairs: ~38, up
+from 3.** The batch-readiness loop (§1a) ran 13 cycles and hit its "Sufficient" stop condition
+(≥20) for real. The orchestrator independently rebuilt the entire computation from scratch
+(all 34 sponsored events × the full 170-pair adjacency graph × every neighbor's dated content on
+all 3 platforms) rather than trusting the report — got **38**, against Track A's reported 37, a
+1-pair gap consistent with a minor dedup/boundary difference, not a fabricated number. Edge pairs
+161→170, sponsored-post `posted_at` gaps 25→0 (fully backfilled), both confirmed exactly.
 
-| # | Creator | Event date | Neighbor | Straddle source | Before / After |
-|---|---|---|---|---|---|
-| 1 | mrbeast | 2026-08-12 | CarryMinati | Instagram | 66 / 13 |
-| 2 | Cristiano Ronaldo | 2026-07-21 | LeBron James | **Reddit only** — 0 IG/YT activity either side | 17 / 179 |
-| 3 | Sania Mirza | 2026-08-01 | parikshitbalochi | **YouTube only** — 0 IG/Reddit activity either side | 12 / 2 |
+Notable pairs, independently reproduced: Kerala Blasters↔Mumbai City FC (YouTube-sourced, the
+previously-isolated creator connected via targeted roster extraction, exactly as scoped); all 5
+previously-blocked priority creators (CarryMinati, Ajinkya Rahane, `kkriders` — not `kkirders`,
+corrected — Prajakta Koli, Taaruk Raina) now fully dated with real resolving edges; several
+sponsored creators (Bhuvan Bam, Virat Kohli, `taarukraina`↔Prajakta Koli) have multiple
+sponsorship events each producing separate computable pairs against the same neighbor.
 
-**2 of 3 pairs exist only because of cross-platform straddle checking** — an Instagram-only check
-would report 1 pair, not 3. This is now the standard measurement (§1a), not a refinement.
-`brand_id` is null on pair 1's event (no blocker — P0.4's definition is graph-connection +
-straddling data, not brand identification).
+**This crosses the ~20-30 "any legitimate held-out split" floor established earlier this
+session.** Not yet at the ~50-100 thesis-defensible tier, but a real, qualitative jump — Track B
+should attempt a genuine training run (not just a pipeline-correctness check) against this set.
+
+⚠️ **Open items from this round, not yet resolved (Track A's own findings, independently
+credible — record, don't lose):**
+- `orchestrator.py:447` still matches post metadata by list position, not `post_id`. A 15-sample
+  caption audit found 0 conflicts, but that's evidence of no-conflict-in-sample, not proof of
+  safety at scale — real risk given how much now depends on Instagram dates.
+- The `--limit 40` fix's earlier diagnosis ("very likely the entire cause" of the 12-post
+  ceiling) is **retracted** — `--limit 40` still returns exactly 12 posts, verified on two
+  creators. Root cause of the ceiling is genuinely unknown again.
+- `account_classify.py` held-out accuracy is 57%, not the 42/42 tuned-suite's 100% — ~43% of
+  category assignments are likely wrong, and this feeds Reddit sub-routing decisions. Real,
+  unresolved data-quality risk.
+- 200 creators are Reddit-blocked purely on a missing real name (not a failed search) — more
+  scraping won't help; needs a better name source at scale.
 
 ⇒ Track B is unblocked to attempt a real training run with 3 actual computable examples, not a
 placeholder target or a single point. Still far below the ~20-pair sufficiency floor (§1a) — this
