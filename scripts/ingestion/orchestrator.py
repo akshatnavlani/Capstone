@@ -23,6 +23,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -157,6 +158,195 @@ if not _OPENCLI_BIN:
     raise RuntimeError("opencli not found on PATH")
 
 
+_OPENCLI_STATS = {"retried": 0, "recovered": 0, "exhausted": 0}
+
+# Adapter calls fail transiently often enough to matter -- measured ~4 of 6 succeeding in one
+# round, 9 of 9 in another. Two extra attempts with a short backoff cost nothing when the first
+# succeeds and recover the whole creator when it doesn't.
+_OPENCLI_TRIES = 3
+_OPENCLI_BACKOFF = [5, 15]
+
+# og:description parsing (2026-08-19). The post permalink page carries
+#     "885 likes, 33 comments - nasimamirza on May 9, 2026: "caption...""
+# in <meta property="og:description">. Unlike the profile listing, this is fetched from the
+# post's OWN url, so whatever it says is BY CONSTRUCTION about the post_id we navigated to --
+# it cannot be misattributed the way a positional match can.
+#
+# Counts here are abbreviated by Instagram ("1M likes" for a true 1,416,111), so they are used
+# only when they carry no K/M suffix. Dates carry +/-1 day (viewer-local rendering); immaterial
+# for straddle analysis but never present them as exact.
+_OG_JS = ('JSON.stringify(document.querySelector('
+          '\'meta[property="og:description"]\')?.content)')
+_OG_MONTHS = {m: i for i, m in enumerate(
+    ["january", "february", "march", "april", "may", "june", "july", "august",
+     "september", "october", "november", "december"], 1)}
+_OG_DATE_RE = re.compile(r"on\s+(" + "|".join(_OG_MONTHS) + r")\s+(\d{1,2}),\s*(\d{4})", re.I)
+_OG_COUNT_RE = re.compile(r"([\d.,]+\s*[KM]?)\s+likes?,\s*([\d.,]+\s*[KM]?)\s+comments?", re.I)
+
+
+def _og_exact_int(tok: str):
+    """Only EXACT counts. An abbreviated '76K' is rounded by Instagram -- writing it would
+    overwrite a real value with a wrong one, so it is discarded rather than approximated."""
+    tok = tok.replace(",", "").strip()
+    if not tok or tok[-1].upper() in ("K", "M"):
+        return None
+    try:
+        return int(float(tok))
+    except ValueError:
+        return None
+
+
+def parse_og_description(desc):
+    """-> {'date': 'M/D/YYYY'|None, 'likes': int|None, 'comments': int|None}."""
+    out = {"date": None, "likes": None, "comments": None}
+    if not desc:
+        return out
+    m = _OG_DATE_RE.search(desc)
+    if m:
+        out["date"] = f"{_OG_MONTHS[m.group(1).lower()]}/{int(m.group(2))}/{m.group(3)}"
+    c = _OG_COUNT_RE.search(desc)
+    if c:
+        out["likes"] = _og_exact_int(c.group(1))
+        out["comments"] = _og_exact_int(c.group(2))
+    return out
+
+
+def _norm_caption(text):
+    if not text:
+        return ""
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def own_post_paths(paths, handle):
+    """Keep only grid links that belong to `handle`.
+
+    Found live 2026-08-19 and it is NOT a subtlety: a profile grid mixes in posts owned by
+    OTHER accounts (tagged/collab posts). On `mostlysane`, 4 of 12 grid links belonged to
+    `netflix_in` and `exhibitmagazine`. The old selector took every `/p/` and `/reel/` link and
+    wrote them all with `username=<handle>, creator_id=<this creator>` -- attributing another
+    account's post, and its engagement counts, to this creator.
+
+    It also GUARANTEED the positional metadata match was wrong: the listing returns only the
+    creator's own posts by recency, while the grid interleaves foreign ones, so every pairing
+    after the first foreign link was offset.
+
+    Instagram serves both `/p/<id>/` (bare, always the profile owner's) and
+    `/<username>/p/<id>/`. Only the second form can be foreign, so only it is checked.
+    """
+    keep = []
+    for p in paths:
+        parts = [x for x in p.split("/") if x]
+        if len(parts) >= 3 and parts[1] in ("p", "reel"):
+            if parts[0].lower() != handle.lower():
+                continue                     # another account's post, not this creator's
+        keep.append(p)
+    return keep
+
+
+def match_listing_meta(page_caption, listing):
+    """Join a post's listing metadata by CAPTION CONTENT, not list position.
+
+    Replaces `posts_meta[i]` (orchestrator.py, flagged 3 rounds running). The adapter's
+    documented output columns are `index, caption, likes, comments, type, date` -- there is no
+    url, shortcode or id to join on, verified against `instagram user --help` and real json
+    output on 2026-08-19. So content is the only available key.
+
+    Instagram pins up to 3 posts to the top of a grid; pinned posts lead `browser find` order
+    but are NOT newest, while the listing is ordered by recency. On any creator that pins, the
+    two lists are offset and positional matching writes post N's date onto post M -- silent
+    cross-post contamination that nothing downstream can catch.
+
+    The listing truncates captions to 100 raw chars while the page extract has the full text,
+    so the comparison is a symmetric prefix over whichever is shorter. Returns
+    (meta, status); an AMBIGUOUS or absent match returns None rather than a guess -- a missing
+    date is recoverable, a confidently wrong one is not.
+    """
+    pk = _norm_caption(page_caption)
+    if len(pk) < 12:
+        return None, "page caption too short to identify"
+    hits = []
+    for m in listing:
+        lk = _norm_caption(m.get("caption"))
+        if len(lk) < 12:
+            continue
+        n = min(len(pk), len(lk), 60)
+        if pk[:n] == lk[:n]:
+            hits.append(m)
+    if len(hits) == 1:
+        return hits[0], "matched"
+    if not hits:
+        return None, "no listing match"
+    return None, f"ambiguous ({len(hits)} listing entries share this caption prefix)"
+
+
+_OPENCLI_STATS = {"retried": 0, "recovered": 0, "exhausted": 0}
+
+# Adapter calls fail transiently often enough to matter -- measured ~4 of 6 succeeding in one
+# round, 9 of 9 in another. Two extra attempts with a short backoff cost nothing when the first
+# succeeds and recover the whole creator when it doesn't.
+_OPENCLI_TRIES = 3
+_OPENCLI_BACKOFF = [5, 15]
+
+# og:description parsing (2026-08-19). The post permalink page carries
+#     "885 likes, 33 comments - nasimamirza on May 9, 2026: "caption...""
+# in <meta property="og:description">. Unlike the profile listing, this is fetched from the
+# post's OWN url, so whatever it says is BY CONSTRUCTION about the post_id we navigated to --
+# it cannot be misattributed the way a positional match can.
+#
+# Counts here are abbreviated by Instagram ("1M likes" for a true 1,416,111), so they are used
+# only when they carry no K/M suffix. Dates carry +/-1 day (viewer-local rendering); immaterial
+# for straddle analysis but never present them as exact.
+_OG_JS = ('JSON.stringify(document.querySelector('
+          '\'meta[property="og:description"]\')?.content)')
+_OG_MONTHS = {m: i for i, m in enumerate(
+    ["january", "february", "march", "april", "may", "june", "july", "august",
+     "september", "october", "november", "december"], 1)}
+_OG_DATE_RE = re.compile(r"on\s+(" + "|".join(_OG_MONTHS) + r")\s+(\d{1,2}),\s*(\d{4})", re.I)
+_OG_COUNT_RE = re.compile(r"([\d.,]+\s*[KM]?)\s+likes?,\s*([\d.,]+\s*[KM]?)\s+comments?", re.I)
+
+
+def _og_exact_int(tok: str):
+    """Only EXACT counts. An abbreviated '76K' is rounded by Instagram -- writing it would
+    overwrite a real value with a wrong one, so it is discarded rather than approximated."""
+    tok = tok.replace(",", "").strip()
+    if not tok or tok[-1].upper() in ("K", "M"):
+        return None
+    try:
+        return int(float(tok))
+    except ValueError:
+        return None
+
+
+def parse_og_description(desc):
+    """-> {'date': 'M/D/YYYY'|None, 'likes': int|None, 'comments': int|None}."""
+    out = {"date": None, "likes": None, "comments": None}
+    if not desc:
+        return out
+    m = _OG_DATE_RE.search(desc)
+    if m:
+        out["date"] = f"{_OG_MONTHS[m.group(1).lower()]}/{int(m.group(2))}/{m.group(3)}"
+    c = _OG_COUNT_RE.search(desc)
+    if c:
+        out["likes"] = _og_exact_int(c.group(1))
+        out["comments"] = _og_exact_int(c.group(2))
+    return out
+
+
+def caption_key(text):
+    """Join key shared by the listing and the post page -- replaces positional matching.
+
+    `instagram user` truncates captions to exactly 100 chars while the page extract has the
+    full text, so the key is a 60-char prefix of collapsed-lowercase alphanumerics: short
+    enough to survive truncation, long enough to identify a post. Returns None for captions
+    too short to identify anything (empty/emoji-only), which are left UNMATCHED rather than
+    guessed at.
+    """
+    if not text:
+        return None
+    norm = re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+    return norm[:60] if len(norm) >= 12 else None
+
+
 def run_opencli(*args: str, timeout: int = 30) -> dict | list:
     # subprocess.run's default (no shell=True) uses CreateProcess directly on
     # Windows, which can't resolve a bare "opencli" to the npm-installed
@@ -168,13 +358,37 @@ def run_opencli(*args: str, timeout: int = 30) -> dict | list:
     # subprocess.run(text=True) defaults to the OS locale encoding (cp1252 on this
     # Windows machine) to decode child stdout — crashes on real comment text with
     # emoji (confirmed: 'charmap' codec can't decode byte 0x8d). Force UTF-8.
-    result = subprocess.run(
-        [_OPENCLI_BIN, *args], capture_output=True, text=True, timeout=timeout, env=env,
-        encoding="utf-8", errors="replace",
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"opencli {' '.join(args)} failed: {result.stdout}{result.stderr}")
-    return yaml.safe_load(result.stdout)
+    # RETRY (2026-08-19). Until now this was a single shot: any transient failure raised
+    # immediately and the caller fell back to the browser-only path, losing the adapter's
+    # structured metadata for that creator entirely. Nobody ever retried.
+    #
+    # A 429 is deliberately NOT retried. It is a real platform throttle, and hammering it is
+    # how the multi-hour Instagram blocks recorded in HANDOFF.md were earned. Retry is for
+    # transport flakiness (chrome-error://, daemon hiccups, timeouts), not for being told to stop.
+    last = None
+    for attempt in range(_OPENCLI_TRIES):
+        try:
+            result = subprocess.run(
+                [_OPENCLI_BIN, *args], capture_output=True, text=True, timeout=timeout,
+                env=env, encoding="utf-8", errors="replace",
+            )
+        except subprocess.TimeoutExpired:
+            last = RuntimeError(f"opencli {' '.join(args)} timed out after {timeout}s")
+        else:
+            if result.returncode == 0:
+                if attempt:
+                    log.info("opencli %s recovered on attempt %d", args[0], attempt + 1)
+                    _OPENCLI_STATS["recovered"] += 1
+                return yaml.safe_load(result.stdout)
+            blob = f"{result.stdout}{result.stderr}"
+            last = RuntimeError(f"opencli {' '.join(args)} failed: {blob}")
+            if "429" in blob or "rate limit" in blob.lower():
+                raise last          # throttle -- back off entirely, do not retry
+        _OPENCLI_STATS["retried"] += 1
+        if attempt < _OPENCLI_TRIES - 1:
+            time.sleep(_OPENCLI_BACKOFF[attempt])
+    _OPENCLI_STATS["exhausted"] += 1
+    raise last
 
 
 # YouTube quota rotation (2026-08-18). search().list costs 100 units against a 10k/day
@@ -268,6 +482,19 @@ class PlatformWorker:
         self.post_cap = post_cap
         self.cutoff = recency_cutoff(recency_days)
         self.skipped_stale = 0
+        # How each post's metadata was joined. Reported per creator so a run that silently
+        # stops matching (adapter down, caption format change) is visible instead of just
+        # producing quietly emptier rows.
+        self.meta_match: dict[str, int] = {}
+
+    def _is_stale(self, raw_date: str) -> bool:
+        """True if an "M/D/YYYY" date predates the recency cutoff. An unparseable date is
+        NOT stale -- we can't prove it, so the post is kept rather than silently dropped."""
+        try:
+            return (datetime.strptime(raw_date, "%m/%d/%Y").replace(tzinfo=timezone.utc)
+                    < self.cutoff)
+        except (ValueError, TypeError):
+            return False
 
     def _release_on_failure(self, handle: str) -> None:
         """No-op by default; only browser-backed workers hold tab leases."""
@@ -283,6 +510,7 @@ class PlatformWorker:
             # first full run's output — "29 skipped" repeated for creators that had
             # skipped nothing).
             self.skipped_stale = 0
+            self.meta_match = {}
             try:
                 self.process_creator(creator, handle, conn)
             except Exception:
@@ -507,7 +735,10 @@ class InstagramWorker(PlatformWorker):
             except RuntimeError:
                 entries = []
             before = len(post_paths)
-            post_paths = list(dict.fromkeys(post_paths + entries))
+            # Drop other accounts' posts BEFORE they count toward the cap -- see
+            # own_post_paths(). Filtering here (not at write time) means the scroll loop
+            # keeps going until we have post_cap of the creator's OWN posts.
+            post_paths = list(dict.fromkeys(post_paths + own_post_paths(entries, handle)))
             if len(post_paths) >= self.post_cap:
                 break
             stalls = stalls + 1 if len(post_paths) == before else 0
@@ -528,34 +759,66 @@ class InstagramWorker(PlatformWorker):
             _release_session(session)
             raise RuntimeError(f"no post links found for {handle} after scrolling")
 
-        # `instagram user` (metadata) and `browser find` (URLs) are two SEPARATE
-        # calls with no shared ID — matched positionally (both list recent posts
-        # newest-first). Not guaranteed aligned if a new post landed between the two
-        # calls; best-effort, not a hard guarantee, flagged rather than silently
-        # trusted. min() so a mismatch in count doesn't index past either list.
+        # METADATA IS NO LONGER MATCHED BY POSITION (fixed 2026-08-19; flagged 3 rounds).
+        #
+        # The old code did `meta = posts_meta[i]`, pairing the i-th grid URL with the i-th
+        # listing entry. Two independent defects:
+        #   1. The listing returns exactly 12 rows no matter what `--limit` says (verified
+        #      2026-08-19 across 3 handles at 12/15/20/25/40; the flag DOES work downward,
+        #      3->3 and 5->5, so it is a truncation of a 12-post first-paint scrape, not a
+        #      broken flag). Past index 11 every field landed NULL.
+        #   2. Instagram pins up to 3 posts to the top of a grid, so grid order != recency
+        #      order and the two lists are offset on any creator that pins -- writing one
+        #      post's date and likes onto another, silently.
+        #
+        # Now: the post's own og:description supplies date/likes/comments (fetched from the
+        # post url itself, so it cannot be misattributed), and the listing is joined by
+        # CAPTION CONTENT with ambiguity refused. Neither path can attach metadata to a post
+        # it does not belong to.
         kept = 0
-        for i, path in enumerate(post_paths[:self.post_cap]):
-            meta = posts_meta[i] if i < len(posts_meta) else {}
-            # Recency filter — meta["date"] is "M/D/YYYY" (e.g. "8/3/2026"). Skipped
-            # posts don't consume budget or get written, so a raised cap pulls more
-            # RECENT posts rather than padding with stale ones. Posts with no usable
-            # date are kept (can't prove they're stale) rather than silently dropped.
-            raw_date = meta.get("date")
-            if raw_date:
-                try:
-                    if datetime.strptime(raw_date, "%m/%d/%Y").replace(tzinfo=timezone.utc) < self.cutoff:
-                        self.skipped_stale += 1
-                        continue
-                except ValueError:
-                    pass
-            kept += 1
+        for path in post_paths[:self.post_cap]:
             post_url = f"https://www.instagram.com{path}"
             post_id = path.strip("/").split("/")[-1]
             self.rate_limiter.wait()
             run_opencli("browser", session, "open", post_url)
             run_opencli("browser", session, "wait", "time", "2")
+
+            try:
+                raw_og = run_opencli("browser", session, "eval", _OG_JS)
+            except RuntimeError:
+                raw_og = None
+            og = parse_og_description(raw_og if isinstance(raw_og, str) else "")
+
+            # Recency filter, now driven by the post's OWN date rather than a positionally
+            # guessed one. Checked before `extract` so a stale post costs one navigation
+            # instead of a full page pull. Posts with no usable date are kept (can't prove
+            # they're stale) rather than silently dropped.
+            if og["date"] and self._is_stale(og["date"]):
+                self.skipped_stale += 1
+                continue
+
             extracted = run_opencli("browser", session, "extract")
             markdown = extracted["content"] if isinstance(extracted, dict) else str(extracted)
+            caption = parse_caption(markdown, handle)
+
+            meta, match_status = match_listing_meta(caption, posts_meta)
+            self.meta_match[("matched" if meta else match_status.split(" (")[0])] = (
+                self.meta_match.get("matched" if meta else match_status.split(" (")[0], 0) + 1)
+            meta = meta or {}
+            if not caption:
+                caption = meta.get("caption")
+
+            # Listing values win where present -- they are exact and carry no timezone shift.
+            # og:description backfills everything past the 12-row ceiling, and contributes
+            # counts ONLY when Instagram did not abbreviate them (see _og_exact_int).
+            post_date = meta.get("date") or og["date"]
+            like_count = meta.get("likes") if meta.get("likes") is not None else og["likes"]
+            comment_count = (meta.get("comments") if meta.get("comments") is not None
+                             else og["comments"])
+            if post_date and self._is_stale(post_date):
+                self.skipped_stale += 1
+                continue
+            kept += 1
 
             with conn.cursor() as cur:
                 # `opencli instagram user` truncates captions to exactly 100 chars.
@@ -564,7 +827,6 @@ class InstagramWorker(PlatformWorker):
                 # directly: the Kohli/Agilitas caption was cut mid-sentence while they
                 # were deciding whether it's a valid sponsorship training pair, and
                 # brand extraction was only ever seeing the first 100 chars.
-                caption = parse_caption(markdown, handle) or meta.get("caption")
                 brand_id = brand_id_for_text(cur, caption)
                 # meta["date"] is "M/D/YYYY" (e.g. "8/3/2026") — to_date with an
                 # explicit format string, not implicit cast, since Postgres's default
@@ -587,7 +849,7 @@ class InstagramWorker(PlatformWorker):
                         fetched_at=now(), brand_id=coalesce(excluded.brand_id, instagram_posts.brand_id)
                     """,
                     (post_id, handle, creator.creator_id, caption, meta.get("type"),
-                     meta.get("likes"), meta.get("comments"), meta.get("date"), brand_id),
+                     like_count, comment_count, post_date, brand_id),
                 )
                 comments = parse_comments(markdown)
                 for c in comments:
@@ -608,8 +870,10 @@ class InstagramWorker(PlatformWorker):
                     )
             conn.commit()
             log.info("Instagram: %s post %s -> %d comments", handle, post_id, len(comments))
-        log.info("Instagram: %s -> %d posts kept (%d skipped as older than the %s cutoff, %d links found)",
-                  handle, kept, self.skipped_stale, self.cutoff.date(), len(post_paths))
+        log.info("Instagram: %s -> %d posts kept (%d skipped as older than the %s cutoff, "
+                  "%d links found) | metadata join: %s",
+                  handle, kept, self.skipped_stale, self.cutoff.date(), len(post_paths),
+                  self.meta_match or "none")
         run_opencli("browser", session, "close")
 
 
