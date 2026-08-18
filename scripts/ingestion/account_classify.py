@@ -95,11 +95,23 @@ _BRAND_SYMBOL = re.compile(r"[™®]")
 # --- Organisational / institutional (NOT an individual). Ordered before individual
 # checks because an academy bio often also says "coach".
 _LEAGUE = _words(
-    "league", "federation", "association", "championship", "governing body",
-    "olympic association", "board of control", "premier league", "world championship",
+    "league", "federation", "association", "governing body",
+    "olympic association", "board of control", "premier league",
+    "championship", "world championship",
 )
+# WEIGHT CLASS / AGE GROUP -- added 2026-08-19, and tested BEFORE the organisational rules.
+#
+# "world championship" is genuinely ambiguous: it is @e1series's identity ("UIM E1 World
+# Championship") and @ravinderdahiya61kg's achievement ("U-23 world championship, South
+# Asian Games x2"). Scoping the word by field does not separate them -- both put it in the
+# bio. What DOES separate them is that no league is ever named after a weight class or an
+# age group, so these markers identify a competitor even when nothing else in the bio does.
+_ATHLETE_CLASS = re.compile(r"(?<!\w)(?:\d{2,3}\s?kgs?|u-?\s?\d{2}|under-?\s?\d{2})(?!\w)", re.I)
 _TEAM = _words(
-    "football club", "cricket club", "fc", "cf", "official team", "squad",
+    # "cf" REMOVED 2026-08-19: it matched "CF Coach" (CrossFit) on @100.rep, a fitness
+    # creator, and routed them to `team`. Two letters carry too little signal to be worth
+    # the collision; "fc" is kept because its collision surface is far smaller.
+    "football club", "cricket club", "fc", "official team", "squad",
     "franchise", "the official", "official account", "official ig", "official instagram",
 )
 _INSTITUTION = _words(
@@ -139,12 +151,22 @@ _LIFESTYLE = _words(
     "creator", "vlogger", "influencer", "youtuber", "comedian", "host", "anchor",
     "rj", "photographer", "model", "artist", "author", "writer", "entrepreneur",
     "speaker", "dancer", "music", "songs", "label", "band", "dj",
+    # Screen-work vocabulary, added 2026-08-19 from held-out failures. "actor"/"actress"
+    # were present but real bios describe the WORK, not the job title: @gurfatehpirzada
+    # ("I act...sometimes at the movies") and @wamiqagabbi ("In Cinemas now") both fell
+    # through to 'other'. "act" alone is NOT included -- it collides with "act now".
+    "acting", "movie", "movies", "film", "films", "cinema", "cinemas", "screenwriter",
+    "in cinemas", "web series",   # bare "series" was tried and REVERTED -- it broke @e1series, a racing league
 )
 
 
 _SPORT_CONTEXT = _words(
     "cricket", "football", "badminton", "tennis", "hockey", "kabaddi", "athletics",
     "boxing", "wrestling", "basketball", "volleyball",
+    # Equipment/venue nouns, added 2026-08-19: @pvsindhu1's entire bio is "Chasing dreams,
+    # one shuttle at a time" -- "shuttler" was in _ATHLETE_STRONG but the bare object was
+    # nowhere. These stay in the LOW-CONFIDENCE tier, which is where they belong.
+    "shuttle", "wicket", "wickets", "crease", "javelin throw", "track and field",
 )
 
 
@@ -168,18 +190,25 @@ def classify_from_profile(name: str, bio: str, handle: str = "",
     if not (name or bio or handle):
         return "other", "no name or bio available"
 
+    m = _ATHLETE_CLASS.search(text)
+    if m:
+        return "athlete", f"athlete: weight class / age group '{m.group(0).strip()}'"
+
     m = _BRAND_STRONG.search(text)
     if m:
         return BRAND, f"BRAND: legal-entity marker '{m.group(0)}'"
     m = _BRAND_COMMERCE.search(text)
     if m:
         return BRAND, f"BRAND: commerce language '{m.group(0)}'"
-    m = _BRAND_SYMBOL.search(text)
-    if m:
-        return BRAND, f"BRAND: trademark symbol '{m.group(0)}'"
     m = _BRAND_PHRASE.search(text)
     if m:
         return BRAND, f"BRAND: self-describes as a brand ('{m.group(0)[:40]}')"
+    # NOTE: the trademark-symbol test used to sit here, ahead of everything. It was MOVED
+    # below the individual checks on 2026-08-19 -- @athleanx ("ATHLEAN-X(tm) | Jeff
+    # Cavaliere ... train like an athlete! Full programs, meal plans") is a real fitness
+    # creator who trademarked his own programme name, and a leading symbol test dropped him
+    # as a brand. A false BRAND is this module's worst error: it silently discards a person
+    # instead of sending them to review.
 
     m = _ATHLETE_STRONG.search(text)
     if m:
@@ -207,6 +236,12 @@ def classify_from_profile(name: str, bio: str, handle: str = "",
     if m:
         return "lifestyle_influencer", f"lifestyle/creator marker '{m.group(0)}'"
 
+    # Trademark symbol -- only now, after every individual marker has declined. See the note
+    # above _BRAND_PHRASE for why this is no longer a leading test.
+    m = _BRAND_SYMBOL.search(text)
+    if m:
+        return BRAND, f"BRAND: trademark symbol '{m.group(0)}', no individual marker present"
+
     # AFFILIATION SIGNAL — added 2026-08-17 after held-out validation scored only 30%,
     # with 18 of 21 errors being "-> other". Real bios are sparse: Ishan Kishan's entire
     # bio is "For business enquiries", and a keyword classifier can never reach it.
@@ -226,6 +261,21 @@ def classify_from_profile(name: str, bio: str, handle: str = "",
     if m:
         return "athlete", (f"LOW CONFIDENCE: sport context '{m.group(0)}' only, no explicit "
                             f"role — verify before relying on this")
+
+    # @-MENTIONS ARE GLUED WORDS. Added 2026-08-19. Sania Mirza's entire bio is
+    # "Humor. Courage. Grace . @saniamirzatennisacademydubai @saniamirzatennisacademy" --
+    # "tennis" is right there, but inside one unbroken token, so every word-boundary
+    # pattern above misses it. The same spacing-blind class as the name-backfill bug.
+    #
+    # Substring matching is only safe because it is confined to @-mention tokens and sits
+    # at the very last resort, after every higher-precision test has already declined.
+    for mention in re.findall(r"@([A-Za-z0-9_.]+)", f"{bio or ''} {name or ''}"):
+        low = mention.lower()
+        for sport in ("cricket", "football", "badminton", "tennis", "hockey", "kabaddi",
+                       "boxing", "wrestling", "basketball", "athletics"):
+            if sport in low:
+                return "athlete", (f"LOW CONFIDENCE: '{sport}' inside affiliated handle "
+                                    f"'@{mention}' — verify before relying on this")
 
     snippet = " ".join(text.split())[:70]
     return "other", f"UNCLASSIFIED — no marker matched (bio: '{snippet}')"

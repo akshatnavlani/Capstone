@@ -1,0 +1,219 @@
+{
+ "_README": "Hand-labelled held-out sets for account_classify.py, built 2026-08-19. Labels are human judgements read off each real bio -- NOT classifier output. set1 was pulled from instagram_profiles (only 26 of 16,815 rows have any bio, so it is capped at 17 usable cases); set2 was fetched live from Instagram and is disjoint from set1 AND from test_account_classify.py. Both have now been tuned against, so a genuinely clean generalization number needs a NEW set3 -- build one the same way rather than re-quoting these.",
+ "set1_source": "instagram_profiles bios",
+ "set2_source": "live fetch_profile()",
+ "set1": [
+  {
+   "handle": "keralablasters",
+   "name": "Kerala Blasters FC",
+   "bio": "The Official Instagram Account of Kerala Blasters Football Club 🐘🟡 💛: #ഒന്നായിപോരാടാം",
+   "label": "team"
+  },
+  {
+   "handle": "beerbiceps",
+   "name": "Ranveer Allahbadia",
+   "bio": "Good vibe giver 🌞 - Co-founder : @monkentertainment, @swaaha.me , @skillhouse_media",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "mostlysane",
+   "name": "Prajakta Koli",
+   "bio": "Creator | Actor | New Author 🤓 Work inquiries- iammostlysane@gmail.com",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "anushkasharma",
+   "name": "AnushkaSharma1588",
+   "bio": "\" After all , we're all just walking each other home \" 💫",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "gurumann",
+   "name": "Guru Mann",
+   "bio": "🔹Exercise & Nutrition Science - California State University 🔹Kinesiology | Biology 🔹Founder @gmnutritionusa @gm.mifi ",
+   "label": "fitness_influencer"
+  },
+  {
+   "handle": "carryminati",
+   "name": "𝑨𝒋𝒆𝒚 𝑵𝒂𝒈𝒂𝒓",
+   "bio": "Ye Apna Official hai.  Business Managed by: @deepakchar7 Twitter: CarryMinati New Video⬇️",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "chennaiyinfc",
+   "name": "Chennaiyin FC",
+   "bio": "The official page of Chennaiyin FC | 🏆 🏆 | #AllInForChennaiyin  Match tickets, official merchandise and more 👇",
+   "label": "team"
+  },
+  {
+   "handle": "gurfatehpirzada",
+   "name": "Gurfateh Singh Pirzada",
+   "bio": "ੴ  Sabr. Shukr. Simran. I act…sometimes at the movies; sometimes in life  CALL ME BAE | CLASS | GUILTY | BRAHMĀSTRA And",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "karanjohar",
+   "name": "Karan Johar",
+   "bio": "Proud parent and Blessed son",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "pvsindhu1",
+   "name": "PV Sindhu",
+   "bio": "Chasing dreams, one shuttle at a time ❤️ Exclusively managed by @baselineventures. For enquires, contact : partnerships@",
+   "label": "athlete"
+  },
+  {
+   "handle": "mcmary.kom",
+   "name": "Dr MC Mary Kom",
+   "bio": "🇮🇳  Boxer🥊Businesswoman  Believes in humanity For queries: mcmary.kom@gmail.com",
+   "label": "athlete"
+  },
+  {
+   "handle": "piyush.meghwanshi",
+   "name": "Piyush Meghwanshi | Podcaster",
+   "bio": "🎓-Xavier's 25 🪷-Breathing 👨‍💻-Building:- @kisse.baazi 👇🏼-Episodes",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "mirzasaniar",
+   "name": "Sania Mirza",
+   "bio": "Humor. Courage. Grace . @saniamirzatennisacademydubai  @saniamirzatennisacademy",
+   "label": "athlete"
+  },
+  {
+   "handle": "servingitupwithsania",
+   "name": "",
+   "bio": "Rallies and Real talk. @mirzasaniar’s new podcast out now on @myntra Glamstream. Also available on YouTube and other aud",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "neeraj____chopra",
+   "name": "Neeraj Chopra",
+   "bio": "Indian Javelin Thrower 🇮🇳 For Queries: connect@velsports.co",
+   "label": "athlete"
+  },
+  {
+   "handle": "wamiqagabbi",
+   "name": "Wamiqa Gabbi",
+   "bio": "I don’t have a twitter account. *DC- In Cinemas now 🥀  *PRAHAAR- 16th October, 2026 🔥  *TIKI TAKA- 2026 *G2- 2026 *GEN",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "nehwalsaina",
+   "name": "SAINA NEHWAL",
+   "bio": "Official page of Saina Nehwal 😇 Indian badminton player 🇮🇳🏸 Business queries - apeksha@ohana.co.in Powered by @Bette",
+   "label": "athlete"
+  }
+ ],
+ "set2": [
+  {
+   "handle": "sheinspireofficial",
+   "name": "She Inspire Magazine",
+   "bio": "🌍 Global Platform for Women Who Lead 🏆 Awards 🎤 Summits 📰 Magazine 🤝 Community Women who build, break barriers & in",
+   "label": "__BRAND__"
+  },
+  {
+   "handle": "tyresemaxey",
+   "name": "Tyrese Maxey",
+   "bio": "#LLMM🕊🕊",
+   "label": "athlete"
+  },
+  {
+   "handle": "ravinderdahiya61kg",
+   "name": "Ravinder Dahiya",
+   "bio": "U-23 world championship    South Asian Games X2🥇 YouTube Channel 👇 1 JAN START- Dream फिट भारत 🇮🇳 👇",
+   "label": "athlete"
+  },
+  {
+   "handle": "natsciver.brunt",
+   "name": "Natalie Sciver-Brunt",
+   "bio": "@wassermancricket  @kookaburracricketuk @rbc  @vitality_uk @sageofficial Enquiries - info@the.team",
+   "label": "athlete"
+  },
+  {
+   "handle": "srwatson33",
+   "name": "Shane Watson",
+   "bio": "🏏 Former Aussie Cricketer 🧠 Mental Skills Performance Coach 📞 Enquiries : lw@allphases.au",
+   "label": "athlete"
+  },
+  {
+   "handle": "ankitxlean",
+   "name": "Ankit Punia",
+   "bio": "🙏 jai bajrang bali   Gym • Humor • Lifestyle  Making gym life funnier 💀   🎥 @ankitxlean",
+   "label": "fitness_influencer"
+  },
+  {
+   "handle": "timdavid8",
+   "name": "",
+   "bio": "@sareensports  @nike @formahelmetsofficial  @callawaygolfaus",
+   "label": "athlete"
+  },
+  {
+   "handle": "zongyenyen",
+   "name": "𝗬𝗘𝗡",
+   "bio": "🎥 Creating entertainment for sports fans 📸 Documenting moments for fun 🤝 Open for collaboration  ⚠️ Views expressed a",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "shubmangill",
+   "name": "Ꮪhubman Gill",
+   "bio": "Don’t play the odds, play the man.  For Business enquiries : hello@teamshubman.in",
+   "label": "athlete"
+  },
+  {
+   "handle": "fit_boult",
+   "name": "World Wide Store",
+   "bio": "💪 Fitness | Workouts | Motivation   📍India 🇮🇳 | USA 🇺🇸   🤝 DM for Collabs | Train Smart. Live Fit. ⬇️ Best Fitnes",
+   "label": "fitness_influencer"
+  },
+  {
+   "handle": "100.rep",
+   "name": "Saurabh Thapa | Fitness Experience Designer",
+   "bio": "🏋🏼‍♀️Building High-Performance Community 🏆Ex-National Athlete | CF Coach @100rep.official | @stride.box Retreat @shiv",
+   "label": "fitness_influencer"
+  },
+  {
+   "handle": "sekhoniafmarathon",
+   "name": "SEKHON INDIAN AIR FORCE MARATHON",
+   "bio": "#SIM2026  Run with Pride. Soar with Courage. Venue: JLN Stadium, New Delhi Date: 4th October 2026 Register Today!",
+   "label": "institution"
+  },
+  {
+   "handle": "_dakshkamra_",
+   "name": "Daksh Kamra",
+   "bio": "Cricketer  ♑",
+   "label": "athlete"
+  },
+  {
+   "handle": "gujarat_titans",
+   "name": "Gujarat Titans",
+   "bio": "The Official Account of Gujarat Titans | IPL 2022 🏆",
+   "label": "team"
+  },
+  {
+   "handle": "athleanx",
+   "name": "ATHLEAN-X™ | Jeff Cavaliere MSPT, CSCS",
+   "bio": "If you want to look like an athlete you've got to train like an athlete! Full programs, meal plans and supplements here 👇🏼",
+   "label": "fitness_influencer"
+  },
+  {
+   "handle": "mrbeast",
+   "name": "MrBeast",
+   "bio": "Watch my latest video!! 👇",
+   "label": "lifestyle_influencer"
+  },
+  {
+   "handle": "manush_official",
+   "name": "Manush Shah",
+   "bio": "🇮🇳 Indian Table Tennis Player 🏆 National Champion 2025 | Representing RBI & India 🌍 ITTF World Tour Athlete | WTT Ci",
+   "label": "athlete"
+  },
+  {
+   "handle": "chetri_sunil11",
+   "name": "Sunil Chhetri",
+   "bio": "Queries : bandana@fairplaysports.in",
+   "label": "athlete"
+  }
+ ]
+}
