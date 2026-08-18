@@ -328,6 +328,16 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
+## CYCLE 8 (in flight) — co-author run over 287 posts, ~half done
+
+Edges are the binding constraint per the ceiling analysis below, and this run is producing
+them: CRA rows 689 → **801** (+112), resolved rows 185 → **194** (+9), edge pairs 163 → **166**.
+Computable pairs still 14 — expected, since a new edge only becomes a pair when it lands on a
+creator holding a DATED event whose window straddles it.
+
+Stats unchanged this cycle: Instagram 130/259 (50.2%) attempted / 47 (18.1%) content;
+YouTube 259/259 (100%); Reddit 54/259 (20.8%), name-gated 200 (77.2%), untouched 5 (1.9%).
+
 ## 📐 CEILING ANALYSIS (cycle 7) — READ THIS BEFORE PLANNING MORE WORK
 
 Every event-neighbour combination, classified by what actually blocks it:
