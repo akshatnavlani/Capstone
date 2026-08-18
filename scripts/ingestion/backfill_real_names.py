@@ -31,6 +31,7 @@ import logging
 import os
 import re
 import time
+import unicodedata
 
 import psycopg2
 
@@ -47,7 +48,24 @@ log = logging.getLogger("names")
 #   'Saurabh Thapa | Fitness Experience Designer' -> the suffix is a job title, not a name
 #   'RAGI CHAUDHARY[flag emoji]'                  -> decoration that no Reddit post contains
 _SUFFIX_SEPS = ("|", "•", "·", "—", "–", "/")
-_KEEP = re.compile(r"[^\w\s'.-]", re.UNICODE)   # drop emoji/symbols, keep letters+marks
+
+
+# Variation selectors and ZWJ are Unicode MARKS/format chars, so a category test keeps them.
+# They carry no searchable text and left a trailing artefact on a real name.
+_INVISIBLE = {"‍", "‌", "﻿"} | {chr(c) for c in range(0xFE00, 0xFE10)}
+
+
+def _keepable(ch: str) -> bool:
+    r"""Keep letters, COMBINING MARKS, and digits; everything else becomes a space.
+
+    The marks matter and a `\w`-based regex silently drops them: Devanagari vowel signs are
+    Unicode category Mc/Mn, which Python's `\w` does NOT match, so a regex filter turned
+    'ऋचा चौहान' into 'ऋच च ह न' -- every matra stripped, the name destroyed and unsearchable.
+    Caught 2026-08-19 on a real profile, so this is category-based, not pattern-based.
+    """
+    if ch in _INVISIBLE:
+        return False
+    return unicodedata.category(ch)[0] in ("L", "M", "N")
 
 
 def clean_name(raw: str) -> str:
@@ -58,7 +76,7 @@ def clean_name(raw: str) -> str:
     for sep in _SUFFIX_SEPS:          # 'Saurabh Thapa | Fitness ...' -> 'Saurabh Thapa'
         if sep in name:
             name = name.split(sep)[0]
-    name = _KEEP.sub(" ", name)       # strip emoji and decoration
+    name = "".join(ch if (_keepable(ch) or ch in " '-") else " " for ch in name)
     name = re.sub(r"[_.]+", " ", name)  # 'Shivaldo_Chingangbam' -> 'Shivaldo Chingangbam'
     return re.sub(r"\s+", " ", name).strip()
 
@@ -127,7 +145,7 @@ def main() -> None:
             log.info("[%d/%d] %s: no usable name (raw=%r)", i, len(todo), handle, raw[:40])
         else:
             resolved += 1
-            done[handle] = {"status": "resolved", "name": name}
+            done[handle] = {"status": "resolved", "name": name, "raw_name": raw}
             log.info("[%d/%d] %s -> %r%s", i, len(todo), handle, name,
                       "" if name == raw else f"   (cleaned from {raw!r})")
             if not args.dry_run:
