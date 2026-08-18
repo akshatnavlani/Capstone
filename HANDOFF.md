@@ -324,7 +324,51 @@ prevent. It converted a silent-corruption bug into a loud one.
 ---
 ---
 
-# LOOP (2026-08-18) — batch-readiness loop, 30-min cadence. CYCLES 1-3 DONE
+# ✅ LOOP COMPLETE (2026-08-18) — STOPPED ON "SUFFICIENT": 37 computable pairs
+
+**13 cycles. Stop condition: Sufficient (pairs ≥ 20) — reached 37.** Cron job 225af3a3
+cancelled. A fresh session does NOT need to resume this loop.
+
+## Baseline → final
+
+| | baseline | final |
+|---|---|---|
+| Instagram attempted | 121 (46.7%) | **130 (50.2%)** |
+| Instagram with content | 36 (13.9%) | **47 (18.1%)** |
+| YouTube attempted | 259 (**100%**) | 259 (**100%**) |
+| YouTube handles / deepened | 41 / 39 (95.1%) | 41 / 39 (95.1%) |
+| Reddit attempted | 36 (13.9%) | **54 (20.8%)** |
+| Reddit with content | 16 (6.2%) | 18 (6.9%) |
+| Reddit name-gated | 215 (83.0%) | **200 (77.2%)** |
+| Reddit untouched | 8 (3.1%) | **5 (1.9%)** |
+| **COMPUTABLE PAIRS** | **3** | **37** |
+| Collaboration edge pairs | 161 | **170** |
+| Sponsored posts still undated | 25 | **0** |
+
+## What actually moved the number
+
+1. **`og:description` date backfill (decisive)** — pairs 14 → 37 in one run, 46/46 filled,
+   0 failures. Every other date source failed on sponsored posts specifically.
+2. **Deepening contentless neighbours of dated events** — +4 pairs in one run (Bhuvan Bam's).
+3. **Kerala Blasters roster extraction** — connected an orphaned creator via rival-club
+   co-authors, giving the first YouTube-sourced event pair.
+
+## ⚠️ Open items for the user (none actioned unilaterally)
+
+1. **Out-of-window posts are now visible.** Dating revealed content back to **2024-09**, and
+   several pairs rest on events dated **2025-07-03 / 2026-01-21 / 2026-02-09** — outside the
+   183-day rolling window. Cause: undated posts could never be evaluated by the recency
+   filter. **Decide: keep (they supply scarce "before" data) or purge (honour the window).**
+   Some of the 37 pairs depend on those events.
+2. **Dates carry ±1 day** (timezone boundary; 3 of 6 off by one in validation). Immaterial for
+   straddle analysis, must not be presented as exact.
+3. **3 handles were wrongly routed to brand_signals** before the grid-BRAND bug was fixed
+   (`brisonfernandes17_`, `duamirzaasad`, `abhishekganguly`) — re-run
+   `push_checkpoint_candidates.py --from-db` to surface them as candidates.
+4. **Reddit remains weak**: 77% of creators are name-gated, and of 38 searched only one
+   produced posts (which were false positives). Not a productive lever on this set.
+
+## (historical cycle detail below)
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
