@@ -26,6 +26,193 @@ Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRA
 
 ---
 
+---
+
+# TECH-DEBT LOOP — CYCLE 1 (2026-08-19)
+
+Scope: the 4 open technical items in CAPSTONE_NEXT_STEPS.md P0.4, folded into 3 numbered
+ITEMs (ITEM 1 covers two of them). **ITEM 1 and ITEM 2 are terminal. ITEM 3 is partially
+done.** The loop continues.
+
+## ITEM 1 — orchestrator position-matching: TERMINAL (fixed + verified on real data)
+
+### 1.1 Adapter retry — done, but its benefit is currently UNMEASURABLE
+`run_opencli` had no retry at all: one shot, raise, caller falls back to browser-only. It now
+retries 3x with 5s/15s backoff. **A 429 is deliberately never retried** — that is a real
+throttle, and hammering it is how the multi-hour blocks in this file were earned.
+
+Honest caveat: the adapter succeeded on **every** call this cycle (9/9 limit tests, 20/20
+held-out fetches), against ~4-of-6 last round. Retry recovered **0** calls — not because it
+does not work, but because nothing failed. Unproven, not disproven.
+
+### 1.2 The `--limit` mystery — SOLVED
+`--limit` **does** reach the call. It works downward and clamps upward:
+
+| `--limit` | 3 | 5 | 12 | 15 | 20 | 25 | 40 |
+|---|---|---|---|---|---|---|---|
+| rows returned | 3 | 5 | 12 | 12 | 12 | 12 | 12 |
+
+Verified on `mostlysane`; 40 to 12 reproduced on `carryminati` and `taarukraina`.
+**Cause: `--limit` truncates an already-scraped set, and the adapter only ever scrapes
+Instagram's 12-post first-paint grid. It has no pagination.** Not fixable adapter-side; the
+browser path already scrolls, which is why it reaches 40 and the adapter cannot. Closed.
+
+### 1.3 Structured date metadata on the permalink page — CONFIRMED, now used per post
+`og:description` carries date, likes, comments AND the owning username, keyed to the post url
+itself. Parser unit-tested 4/4 including the abbreviated-count case. Counts are written ONLY
+when Instagram did not abbreviate them (a "1M" for a true 1,416,111 would corrupt a real value).
+
+### 1.4 The fix — could NOT be done as literally specified
+`opencli instagram user --help` documents its output columns as
+`index, caption, likes, comments, type, date`. **There is no url, shortcode or id** — a
+`post_id` join against the listing is impossible, there is nothing to join on. Confirmed
+against real json, not just the help text.
+
+Implemented instead, same goal (metadata provably belongs to its post):
+- **`match_listing_meta()`** joins by caption content (symmetric prefix, since the listing
+  truncates at 100 chars while the page has the full text) and **refuses ambiguous matches**
+  rather than guessing. A missing date is recoverable; a confidently wrong one is not.
+- **`og:description` per post**, fetched from the post's own url, so it cannot be
+  misattributed, and it reaches posts past the 12-row ceiling that were permanently NULL.
+- Recency filtering now uses the post's own date, not a positionally guessed one.
+
+### 1.5 — the verification found something WORSE than misalignment
+A profile grid mixes in posts owned by **other accounts**. On `mostlysane`, 4 of 12 grid links
+belonged to `netflix_in` and `exhibitmagazine`, interleaved from position 2:
+
+```
+ 1 /mostlysane/reel/DcLAofft5_h/      own
+ 2 /netflix_in/reel/Db-JzrUGjyB/      FOREIGN
+ 3 /netflix_in/p/Db72ic4kQiM/         FOREIGN
+ 4 /exhibitmagazine/p/Db3BGJgsSnp/    FOREIGN
+ 5 /mostlysane/p/Db2norRjVTl/         own
+ 6 /netflix_in/reel/Db2nGH6FaO6/      FOREIGN
+```
+
+The old selector took every `/p/` and `/reel/` link and wrote them all with
+`username=<handle>, creator_id=<this creator>`. Two consequences:
+1. **Another account's post, and its engagement counts, recorded as this creator's.**
+2. It **proves** positional matching was wrong — the listing holds only her own posts by
+   recency, so from grid #2 on every pairing was offset. At most **1 of 12** was correct.
+   That is the confirmation three rounds of flagging never produced.
+
+`own_post_paths()` now filters foreign links before they consume the post cap.
+
+**Measured contamination in data already stored** (`audit_post_ownership.py`, new, read-only):
+
+| sample | resolvable | misattributed | rate |
+|---|---|---|---|
+| random posts | 14 | 2 | **14.3%** |
+| sponsorship events | 52 | 3 | **5.8%** |
+
+| post | stored as | real owner |
+|---|---|---|
+| `DLrSRdqTcEQ` | virat.kohli | anushkasharma |
+| `DUkDWOYiL8x` | virat.kohli | **duroflexworld** (brand) |
+| `DW3hIgJDI3P` | pratibha_ranta | **reliancejewels** (brand) |
+
+Two of three are brand-owned — a brand's own ad recorded as a creator's sponsorship event.
+That is a label error, not an attribution nit.
+
+**Reach into the objective: 5 of 37 computable pairs (13.5%) depend on one of these events.
+32 survive, still above the 20 floor.** A correctness problem, not a go/no-go one.
+
+**Left for the user, deliberately not actioned:** re-attributing a sponsorship event changes
+the collaboration graph and the pair count Track B trains on. `--fix` is intentionally absent.
+
+## ITEM 2 — account_classify: TERMINAL (characterized, fixed, honestly re-measured)
+
+**The first finding is about the measurement, not the classifier:** only **26 of 16,815**
+`instagram_profiles` rows carry any bio (0.15%), 22 over 25 chars — so a DB-sourced held-out
+set caps at 17 usable cases. And **no held-out set was ever stored**; the 57% was a one-off
+nobody could reproduce. Both sets are now committed as `heldout_accounts.json`.
+
+**The failure pattern (set #1, 17 hand-labelled real bios, 52.9%):** every error was "to other"
+— the classifier fails by *abstaining*, never by confusing two real categories. Even split:
+- **Group A, fixable (4):** the occupational word is present but missing from the lexicon —
+  "I act...at the movies", "one shuttle at a time", "In Cinemas now", and `tennis` glued inside
+  `@saniamirzatennisacademy` (word boundaries cannot see inside a handle).
+- **Group B, unrecoverable (4):** no occupational signal at all — "Proud parent and Blessed
+  son", "we're all just walking each other home".
+
+Honest bio-only ceiling: **13/17 = 76.5%, not 100%**. Fixing Group A hit exactly 76.5%, the 4
+remaining misses being precisely the 4 Group-B cases predicted.
+
+**Does it generalize? Only weakly — that is the real answer:**
+
+| | pre-fix | post-fix |
+|---|---|---|
+| set #1 (the set the fix came from) | 52.9% | **76.5%** (+23.6pp) |
+| **set #2 (fresh, live-fetched, never tuned on)** | **33.3%** | **44.4%** (+11.1pp) |
+| tuned suite | 42/42 | 42/42 |
+
+Most of the set-#1 gain was overfitting. Real generalization is +11.1pp.
+
+**Set #2 exposed an error class set #1 never showed — CONFIDENT wrong answers, worse than
+abstaining**, contradicting the "all errors abstain" pattern:
+- `"world championship"` in `_LEAGUE` caught an athlete listing events he **won**.
+- bare `"cf"` in `_TEAM` caught `"CF Coach"` (CrossFit) on a fitness creator.
+- a leading trademark-symbol test dropped `@athleanx`, a real creator who trademarked his own
+  programme name — this module's **worst** error class (a false BRAND silently discards a
+  person instead of sending them to review).
+
+Fixed by moving the symbol test below the individual checks, dropping `"cf"`, and separating
+leagues from athletes on weight-class/age-group markers (`U-23`, `61kg`) — no league is named
+after a weight class. **Scoping "world championship" by field was tried first and does NOT
+work**: `@e1series` has it in the bio too, exactly like the athlete.
+
+**Set #2 has now been tuned against as well. A clean number needs a set #3** — build one the
+same way rather than re-quoting 44.4% as if it were untouched.
+
+## ITEM 3 — Reddit real-name backfill: IN PROGRESS (step 1 done, and it inverts the premise)
+
+**Step 1 as specified. Handle-as-is search does NOT fail by returning zero — and "does it
+return results" is the wrong test.**
+
+Population first: of 205 name-gated creators, **200 have `name == handle`**, 5 are gated for
+other reasons. But the 200 are mostly not famous people with a recoverable name — the list is
+dominated by small accounts, orgs and handle-only personas (`sultaan_pahalwan`, `jumper_aj_`,
+`fyxscasts`, `sofii_flow_`, `totalcombatfitness`).
+
+Site-wide search on real handles returns plenty of results, and they are **noise**:
+
+| query | results | actually relevant |
+|---|---|---|
+| `jumper_aj_` | 15 | **0/5** — r/nba "jumper" plus a player called "AJ", matched separately |
+| `fit_boult` | 15 | **0/5** — Trent Boult the cricketer plus "fit" |
+| `sunrisershyd` | 15 | **4/5** — a real, recognizable abbreviation |
+
+**Reddit tokenizes on `_` and `.`, so a handle-shaped name returns plausible-looking garbage
+rather than nothing.** Worse than failing, and exactly the false-positive mechanism that
+previously forced purging 10 posts and 67 comments. So `name = handle` IS genuinely blocking,
+but the recorded reason ("returns 0 results") is wrong.
+
+**Second finding: `reddit search` is FLAKY, and a flake is indistinguishable from a real
+negative.** `"Sunrisers Hyderabad"` and `"Royal Challengers Bengaluru"` each returned **0** on
+first run and **15** on retest, query unchanged. `run_opencli`'s new retry does **not** cover
+this — a search that exits 0 with an empty list counts as success. **Any past conclusion of the
+form "creator X has no Reddit presence" may be a flake, including part of the 77% figure.**
+
+### Still to do on ITEM 3 (cycle 2)
+- Retry-on-empty for `reddit search`, then re-measure how much of the 77% survives.
+- The two untried name sources: the YouTube channel **description/about** text (a distinct
+  field from the title already checked), and a lightweight Wikipedia/web lookup for well-known
+  figures.
+- Report resolved-per-method and how many are genuinely unresolvable — a legitimate outcome for
+  handle-only personas, not a failure.
+
+## Found but not finished (cycle 1)
+1. **The 3 misattributed sponsorship events are still in the DB** — awaiting the user's call,
+   since fixing them changes Track B's graph. 32 of 37 pairs are independent of them.
+2. **Full-DB ownership audit not run** — 1,751 posts at ~10s each is roughly 5h. Only the
+   sponsored subset (52) and a 15-post random sample were checked.
+3. **`account_classify` set #3 not built** — 44.4% is no longer a clean number.
+4. **Taxonomy gaps found while labelling**: a football club's assistant coach, and a marathon
+   *event*, have no correct category. Both excluded from set #2 rather than force-labelled.
+5. **Retry's real-world benefit unmeasured** — the adapter never failed this cycle.
+
+---
+
 ## Current state (one paragraph)
 
 The full data layer is **built, live, and collecting real data**. Supabase Postgres is
