@@ -75,7 +75,16 @@ def subs_for(name: str, category: str, connected_names: str) -> list[str]:
     if category == "athlete":
         if FOOTBALL_HINTS.search(blob):
             return FOOTBALL
-        return CRICKET if CRICKET_HINTS.search(blob) else ["india", "Cricket"]
+        if CRICKET_HINTS.search(blob):
+            return CRICKET
+        # NO SPORT SIGNAL -> do NOT assert one. This fallback used to return
+        # ["india", "Cricket"], which measured 2026-08-19 as 41 of 44 eligible athletes
+        # (93%) being sent to r/Cricket on no evidence at all -- among them Leander Paes
+        # (tennis), Sunil Chhetri and Ashique Kuruniyan (football), Ravinder Dahiya
+        # (wrestling) and Manush Shah (table tennis). `category` carries no sport, and a
+        # personal name carries none either, so cricket was a guess dressed as a default.
+        # r/india alone is generic but true; the wrong sport sub is a guaranteed miss.
+        return ["india"]
     if category == "fitness_influencer":
         return FITNESS
     return GENERIC
