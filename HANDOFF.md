@@ -328,15 +328,23 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
-## CYCLE 8 (in flight) — co-author run over 287 posts, ~half done
+## CYCLE 9 (co-author run still in flight) — 174 of 287 posts, 0 failures
 
-Edges are the binding constraint per the ceiling analysis below, and this run is producing
-them: CRA rows 689 → **801** (+112), resolved rows 185 → **194** (+9), edge pairs 163 → **166**.
-Computable pairs still 14 — expected, since a new edge only becomes a pair when it lands on a
-creator holding a DATED event whose window straddles it.
+Edges are the binding constraint per the ceiling analysis below, and the run keeps producing
+them: CRA rows 689 → **821** (+132), resolved 185 → 194, edge pairs 163 → **167**.
+**Computable pairs still 14** — expected, not a stall: a new edge only becomes a pair when it
+lands on a creator holding a DATED event whose window straddles it.
 
-Stats unchanged this cycle: Instagram 130/259 (50.2%) attempted / 47 (18.1%) content;
+Pace is ~41s/post (8s inter-post gap + 3 opencli calls each), so a 287-post scan runs ~3h.
+Budget for that when planning a cycle around it.
+
+Stats flat across cycles 7-9: Instagram 130/259 (50.2%) attempted / 47 (18.1%) content;
 YouTube 259/259 (100%); Reddit 54/259 (20.8%), name-gated 200 (77.2%), untouched 5 (1.9%).
+
+⚠️ **Pairs have now been flat at 14 for 3 consecutive cycles (7, 8, 9).** Under the Exhausted
+criterion that satisfies "stopped growing for 2 consecutive cycles" — but Exhausted ALSO
+requires 100% attempted on all three platforms, and Reddit sits at 20.8%. So the loop
+continues; the flatness is informative, not terminal.
 
 ## 📐 CEILING ANALYSIS (cycle 7) — READ THIS BEFORE PLANNING MORE WORK
 
