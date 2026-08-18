@@ -1,7 +1,7 @@
 # HANDOFF — Track A (Data/Infra)
 
 **Start here.** Canonical entry point for a fresh session on this track. Last updated
-**2026-08-18 — the batch-readiness loop is CLOSED.** Branch: `track-a-data-infra`.
+**2026-08-19 — batch-readiness loop CLOSED; a TECH-DEBT loop is running (cycle 1 done, ITEM 3 still open).** Branch: `track-a-data-infra`.
 Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
 ## ⏩ 30-SECOND RESUME — read this before anything else
