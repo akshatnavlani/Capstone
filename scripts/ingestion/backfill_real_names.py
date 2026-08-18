@@ -1,0 +1,154 @@
+"""Backfill `creators.name` for handle-named creators from their live Instagram profile.
+
+WHY THIS IS ONLY NOW POSSIBLE. Bulk promotion set `creators.name = instagram_handle` for 200+
+creators, and the Reddit topic-sub search queries by `name` -- so a handle-shaped name is the
+single precondition failure blocking all Reddit work for them (P0.5).
+
+The previous attempt (2026-08-17) resolved ZERO and diagnosed why: the profile fetch already
+returns the name, it was simply never persisted, and re-fetching needed Instagram calls that
+were blocked behind a sustained HTTP 429. **That block has cleared** -- the adapter succeeded on
+every call made on 2026-08-19 -- so this is the same plan, finally runnable.
+
+DB-side sources are exhausted and cannot close this. Measured 2026-08-19 against the 200
+name-gated creators: YouTube channel description covers 5, YouTube title 5,
+`instagram_profiles.full_name` 8, `instagram_profiles.bio` 7. A live fetch is the only source
+with the reach to matter.
+
+WHAT COUNTS AS A REAL NAME: `looks_like_real_name()` -- reused, not reimplemented -- requires a
+SPACE. That is not cosmetic. Reddit tokenizes on separators, so "Mumbai Indians" is searchable
+where "mumbaiindians" is not; word separation IS the improvement. A spacing-blind version of
+this check previously rejected 17 recoverable names as "no change".
+
+Never guesses. A profile with no name, or a name equal to the handle, is left alone and counted
+as genuinely unresolvable -- an acceptable outcome for handle-only personas, not a failure.
+
+Run: python backfill_real_names.py [--dry-run] [--limit N]
+"""
+
+import argparse
+import json
+import logging
+import os
+import re
+import time
+
+import psycopg2
+
+from account_classify import fetch_profile
+from assign_reddit_subs import looks_like_real_name
+from orchestrator import ENV
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("names")
+
+# A name is only useful here if REDDIT CAN SEARCH IT, so the raw profile name is cleaned
+# before it is judged. Every rule below comes from a real value seen in the first dry run:
+#   'Shivaldo_Chingangbam'                        -> separators are real word breaks
+#   'Saurabh Thapa | Fitness Experience Designer' -> the suffix is a job title, not a name
+#   'RAGI CHAUDHARY[flag emoji]'                  -> decoration that no Reddit post contains
+_SUFFIX_SEPS = ("|", "•", "·", "—", "–", "/")
+_KEEP = re.compile(r"[^\w\s'.-]", re.UNICODE)   # drop emoji/symbols, keep letters+marks
+
+
+def clean_name(raw: str) -> str:
+    """Normalise a profile name into something Reddit search can actually match."""
+    if not raw:
+        return ""
+    name = raw
+    for sep in _SUFFIX_SEPS:          # 'Saurabh Thapa | Fitness ...' -> 'Saurabh Thapa'
+        if sep in name:
+            name = name.split(sep)[0]
+    name = _KEEP.sub(" ", name)       # strip emoji and decoration
+    name = re.sub(r"[_.]+", " ", name)  # 'Shivaldo_Chingangbam' -> 'Shivaldo Chingangbam'
+    return re.sub(r"\s+", " ", name).strip()
+
+
+CHECKPOINT = os.path.join(os.path.dirname(__file__), "name_backfill_checkpoint.json")
+
+# Creators whose Reddit work is blocked purely because name == handle.
+GATED = """
+    select c.creator_id, c.instagram_handle
+    from creators c
+    where c.instagram_handle is not null
+      and lower(c.name) = lower(c.instagram_handle)
+      and not exists (select 1 from reddit_posts r where r.creator_id = c.creator_id)
+      and not exists (select 1 from reddit_post_creators r where r.creator_id = c.creator_id)
+      and coalesce(array_length(c.reddit_topic_subs, 1), 0) = 0
+      and coalesce(array_length(c.reddit_handles, 1), 0) = 0
+    order by c.instagram_handle
+"""
+
+
+def load_done() -> dict:
+    try:
+        with open(CHECKPOINT, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_done(done: dict) -> None:
+    with open(CHECKPOINT, "w", encoding="utf-8") as fh:
+        json.dump(done, fh, ensure_ascii=False, indent=1)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--limit", type=int, default=0)
+    args = ap.parse_args()
+
+    conn = psycopg2.connect(ENV["DATABASE_URL"])
+    with conn.cursor() as cur:
+        cur.execute(GATED)
+        gated = cur.fetchall()
+
+    done = load_done()
+    todo = [(cid, h) for cid, h in gated if h not in done]
+    if args.limit:
+        todo = todo[: args.limit]
+    log.info("name-gated: %d  |  already attempted: %d  |  this run: %d",
+              len(gated), len(done), len(todo))
+
+    resolved = unresolved = failed = 0
+    for i, (cid, handle) in enumerate(todo, 1):
+        try:
+            prof = fetch_profile(handle)
+        except Exception as e:
+            failed += 1
+            log.warning("[%d/%d] %s: fetch failed (%s)", i, len(todo), handle, str(e)[:80])
+            continue
+        raw = (prof or {}).get("name") or ""
+        name = clean_name(raw)
+
+        if not looks_like_real_name(name, handle):
+            unresolved += 1
+            done[handle] = {"status": "unresolvable", "raw_name": raw}
+            log.info("[%d/%d] %s: no usable name (raw=%r)", i, len(todo), handle, raw[:40])
+        else:
+            resolved += 1
+            done[handle] = {"status": "resolved", "name": name}
+            log.info("[%d/%d] %s -> %r%s", i, len(todo), handle, name,
+                      "" if name == raw else f"   (cleaned from {raw!r})")
+            if not args.dry_run:
+                with conn.cursor() as cur:
+                    cur.execute("update creators set name=%s where creator_id=%s", (name, cid))
+                    # Persist to the profile row too, so the DB-side source stops being empty
+                    # for the next tool that looks there.
+                    cur.execute("""
+                        update instagram_profiles set full_name=%s
+                        where lower(username)=lower(%s)
+                          and length(coalesce(full_name,'')) = 0
+                    """, (name, handle))
+                conn.commit()
+        if not args.dry_run:
+            save_done(done)
+        time.sleep(3)
+
+    conn.close()
+    log.info("DONE resolved=%d unresolvable=%d fetch_failed=%d%s",
+              resolved, unresolved, failed, "  [DRY RUN]" if args.dry_run else "")
+
+
+if __name__ == "__main__":
+    main()

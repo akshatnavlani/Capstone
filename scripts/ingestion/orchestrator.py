@@ -956,6 +956,32 @@ class RedditWorker(PlatformWorker):
                   creator.name, collected, len(creator.reddit_handles),
                   len(creator.reddit_topic_subs))
 
+    def _search_retry_empty(self, query: str, sub: str, tries: int = 3):
+        """`reddit search`, retried when it returns EMPTY -- not when it errors.
+
+        Measured 2026-08-19: "Sunrisers Hyderabad" and "Royal Challengers Bengaluru" each
+        returned 0 results, then 15 on retest with the query unchanged. The command exits 0
+        and yields an empty list, so it is a "success" -- run_opencli's retry never sees it,
+        and a flake is indistinguishable from a creator genuinely having no Reddit presence.
+
+        That matters beyond one run: every "creator X has no Reddit content" conclusion on
+        record was drawn from a single call, so an unknown share of the 77% name-gated /
+        no-content population may be flakes rather than real negatives.
+
+        A still-empty result after `tries` attempts is accepted as a real negative.
+        """
+        for attempt in range(tries):
+            posts = run_opencli("reddit", "search", query, "--subreddit", sub, "--sort", "new",
+                                 "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+            if isinstance(posts, list) and posts:
+                if attempt:
+                    log.info("Reddit: r/%s '%s' returned empty %dx, then %d results — flake, "
+                              "not a real negative", sub, query, attempt, len(posts))
+                return posts
+            if attempt < tries - 1:
+                time.sleep(4)
+        return posts
+
     def _collect(self, creator: Creator, sub: str, conn, mode: str) -> int:
         self.rate_limiter.wait()
         try:
@@ -966,9 +992,7 @@ class RedditWorker(PlatformWorker):
                 posts = run_opencli("reddit", "subreddit", sub, "--sort", "new",
                                      "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
             else:
-                posts = run_opencli("reddit", "search", creator.name,
-                                     "--subreddit", sub, "--sort", "new",
-                                     "--limit", str(self.post_cap), "-f", "yaml", timeout=90)
+                posts = self._search_retry_empty(creator.name, sub)
         except RuntimeError as e:
             log.warning("Reddit %s r/%s for %s failed: %s", mode, sub, creator.name,
                          str(e)[:120])
