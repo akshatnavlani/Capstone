@@ -328,6 +328,36 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
+## ✅ CYCLE 12 — THE DATE BLOCKER IS SOLVED. Pairs 14 → 16 and climbing
+
+`backfill_dates_from_og.py` is running against the 46 dateless sponsored posts with a
+**100% hit rate so far (0 failures)**, and pairs moved **14 → 16 on the first 4 dates alone**.
+This is the constraint cycle 10 quantified as worth 50-70 pairs.
+
+Source: the post page's `<meta property="og:description">`, which carries a date for ANY post
+including captioned/sponsored ones — the exact gap every other mechanism had. Validated 6/6
+against DB ground truth (3 exact, 3 off-by-one from the known timezone boundary). **Date
+only** — the like/comment counts in that string are abbreviated ("1M" for 1,416,111) and
+drift with engagement, so writing them would corrupt real values.
+
+### ⚠️ SIDE-FINDING: undated posts BYPASSED the recency filter, so the backlog skews OLD
+`anushkasharma`'s newly-dated posts run back to **2024-09-18**, far outside the 183-day
+rolling window (cutoff 2026-02-15). Cause: the recency filter compares a post's date to the
+cutoff, so a post with **no date could never be filtered** and was stored regardless of age.
+
+Already surfaced: **21 posts now dated before the cutoff, 5 of them sponsorship events.**
+
+Two consequences, neither yet decided:
+1. **Data hygiene** — the dataset contains out-of-window content that the rolling-window
+   policy would have excluded. Now visible for the first time *because* dating works.
+2. **Pair impact is mixed, not purely good** — an old *event* is unlikely to straddle
+   (neighbours' collected posts are recent), but old *neighbour* posts are exactly the
+   "before" side that was missing. Both effects are live in the current count.
+
+**Needs a user decision:** keep the pre-cutoff posts (they supply scarce "before" data) or
+purge them to honour the rolling window. Not actioned unilaterally — it is a policy call, and
+deleting real scraped data is not reversible.
+
 ## ⚠️ CYCLE 11 — FALSE BRAND POSITIVES FROM GRID TEXT, found and fixed
 
 The co-author run's classification pass routed real PEOPLE to `brand_signals`:
