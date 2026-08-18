@@ -328,7 +328,32 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
-## 🎯 COMPUTABLE PAIRS: 3 (baseline) → 13 of the 20 target
+## 🎯 COMPUTABLE PAIRS: 3 (baseline) → 14 of the 20 target
+
+Trajectory by cycle: **3 → 4 → 5 → 10 → 13 → 14**.
+
+| | baseline | cycle 6 |
+|---|---|---|
+| Instagram attempted | 121 (46.7%) | **130 (50.2%)** |
+| Instagram with content | 36 (13.9%) | **47 (18.1%)** |
+| YouTube attempted | 259 (100%) ✅ | 259 (100%) ✅ |
+| Reddit attempted | 36 (13.9%) | 54 (20.8%) |
+| Reddit name-gated | 215 (83%) | 200 (77%) |
+| **Computable pairs** | **3** | **14** |
+| Collaboration edge pairs | 161 | 163 |
+
+**Cycle 6 note — the contentless-neighbour lever is showing diminishing returns.** The second
+batch (chennaiyinfc, anushkasharma, nasimamirza, saniamirzatennisacademy, servingitupwithsania)
+deepened 5 creators for **+1 pair**, versus +4 from the Bhuvan Bam batch. The remaining
+contentless neighbours mostly touch a single event each, and several fail outright
+(`nikkhiladvani` twice, `portugal` — both look like dead/blocked handles).
+
+**IN FLIGHT:** co-author extraction over **284 newly deepened posts** (chennaiyinfc 40,
+karanjohar 40, pratibha_ranta 39, nasimamirza 38, saniamirzatennisacademy 35, anushkasharma 31,
+servingitupwithsania 30, …). New edges are the other route to pairs, since every new resolving
+edge multiplies against the dated events already held.
+
+### (superseded) earlier snapshots below
 
 Cycle 5's full deepening run (5 of 6 creators; `nikkhiladvani` failed and is being retried)
 took pairs 10 → **13**. Instagram attempted 121 → 126 (48.6%), with content 37 → 42 (16.2%).
