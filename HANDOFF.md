@@ -328,6 +328,33 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 **A fresh session resuming this loop should read THIS section first — it is the live state.**
 
+## 📐 CEILING ANALYSIS (cycle 7) — READ THIS BEFORE PLANNING MORE WORK
+
+Every event-neighbour combination, classified by what actually blocks it:
+
+| | count | fixable? |
+|---|---|---|
+| **Computable now** | **14** | — |
+| Neighbour has NO Instagram content | 6 | deepening CAN fix |
+| Neighbour's collected window STARTS AFTER the event | 7 | **unreachable** without history extension |
+| Window covers the event but before=0 | 0 | — |
+| **Total combos** | **29** | |
+
+⇒ **With the CURRENT set of events and edges, the hard ceiling is 20 pairs** (14 + 6), and
+only if all six deepen successfully. Of those six:
+- `sporting.beyond` — **must not be deepened**: flagged brand (Sporting Beyond Pvt Ltd) and a
+  dead handle
+- `portugal`, `nikkhiladvani` — each **failed twice**; treat as dead/blocked, do not retry
+  again without a different approach
+- `suhan.khnofficial`, `Mumbai City FC` — the only clean targets left
+
+**Realistic ceiling on the current graph is therefore ~16, not 20.** Exceeding it requires
+either MORE DATED EVENTS (blocked — the 25 dateless sponsored posts are unreachable by every
+mechanism: adapter capped at 12, grid only dates caption-less posts, post page has no date)
+or MORE RESOLVING EDGES (the co-author run in flight is exactly this).
+
+**That makes edges, not deepening, the binding constraint from here.**
+
 ## 🎯 COMPUTABLE PAIRS: 3 (baseline) → 14 of the 20 target
 
 Trajectory by cycle: **3 → 4 → 5 → 10 → 13 → 14**.
