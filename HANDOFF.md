@@ -1,12 +1,28 @@
 # HANDOFF — Track A (Data/Infra)
 
 **Start here.** Canonical entry point for a fresh session on this track. Last updated
-2026-08-12 (end of Weeks 11-13). Branch: `track-a-data-infra`. Worktree:
-`D:\Capstone-worktrees\track-a-data-infra`.
+**2026-08-18 — the batch-readiness loop is CLOSED.** Branch: `track-a-data-infra`.
+Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
-Read this first, then `DATA_COLLECTION_STATUS.md` (real backend state + measurements),
-`ORCHESTRATION.md` (pipeline design + the parallelization rule), `SCHEMA.md` (DB
-contract other tracks build against).
+## ⏩ 30-SECOND RESUME — read this before anything else
+
+- **The loop is finished. Do not restart it and do not re-run Phase 0 from scratch.** It
+  stopped on its own "Sufficient" condition: **37 computable training pairs**, target was
+  ≥ 20. Both cron jobs (`225af3a3` and the pre-crash `8b00cead`) are cancelled — `CronList`
+  reports no scheduled jobs. If a loop prompt fires again, that is a stale schedule, not work.
+- **The live state is the `✅ LOOP COMPLETE (2026-08-18)` section** (search for it — it sits
+  partway down this file). Everything between here and it is *older* than it. Chronology in
+  this file runs newest-at-top *within* each block but the blocks themselves are appended, so
+  trust the dates, not the position.
+- **Re-verify before acting on any number**: `python scripts/ingestion/loop_stats.py` reprints
+  the entire Phase 0 table in ~10s against the live DB. That is the only thing worth re-running.
+- **Instagram and Reddit must run SEQUENTIALLY.** The resource-separation hypothesis was
+  tested this loop and **failed** — see "Phase 1" below. Do not casually re-test it.
+- **Four decisions are waiting on the user** (out-of-window posts, ±1-day dates, 3
+  mis-routed handles, Reddit's weakness). None were actioned unilaterally.
+
+Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRATION.md`
+(pipeline design + the parallelization rule), `SCHEMA.md` (DB contract for other tracks).
 
 ---
 
@@ -326,8 +342,100 @@ prevent. It converted a silent-corruption bug into a loud one.
 
 # ✅ LOOP COMPLETE (2026-08-18) — STOPPED ON "SUFFICIENT": 37 computable pairs
 
-**13 cycles. Stop condition: Sufficient (pairs ≥ 20) — reached 37.** Cron job 225af3a3
-cancelled. A fresh session does NOT need to resume this loop.
+**13 cycles. Stop condition: Sufficient (pairs ≥ 20) — reached 37.** Both cron jobs cancelled:
+`225af3a3` (the post-crash re-creation) and `8b00cead` (the ORIGINAL, created before the
+laptop crash — it survived and re-fired the loop once after completion, which is why a
+loop prompt may appear in the transcript after the final report). `CronList` now reports
+no scheduled jobs. **A fresh session does NOT need to resume this loop.**
+
+## Where the loop stopped, phase by phase
+
+**Not mid-phase. All three phases ran to completion and the loop body then hit its stop
+condition.** A fresh session has nothing to pick up here.
+
+| Phase | Status | What it left behind |
+|---|---|---|
+| **Phase 0 — baseline stats** | ✅ complete, cycle 0 | The baseline column of the table below. Reproducible any time via `loop_stats.py`; do **not** hand-derive it again. |
+| **Phase 1 — parallelization hypothesis test** | ✅ complete, and the hypothesis **FAILED** | Instagram and Reddit run **sequentially**. See below. |
+| **Loop body** | ✅ 13 full cycles, stopped on "Sufficient" | 37 computable pairs (target ≥ 20). |
+
+**Phase 0 baseline, exactly as measured (259 creators, cycle 0):** Instagram attempted
+**121 / 259 = 46.7%**; YouTube attempted **259 / 259 = 100%**; Reddit attempted
+**36 / 259 = 13.9%**. Computable pairs at baseline: **3**. `loop_stats.py` deliberately
+measures *attempted*, not *succeeded* — a creator scanned and found empty is progress, and
+counting successes would have made the loop chase the same dead accounts forever.
+
+### Phase 1 — the resource-separation hypothesis did NOT hold
+
+The hypothesis was that the original contention incident came from two *site adapters*
+sharing one tab lease, and that a **site adapter (Instagram) + a named browser session
+(Reddit)** would touch different resources and so run concurrently.
+
+- **First measurement said clear — and it was wrong.** A 3-call burst showed no contention.
+  I reported it clear.
+- **Sustained load reproduced the original incident exactly.** Roughly **4 minutes** after
+  the concurrent Instagram job started, Reddit queries began failing; the *same* queries
+  succeeded immediately once Instagram stopped. Same signature as the first incident.
+- **Retracted.** The burst test was too short to reach the starvation point. Lesson recorded:
+  concurrency clearance requires a *sustained* test, never a burst — the same lesson the
+  Instagram-throttle probe taught earlier in this file.
+
+**Fallback state right now: sequential, and that is the committed configuration.** YouTube
+remains safe to run alongside either (verified: it makes zero browser calls, `urllib`
+straight to `googleapis.com`). Do not re-open this without a sustained test of ≥ 10 minutes.
+
+### Kerala Blasters — yes, connected
+
+It was an orphan (0 graph edges) with 2 sponsorship events living on **YouTube**
+("brought to you by"), invisible to an Instagram-only event query. Roster extraction found
+co-authors via **rival clubs**, giving it **2 resolving edges** and the loop's first
+YouTube-sourced event pair. Two fixes were required and both are in code: the roster
+extraction itself, and the `loop_stats.py` event query, whose *event* side was
+Instagram-only and silently hid these events (the neighbour side had already been fixed —
+the same blind spot, twice).
+
+### The 5 priority Instagram creators — all five now have real content
+
+Verified live at handoff (`instagram_posts`, 2026-08-18):
+
+| creator | handle | posts | sponsored | undated sponsored | dated posts | resolving edges |
+|---|---|---|---|---|---|---|
+| CarryMinati | `carryminati` | 40 | 6 | **0** | 21 | 1 |
+| Ajinkya Rahane | `ajinkyarahane` | 39 | 1 | **0** | 20 | 4 |
+| KKR | `kkriders` | 40 | 1 | **0** | 18 | 16 |
+| Prajakta Koli | `mostlysane` | 40 | 2 | **0** | 29 | 8 |
+| Taaruk Raina | `taarukraina` | 34 | 4 | **0** | 26 | 2 |
+
+(The brief spelled it `kkirders`; the real handle is `kkriders`.) All five were blocked at
+loop start — the Instagram adapter was returning `chrome-error://chromewebdata/`. They were
+collected via the **browser-only** path, and every one of their sponsored posts is now dated,
+which is what made them usable as pair endpoints. `kkriders` at 16 resolving edges is the
+densest node in the priority set and the best target for any further deepening.
+
+### Found but NOT finished investigating
+
+Ranked by how much they could still bite:
+
+1. **`orchestrator.py:447` positional metadata matching.** `meta = posts_meta[i] if i <
+   len(posts_meta) else {}` pairs a post with metadata **by list position**, against a
+   listing that caps at 12 items. If the two lists ever diverge, metadata silently attaches
+   to the wrong post. I audited 15 caption-verified comparisons and found **0 conflicts** —
+   but 15 is a small sample and it is **not proof of safety**. Fix is to match on `post_id`.
+2. **Instagram adapter intermittency, never root-caused.** `opencli instagram user` succeeds
+   roughly **4 of 6** attempts with no pattern I could isolate; the browser-only path is the
+   working substitute, not a diagnosis. Phase 1L settled that it is *not* pacing.
+3. **`account_classify.py` held-out accuracy is 57%** (30% bio-only → 47% +affiliation →
+   57% +grid). The 42/42 on the tuned suite is **overfit — do not quote it**. ~43% of
+   categories are still wrong, which matters for Reddit sub-routing.
+4. **The 12-post listing ceiling itself.** `--limit 40` returns exactly 12, verified on two
+   creators at both values. My earlier claim that `--limit` was "very likely the entire
+   cause" was **wrong**. Root cause unknown; it caps every Instagram creator at 12 fresh
+   posts per pass.
+5. **Out-of-window posts** — dating exposed content back to **2024-09**. Not a bug; undated
+   posts could never be evaluated by the recency filter. Needs the user's keep-or-purge call
+   (item 1 below) and some of the 37 pairs depend on those events.
+6. **Reddit's 200 name-gated creators.** The gate is a missing real name, not a failed
+   search. A better name source would unlock them in bulk; scraping more Reddit will not.
 
 ## Baseline → final
 
