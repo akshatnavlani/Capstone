@@ -83,14 +83,43 @@ WAIT_SECONDS = "3"
 SLEEP_SECONDS = 3
 
 
+# Read the canonical URL alongside the description, in ONE eval, so both describe the same
+# page state. Without this the audit trusts whatever page happens to be loaded.
+_OG_VERIFIED_JS = (
+    "JSON.stringify({"
+    "d: document.querySelector('meta[property=\"og:description\"]')?.content,"
+    "u: document.querySelector('meta[property=\"og:url\"]')?.content || location.href"
+    "})"
+)
+
+
 def real_owner(post_id: str) -> str | None:
+    """Owner per the post's own og:description, or None if it cannot be trusted.
+
+    ⚠️ VERIFIES THE PAGE IS ACTUALLY THE REQUESTED POST. Without this check the audit produced
+    provably wrong readings: DC_DLAuzLnl's live og:description says `anushkasharma` on two
+    consecutive reads, while the audit had recorded `virat.kohli`. `open` is not guaranteed to
+    have completed -- or to have landed anywhere in particular -- by the time `eval` runs, so a
+    read can describe a different page entirely. Five consecutive "misattributions", each to a
+    different well-known creator, is what that looks like in the data.
+
+    Returning None on a mismatch means the post is simply re-checked later, which is always
+    preferable to recording a confident wrong owner and re-attributing real data on it.
+    """
     oc("open", f"https://www.instagram.com/p/{post_id}/")
     oc("wait", "time", WAIT_SECONDS)
     try:
-        desc = json.loads((oc("eval", _OG_JS).stdout or "").strip())
+        payload = json.loads((oc("eval", _OG_VERIFIED_JS).stdout or "").strip())
     except Exception:
         return None
-    m = OWNER.search(desc or "")
+    if not isinstance(payload, dict):
+        return None
+    url = payload.get("u") or ""
+    if post_id not in url:
+        log.warning("page mismatch for %s (loaded %s) -- discarding this read",
+                     post_id, url[:70] or "<no url>")
+        return None
+    m = OWNER.search(payload.get("d") or "")
     return m.group(1) if m else None
 
 
