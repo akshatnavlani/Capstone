@@ -1,7 +1,7 @@
 # HANDOFF — Track A (Data/Infra)
 
 **Start here.** Canonical entry point for a fresh session on this track. Last updated
-**2026-08-19 — batch-readiness loop CLOSED; a TECH-DEBT loop is running (cycle 2 done, all 3 items terminal).** Branch: `track-a-data-infra`.
+**2026-08-19 — batch-readiness loop CLOSED; tech-debt loop CLOSED (5 cycles, all 3 items terminal).** Branch: `track-a-data-infra`.
 Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
 ## ⏩ 30-SECOND RESUME — read this before anything else
@@ -27,6 +27,134 @@ Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRA
 ---
 
 ---
+
+---
+
+---
+
+# ✅ TECH-DEBT LOOP COMPLETE — CYCLES 3-5 (2026-08-19)
+
+**All 3 items terminal. 5 cycles. Loop closed.** Cycles 1-2 are recorded below this section.
+
+## ITEM 1 — TERMINAL: verified end-to-end on a live creator
+
+Cycle 1 fixed the code; cycle 3 closed the "verify against a real sample, not just unit tests"
+gap by running the fixed worker against @mostlysane, the creator already proven to have foreign
+posts in its grid:
+
+| check | result |
+|---|---|
+| owner filter | 8 links found, 6 kept — **none** of netflix_in's 3 or exhibitmagazine's 1 appear |
+| dates | **6/6** (the old positional code wrote NULL past index 11) |
+| comment counts | **6/6 exact** |
+| like counts | only on joined posts — by design; og abbreviates large counts and `_og_exact_int` refuses to overwrite a real value with a rounded one |
+
+**The run exposed a defect in my own matcher.** The page caption is MARKDOWN (it comes from
+`browser extract`), so a mention is `[@handle](/handle/)` while the listing has plain `@handle`.
+Stripping punctuation without collapsing the link first left the handle DUPLICATED, breaking the
+join on exactly the posts that mention someone — the collab posts that matter most for the
+graph. 1 of 6 joined; collapsing links first → 2 of 6. A failed join now only costs the exact
+like_count, since date and comment count come from og regardless.
+
+### The bug's real damage was MISSING metadata, not wrong metadata
+| signature | count |
+|---|---|
+| posts sharing an identical (likes, comments, date) triple | **1 group** |
+| posts with no likes AND no date | **1041 of 1751 (59%)** |
+
+Past index 11 the old code wrote `{}`, so posts got NULL rather than another post's values.
+
+**Negative result that prevents wasted work: backfilling those 1041 would add ZERO computable
+pairs.** 0 creators have all-undated posts and 0 event-neighbours are dark, so every straddle
+check already has the dated activity it needs. That is ~3 hours of browser time not worth
+spending.
+
+## ITEM 2 — TERMINAL: four held-out sets, and the answer is "mostly overfitting"
+
+The bio-capture pass (see ITEM 3) lifted profiles-with-a-bio **26 → 151**, which is what made a
+real held-out set possible at all — the earlier "bio-only ceiling" was measured on 17 cases
+*because of our own discard bug*, not because bios are scarce.
+
+**First-exposure scores, taken BEFORE any tuning against that set:**
+
+| set | n | first exposure | after being tuned against |
+|---|---|---|---|
+| set1 | 17 | 52.9% | 76.5% |
+| set2 | 18 | 33.3% | 38.9% |
+| set3 | 27 | **55.6%** | **81.5%** |
+| set4 | 23 | **47.8%** | 60.9% |
+
+**Mean first-exposure ~45%. Each tuning round buys ~25-30pp on its own set and ~5-13pp on fresh
+data.** ⇒ **A keyword/lexicon classifier plateaus near 50% on these bios.** More keywords will
+not break that; real improvement needs embeddings/LLM classification, which is outside Track A's
+lane. The tuned suite stayed 42/42 throughout — it measures nothing about generalization.
+
+⚠️ **All four sets have now been tuned against. Build set5 before quoting a new number.**
+`heldout_accounts.json` holds the labelled sets; `eval_account_classify.py` re-derives any
+number in seconds and prints "TUNED ON — optimistic" against every set that is no longer clean.
+
+### Two rules REMOVED because measurement showed they are net-harmful
+- **`_ATHLETE_CLASS`** (added by me in cycle 1) fixed 1 case and broke 3: `"drop 10-30kg+"` is
+  weight loss, `"40 Under 40"` is an award, `"RFDL U21"` is a youth team. Adding exceptions to it
+  is how this module overfits, so it is gone and @ravinderdahiya61kg is misclassified again.
+- **`"use code"` as a strong BRAND marker.** An affiliate code is what a SPONSORED CREATOR posts,
+  not what a brand says about itself — which matters doubly here, since finding sponsored
+  creators is the project's whole purpose. Both corpus occurrences were creators, none were
+  brands, and both were being dropped as brands (this module's worst error class).
+
+Also fixed from set3: a club listing its leagues is still a club; "Official Handle"; inflected
+"coached"/"coaching"; endurance sports; and product-category nouns demoted below the individual
+checks, since `Fashion | Fitness | skincare | travel` is a topic list, not commerce.
+
+⚠️ **Harness flaw caught before use:** `--propose` excluded the stored sets but NOT the tuned
+suite, and offered @technicalguruji and @ajinkyarahane. Labelling those into "set3" would have
+produced a clean-looking number that was not clean.
+
+## ITEM 3 — TERMINAL (closed in cycle 2, verified in cycles 3-4)
+
+See the cycle-2 section below for the full per-method table. Headline: name-gated **200 → 24**,
+creators with a real name **43 → 211**, Reddit attempted **54 → 230 (20.8% → 88.8%)**.
+
+## Corrections issued across this loop (all mine, all measured)
+1. **"reddit search is flaky" — RETRACTED.** 0 empties in 36 paced calls, including the two
+   queries that had failed. Burst-induced, not a defect.
+2. **"bios are scarce" — was OUR BUG.** `fetch_profile()` returns the bio; the backfill discarded
+   200 of them. That discard capped ITEM 2's held-out set at 17 cases.
+3. **The shubmangill duplicate was mine, minutes old** — not a pre-existing bug of the Mumbiker
+   Nikhil class, as I first read it.
+4. **My sport-routing "fix" was wrong and was reverted.** I narrowed no-signal athletes from
+   `["india","Cricket"]` to `["india"]` because cricket looked like a guess. Measured:
+   Shane Watson r/Cricket **20** / r/india **0**; Leander Paes r/Cricket **0** / r/india **20**.
+   A wrong sport sub returns *nothing*, not wrong data, because the relevance gate verifies every
+   hit — so the omission cost ~20 real posts per cricketer and bought no correctness. 65 athletes
+   restored; creators routed to r/Cricket 29 → 94.
+5. **The first Reddit yield sample was contaminated by me.** I ran a 2-call Instagram dry-run
+   while a Reddit job was live and starved 6 of 10 creators. **Two adapter calls were enough** —
+   the rule is not "avoid sustained parallel jobs", it is *don't touch the browser at all while a
+   browser job runs*.
+
+## Other real bugs fixed this loop
+| bug | evidence |
+|---|---|
+| a single failed comment read killed the whole creator | Tyrese Maxey collected 17 posts / 718 comments over 5 min, then one `reddit read` returned UNKNOWN and the creator was skipped with **no summary line at all** — so a productive run read as a total failure. Writes are incremental, so the loss is the *remaining* work, silently. |
+| `clean_name` destroyed every non-Latin name | Python's `\w` does not match Unicode combining marks: `'नितिन चतुर्वेदी'` → `'न त न चत र व द'`. Now category-based; 4 names repaired. |
+| `--handles` minted duplicate creators | `--platform reddit --handles <ig_handle>` keyed `get_or_create_creator` on NAME and searched `r/<ig_handle>`. My own test runs created 8 junk rows (259 → 267); cleaned up by re-pointing 40 real posts then deleting only rows verified empty across all 11 `creator_id` tables. |
+| `--dry-run` wrote the checkpoint | a rehearsal marked creators as already-attempted |
+| Wikipedia gate manufactured names | the reverse-prefix direction accepted @sagarliftz → "Sagar" |
+
+## Found but not finished (handing over)
+1. **The 3 misattributed sponsorship events are still in the DB** — `DLrSRdqTcEQ` (really
+   anushkasharma), `DUkDWOYiL8x` (duroflexworld), `DW3hIgJDI3P` (reliancejewels). Re-attributing
+   changes the graph Track B trains on, so it is a **user decision**. 32 of 37 pairs are
+   independent of them. `audit_post_ownership.py --sponsored-only` re-checks in ~6 min.
+2. **set5 for account_classify** — all four existing sets are now tuned against.
+3. **Reddit yield rate is still not cleanly measured.** Three separate errors distorted it
+   (contention I caused, silent creator aborts, and my bad sport routing). The 65 repaired
+   athletes were searched with the wrong sub set and their yield is understated.
+4. **Recency window is now Reddit's binding constraint**, not names — the same open decision as
+   the out-of-window Instagram posts.
+5. **Full-DB ownership audit not run** — 1,751 posts at ~10s each is ~5h. Only the sponsored
+   subset (52) and a 15-post random sample were checked.
 
 ---
 
