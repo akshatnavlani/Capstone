@@ -110,12 +110,40 @@ meaningfully attempted on Reddit:
   creators project-wide have a single-word name differing from their handle, which is far too
   few to justify loosening a guard that exists because of the 88% noise purge.
 
+## Task 3 — the recency window is discarding the GOOD Reddit data and keeping the noise
+
+Measured, not assumed — this project already purged 88% of Reddit data as noise after widening
+reach on an assumption. 164 results across 10 creators, relevance scored per age bucket with a
+word-boundary, all-tokens-present gate (`measure_reddit_recency.py`):
+
+| age bucket | results | on-topic | relevance |
+|---|---|---|---|
+| 0-90d | 9 | 2 | **22%** |
+| 90-183d (just outside) | 22 | 11 | 50% |
+| 183-365d | 33 | 28 | 85% |
+| 1-2y | 29 | 29 | **100%** |
+| 2y+ | 71 | 71 | **100%** |
+
+**Inside the 183-day window: 13 of 31 on-topic (42%). Outside it: 128 of 133 (96%).**
+
+Relevance RISES with age, so the window is doing the opposite of its job — excluding 133 results
+that are 96% on-topic while keeping 31 that are 42% on-topic. The noise sits in the RECENT
+results, consistent with Reddit search falling back to loose partial matches when exact recent
+matches are scarce.
+
+⇒ **Widening recovers real signal and does not reopen the noise problem.** The earlier purge was
+caused by handle-shaped name queries matching unrelated posts — a different mechanism, already
+fixed by the real-name backfill.
+
+⚠️ **Not applied.** It is a collection-policy change that interacts with the still-open user
+decision on out-of-window Instagram posts; the two should be settled together.
+
 ## Found but not finished
-1. **The audit must be re-run almost from scratch** — 56 verified of 1752. The pruned 254 were
-   not wrong-by-default, they were simply never verified.
-2. **Tasks 3 and 4 are browser-blocked** behind the audit. `measure_reddit_recency.py` is built
-   and unit-tested but has never been run.
-3. **26 is the current honest pair count.**
+1. **The audit needs ~1,500 more posts** — 240 verified of 1752, and Instagram is currently
+   throttled, so it needs a cooldown before resuming.
+2. **27 is the current honest pair count.**
+3. **Task 4 barely moved** — Instagram attempted 130 → 137 (50.2% → 52.9%), entirely as a side
+   effect of re-attribution moving posts onto creators who had none.
 
 ---
 
