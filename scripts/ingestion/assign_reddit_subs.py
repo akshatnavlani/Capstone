@@ -77,14 +77,22 @@ def subs_for(name: str, category: str, connected_names: str) -> list[str]:
             return FOOTBALL
         if CRICKET_HINTS.search(blob):
             return CRICKET
-        # NO SPORT SIGNAL -> do NOT assert one. This fallback used to return
-        # ["india", "Cricket"], which measured 2026-08-19 as 41 of 44 eligible athletes
-        # (93%) being sent to r/Cricket on no evidence at all -- among them Leander Paes
-        # (tennis), Sunil Chhetri and Ashique Kuruniyan (football), Ravinder Dahiya
-        # (wrestling) and Manush Shah (table tennis). `category` carries no sport, and a
-        # personal name carries none either, so cricket was a guess dressed as a default.
-        # r/india alone is generic but true; the wrong sport sub is a guaranteed miss.
-        return ["india"]
+        # NO SPORT SIGNAL. Earlier the same day I narrowed this to ["india"] alone, on the
+        # reasoning that r/Cricket was "a guess dressed as a default" -- 41 of 44 eligible
+        # athletes (93%) were being sent there on no evidence. That reasoning was WRONG, and
+        # measuring it settled the matter:
+        #
+        #     Shane Watson (cricket)          r/Cricket 20   r/india  0
+        #     Natalie Sciver-Brunt (cricket)  r/Cricket  6
+        #     Leander Paes (tennis)           r/Cricket  0   r/india 20
+        #     Ravinder Dahiya (wrestling)     r/Cricket  0   r/india  0
+        #
+        # A WRONG sport sub returns nothing -- it does not return wrong data -- because the
+        # topic-search relevance gate independently verifies each hit mentions the creator
+        # (measured: 40 returned, 0 off-topic). So the cost of an unneeded sub is one empty
+        # request, while the cost of omitting the right one is ~20 real posts per cricketer.
+        # Searching both is strictly better than guessing either.
+        return ["india", "Cricket"]
     if category == "fitness_influencer":
         return FITNESS
     return GENERIC
