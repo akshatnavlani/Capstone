@@ -1,7 +1,7 @@
 # HANDOFF — Track A (Data/Infra)
 
 **Start here.** Canonical entry point for a fresh session on this track. Last updated
-**2026-08-19 — batch-readiness loop CLOSED; a TECH-DEBT loop is running (cycle 1 done, ITEM 3 still open).** Branch: `track-a-data-infra`.
+**2026-08-19 — batch-readiness loop CLOSED; a TECH-DEBT loop is running (cycle 2 done, all 3 items terminal).** Branch: `track-a-data-infra`.
 Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
 ## ⏩ 30-SECOND RESUME — read this before anything else
@@ -25,6 +25,107 @@ Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRA
 (pipeline design + the parallelization rule), `SCHEMA.md` (DB contract for other tracks).
 
 ---
+
+---
+
+---
+
+# TECH-DEBT LOOP — CYCLE 2 (2026-08-19)
+
+**ITEM 3 closed. All three items now terminal.** ITEM 1 and ITEM 2 closed in cycle 1.
+
+## ITEM 3 — Reddit real-name backfill: TERMINAL
+
+### Resolved per method, against the 200 name-gated creators
+
+| method | resolved | ceiling | note |
+|---|---|---|---|
+| **live Instagram profile fetch** | **168** | ~200 | 0 fetch failures |
+| **Wikipedia (verified)** | **8** | — | of the 32 the Instagram pass could not resolve |
+| YouTube channel *description* | 0 applied | **5** | see below — real but structurally capped |
+| YouTube channel *title* | 0 applied | 5 | glued; 1 usable only after cleaning |
+| `instagram_profiles.full_name` | — | 8 | a storage gap, not an availability gap |
+| **genuinely unresolvable** | **24** | — | handle-only personas; an acceptable outcome |
+
+Every DB-side source was bounded BEFORE any network time was spent, which is what showed the
+live fetch was the only lever worth pulling.
+
+**The YouTube about-text source works and is still not worth much.** It genuinely carries names
+the title cannot — `@jumper_aj_`'s title is the useless "jumperAj" while its description reads
+*"this is abhishek narayan jha"*, and `@corysmithhoops` names "Cory Smith" in prose. But only
+**5** of the 200 name-gated creators have a YouTube channel at all, so the method's total reach
+is 2-3 creators. Confirmed-but-capped, not unfixable.
+
+### Outcome
+
+| metric | before | after |
+|---|---|---|
+| creators with a real name | 43 | **211** |
+| name-gated | 200 | **24** |
+| Reddit-eligible (real, searchable name) | ~5 | **176 assigned topic subs** |
+| **Reddit attempted** | 54 (20.8%) | **230 (88.8%)** |
+| Reddit with content | 18 (6.9%) | 22 (8.5%) |
+| computable pairs | 37 | 37 (unchanged) |
+
+**Verified end-to-end, not assumed.** r/india search for "Sunil Chhetri" returns **40 results,
+0 off-topic** — the orchestrator's own relevance gate passed all 40 — where the handle
+`chetri_sunil11` previously returned pure noise. All 40 were then dropped as **stale**.
+
+⇒ **The name was the precondition; the recency window is now the binding constraint.** Search is
+unblocked, `attempted` moves hugely, and *collected volume* barely moves. Both halves are true
+and reporting only one would be misleading.
+
+## Corrections issued this cycle
+
+1. **RETRACTED: "reddit search is flaky."** Cycle 1 inferred that part of the 77% no-content
+   population might be flakes. A follow-up could not reproduce it: **0 empties in 36 paced
+   calls** (20 subreddit-scoped, 16 site-wide), including the two exact queries that had failed.
+   Those zeros came inside a 12-query burst at ~4s spacing, so they look burst-induced. The
+   retry-on-empty is kept as a cheap safety net that makes any recurrence visible in the log —
+   not as a fix for a proven bug.
+2. **"Bios are scarce" was OUR BUG, not a fact about the data.** `fetch_profile()` returns name
+   and bio in one call; the backfill stored only the name and discarded 200 bios. That discard
+   is the direct cause of both "only 26 of 16,815 rows have a bio" (which capped the
+   account_classify held-out set at 17 cases) and "sport is not in the schema, so athletes
+   cannot be routed". Now persisted; 133 rows are re-fillable at zero extra network cost.
+3. **The shubmangill duplicate was mine, minutes old.** I first read it as a pre-existing bug of
+   the same class as the Mumbiker Nikhil incident. It was created by my own test run.
+
+## Bugs found and fixed this cycle
+
+| # | bug | evidence |
+|---|---|---|
+| 1 | `clean_name` destroyed every non-Latin name | Python's `\w` does not match Unicode combining marks, so Devanagari matras were stripped: `'नितिन चतुर्वेदी'` → `'न त न चत र व द'`. Not a worse name — an unsearchable one. Now category-based (L/M/N). 4 names repaired. |
+| 2 | `--dry-run` wrote the checkpoint | a rehearsal marked creators as already-attempted |
+| 3 | cricket asserted on no evidence | **41 of 44** eligible athletes (93%) routed to r/Cricket with no sport signal — Leander Paes (tennis), Sunil Chhetri (football), Ravinder Dahiya (wrestling), Manush Shah (table tennis). Now returns r/india: generic but true. |
+| 4 | `--handles` minted duplicate creators | `--platform reddit --handles <ig_handle>` keyed `get_or_create_creator` on NAME and set `reddit_handles=[<ig handle>]`, so the worker searched `r/<ig_handle>` — a subreddit that does not exist. **My two test runs created 8 junk rows (259 → 267)** and split shubmangill's Reddit data onto a row its Instagram data could never reach. |
+| 5 | Wikipedia gate manufactured names | the "title prefixes handle" direction accepted `@sagarliftz` → "Sagar". Removed; no genuine case needed it. |
+
+**Cleanup of bug 4 was done the Gujarat Titans way**: re-point, then delete. The 40 real
+r/shubmangill posts were moved onto the genuine creator, and the junk rows deleted only after
+each was verified empty across all 11 `creator_id` tables. Back to 259, 40 posts preserved.
+
+## ⚠️ Contention is sharper than previously recorded
+
+The first 10-creator yield sample failed on 6 of 10 creators with `TypeError: Failed to fetch` —
+the documented Instagram/Reddit contention signature. **I caused it** by running a 2-call
+Instagram dry-run while the Reddit job was live.
+
+That is a stronger result than the original incident: **two adapter calls were enough to starve
+a running Reddit job.** The rule is not "don't run sustained parallel jobs" — it is
+**don't touch the browser at all while a browser job is running.** The clean re-run showed 0
+such failures.
+
+## Found but not finished
+1. **Bio-capture pass over the 133 bio-less rows** — coded, dry-run verified, not yet run.
+2. **`account_classify` set #3** — worth building only AFTER the bio pass, which will finally
+   supply a real corpus instead of 17 cases. Until then 44.4% is not a clean number.
+3. **The 3 misattributed sponsorship events** (ITEM 1) remain in the DB, awaiting the user's
+   call. 32 of 37 pairs do not depend on them.
+4. **Sport still absent from the schema** — the fix stops the wrong guess but does not recover
+   the right sport. The bio names it; the bio pass above is the unlock.
+5. **Recency window is now Reddit's binding constraint**, not names. Whether to widen it is the
+   same open user decision as the out-of-window Instagram posts.
 
 ---
 
