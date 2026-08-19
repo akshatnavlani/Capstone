@@ -138,12 +138,34 @@ fixed by the real-name backfill.
 ⚠️ **Not applied.** It is a collection-policy change that interacts with the still-open user
 decision on out-of-window Instagram posts; the two should be settled together.
 
+## Task 4 — Instagram attempted 52.9% -> 62.5% with NO Instagram calls
+
+`ig_attempted` counts creators with an `instagram_profiles` row tied to them via
+`ip.creator_id`. The name backfill and the bio backfill both matched profiles by USERNAME and
+never set `creator_id`, so 40 profile rows sat unlinked — creators whose profile had genuinely
+been fetched (name and bio present) were reported as never attempted.
+
+Linked them, guarded on handle uniqueness: only where exactly ONE creator owns that handle,
+because the kingjames/lebron collision incident is what happens when a shared handle is linked
+to the wrong creator. Zero duplicate handles exist right now, so nothing was skipped, but the
+guard belongs in the query rather than in anyone's memory of the incident.
+
+**Instagram attempted 137 -> 162 (52.9% -> 62.5%).** Not a metric game — the work had been
+done and the missing FK was hiding it.
+
+Remaining 97 unattempted split cleanly:
+- **2** have no `instagram_handle` at all — cannot be attempted, another principled floor
+- **95** have a handle and need one profile fetch each (blocked on the Instagram throttle)
+
 ## Found but not finished
 1. **The audit needs ~1,500 more posts** — 240 verified of 1752, and Instagram is currently
    throttled, so it needs a cooldown before resuming.
 2. **27 is the current honest pair count.**
-3. **Task 4 barely moved** — Instagram attempted 130 → 137 (50.2% → 52.9%), entirely as a side
-   effect of re-attribution moving posts onto creators who had none.
+3. **Instagram: 95 creators need one profile fetch each**, blocked on the throttle. 2 more have
+   no handle and can never be attempted.
+4. **Instagram was throttled at ~14:10** (1,496 consecutive chrome-error page loads). This
+   project's history says these last hours — 3.5h was once not enough. The audit's new 12-strike
+   abort makes resuming cheap once it has genuinely cooled; re-probing early just adds load.
 
 ---
 
