@@ -114,15 +114,29 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--ignore-checkpoint", action="store_true",
+                     help="Re-process creators already attempted. Needed once, to capture the "
+                          "bios that earlier runs fetched and discarded; names already correct "
+                          "are simply rewritten with the same value.")
     args = ap.parse_args()
 
     conn = psycopg2.connect(ENV["DATABASE_URL"])
     with conn.cursor() as cur:
-        cur.execute(GATED)
+        if args.ignore_checkpoint:
+            # Bio-capture pass: the creators whose bios were fetched and dropped are the ones
+            # ALREADY resolved, so the name-gated query would skip precisely the wrong set.
+            cur.execute("""
+                select c.creator_id, c.instagram_handle from creators c
+                join instagram_profiles p on lower(p.username) = lower(c.instagram_handle)
+                where c.instagram_handle is not null and length(coalesce(p.bio, '')) = 0
+                order by c.instagram_handle
+            """)
+        else:
+            cur.execute(GATED)
         gated = cur.fetchall()
 
     done = load_done()
-    todo = [(cid, h) for cid, h in gated if h not in done]
+    todo = gated if args.ignore_checkpoint else [(cid, h) for cid, h in gated if h not in done]
     if args.limit:
         todo = todo[: args.limit]
     log.info("name-gated: %d  |  already attempted: %d  |  this run: %d",
@@ -138,6 +152,19 @@ def main() -> None:
             continue
         raw = (prof or {}).get("name") or ""
         name = clean_name(raw)
+
+        # PERSIST THE BIO TOO. The fetch returns it either way, and throwing it away is what
+        # left only 26 of 16,815 profile rows with any bio -- which in turn capped the
+        # account_classify held-out set at 17 usable cases and leaves `assign_reddit_subs`
+        # with no way to tell a tennis player from a cricketer. Same call, no extra cost.
+        bio = (prof or {}).get("bio") or ""
+        if bio and not args.dry_run:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    update instagram_profiles set bio=%s, updated_at=now()
+                    where lower(username)=lower(%s) and length(coalesce(bio,'')) = 0
+                """, (bio, handle))
+            conn.commit()
 
         if not looks_like_real_name(name, handle):
             unresolved += 1
