@@ -64,6 +64,12 @@ def main() -> None:
     if args.propose:
         seen = {r["handle"].lower() for k, v in data.items()
                 if k.startswith("set") for r in (v if isinstance(v, list) else [])}
+        # ALSO exclude the tuned suite. Without this the proposer happily offered
+        # @technicalguruji and @ajinkyarahane, both of which the lexicon was tuned against --
+        # labelling those into "set3" would have produced a clean-looking number that is not
+        # clean at all, which is the exact failure this whole item exists to stop repeating.
+        from test_account_classify import CASES
+        seen |= {c[0].lower() for c in CASES}
         with conn.cursor() as cur:
             cur.execute("""
                 select username, coalesce(full_name, ''), coalesce(bio, '')
@@ -86,7 +92,7 @@ def main() -> None:
             continue
         ok, n, misses = score(rows, orgs)
         src = data.get(f"{key}_source", "?")
-        status = "TUNED ON — optimistic" if key in ("set1", "set2") else "clean"
+        status = "TUNED ON — optimistic" if key in data.get("_tuned_on", []) else "clean"
         print(f"{key:<8}{src[:27]:<28}{n:>4}{ok:>9}{100*ok/n:>9.1f}%   {status}")
         if args.verbose:
             for h, got, want, why in misses:

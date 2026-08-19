@@ -67,7 +67,15 @@ _BRAND_STRONG = _words(
     "corporation", "enterprises",
 )
 _BRAND_COMMERCE = _words(
-    "shop now", "buy now", "order now", "free shipping", "use code", "discount code",
+    "shop now", "buy now", "order now", "free shipping",
+    # "use code" / "discount code" REMOVED from the strong tier 2026-08-19. An affiliate code
+    # is what a SPONSORED CREATOR posts, not what a brand says about itself -- which matters
+    # doubly here, since finding sponsored creators is this project's whole purpose. Both
+    # occurrences in the corpus were creators and none were brands:
+    #   @shivamfitness_official "Youtuber (800k) ... @asitisnutrition | use code : MISHRAASITIS"
+    #   @shivank.bhalla10       "National Level Badminton Player ... Use Code: SHIVANKMB"
+    # Both were dropped as brands. They now fall through to the product-noun tier below the
+    # individual checks, where a real product account with no personal marker still lands.
     "our products", "official store", "flagship store", "worldwide shipping",
     # Added 2026-08-17 after inspecting real escapes: @gocolors ("India's leading
     # bottom-wear brand, 1200+ styles") and @eliore_essentials ("Elioré™ Luxury
@@ -80,6 +88,19 @@ _BRAND_COMMERCE = _words(
     #   @mohitvaru     "storytelling for brands & people" -> a photographer
     # and "For brand queries" appears in a large share of athlete bios. Product-category
     # nouns are safe; the bare word is not.
+)
+# PRODUCT-CATEGORY NOUNS ARE NOT COMMERCE VERBS, and they were promoted too far. On set3,
+# @mayyu.ft's bio "Fashion | Fitness | skincare | travel" -- a creator listing the TOPICS she
+# posts about -- was classified BRAND on the word "skincare" and dropped as a non-creator.
+# That is this module's worst error (a false BRAND silently discards a person), and it is the
+# second time the same noun list has caused it; the first was grid text, fixed 2026-08-18 by
+# restricting brand judgements to self-description. A bio topic list is self-description, so
+# that fix could not catch this one.
+#
+# These now sit BELOW the individual checks, the same demotion already applied to the
+# trademark symbol: they still identify a real product account that says nothing personal,
+# but they can no longer outrank "Fitness" appearing in the same sentence.
+_BRAND_PRODUCT_NOUNS = _words(
     "boutique", "couture", "apparel", "footwear", "menswear", "womenswear",
     "activewear", "sportswear", "cosmetics", "skincare", "fragrances", "eyewear",
     "jewellery", "jewelry", "showroom", "outlets", "franchise enquiry", "dealership",
@@ -99,20 +120,27 @@ _LEAGUE = _words(
     "olympic association", "board of control", "premier league",
     "championship", "world championship",
 )
-# WEIGHT CLASS / AGE GROUP -- added 2026-08-19, and tested BEFORE the organisational rules.
-#
-# "world championship" is genuinely ambiguous: it is @e1series's identity ("UIM E1 World
-# Championship") and @ravinderdahiya61kg's achievement ("U-23 world championship, South
-# Asian Games x2"). Scoping the word by field does not separate them -- both put it in the
-# bio. What DOES separate them is that no league is ever named after a weight class or an
-# age group, so these markers identify a competitor even when nothing else in the bio does.
-_ATHLETE_CLASS = re.compile(r"(?<!\w)(?:\d{2,3}\s?kgs?|u-?\s?\d{2}|under-?\s?\d{2})(?!\w)", re.I)
+# A WEIGHT-CLASS / AGE-GROUP RULE WAS TRIED HERE AND REMOVED (2026-08-19).
+# It was added to separate @ravinderdahiya61kg ("U-23 world championship") from a league, on
+# the reasoning that no league is named after a weight class. It fixed that one case and then
+# broke three others across the next two held-out sets:
+#   @katypadam            "drop 10-30kg+"          weight LOSS  -> misread as a weight class
+#   @theofficial_padwoman "40 Under 40"            an award     -> misread as an age group
+#   @rgpunjabfc           "RFDL U21 24'"           a youth team -> misread as an individual
+# Net -2. Numbers that look like classes are far more often prizes, ranges and squad names,
+# so the rule is gone rather than patched -- adding exceptions to it is how the overfitting
+# in this module happens. @ravinderdahiya61kg is misclassified again and that is accepted.
+# Unambiguous club identifiers -- these name the ENTITY, not a competition it enters.
+_TEAM_STRONG = _words("football club", "cricket club", "fc", "super kings", "knight riders",
+                       "royal challengers", "super giants", "indians", "capitals", "titans")
+
 _TEAM = _words(
     # "cf" REMOVED 2026-08-19: it matched "CF Coach" (CrossFit) on @100.rep, a fitness
     # creator, and routed them to `team`. Two letters carry too little signal to be worth
     # the collision; "fc" is kept because its collision surface is far smaller.
     "football club", "cricket club", "fc", "official team", "squad",
     "franchise", "the official", "official account", "official ig", "official instagram",
+    "official handle", "official page",
 )
 _INSTITUTION = _words(
     "academy", "institute", "institution", "foundation", "trust", "ngo", "council",
@@ -134,9 +162,13 @@ _ATHLETE_STRONG = _words(
 _ATHLETE = _words(
     "athlete", "national champion", "keeper", "all rounder", "midfielder", "striker",
     "javelin", "nba", "wnba", "ipl", "isl", "squad player",
+    # @anamika.0845 "Amateur Cyclist/Triathlete" fell through -- endurance sports were absent.
+    "cyclist", "triathlete", "marathoner", "swimmer", "rower", "ironman", "powerlifter",
 )
 _FITNESS = _words(
-    "coach", "trainer", "personal trainer", "pt", "strength", "conditioning",
+    # Inflected forms matter: "500+ clients coached" and "DM for coaching" are how real bios
+    # phrase it, and a bare "coach" with word boundaries matches neither (@thetraineranish).
+    "coach", "coached", "coaching", "trainer", "personal trainer", "pt", "strength", "conditioning",
     "nutritionist", "nutrition", "physio", "physiotherapist", "fitness", "gym",
     "bodybuilding", "calisthenics", "yoga", "crossfit", "powerlifting", "wellness",
     "transformation", "weight loss",
@@ -190,10 +222,6 @@ def classify_from_profile(name: str, bio: str, handle: str = "",
     if not (name or bio or handle):
         return "other", "no name or bio available"
 
-    m = _ATHLETE_CLASS.search(text)
-    if m:
-        return "athlete", f"athlete: weight class / age group '{m.group(0).strip()}'"
-
     m = _BRAND_STRONG.search(text)
     if m:
         return BRAND, f"BRAND: legal-entity marker '{m.group(0)}'"
@@ -219,6 +247,15 @@ def classify_from_profile(name: str, bio: str, handle: str = "",
     m = _INSTITUTION.search(text)
     if m:
         return "other", f"institutional (academy/foundation/council) marker '{m.group(0)}' — kept for breadth, not a standalone creator"
+    # A football/cricket CLUB names the competitions it plays in ("I-League", "Indian Super
+    # League"), and _LEAGUE would claim it first. @bengalurufc and @gokulam_kerala_fc both
+    # landed as `league` that way. A club marker is far more specific than a competition
+    # name, so it is tested first -- same principle as _ATHLETE_STRONG preceding the org
+    # rules, and the same shape as the "world championship" athlete/league confusion.
+    m = _TEAM_STRONG.search(text)
+    if m:
+        return "team", f"club marker '{m.group(0)}'"
+
     m = _LEAGUE.search(text)
     if m:
         return "league", f"league/federation marker '{m.group(0)}'"
@@ -236,11 +273,15 @@ def classify_from_profile(name: str, bio: str, handle: str = "",
     if m:
         return "lifestyle_influencer", f"lifestyle/creator marker '{m.group(0)}'"
 
-    # Trademark symbol -- only now, after every individual marker has declined. See the note
-    # above _BRAND_PHRASE for why this is no longer a leading test.
+    # Trademark symbol and product-category nouns -- only now, after every individual marker
+    # has declined. See the notes above _BRAND_PHRASE and _BRAND_PRODUCT_NOUNS for why neither
+    # is a leading test any more.
     m = _BRAND_SYMBOL.search(text)
     if m:
         return BRAND, f"BRAND: trademark symbol '{m.group(0)}', no individual marker present"
+    m = _BRAND_PRODUCT_NOUNS.search(text)
+    if m:
+        return BRAND, (f"BRAND: product category '{m.group(0)}', no individual marker present")
 
     # AFFILIATION SIGNAL — added 2026-08-17 after held-out validation scored only 30%,
     # with 18 of 21 errors being "-> other". Real bios are sparse: Ishan Kishan's entire
