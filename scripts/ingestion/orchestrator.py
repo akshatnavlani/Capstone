@@ -959,14 +959,22 @@ class RedditWorker(PlatformWorker):
     def _search_retry_empty(self, query: str, sub: str, tries: int = 3):
         """`reddit search`, retried when it returns EMPTY -- not when it errors.
 
-        Measured 2026-08-19: "Sunrisers Hyderabad" and "Royal Challengers Bengaluru" each
+        Observed 2026-08-19: "Sunrisers Hyderabad" and "Royal Challengers Bengaluru" each
         returned 0 results, then 15 on retest with the query unchanged. The command exits 0
         and yields an empty list, so it is a "success" -- run_opencli's retry never sees it,
         and a flake is indistinguishable from a creator genuinely having no Reddit presence.
 
-        That matters beyond one run: every "creator X has no Reddit content" conclusion on
-        record was drawn from a single call, so an unknown share of the 77% name-gated /
-        no-content population may be flakes rather than real negatives.
+        ⚠️ SCOPE CORRECTION, same day. A follow-up measurement could NOT reproduce it:
+        0 empties in 36 paced calls (20 subreddit-scoped, 16 site-wide), including those two
+        exact queries. The original zeros occurred inside a 12-query burst spaced ~4s apart,
+        so they look burst-induced rather than a standing defect. The earlier inference --
+        that an unknown share of the 77% no-content population might be flakes -- is
+        RETRACTED; there is no evidence for it.
+
+        This retry is kept anyway because it is nearly free (it only fires on an empty
+        result, which is exactly when a retry is cheap) and it makes any recurrence visible
+        in the log instead of silently becoming a "real negative". It is a safety net, not
+        a fix for a proven bug.
 
         A still-empty result after `tries` attempts is accepted as a real negative.
         """
@@ -1244,6 +1252,22 @@ def seed_creators(conn, target_list: list[dict]) -> dict[str, Creator]:
     return result
 
 
+def load_creator_by_instagram_handle(conn, handle: str) -> Creator | None:
+    """Existing creator with this Instagram handle, with its real Reddit config loaded."""
+    with conn.cursor() as cur:
+        cur.execute("""
+            select creator_id, name, category, youtube_handle, instagram_handle,
+                   coalesce(reddit_handles, '{}'), coalesce(reddit_topic_subs, '{}')
+            from creators where lower(instagram_handle) = lower(%s) limit 1
+        """, (handle,))
+        row = cur.fetchone()
+    if not row:
+        return None
+    return Creator(creator_id=row[0], name=row[1], category=row[2], youtube_handle=row[3],
+                    instagram_handle=row[4], reddit_handles=list(row[5]),
+                    reddit_topic_subs=list(row[6]))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", help="Path to a curated target-list JSON to seed into `creators` "
@@ -1300,6 +1324,21 @@ def main():
             ))
     elif not args.dry_run and args.handles:
         for h in args.handles:
+            # PREFER AN EXISTING CREATOR. This branch used to go straight to
+            # get_or_create_creator(conn, h, ...), which keys on NAME -- so passing an
+            # Instagram handle minted a brand-new creator row named after the handle,
+            # instagram_handle NULL, sitting alongside the real one. Running
+            # `--platform reddit --handles <ig_handle>` on 6 creators created 8 junk rows
+            # (259 -> 267) and split one creator's Reddit data onto a row its Instagram data
+            # could never reach. Found and cleaned up 2026-08-19.
+            #
+            # For reddit specifically the old code was doubly wrong: it set
+            # reddit_handles=[<instagram handle>], making the worker search r/<ig_handle> --
+            # a subreddit that does not exist -- instead of the creator's assigned topic subs.
+            existing = load_creator_by_instagram_handle(conn, h)
+            if existing:
+                creators.append(existing)
+                continue
             kwargs = {f"{args.platform}_handle" if args.platform != "reddit" else "reddit_handles":
                       h if args.platform != "reddit" else [h]}
             creators.append(get_or_create_creator(conn, h, "other", **kwargs))
