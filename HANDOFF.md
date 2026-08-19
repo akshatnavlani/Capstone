@@ -138,6 +138,36 @@ fixed by the real-name backfill.
 ⚠️ **Not applied.** It is a collection-policy change that interacts with the still-open user
 decision on out-of-window Instagram posts; the two should be settled together.
 
+## Stop-condition clause: cross-platform straddle check — SATISFIED, and it explains the 27
+
+Every connected, dated sponsorship event is checked against every graph neighbour, on all three
+platforms, on both sides of the event date:
+
+| | count |
+|---|---|
+| dated sponsorship events | 53 |
+| graph-connected (checkable) | **49** |
+| orphan, no neighbour at all | 4 |
+| **event × neighbour checks performed** | **137** |
+
+| outcome | count |
+|---|---|
+| **straddle satisfied = computable pair** | **27** |
+| neighbour has no **BEFORE** activity | **56** |
+| neighbour has no AFTER activity | 6 |
+| neighbour has no dated content at all | 48 |
+
+**The dominant failure is missing BEFORE activity — 56 of 137 checks.** That is the recency
+window, not a graph problem: collection starts 2026-02-17, so for any event early in that
+window a neighbour simply has no earlier content to corroborate with.
+
+⇒ This joins Task 3 to the headline metric. Widening the window adds exactly the thing 56 checks
+are missing. It is not a promise of +56 pairs — some neighbours will still be silent — but the
+binding constraint on pair count is now identified and it is the same constraint Task 3 measured
+independently on relevance grounds.
+
+The other 48 (neighbour has no dated content at all) need coverage, not window.
+
 ## Task 4 — Instagram attempted 52.9% -> 62.5% with NO Instagram calls
 
 `ig_attempted` counts creators with an `instagram_profiles` row tied to them via
