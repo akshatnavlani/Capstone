@@ -1010,6 +1010,7 @@ class RedditWorker(PlatformWorker):
 
         kept = 0
         irrelevant = 0
+        comment_failures = 0
         for post in posts[:self.post_cap]:
             post_id = post.get("id")
             if not post_id:
@@ -1062,9 +1063,24 @@ class RedditWorker(PlatformWorker):
             conn.commit()
 
             self.rate_limiter.wait()
-            self._fetch_comments(post_id, conn)
-        log.info("Reddit[%s] r/%s for %s -> %d kept (%d off-topic, %d stale, %d returned)",
-                  mode, sub, creator.name, kept, irrelevant, self.skipped_stale, len(posts))
+            # A COMMENT FAILURE MUST NOT KILL THE CREATOR. Observed 2026-08-19: Tyrese Maxey's
+            # r/nba pass ran for 5 minutes and collected 17 posts / 718 comments, then ONE
+            # `reddit read` returned code UNKNOWN, the exception unwound through _collect and
+            # process_creator, and the whole creator was skipped -- abandoning its remaining
+            # posts and every other topic sub it had. The posts already written survived
+            # (writes are incremental), so the loss is the REMAINING work, silently.
+            #
+            # Comments are strictly supplementary to the post row, so a failure here is
+            # logged and stepped over. run_opencli already retried 3x before raising.
+            try:
+                self._fetch_comments(post_id, conn)
+            except RuntimeError as e:
+                comment_failures += 1
+                log.warning("Reddit: comments unavailable for %s (%s) — keeping the post",
+                             post_id, str(e).split(chr(10))[0][:90])
+        log.info("Reddit[%s] r/%s for %s -> %d kept (%d off-topic, %d stale, %d returned%s)",
+                  mode, sub, creator.name, kept, irrelevant, self.skipped_stale, len(posts),
+                  f", {comment_failures} comment fetches failed" if comment_failures else "")
         return kept
 
     def _fetch_comments(self, post_id: str, conn) -> None:
