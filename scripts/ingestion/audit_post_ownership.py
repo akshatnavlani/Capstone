@@ -74,9 +74,18 @@ def oc(*args, timeout=120):
                            timeout=timeout, env=env, encoding="utf-8", errors="replace")
 
 
+# Pacing. Measured 2026-08-19: wait=4/sleep=5 gives 9.4s per post, wait=2/sleep=1 gives 5.1s,
+# and BOTH parsed 8 of 8. But that was an 8-post burst, and a burst proves nothing about
+# sustained load -- exactly the error that produced the retracted Phase 1 concurrency clearance
+# in HANDOFF.md. So this takes the middle setting rather than the fastest one, and a 429 is
+# still never retried (run_opencli refuses), which keeps a real throttle visible in the log.
+WAIT_SECONDS = "3"
+SLEEP_SECONDS = 3
+
+
 def real_owner(post_id: str) -> str | None:
     oc("open", f"https://www.instagram.com/p/{post_id}/")
-    oc("wait", "time", "4")
+    oc("wait", "time", WAIT_SECONDS)
     try:
         desc = json.loads((oc("eval", _OG_JS).stdout or "").strip())
     except Exception:
@@ -126,7 +135,7 @@ def main() -> None:
             log.warning("MISATTRIBUTED %s: stored as %s, really %s", pid, user, owner)
         seen[pid] = {"stored": user, "real": owner}
         save_seen(seen)
-        time.sleep(5)
+        time.sleep(SLEEP_SECONDS)
     oc("close")
 
     resolvable = ok + bad
