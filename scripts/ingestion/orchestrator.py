@@ -211,9 +211,19 @@ def parse_og_description(desc):
     return out
 
 
+# The page caption arrives as MARKDOWN (it comes from `browser extract`), so a mention is
+# "[@handle](/handle/)" while the listing has a plain "@handle". Stripping punctuation without
+# collapsing the link first leaves the handle DUPLICATED -- "annoying rannvijaysingha
+# rannvijaysingha since" vs "annoying rannvijaysingha since" -- which breaks the prefix
+# comparison on exactly the posts that mention someone, i.e. the collab posts that matter most.
+# Measured on @mostlysane before this fix: only 1 of 6 posts joined to the listing.
+_MD_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+
+
 def _norm_caption(text):
     if not text:
         return ""
+    text = _MD_LINK.sub(r"\1", text)
     return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
 
 
