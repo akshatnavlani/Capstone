@@ -589,19 +589,38 @@ sponsorship events each producing separate computable pairs against the same nei
 session.** Not yet at the ~50-100 thesis-defensible tier, but a real, qualitative jump — Track B
 should attempt a genuine training run (not just a pipeline-correctness check) against this set.
 
-⚠️ **Open items from this round, not yet resolved (Track A's own findings, independently
-credible — record, don't lose):**
-- `orchestrator.py:447` still matches post metadata by list position, not `post_id`. A 15-sample
-  caption audit found 0 conflicts, but that's evidence of no-conflict-in-sample, not proof of
-  safety at scale — real risk given how much now depends on Instagram dates.
-- The `--limit 40` fix's earlier diagnosis ("very likely the entire cause" of the 12-post
-  ceiling) is **retracted** — `--limit 40` still returns exactly 12 posts, verified on two
-  creators. Root cause of the ceiling is genuinely unknown again.
-- `account_classify.py` held-out accuracy is 57%, not the 42/42 tuned-suite's 100% — ~43% of
-  category assignments are likely wrong, and this feeds Reddit sub-routing decisions. Real,
-  unresolved data-quality risk.
-- 200 creators are Reddit-blocked purely on a missing real name (not a failed search) — more
-  scraping won't help; needs a better name source at scale.
+✅ **Tech-debt loop closed 2026-08-19 (5 cycles, all 3 items terminal).** Superseding the open
+items above:
+
+- **Position-matching: FIXED.** Root cause was worse than "which index" — Instagram's adapter
+  hard-caps at its 12-post first-paint grid (confirmed: `--limit` 3/5/12 pass through exactly,
+  15/20/25/40 all clamp to 12 — no pagination exists, not fixable adapter-side). Replaced with a
+  caption-content join (refuses ambiguous matches) plus per-post `og:description`, verified
+  end-to-end on a real creator (6/6 dated, 6/6 comment counts exact, 0 foreign posts written).
+- ⚠️ **A worse bug surfaced during verification: Instagram profile grids mix in OTHER accounts'
+  posts** (same bug class as the historic caption-authorship incident, new form). Measured:
+  14.3% of random posts, 5.8% of sponsorship events. **Independently traced by the orchestrator
+  to 2 of the 3 misattributed posts landing inside the P0.4 milestone**: `DLrSRdqTcEQ` (attributed
+  to Kohli, actually anushkasharma's) and `DUkDWOYiL8x` (attributed to Kohli, actually
+  duroflexworld's — a brand) each produced 2 rows in the recomputed 38-pair set (dates
+  2025-07-03 and 2026-02-09). **~32-33 of the ~38 pairs are unaffected either way** — the
+  sufficiency milestone holds even in the worst case. **Re-attribution recommended** (fix at the
+  source, don't just discard — same reasoning as the caption incident) but awaiting final
+  execution. `DW3hIgJDI3P` (reliancejewels) is separately misattributed but not currently
+  `is_sponsored`, so it doesn't touch the pair count.
+- **`account_classify.py`: CHARACTERIZED, not fixable with more keywords.** 4 held-out sets,
+  scored honestly (not against the tuned suite): mean ~45% at first exposure, plateaus after
+  tuning — a lexicon classifier ceiling, not a bug. 2 of the classifier's own prior "fixes" were
+  found net-harmful and reverted (`_ATHLETE_CLASS`, an "use code" brand-marker that was
+  misfiring on real creators' affiliate codes). Real, honest negative result — don't keep
+  throwing keywords at it; a different approach would be needed to move past ~50%.
+- **Reddit real-name gate: RESOLVED, 200 → 24 unresolvable.** 168 recovered via live Instagram
+  re-fetch (now that dates/metadata work correctly), 8 via Wikipedia, 5 via YouTube description.
+  Creators with a real name: 43 → 211+. Reddit-attempted: 54 → 230 (20.8% → 88.8%).
+  **New binding constraint surfaced, not yet solved**: names were never the only gate — Reddit's
+  *recency window* now caps yield the same way Instagram's did (example: a real athlete search
+  returned 40 relevant, 0-off-topic results, all dropped as stale). Reddit-with-content only grew
+  18→22 despite the massive name-unblock — the next real lever, not a solved problem.
 
 ⇒ Track B is unblocked to attempt a real training run with 3 actual computable examples, not a
 placeholder target or a single point. Still far below the ~20-pair sufficiency floor (§1a) — this
