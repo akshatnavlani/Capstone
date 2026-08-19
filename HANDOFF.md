@@ -1,7 +1,7 @@
 # HANDOFF — Track A (Data/Infra)
 
 **Start here.** Canonical entry point for a fresh session on this track. Last updated
-**2026-08-19 — batch-readiness loop CLOSED; tech-debt loop CLOSED (5 cycles, all 3 items terminal).** Branch: `track-a-data-infra`.
+**2026-08-19 — tech-debt loop CLOSED; attribution/coverage loop IN PROGRESS. Pairs 37 -> 26 after verified re-attribution; the ownership audit had a real defect, see the top section.** Branch: `track-a-data-infra`.
 Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
 ## ⏩ 30-SECOND RESUME — read this before anything else
@@ -29,6 +29,93 @@ Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRA
 ---
 
 ---
+
+---
+
+---
+
+# ATTRIBUTION / COVERAGE LOOP (2026-08-19, in progress)
+
+## 🚨 READ THIS BEFORE TRUSTING ANY OWNERSHIP-AUDIT NUMBER
+
+`audit_post_ownership.py` produced **provably wrong readings** for its first ~310 posts, and I
+re-attributed 54 real posts on them before catching it. What the numbers actually are:
+
+| measure | value |
+|---|---|
+| audit false-positive rate (flagged misattributions that were fine) | **~18%** (10 of 57) |
+| verified contamination rate | **~15%** (44 confirmed of ~294 resolvable) |
+| rate as first reported | 19-25% — **inflated, do not quote** |
+
+**Root cause.** `real_owner()` called `open` then `eval` and trusted whatever page was loaded.
+`open` is not guaranteed to have completed, or to have landed anywhere in particular, by the
+time `eval` runs, so a read can describe a **different page entirely**. Fixed: og:url and
+og:description are now read in ONE eval, and the read is DISCARDED unless the url contains the
+requested post_id. A discarded read is simply re-checked later, which always beats recording a
+confident wrong owner.
+
+**How it was caught.** `DC_DLAuzLnl` had two different "real owners" across two runs — its live
+og:description says `anushkasharma` on two consecutive reads while the audit had recorded
+`virat.kohli`. The checkpoint also held **five consecutive misattributions, each pointing at a
+different well-known creator in our set**, which is not something real collab data produces.
+
+**A theory that was tested and DISPROVEN:** that each bad read returned the *previous* post's
+page. 0% of misattributions matched the preceding audited post's owner. The exact mechanism is
+still unidentified; the verification is correct regardless of which page was being described.
+
+**Recovery performed.** All 57 flagged misattributions were re-read with verification on
+(44 confirmed / 10 refuted / 3 other), all 16 affected posts were set to their VERIFIED owner,
+and the checkpoint was pruned from 310 to 56 — every reading taken without verification was
+dropped so it gets re-checked rather than silently trusted.
+
+## Computable pairs — tracked, and one figure retracted
+
+| stage | pairs |
+|---|---|
+| uncorrected, start of loop | 37 |
+| after the 3 user-approved re-attributions | 31 |
+| after bulk re-attribution | 41 — **RETRACTED, rested on bad readings** |
+| **after verification and correction** | **26** |
+
+**Two mechanisms move this number, and only the first is obvious:**
+1. A misattributed post **fabricates an event** the creator never had.
+2. A misattributed post **widens the wrongful owner's ACTIVITY window**, so *other* creators'
+   straddle checks falsely pass against it. This is why Task 1's three posts cost 6 pairs rather
+   than the 5 predicted from removing the events alone: one of them extended Kohli's window
+   almost six months earlier than his real 2026-01-21 start, and he is the neighbour in 16
+   event-slots.
+
+## Task 1 — DONE (user-approved, verified)
+| post | was | now |
+|---|---|---|
+| `DLrSRdqTcEQ` | virat.kohli | **anushkasharma** (real creator) |
+| `DUkDWOYiL8x` | virat.kohli | **duroflexworld** — creator_id NULL + brands row |
+| `DW3hIgJDI3P` | pratibha_ranta | **reliancejewels** — creator_id NULL + brands row |
+
+Brand-owned posts carry **no** creator attribution, matching how the schema already represents
+brand content. `reattribute_posts.py` applies the same rule to anything the audit finds, and
+deliberately does **not** invent brands rows for ordinary accounts — a NULL creator_id already
+says the whole truth, and guessing which owners are "brands" would fabricate a classification.
+
+⚠️ `instagram_posts.username` has an FK to `instagram_profiles`, so an owner must be inserted
+there first. That does **not** make them a creator.
+
+## Task 4 — the exhaustion bar has a principled floor
+"100% attempted on all 3 platforms" is likely **unreachable by design**. Five creators cannot be
+meaningfully attempted on Reddit:
+- `Ohio State Football`, `Ohio State Buckeyes`, `E1 Series` — no proven in-repo sub exists for
+  US college sports or powerboat racing, and inventing one would inflate "attempted" with a
+  guaranteed non-attempt.
+- `ATHLEAN-X™`, `Etaki` — rejected by the no-space rule in `looks_like_real_name`. Only **3**
+  creators project-wide have a single-word name differing from their handle, which is far too
+  few to justify loosening a guard that exists because of the 88% noise purge.
+
+## Found but not finished
+1. **The audit must be re-run almost from scratch** — 56 verified of 1752. The pruned 254 were
+   not wrong-by-default, they were simply never verified.
+2. **Tasks 3 and 4 are browser-blocked** behind the audit. `measure_reddit_recency.py` is built
+   and unit-tested but has never been run.
+3. **26 is the current honest pair count.**
 
 ---
 
