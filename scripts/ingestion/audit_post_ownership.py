@@ -41,6 +41,25 @@ log = logging.getLogger("ownership")
 _OC = shutil.which("opencli")
 SESSION = "ownaudit"
 
+# A full-corpus audit is ~1,751 posts at ~10s each, so roughly 5 hours. Without a checkpoint any
+# interruption -- a browser hiccup, a laptop sleep, a session ending -- throws the whole run
+# away and it has to start from zero. Results are appended per post, so a resumed run only
+# checks what it has not seen.
+CHECKPOINT = os.path.join(os.path.dirname(__file__), "ownership_audit_checkpoint.json")
+
+
+def load_seen() -> dict:
+    try:
+        with open(CHECKPOINT, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_seen(seen: dict) -> None:
+    with open(CHECKPOINT, "w", encoding="utf-8") as fh:
+        json.dump(seen, fh, ensure_ascii=False, indent=1)
+
 # "- <owner> on <Month> <D>, <YYYY>" -- anchored on the month name so a username containing
 # " on " cannot be mistaken for the separator.
 OWNER = re.compile(r"-\s*([A-Za-z0-9_.]+)\s+on\s+(?:January|February|March|April|May|June|July|"
@@ -72,6 +91,8 @@ def main() -> None:
                      help="Only sponsorship events -- these gate computable training pairs, "
                           "so a wrong owner here is a label error, not just bad metadata.")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--recheck", action="store_true",
+                     help="Re-audit posts already recorded in the checkpoint.")
     args = ap.parse_args()
 
     where = "username is not null"
@@ -85,7 +106,11 @@ def main() -> None:
                      f"order by {order}" + (f" limit {int(args.limit)}" if args.limit else ""))
         rows = cur.fetchall()
     conn.close()
-    log.info("auditing %d posts%s", len(rows), "  [sponsored only]" if args.sponsored_only else "")
+    seen = load_seen()
+    if not args.recheck:
+        rows = [r for r in rows if r[0] not in seen]
+    log.info("auditing %d posts (%d already done, resuming)%s", len(rows), len(seen),
+              "  [sponsored only]" if args.sponsored_only else "")
 
     ok = bad = unknown = 0
     misattributed = []
@@ -99,6 +124,8 @@ def main() -> None:
             bad += 1
             misattributed.append((pid, user, owner))
             log.warning("MISATTRIBUTED %s: stored as %s, really %s", pid, user, owner)
+        seen[pid] = {"stored": user, "real": owner}
+        save_seen(seen)
         time.sleep(5)
     oc("close")
 
