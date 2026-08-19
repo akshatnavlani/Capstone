@@ -79,8 +79,18 @@ def oc(*args, timeout=120):
 # sustained load -- exactly the error that produced the retracted Phase 1 concurrency clearance
 # in HANDOFF.md. So this takes the middle setting rather than the fastest one, and a 429 is
 # still never retried (run_opencli refuses), which keeps a real throttle visible in the log.
-WAIT_SECONDS = "3"
-SLEEP_SECONDS = 3
+#
+# ⚠️ REVERTED TO THE SLOW SETTING 2026-08-19. wait=3/sleep=3 (~7s) held for roughly 200 posts
+# and then Instagram throttled: 1,496 consecutive page loads returned
+# chrome-error://chromewebdata/, the network-layer throttle signature already documented in
+# HANDOFF.md. The burst test that justified 7s measured 8 posts. It was the same mistake as the
+# retracted Phase 1 concurrency clearance -- a burst is not evidence about sustained load, and
+# knowing that in advance did not stop me making it.
+WAIT_SECONDS = "4"
+SLEEP_SECONDS = 6
+
+# Stop once the throttle is obvious rather than grinding through the rest of the corpus.
+MAX_CONSECUTIVE_UNKNOWN = 12
 
 
 # Read the canonical URL alongside the description, in ONE eval, so both describe the same
@@ -151,12 +161,27 @@ def main() -> None:
               "  [sponsored only]" if args.sponsored_only else "")
 
     ok = bad = unknown = 0
+    consecutive_unknown = 0
     misattributed = []
     for pid, user in rows:
         owner = real_owner(pid)
         if owner is None:
+            # NOT CHECKPOINTED. An unreadable post is unfinished work, not a result. The first
+            # full run recorded 1,496 of these as if they were answers, which permanently
+            # excluded them from every resume -- the audit reported 1752/1752 "done" while only
+            # 184 posts had actually been verified.
             unknown += 1
-        elif owner.lower() == user.lower():
+            consecutive_unknown += 1
+            if consecutive_unknown >= MAX_CONSECUTIVE_UNKNOWN:
+                log.error("%d consecutive unreadable pages -- Instagram is throttling "
+                           "(chrome-error://chromewebdata/). Stopping so the run does not spend "
+                           "hours hammering a blocked endpoint; re-run after a cooldown and the "
+                           "checkpoint will resume where this left off.", consecutive_unknown)
+                break
+            time.sleep(SLEEP_SECONDS)
+            continue
+        consecutive_unknown = 0
+        if owner.lower() == user.lower():
             ok += 1
         else:
             bad += 1
