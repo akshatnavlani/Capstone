@@ -638,46 +638,6 @@ sponsorship events each producing separate computable pairs against the same nei
 session.** Not yet at the ~50-100 thesis-defensible tier, but a real, qualitative jump — Track B
 should attempt a genuine training run (not just a pipeline-correctness check) against this set.
 
-<<<<<<< HEAD
-✅ **All four resolved 2026-08-19 by Track A's tech-debt loop (5 cycles). Detail in HANDOFF.md.**
-- ~~`orchestrator.py:447` matches post metadata by list position~~ → **FIXED.** The adapter has
-  no id to join on (`--help` documents its columns as `index, caption, likes, comments, type,
-  date`), so a literal `post_id` join was impossible. Replaced with a caption-content join that
-  refuses ambiguous matches, plus per-post `og:description` read from the post's own URL.
-  Verified end-to-end on @mostlysane: 6/6 posts dated, 6/6 comment counts exact.
-  **A worse bug surfaced during verification:** profile grids mix in OTHER accounts' posts (4 of
-  12 on @mostlysane belonged to netflix_in / exhibitmagazine), and all were being written as the
-  creator's own. Measured contamination: 2 of 14 random posts (14.3%) and **3 of 52 sponsorship
-  events (5.8%)** are filed under the wrong creator; **5 of the 37 pairs (13.5%) depend on one**,
-  32 survive. `own_post_paths()` now filters them; `audit_post_ownership.py` finds stored ones.
-  ⚠️ The 3 mislabelled events are still in the DB — re-attributing them changes the graph Track B
-  trains on, so that is a **user decision, not Track A's**.
-- ~~`--limit 40` root cause unknown~~ → **SOLVED.** The flag works downward (3→3, 5→5) and clamps
-  at 12 upward on every handle at 12/15/20/25/40. It truncates an already-scraped set, and the
-  adapter only ever scrapes Instagram's 12-post first-paint grid. **No pagination exists**; not
-  fixable adapter-side. The browser path already scrolls, which is why it reaches 40.
-- ~~`account_classify.py` held-out accuracy 57%~~ → **CHARACTERIZED, and the honest answer is
-  worse than 57% implies.** Four hand-labelled held-out sets, scored at first exposure *before*
-  any tuning against them: **set2 33.3%, set3 55.6%, set4 47.8% — mean ~45%.** The same sets read
-  76.5% / 81.5% *after* being tuned against. So each tuning round buys ~25-30pp on its own set
-  and only ~5-13pp on fresh data. **A keyword/lexicon classifier plateaus near 50% on these
-  bios**; further keyword work will not break that ceiling, and real improvement needs a
-  different method (embeddings/LLM) that is outside Track A's lane. Sets are committed in
-  `heldout_accounts.json`; `eval_account_classify.py` re-derives any number in seconds. All four
-  sets have now been tuned against — **build set5 before quoting a new figure.**
-- ~~200 creators Reddit-blocked on a missing real name~~ → **RESOLVED to 24.** Resolved per
-  method: **live Instagram profile fetch 168** (0 failures), **verified Wikipedia 8**,
-  **24 genuinely unresolvable** handle-only personas — an acceptable outcome, not a failure.
-  The YouTube *description* source was checked as asked and is **confirmed-but-capped**: it does
-  carry names the title cannot (@jumper_aj_'s title is the useless "jumperAj" while its
-  description reads "this is abhishek narayan jha"), but only **5** name-gated creators have a
-  YouTube channel at all. Creators with a real name **43 → 211**; Reddit attempted **54 → 230
-  (20.8% → 88.8%)**.
-  ⚠️ **The name was the precondition; the recency window is now the binding constraint.** r/india
-  search for "Sunil Chhetri" returns 40 results with **0 off-topic** where the handle returned
-  pure noise — then all 40 are dropped as stale. Search is unblocked; collected volume barely
-  moves. Reddit *with content* is 22/259, up only from 18.
-=======
 ✅ **Tech-debt loop closed 2026-08-19 (5 cycles, all 3 items terminal).** Superseding the open
 items above:
 
@@ -695,8 +655,10 @@ items above:
   2025-07-03 and 2026-02-09). **~32-33 of the ~38 pairs are unaffected either way** — the
   sufficiency milestone holds even in the worst case. **Re-attribution recommended** (fix at the
   source, don't just discard — same reasoning as the caption incident) but awaiting final
-  execution. `DW3hIgJDI3P` (reliancejewels) is separately misattributed but not currently
-  `is_sponsored`, so it doesn't touch the pair count.
+  execution. `DW3hIgJDI3P` (reliancejewels) is separately misattributed and **does** count
+  toward the pair set, contrary to an earlier draft: its `is_sponsored` is NULL but
+  `has_paid_partnership_label` is TRUE, and the events query is
+  `(is_sponsored OR has_paid_partnership_label)` -- verified against the live row 2026-08-19.
 - **`account_classify.py`: CHARACTERIZED, not fixable with more keywords.** 4 held-out sets,
   scored honestly (not against the tuned suite): mean ~45% at first exposure, plateaus after
   tuning — a lexicon classifier ceiling, not a bug. 2 of the classifier's own prior "fixes" were
@@ -704,13 +666,16 @@ items above:
   misfiring on real creators' affiliate codes). Real, honest negative result — don't keep
   throwing keywords at it; a different approach would be needed to move past ~50%.
 - **Reddit real-name gate: RESOLVED, 200 → 24 unresolvable.** 168 recovered via live Instagram
-  re-fetch (now that dates/metadata work correctly), 8 via Wikipedia, 5 via YouTube description.
+  re-fetch (now that dates/metadata work correctly) and 8 via verified Wikipedia; 168 + 8 + 24
+  = 200. (Corrected 2026-08-19: an earlier draft credited "5 via YouTube description".
+  **Zero** names were applied from that source -- 5 was its measured CEILING, i.e. how many
+  name-gated creators own a YouTube channel at all. The source is real but capped:
+  @jumper_aj_'s title is the useless "jumperAj" while its description names him in prose.)
   Creators with a real name: 43 → 211+. Reddit-attempted: 54 → 230 (20.8% → 88.8%).
   **New binding constraint surfaced, not yet solved**: names were never the only gate — Reddit's
   *recency window* now caps yield the same way Instagram's did (example: a real athlete search
   returned 40 relevant, 0-off-topic results, all dropped as stale). Reddit-with-content only grew
   18→22 despite the massive name-unblock — the next real lever, not a solved problem.
->>>>>>> f79f5ddce7bdc7e2dd63b0b2e7b196d6cfb48226
 
 ⇒ Track B is unblocked to attempt a real training run with 3 actual computable examples, not a
 placeholder target or a single point. Still far below the ~20-pair sufficiency floor (§1a) — this
