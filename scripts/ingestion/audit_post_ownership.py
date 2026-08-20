@@ -66,6 +66,10 @@ OWNER = re.compile(r"-\s*([A-Za-z0-9_.]+)\s+on\s+(?:January|February|March|April
                     r"August|September|October|November|December)\s", re.I)
 
 
+class Disconnected(RuntimeError):
+    """No browser bridge. Not a throttle -- retrying cannot help, a human must act."""
+
+
 def oc(*args, timeout=120):
     env = dict(os.environ)
     if ENV.get("OPENCLI_PROFILE"):
@@ -92,6 +96,22 @@ SLEEP_SECONDS = 6
 # Stop once the throttle is obvious rather than grinding through the rest of the corpus.
 MAX_CONSECUTIVE_UNKNOWN = 12
 
+# ⚠️ A STRIKE BUDGET IS NOT A TIME BUDGET, learned 2026-08-20. The 12-strike abort was
+# documented as catching a bad run "in ~2 minutes". That is only true when reads fail
+# FAST. When the browser bridge is disconnected, every opencli call blocks for its own
+# 45s connect timeout, so one post costs open+wait+eval+sleep = ~141s and twelve strikes
+# takes 28 MINUTES. Measured, not estimated: a resumed run sat for 8 minutes without
+# recording a single result or printing a single warning.
+MAX_STALL_SECONDS = 180
+
+# The failure that actually occurred was NOT a throttle, which is worth separating because
+# the two look identical from inside the loop and call for opposite responses. A throttle
+# means back off and retry later; a disconnected profile means nothing will EVER succeed
+# until a human opens the Chrome profile with the OpenCLI extension. This project has
+# already confused these once in the other direction -- `opencli doctor` misreading a
+# disconnected daemon as a throttle -- so the signature is matched explicitly.
+_DISCONNECTED = "is not connected"
+
 
 # Read the canonical URL alongside the description, in ONE eval, so both describe the same
 # page state. Without this the audit trusts whatever page happens to be loaded.
@@ -116,7 +136,9 @@ def real_owner(post_id: str) -> str | None:
     Returning None on a mismatch means the post is simply re-checked later, which is always
     preferable to recording a confident wrong owner and re-attributing real data on it.
     """
-    oc("open", f"https://www.instagram.com/p/{post_id}/")
+    r = oc("open", f"https://www.instagram.com/p/{post_id}/")
+    if _DISCONNECTED in (r.stderr or ""):
+        raise Disconnected((r.stderr or "").strip().splitlines()[0])
     oc("wait", "time", WAIT_SECONDS)
     try:
         payload = json.loads((oc("eval", _OG_VERIFIED_JS).stdout or "").strip())
@@ -162,9 +184,16 @@ def main() -> None:
 
     ok = bad = unknown = 0
     consecutive_unknown = 0
+    stall_since = None
     misattributed = []
     for pid, user in rows:
-        owner = real_owner(pid)
+        try:
+            owner = real_owner(pid)
+        except Disconnected as e:
+            log.error("BROWSER BRIDGE IS DOWN, not a throttle: %s", e)
+            log.error("Open the Chrome profile with the OpenCLI extension enabled, then "
+                       "re-run -- the checkpoint resumes from here. Nothing was lost.")
+            break
         if owner is None:
             # NOT CHECKPOINTED. An unreadable post is unfinished work, not a result. The first
             # full run recorded 1,496 of these as if they were answers, which permanently
@@ -172,6 +201,13 @@ def main() -> None:
             # 184 posts had actually been verified.
             unknown += 1
             consecutive_unknown += 1
+            stall_since = stall_since or time.time()
+            stalled_for = time.time() - stall_since
+            if stalled_for >= MAX_STALL_SECONDS:
+                log.error("%.0fs without a single readable page (%d attempts). Stopping: "
+                           "whatever is wrong, it is not going to resolve inside this run.",
+                           stalled_for, consecutive_unknown)
+                break
             if consecutive_unknown >= MAX_CONSECUTIVE_UNKNOWN:
                 log.error("%d consecutive unreadable pages -- Instagram is throttling "
                            "(chrome-error://chromewebdata/). Stopping so the run does not spend "
@@ -181,6 +217,7 @@ def main() -> None:
             time.sleep(SLEEP_SECONDS)
             continue
         consecutive_unknown = 0
+        stall_since = None
         if owner.lower() == user.lower():
             ok += 1
         else:
