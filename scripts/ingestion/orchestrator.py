@@ -544,6 +544,25 @@ class PlatformWorker:
             handle = self._handle_for(creator)
             if not handle:
                 continue
+            # A DEAD CONNECTION IS NOT A PER-CREATOR FAILURE (2026-08-21). The except below
+            # is right for a bad handle -- skip it, keep going. It is exactly wrong for a
+            # closed connection, which fails identically for every creator that follows.
+            # Measured on this loop's own YouTube run: the pooler dropped the connection
+            # after ~75 minutes and the remaining 7 of 41 creators each "failed and
+            # continued" inside two seconds, so the batch reported completion having
+            # silently skipped them. Reconnect once per creator when needed; if the
+            # reconnect itself fails there is nothing left to continue for, so stop.
+            if getattr(conn, "closed", 0):
+                log.warning("database connection was closed mid-batch -- reconnecting "
+                             "before %s rather than burning through the rest of the batch",
+                             creator.name)
+                try:
+                    conn = get_connection()
+                except Exception:
+                    log.exception("reconnect failed -- aborting batch with %d creators "
+                                   "unprocessed rather than reporting a false completion",
+                                   len(creators) - creators.index(creator))
+                    return
             # Reset per-creator so the log line reports THIS creator's skips, not a
             # running total across the batch (real reporting bug found reading the
             # first full run's output — "29 skipped" repeated for creators that had
