@@ -53,7 +53,36 @@ DEFAULT_POST_CAP = 40
 # so those fixed dates would already be going stale). Posts older than this are skipped
 # rather than counted toward the cap, so raising the cap doesn't pad the dataset with
 # stale content.
-DEFAULT_RECENCY_DAYS = 183
+#
+# WIDENED 183 -> 1095 (6 months -> 3 years) on 2026-08-20. "The newer the better" turned
+# out to be false for this corpus, and two independent measurements said so:
+#
+#   1. RELEVANCE RISES WITH AGE, it does not fall. Reddit topic-search results scored by
+#      the same word-boundary name test the collector applies: 0-90d 22% on-topic (n=9),
+#      90-183d 50% (n=22), 183-365d 85% (n=33), 1-2y 100% (n=29), 2y+ 100% (n=71). The
+#      183-day window was keeping 31 results at 42% relevance and discarding 133 at 96%.
+#      Recent hits skew to news chatter that merely name-drops; older ones are the actual
+#      discussion. So relevance imposes NO upper bound anywhere in the measured range --
+#      it does not select the number, it only refuses to cap it.
+#
+#   2. THE NUMBER COMES FROM THE STRADDLE REQUIREMENT, which is measurable. A training
+#      pair needs a neighbour active BEFORE the event. 56 of 137 event x neighbour checks
+#      fail on the BEFORE side alone. The oldest dated sponsorship event is 2024-09-18,
+#      701 days old, and 24 of 55 events (44%) predate the old cutoff -- their before-side
+#      evidence sat in a range the window forbade collecting. Margin needed on top: the
+#      27 pairs that DO work have a median before-gap of 8 days and p90 of 48, so ~50 days
+#      suffices. 701 + 48 = 749 is therefore today's floor; 1095 clears it with a year of
+#      headroom so the window does not need re-deriving as the corpus ages.
+#
+# Evidence of truncation, if further proof is wanted: youtube_videos' oldest row is
+# 2026-02-09 and reddit_posts' is 2026-02-22 -- both sitting exactly on the 183-day
+# cutoff (2026-02-18). Neither corpus contains ANY older content, because the window
+# never let any be written.
+#
+# The earlier 88% Reddit noise purge is a DIFFERENT cause (handle-shaped queries, since
+# fixed by the real-name backfill) and is not reopened by this -- verified separately
+# rather than assumed, see `measure_reddit_recency.py`.
+DEFAULT_RECENCY_DAYS = 1095
 
 
 def recency_cutoff(days: int = DEFAULT_RECENCY_DAYS) -> datetime:

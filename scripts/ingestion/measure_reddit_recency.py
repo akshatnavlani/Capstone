@@ -83,8 +83,13 @@ def age_days(post: dict, now: datetime.datetime):
     return None
 
 
-BUCKETS = [(0, 90), (90, 183), (183, 365), (365, 730), (730, 100000)]
-LABELS = ["0-90d", "90-183d (just outside)", "183-365d", "1-2y", "2y+"]
+# The first run's top bucket was an unbounded "2y+" that scored 100% on 71 results. That
+# supports widening, but it does NOT characterise the range actually being adopted -- a
+# 1095-day window reaches 3 years, and "2y+" cannot tell 2y from 8y apart. Split so the
+# re-verification measures the range the window now admits instead of extrapolating into it.
+BUCKETS = [(0, 90), (90, 183), (183, 365), (365, 730), (730, 1095), (1095, 100000)]
+LABELS = ["0-90d", "90-183d (just outside)", "183-365d", "1-2y",
+          "2-3y (newly admitted)", "3y+ (still excluded)"]
 
 
 def main() -> None:
