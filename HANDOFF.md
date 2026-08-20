@@ -36,6 +36,93 @@ Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRA
 
 ---
 
+# BACKLOG LOOP (2026-08-21) — cycles 2-5
+
+## ITEM 1 — the window was widened, and it did NOT move the pair count. Here is why.
+
+YouTube is the one platform that does not need the browser bridge (official API), so it was
+re-run against all 41 handle-holders at the new 1095-day window.
+
+| measure | before | after (23/41 creators) |
+|---|---|---|
+| `youtube_videos` rows | 1,238 | **1,398** |
+| oldest video | 2026-02-09 | **2023-09-16** |
+| orphaned rows (integrity) | 0 | **0** |
+| **computable pairs** | **27** | **27 — unchanged** |
+| failure breakdown (before/after/silent) | 56 / 6 / 48 | **56 / 6 / 48 — identical** |
+
+The corpus grew by 160 videos reaching two years further back and *not one straddle check
+changed*. That is not a null result to shrug at, it has a specific cause, measured:
+
+| the neighbours that fail | distinct | on YouTube at all |
+|---|---|---|
+| fail on missing BEFORE (56 checks) | 13 | **2 of 13** |
+| neighbour fully silent (48 checks) | 25 | **0 of 25** |
+
+**Widening YouTube's window cannot fix these, because the blocking neighbours are not on
+YouTube.** The fix has to come from Instagram and Reddit — both blocked on the bridge.
+
+### ⚠️ The bigger lever is not the window at all: 51% of Instagram posts have no date
+
+`instagram_posts`: **1,802 rows, 881 dated, 921 undated (51%)**. The straddle test needs
+`posted_at`; an undated post is invisible to it. There is no unused date column —
+`fetched_at`/`created_at` are ingestion timestamps.
+
+| of the 104 checks failing the BEFORE clause | count |
+|---|---|
+| neighbour **already has undated Instagram posts** (10 distinct neighbours) | **40 (38%)** |
+| remaining, genuinely needing collection | 64 |
+
+**893 undated posts are already attached to a creator.** 38% of the pair gap is therefore
+*not* a collection problem and *not* a window problem — the data is sitting in the DB
+without a date. Dating it needs one `og:description` read per post, i.e. the bridge.
+
+### The 38 creators gating 104 of 137 checks
+
+Highly concentrated, and this is the priority list for the moment the bridge returns —
+far higher leverage than working through the generic 95-unattempted list:
+
+| checks gated | creator | ig posts | dated | note |
+|---|---|---|---|---|
+| **16** | Virat Kohli | 38 | 13 | 25 undated — date-gated, not collection-gated |
+| 7 | karanjohar | 40 | 15 | date-gated |
+| 7 | Nikkhil Advani | **0** | 0 | never fetched |
+| 7 | Gurfateh Singh Pirzada | 9 | 9 | needs older history |
+| 6 | Mihir Ahuja | **0** | 0 | never fetched |
+| 6 | Jimmy Shergill | **0** | 0 | never fetched |
+| 5 | Wamiqa Gabbi / mrbeast | 11 / 37 | 11 / 20 | mixed |
+
+**19 of the 38 blockers have zero Instagram posts** — they are in the 95-unattempted set.
+
+### Yield: the post cap, not the window, now binds
+
+Across the first 14 creators re-run: **10 were cap-bound** (40 kept, 0 stale), 3 window-hit,
+1 channel-exhausted. **71% never touched the window.** The historical 27% stale-discard rate
+was concentrated in sparse channels, not spread evenly. `--post-cap 40` was left alone — that
+is a cost decision for the user, not something to change mid-loop.
+
+## The blocker, and two silent-failure bugs it exposed
+
+**The OpenCLI browser bridge is down** — `opencli profile list` reports no connected profiles,
+re-probed at the start of every cycle. **Both Instagram AND Reddit adapters need it** (tested:
+`reddit search` fails identically after a 45s connect timeout). Only a human can fix it: open
+the Chrome profile with the OpenCLI extension enabled.
+
+It exposed two bugs of the same class — a dead channel indistinguishable from a real result:
+
+1. **`measure_reddit_recency.oc_search` returned `[]` on any failure.** With the bridge down
+   every search "succeeds" with zero results, so the script would have printed a confident
+   **0%-relevance table for every age bucket** — a fabricated measurement, and I would have
+   reported it as ITEM 1's re-verification. Now raises on the disconnect signature. Verified.
+2. **The audit's strike budget was not a time budget** (see cycle 1 above).
+
+A third, flagged but not yet fixed: YouTube comment fetching logs `HTTP Error 403` (comments
+genuinely disabled) and `WinError 10054` / SSL timeouts (transient, data silently lost) under
+one message, *"Comments disabled or unavailable"*. Roughly 5 of 8 observed failures were
+retryable losses being written off as permanent states.
+
+---
+
 # BACKLOG LOOP (2026-08-20) — cycle 1
 
 ## 🛑 THE ONE THING BLOCKING TWO OF FOUR ITEMS
