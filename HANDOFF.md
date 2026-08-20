@@ -189,6 +189,27 @@ safe, for a more precise reason than "that's fixed":
   that creator's own dedicated subreddit** (r/CarryMinati, r/shubmangill), where relevance is
   structural and the gate correctly does not apply.
 
+### Live collection results at the widened window (2026-08-21, in progress)
+
+| platform | rows before | rows now | oldest before | oldest now | creators w/ content |
+|---|---|---|---|---|---|
+| YouTube | 1,238 | 1,398+ | 2026-02-09 | **2023-09-16** | 39 → 39 |
+| Reddit | 822 | **1,005** | 2026-02-22 | **2023-11-29** | 22 → **35** |
+| Instagram | 1,802 | — | — | 2016-08-25 (all dated) | blocked on throttle |
+
+**Computable pairs: 27 → 46 (date backfill) → 48 (Reddit collection).** The Reddit arm is the
+first time COLLECTION rather than re-dating moved the number.
+
+⚠️ **The window is still binding on Reddit even at 1095 days**: 45-54% of relevance-passing
+results are still discarded as stale, and the live measurement scored the excluded 3y+ band at
+**100% on-topic (n=31)**. A further widening is data-supported and cheap -- Reddit search
+already RETURNS those results, so the only extra cost is comment fetches on the additional kept
+posts, not extra searching. Left for the user: this is a cost/scope call, same class as
+`--post-cap`, and this loop has already taken the one widening it was asked to take.
+
+Instagram is unaffected by any further widening -- only 4 of its 1,802 posts fall beyond 1095
+days.
+
 ### ITEM 1 re-verification: RUN LIVE 2026-08-21, the noise problem is NOT reopened
 
 The brief asked for one real check rather than an assumption. This is it, measured against
