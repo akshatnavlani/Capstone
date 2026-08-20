@@ -34,6 +34,104 @@ Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRA
 
 ---
 
+---
+
+# BACKLOG LOOP (2026-08-20) — cycle 1
+
+## 🛑 THE ONE THING BLOCKING TWO OF FOUR ITEMS
+
+**The OpenCLI browser bridge is disconnected.** `opencli profile list` → *"No Browser Bridge
+profiles connected."* Every browser call fails after a 45-second connect timeout with
+`Browser profile "s8h98tr4" is not connected`.
+
+**This is not the Instagram throttle.** The throttle from last round may well have expired —
+we cannot tell, because nothing has reached Instagram to find out. Only a human can fix this:
+open the Chrome profile with the OpenCLI extension enabled. ITEMs 2 and 3 resume the moment
+it reconnects; the audit checkpoint (240) is intact and nothing was lost.
+
+Two defects in the abort logic surfaced here and are fixed:
+- **A strike budget is not a time budget.** The 12-strike abort was documented as catching a
+  bad run "in ~2 minutes" — true only when reads fail *fast*. At 45s per failed call one post
+  costs ~141s, so twelve strikes is **28 minutes**. Measured: the audit sat 8 minutes without
+  recording or printing anything. `MAX_STALL_SECONDS = 180` now runs alongside the strike count.
+- **A disconnect is not a throttle.** Identical from inside the loop, opposite responses
+  (back off later / nothing will ever work until a human acts). The project already confused
+  these once in the other direction. Now matched explicitly. Verified: aborts at 45s with the
+  right diagnosis, checkpoint untouched.
+
+## ITEM 1 — window widened, 183 → 1095 days ✅ code done, live yield pending browser
+
+The size was **derived, not chosen**. Relevance rises with age (0-90d 22% on-topic → 2y+ 100%),
+so relevance imposes *no* upper bound anywhere measured — it refuses to cap the window, it does
+not pick a number. The number comes from the straddle requirement, which is measurable:
+
+| input | value | source |
+|---|---|---|
+| oldest dated sponsorship event | 2024-09-18 = **701 days** old | live DB |
+| events predating the old 183d cutoff | **24 of 55 (44%)** | live DB |
+| before-gap of the 27 pairs that DO work | median **8d**, p90 **48d** | live DB |
+| ⇒ floor today | 701 + 48 = **749 days** | |
+| ⇒ adopted | **1095** (a year of headroom so it needn't be re-derived monthly) | |
+
+**Corroboration that the window was truncating, not filtering:** `youtube_videos`' oldest row
+is 2026-02-09 and `reddit_posts`' is 2026-02-22 — both sitting exactly on the 183-day cutoff
+(2026-02-18). Neither corpus holds *anything* older, because the window never let any be written.
+
+### What the old window actually discarded — counted from real run logs, not sampled
+
+| platform | kept | discarded as stale | share discarded |
+|---|---|---|---|
+| **Reddit** | 468 | **976** | **68%** *(all of it had already passed the relevance gate)* |
+| **YouTube** | 1,153 | **417** | **27%** |
+| Instagram | 862 | 22 | **2%** |
+
+⚠️ **Instagram's widening recovers almost nothing** — its grid is newest-first and hard-capped
+at 12 posts, so what it fetches is recent by construction. The brief expected gains on Reddit
+and Instagram; the real gains are **Reddit and YouTube**. YouTube was not named in the decision
+but shares the constant and is the second-biggest winner.
+
+### The "does this reopen the 88% noise purge?" check — run, and the assumption was wrong
+
+Not assumed. **11 of 229 creators configured for Reddit topic search still query a
+handle-shaped name** — the exact cause of the old purge, still present. But widening is still
+safe, for a more precise reason than "that's fixed":
+
+- **9 of the 11 have zero Reddit rows.** `mentions_creator` substring-matches the whole handle
+  token (`rohitsharma45`), which never appears in prose, so the gate **fails closed**.
+- **The 2 with rows are `CarryMinati` (62) and `shubmangill` (40), and every row comes from
+  that creator's own dedicated subreddit** (r/CarryMinati, r/shubmangill), where relevance is
+  structural and the gate correctly does not apply.
+
+## ITEM 3 — the reachable set, enumerated
+
+| platform | not attempted | structurally unreachable | **reachable, still to do** |
+|---|---|---|---|
+| Instagram | 97 | 2 (`Athletics`, `Mumbiker Nikhil` — no handle at all) | **95** |
+| Reddit | 29 | 5 (Ohio State ×2, E1 Series, ATHLEAN-X, Etaki) | 24 name-gated |
+
+**A lever inside the name-gate, found this cycle:** of the 24 name-gated creators, **20 already
+had an Instagram profile fetched and it returned no `full_name`** — genuinely exhausted for that
+source. The other **4 have never had one fetched at all**: `ashwani__42`, `gkgurpreet`,
+`rinkukumar12`, `sivasakthi_ss11`. They also sit inside the 95 Instagram-unattempted, so one
+profile fetch each serves both items. Not a retry of anything confirmed unreachable.
+
+## ITEM 4 — canonical pair count ✅ TERMINAL
+
+`scripts/ingestion/pair_count.py` now owns the single definition; `loop_stats.py` imports it
+instead of keeping a second copy. Both print **27**.
+
+It also prints the four other plausible readings, which is where the 38-vs-37 and 30-vs-27
+disagreements came from — none of them was an error, they were different questions:
+
+| reading | value |
+|---|---|
+| **(event × neighbour) rows — CANONICAL** | **27** |
+| distinct directed creator pairs | 17 |
+| distinct undirected creator pairs | 16 |
+| events yielding ≥1 pair | 17 |
+| collaboration edge pairs (graph only) | 170 |
+| event × neighbour checks evaluated | 137 |
+
 # ATTRIBUTION / COVERAGE LOOP (2026-08-19, in progress)
 
 ## 🚨 READ THIS BEFORE TRUSTING ANY OWNERSHIP-AUDIT NUMBER
