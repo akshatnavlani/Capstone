@@ -25,6 +25,7 @@ import sys
 
 import psycopg2
 
+import pair_count
 from orchestrator import ENV
 
 CKPT = os.path.join(os.path.dirname(__file__), "yt_discovery_checkpoint.json")
@@ -77,41 +78,12 @@ def main() -> None:
     rd_name_gated = cur.fetchone()[0]
     rd_untouched = total - rd_attempted - rd_name_gated
 
-    # --- the actual objective
-    cur.execute("""
-        with events as (
-            -- Events must be counted on EVERY platform, not just Instagram. Kerala Blasters'
-            -- 2 sponsorship events live on YouTube ("brought to you by"), and an
-            -- Instagram-only event query silently excluded them -- the same cross-platform
-            -- blind spot already fixed on the NEIGHBOUR side of this calculation.
-            select creator_id, post_id, posted_at from instagram_posts
-            where (is_sponsored or has_paid_partnership_label) and posted_at is not null
-            union all
-            select creator_id, video_id, published_at from youtube_videos
-            where is_sponsored and published_at is not null
-            union all
-            select creator_id, post_id, posted_at from reddit_posts
-            where is_sponsored and posted_at is not null),
-        pairs as (select distinct x.creator_id a, c2.creator_id b
-                  from creator_related_accounts x
-                  join creators c2 on lower(c2.instagram_handle)=lower(x.handle)
-                                   and c2.creator_id<>x.creator_id)
-        select count(*) from (
-          select 1 from events e join pairs pr on pr.a = e.creator_id
-          where (select count(*) from instagram_posts q where q.creator_id=pr.b and q.posted_at<e.posted_at)
-               +(select count(*) from youtube_videos v where v.creator_id=pr.b and v.published_at<e.posted_at)
-               +(select count(*) from reddit_posts r where r.creator_id=pr.b and r.posted_at<e.posted_at) > 0
-            and (select count(*) from instagram_posts q where q.creator_id=pr.b and q.posted_at>e.posted_at)
-               +(select count(*) from youtube_videos v where v.creator_id=pr.b and v.published_at>e.posted_at)
-               +(select count(*) from reddit_posts r where r.creator_id=pr.b and r.posted_at>e.posted_at) > 0
-        ) t""")
-    pairs = cur.fetchone()[0]
-    cur.execute("""select count(*) from (
-        select distinct least(a.name,c.name), greatest(a.name,c.name)
-        from creator_related_accounts x
-        join creators a on a.creator_id=x.creator_id
-        join creators c on lower(c.instagram_handle)=lower(x.handle) and c.creator_id<>x.creator_id) t""")
-    edge_pairs = cur.fetchone()[0]
+    # --- the actual objective. NOT computed here: `pair_count.py` owns the one definition,
+    # because two hand-rolled copies is exactly how the reported figure came to disagree with
+    # independent recomputation twice in a row.
+    st = pair_count.compute(cur)
+    pairs = st["computable_pairs"]
+    edge_pairs = st["collab_edge_pairs"]
     conn.close()
 
     pct = lambda n: f"{100*n/total:5.1f}%"
