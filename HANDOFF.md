@@ -189,6 +189,30 @@ safe, for a more precise reason than "that's fixed":
   that creator's own dedicated subreddit** (r/CarryMinati, r/shubmangill), where relevance is
   structural and the gate correctly does not apply.
 
+### ITEM 1 re-verification: RUN LIVE 2026-08-21, the noise problem is NOT reopened
+
+The brief asked for one real check rather than an assumption. This is it, measured against
+live Reddit search with the same word-boundary relevance test the collector applies:
+
+| age bucket | results | on-topic | relevance |
+|---|---|---|---|
+| 0-90d | 8 | 1 | **12%** |
+| 90-183d (just outside the old window) | 22 | 11 | 50% |
+| 183-365d | 33 | 28 | 85% |
+| 1-2y | 29 | 29 | **100%** |
+| **2-3y — the band the widening ADMITS** | **36** | **36** | **100%** |
+| 3y+ — still excluded at 1095d | 31 | 31 | **100%** |
+
+Inside the old window: 30 results at **40%** on-topic. Outside it: 129 at **96%**.
+
+Two conclusions, both worth stating separately:
+1. **The widening admits clean data.** The 2-3y band it newly allows is 100% on-topic across
+   36 results. The 88% purge is not reopened.
+2. **1095 days is conservative, not aggressive.** The 3y+ band is also 100% on 31 results, so
+   relevance still imposes no ceiling even beyond the new window. 1095 was derived from the
+   straddle requirement (oldest event 701d + p90 before-gap 48d), not from relevance, and it
+   can be raised further if the pair count ever needs it.
+
 ## ITEM 3 — the reachable set, enumerated
 
 | platform | not attempted | structurally unreachable | **reachable, still to do** |
