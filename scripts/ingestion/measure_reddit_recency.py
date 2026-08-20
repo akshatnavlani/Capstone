@@ -47,9 +47,23 @@ def oc_search(query: str, sub: str, limit: int) -> list:
                         "--sort", "new", "--limit", str(limit), "-f", "json"],
                        capture_output=True, text=True, timeout=180, env=env,
                        encoding="utf-8", errors="replace")
+    # ⚠️ A DEAD BRIDGE MUST NOT LOOK LIKE AN EMPTY RESULT SET (added 2026-08-20). This
+    # returned [] on any failure, so with the OpenCLI browser bridge disconnected every
+    # search "succeeded" with zero results and the script would have printed a confident
+    # 0%-relevance table for every age bucket -- a fabricated measurement, and the exact
+    # error class that produced the retracted ownership-audit numbers. Verified live: with
+    # the bridge down, `reddit search` exits 1 after a 45s connect timeout and prints
+    # `Browser profile "..." is not connected` on stderr.
+    if "is not connected" in (r.stderr or ""):
+        raise RuntimeError("OpenCLI browser bridge is down -- open the Chrome profile with "
+                            "the extension enabled. Refusing to report a measurement built "
+                            "on zero reachable searches.")
     try:
         d = json.loads((r.stdout or "").strip())
     except Exception:
+        if r.returncode != 0:
+            log.warning("reddit search failed rc=%s: %s", r.returncode,
+                         (r.stderr or "")[:160].replace(chr(10), " "))
         return []
     return d if isinstance(d, list) else d.get("entries", [])
 
