@@ -50,35 +50,71 @@ open when the loop was cancelled. Cron `77b2ad16` deleted; `CronList` confirms n
 | 3 — exhaustion bar | **NO** | Reddit arm effectively done (content 22→117); Instagram arm blocked |
 | 4 — canonical pair script | **YES** | `pair_count.py` owns the definition, `loop_stats.py` imports it |
 
-## 🚨 OPEN DEFECT I INTRODUCED AND COULD NOT FIX — duplicate `Athletics` creator
+## ✅ RESOLVED 2026-08-22 — duplicate `Athletics` creator merged, root cause closed
 
-My `reddit_widen` run created a SECOND `creators` row named `Athletics`
-(`83d01ca9-9c3f-4b4a-b4e4-6fc5b28a8d3c`, created 2026-08-20 21:40) alongside the original
-(`33d17cfb-3f60-4ca7-90b6-e7911fd249c1`, 2026-08-10). The orchestrator's duplicate guard
-**logged the warning and inserted anyway** — the guard warns, it does not block.
+Was: two `creators` rows named "Athletics" with that creator's Reddit content split across
+them (40/40 links on the 2026-08-10 row, 21/40 on the 2026-08-20 row my own run created).
 
-Both rows now hold real Reddit data, so this creator's data is SPLIT:
+**Merged** with `merge_duplicate_creator.py`. 19 of the duplicate's links pointed at posts the
+canonical row already claimed, so a blind re-point would have violated the PK on
+`reddit_post_creators`; those were dropped as redundant and the other 21 (plus 21
+`reddit_posts`) moved across. **Result 61/61 — exactly the predicted 40 + 40 − 19.** The
+duplicate row was deleted only after all six `creator_id` tables were confirmed empty for it.
+Independently re-checked: creators **260 → 259**, one `Athletics` row, **0** orphaned
+`reddit_posts`, **0** dangling links.
 
-| row | reddit_posts | reddit_post_creators |
-|---|---|---|
-| `33d17cfb` (keep) | 40 | 40 |
-| `83d01ca9` (dup) | 21 | 40 |
+**Root cause closed.** `get_or_create_creator` keyed identity on `youtube_handle` /
+`instagram_handle` only, so a creator with NEITHER had no key at all and was re-created every
+run. Added a last-resort name key for exactly that case, guarded on both sides: consulted only
+when no handle was supplied, and matching only rows that themselves carry no handles.
 
-**The fix, not applied** — the merge was blocked by the permission classifier (DELETE/UPDATE),
-and I deliberately did not work around it:
-1. delete the 19 `reddit_post_creators` rows on the dup whose `post_id` is ALREADY linked to
-   `33d17cfb` (they would violate the PK on re-point);
-2. `update reddit_post_creators, reddit_posts set creator_id='33d17cfb…' where
-   creator_id='83d01ca9…'`;
-3. re-check all 6 `creator_id` tables are empty for the dup, and only then delete the row.
+**This is not the PV Sindhu / Saina Nehwal collision returning.** That came from matching on
+SHARED COMMUNITY MEMBERSHIP — two different people both legitimately in r/badminton. The new
+key is the creator's own NAME, and their names differ. Asserted rather than argued:
+`test_get_or_create_identity.py` runs against the real DB and passes all three —
+Reddit-only creator reused; shared subreddit does NOT merge differently-named creators; a
+same-name Reddit-only lookup does NOT absorb a creator that has an Instagram handle. It cleans
+up its own rows and verifies the cleanup landed.
 
-Until then `creators` reads 260, not 259, and `Athletics` is one creator counted twice.
-This is cosmetic for the pair count (Athletics is in neither) but it is wrong data.
+## ✅ The two "worst kind" misattributions — STRICTLY RE-EXAMINED 2026-08-22, both CONFIRMED
 
-⚠️ **The underlying bug is worth fixing before the next bulk run**: `get_or_create_creator`
-matches on `youtube_handle`/`instagram_handle` only — deliberately NOT on `reddit_handles`,
-because that caused the PV Sindhu/Saina Nehwal merge. A creator with NEITHER a YouTube nor an
-Instagram handle therefore has no identity key at all and is re-created on every run.
+Challenged on the grounds that LeBron's Nike posts read as genuine first-person endorsement,
+and that the audit had an 18% false-positive rate. **The challenge was right about the posts
+and wrong about which post was flagged** — and the 18% figure belongs to a different era.
+
+**Provenance first.** Both readings come from `audit_cycle8.log`, the run started AFTER the
+page-verification fix. The 18% false-positive rate was measured on the UNVERIFIED era, and
+every reading from it was purged. Verification was demonstrably live during this very run —
+it discarded 12 pages in it.
+
+**Live strict re-read was attempted and could NOT complete**: 4 reads, all discarded as
+`chrome-error://chromewebdata/`. Instagram is still throttled. So the confirmation below rests
+on stored evidence, which is a different and weaker instrument than a live og:description read
+— stated plainly rather than blurred.
+
+**`DZSLvpKO7fZ` → nike: CONFIRMED misattribution.** The discriminator is voice, and the corpus
+settles it. LeBron's grid holds FOUR Nike posts; the audit flagged exactly ONE:
+
+| post | date | caption | still kingjames? |
+|---|---|---|---|
+| `DV_cx1aDgda` | 03-17 | "…Beats and Nike have been a part of **my** journey…" | ✅ yes |
+| `DWG1NxEDoq0` | 03-20 | "Keep your head in the game." | ✅ yes |
+| `DZLVfYcEvXU` | 06-04 | "Time to call **your** agent, @cristiano 🤷🏾‍♂️ Watch on @nike!!" | ✅ yes |
+| `DZSLvpKO7fZ` | 06-07 | "The GOATs' Goodbye. Coming when **@cristiano and @kingjames** say so." | ❌ → nike |
+
+The three first-person posts were **left untouched**. The one moved refers to LeBron in the
+THIRD PERSON via @mention — brand campaign copy, three days after LeBron's own first-person
+teaser for the same campaign. The audit discriminated correctly rather than sweeping the topic.
+
+**`DYj0mpNAjZS` → astermedcity: CONFIRMED misattribution.** Caption: *"**Proud to be the
+Official Medical Partner for** Kerala Blasters FC during the ISL 2026 season… **our team**
+remained committed…"* — sponsor voice announcing its own partnership. Kerala Blasters' own 37
+posts from the same week are uniformly club voice (`#KeralaBlasters`, `#YennumYellow`, match
+commentary). A club does not announce that it is proud to be its own medical partner.
+
+**Both stand as re-attributed. No further action taken.** They remain the clearest illustration
+of why this bug matters for Track B: a sponsor's own post filed as the creator's, sitting
+directly on the sponsorship relationship the model is meant to learn.
 
 ## Instagram throttle — the operative fact for planning
 
