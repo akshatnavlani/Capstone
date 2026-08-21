@@ -1230,6 +1230,38 @@ def get_or_create_creator(conn, name: str, category: str, replace_reddit: bool =
         # youtube_handle/instagram_handle (a unique account per real person),
         # reddit_handles is a list of communities ABOUT a creator, which multiple
         # different real people can legitimately share — never a valid identity key.
+        #
+        # LAST-RESORT KEY FOR REDDIT-ONLY CREATORS (added 2026-08-22). The two rules
+        # above leave a real hole: a creator with NEITHER a YouTube nor an Instagram
+        # handle has no identity key at all, so every run re-created them. That is not
+        # hypothetical — a Reddit run on 2026-08-20 minted a second "Athletics" row and
+        # split that creator's Reddit content across two identities (40 posts on one,
+        # 21 on the other) before it was caught and merged by hand.
+        #
+        # WHY THIS IS NOT THE SAINA/SINDHU BUG AGAIN. That collision came from matching
+        # on SHARED COMMUNITY MEMBERSHIP — two different people, both legitimately in
+        # r/badminton. This matches on the creator's own NAME, and their names differ, so
+        # the failing case cannot recur (asserted in test_get_or_create_identity.py).
+        #
+        # Two guards keep it narrow:
+        #   1. only consulted when NO handle was supplied, so it can never override or
+        #      compete with a real account key;
+        #   2. only matches rows that themselves have NO handles, so a Reddit-only
+        #      lookup can never absorb an established multi-platform creator that merely
+        #      happens to share a name.
+        # The residual risk is two genuinely different Reddit-only creators with the
+        # identical name — a real name collision, which no key can resolve and which the
+        # handle columns cannot help with either, since by definition there are none.
+        if row is None and not yt and not ig and name:
+            cur.execute("""select creator_id from creators
+                            where lower(name) = lower(%s)
+                              and instagram_handle is null
+                              and youtube_handle is null
+                            limit 1""", (name,))
+            row = cur.fetchone()
+            if row is not None:
+                log.info("matched Reddit-only creator %r by name (no handles on either "
+                          "side) — reusing %s instead of creating a duplicate", name, row[0])
 
         if row is not None:
             creator_id = row[0]
