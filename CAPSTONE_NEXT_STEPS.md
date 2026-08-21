@@ -71,16 +71,14 @@ event have `brand_id`, does a connected neighbor have pre-event history) — not
 structural criteria before declaring a milestone's data "ready," not just the headline counts.
 
 **Review 1 — "basic dry run," the bar for THIS check-in:**
-- [x] ~100 creators (259, well past the floor)
-- [x] **At least one fully computable training pair** — a sponsorship event that is BOTH
-      graph-connected to another creator AND has pre-event data on that neighbor. **DONE
-      2026-08-17**: mrbeast↔CarryMinati, independently confirmed three ways — see P0.4. Ideally
-      grow past 1 (3-5) before calling this fully comfortable; one real example de-risks the
-      pipeline, it doesn't validate a model.
-- [x] Real collaboration edges comfortably above the old 10 pairs — now 161, from bulk-promoting
-      the reviewed sheet backlog, not from coverage. See the retired P0.2 finding above.
+- [x] ~100 creators (260, well past the floor)
+- [x] **Computable training pairs: 52** (2026-08-21, canonical script, orchestrator-verified
+      directly) — past not just "at least one" but the ~50-100 thesis-defensible tier. See P0.4
+      for the full breakdown and how it got here.
+- [x] Real collaboration edges: 170 (unchanged since bulk promotion, still healthy).
 - [ ] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a
-      sentiment/reputation signal, even if the full pipeline isn't built yet.
+      sentiment/reputation signal — likely already true given Reddit's growth (55 creators with
+      content, 2,649 posts) but not yet explicitly checked against this specific bar.
 
 **Review 2 — "GAIL trains for real, fusion produces real scores":**
 - [ ] Sponsorship events: 300+ (established Phase 2 target)
@@ -99,6 +97,42 @@ structural criteria before declaring a milestone's data "ready," not just the he
 - [ ] Limitations section grounded in what was actually found this project (observational data,
       disclosure-based treatment labels, structural graph sparsity, India-skewed sample,
       engagement-per-rupee not true ROI) — not a generic boilerplate list
+
+### 1a. Batch-readiness criteria (added 2026-08-18) — when to stop deepening the current 259 and
+promote the next batch
+
+The user's stated policy: loop data collection on the current creator set until EITHER it's
+genuinely exhausted across all three platforms, or a real sufficiency threshold is hit — whichever
+comes first. Don't promote the next batch before then. Concretely:
+
+**"Exhausted" (stop looping regardless of pair count) — ALL of:**
+- [ ] Every one of the 259 creators has been *attempted* on all 3 platforms — not necessarily
+      successfully, but no creator sits fully untouched on YouTube or Reddit. (Instagram is
+      already effectively maxed given the adapter block; browser-only coverage work counts here.)
+- [x] **DONE 2026-08-18.** Track C confirmed (by reading the code, not inferring) that real
+      multi-platform disclosure detection has existed since Weeks 7-8 — the "32, Instagram-only"
+      result reflected zero real signal at the old, much smaller YouTube/Reddit scale, not an
+      unbuilt capability. Re-run at the new scale (1,227 YouTube videos/39 creators, 681 Reddit
+      posts) found 2 new YouTube events (`keralablasters`, via "brought to you by"), 0 on Reddit.
+      Neither creator is graph-connected yet, so no new pair this round — but the mechanism is
+      now confirmed real and current, not a guess.
+- [ ] Every connected, dated sponsorship event has been checked cross-platform for a straddle
+      (routine now per §5 P0.4, not a manual spot-check).
+- [ ] Computable training pairs have stopped growing for 2 consecutive rounds despite the above
+      being satisfied — the real diminishing-returns signal.
+
+**"Sufficient" (can stop early even if not fully exhausted) — the real target:**
+- [x] **DONE 2026-08-18. Computable training pairs ≥ 20** — the bare floor for any legitimate
+      held-out split. **~38, independently confirmed** (see P0.4). The loop's own "Sufficient"
+      stop condition fired for real after 13 cycles, not a premature/false stop.
+- [x] Real resolved collaboration edges: 170, up from 161 — healthy trend, tracked each round.
+- [ ] Reddit unblocked for a meaningful share of the 231 handle-named creators (real-name
+      backfill via free bio/channel-title sources, gated on Instagram deepening producing names —
+      see §5 P0.5).
+
+Report against this checklist every round, not just raw creator/post/event counts — a round that
+grows posts but doesn't move the pair count or check off one of these boxes hasn't actually made
+the batch more ready.
 
 ---
 
@@ -533,31 +567,132 @@ of their own.
 (`athleanx` gained the instagram_handle it had on the sheet but not the DB — exactly the case
 insert-only would have missed), 0 duplicates, `approval_status` untouched.
 
-**✅ P0.4 — RESOLVED 2026-08-17. The first fully-computable GAIL training pair is real,
-independently confirmed three separate ways.** Not "should become real" — actually real, as of
-Track C's Phase 1G relabel:
+**✅ P0.4 — SUFFICIENCY THRESHOLD CLEARED 2026-08-18, RE-VERIFIED AFTER CORRECTION 2026-08-19.
+Computable GAIL training pairs: ~27-30**, down from an uncorrected ~37-38 — a real, GOOD
+correction, not a regression. Two of the 3 misattributed posts found in the tech-debt round
+(§ below) were inflating the count doubly: fabricating an event, and widening the wrongful
+owner's activity window enough to falsely pass other creators' straddle checks (Kohli's real
+dated window is 2026-01-21→2026-06-26; one mis-owned post extended it ~6 months, and he sits as
+the neighbor in 16 event-slots). Corrected, then independently re-verified from scratch by the
+orchestrator a second time: **30** (fresh live pull, all 33 usable events including a newly
+surfaced 2nd Ronaldo event × 170-pair graph × full neighbor content), against Track A's own
+final figure of **27**. Both numbers are real and both clear the ≥20 floor — the gap is most
+likely timing (new data landing between counts), not an error either side. **Recommendation: one
+canonical, shared pair-counting script, not each track/session hand-rolling it separately** — this
+is the second round running where independent recomputation gave a different number.
 
-| Condition | Status |
-|---|---|
-| Treatment event correctly labeled | ✅ `Db5rzczsSV5` (mrbeast, 2026-08-12), `is_sponsored=true` via native `paid_partnership_label` signal (caption's `#oldnavypartner` hashtag isn't a pattern the regex labeler catches on its own — the native signal is exactly why it exists) |
-| Real graph connection | ✅ mrbeast ↔ CarryMinati, resolved collaboration edge, both directions |
-| Neighbor data straddles the event | ✅ CarryMinati: 11 dated posts before (through 2026-08-08), 1 after (2026-08-13) |
+Notable pairs, re-confirmed post-correction: Kerala Blasters↔Mumbai City FC, all 5 previously-
+blocked priority creators, Ronaldo↔LeBron now has 2 separate dated events producing pairs.
 
-Verified independently three times: Track A found it and reported the raw numbers; the
-orchestrator opened CarryMinati's live Instagram grid directly (via the accessibility tree, not
-just a screenshot) specifically to rule out the pinned-post metadata bug Track A flagged the same
-round, and found no pinned posts — the date data is trusted; Track C confirmed the label and the
-edge from its own side independently. `brand_id` is still NULL on this post (no "Old Navy" row
-exists in `brands` yet) — **this does not block the milestone**, since P0.4's actual definition
-is graph-connection + straddling data, not brand identification. Brand linkage is Track A's
-extraction to close when it gets to it, separately.
+**⬆️ SUPERSEDED AGAIN 2026-08-21. Computable pairs: 52**, verified by the orchestrator running
+Track A's own new canonical script (`pair_count.py`) directly against the live DB, not by
+trusting a report. **This crosses the ~50-100 thesis-defensible tier**, not just the ≥20 floor —
+a real, substantial jump from the ~27-30 two days prior. Full breakdown from the canonical
+script: 137 event×neighbor checks evaluated, 49 dated sponsorship events, 37 events yielding at
+least one pair, 23 distinct directed / 20 undirected creator pairs, 170 collaboration edges.
 
-⇒ Track B is unblocked to attempt a real training run with an actual computable example, not a
-placeholder target. One real pair is not enough to validate generalization — treat the first
-real run as a pipeline-correctness check (does it run end-to-end on real data, no NaN/crash),
-not a trained model. The collaboration graph is also no longer what it was — 161 distinct pairs,
-not 10 (see the retired-finding note above) — so the graph Track B builds against now looks very
-different from its first attempt.
+**The jump was driven by one genuinely excellent technical discovery, not just more scraping**:
+an Instagram post's shortcode IS its media ID in base64, and the media ID's high bits encode a
+millisecond timestamp — the date was sitting inside the primary key the whole time. Fitted (not
+guessed) against 881 independently-dated ground-truth posts (via `og:description`, so not
+circular): the correct bit-shift lands 99.4% of dates within 72 hours, median error 0.5 days.
+Filled NULLs only, self-checks and refuses to write if agreement drops below 95%, flagged
+(didn't touch) 5 stored dates it found to conflict — **all 1,811 Instagram posts are now dated**,
+up from 881 (49%). This is a zero-network-call fix, so it fully sidesteps the Instagram
+adapter/throttle problem for dating purposes specifically. Combined with the recency-window
+widening (183→1095 days) and the Reddit name-unblock cascading into real content growth, pairs
+went 27→46 (shortcode fix alone)→48→50→**52**.
+
+**Canonical pair-counting is now solved structurally, not just for this round**: `pair_count.py`
+is the single definition, `loop_stats.py` imports it rather than keeping a second copy, and it
+prints all 4 plausible readings of "how many pairs" explicitly (event-neighbor rows, directed
+pairs, undirected pairs, events-yielding-a-pair) — this is what caused every prior recomputation
+disagreement, now named instead of re-litigated each round.
+
+**⛔ STANDING RULE 2026-08-21: `DEFAULT_RECENCY_DAYS = 1095` (3 years) is a hard ceiling — do
+not widen further.** Track A flagged further widening as data-supported (the 3y+ Reddit band
+scored 100% on-topic) and it was queued for approval; the user held it back on reflection and
+capped it here explicitly. Reasoning worth keeping: this constant does two conceptually
+different jobs at once — (1) how far back to look for historical sponsorship-event context
+(where wide is genuinely fine, since a training pair is anchored to its own event's date, not
+"today"), and (2) implicitly, how far back any *current-creator-status* feature might draw from
+if built carelessly against the same pool (where 3-year-old data would misrepresent who a
+creator is now). Job (1) justified the widening to 1095; job (2) is the reason not to go
+further without first separating the two uses — **not yet done**, worth a real task before
+either Track B's feature-building or Track A's collection touches this distinction again.
+
+**✅ CLOSED 2026-08-22.** The duplicate "Athletics" creator merged cleanly (61 = 40+40-19 posts,
+independently confirmed; creators 260→259) and its root cause fixed (`get_or_create_creator` now
+has a guarded last-resort name key for handle-less creators, regression-tested against the
+Saina/Sindhu collision it was designed to avoid — 3/3 tests pass). Both flagged misattributions
+independently confirmed genuine (not false positives, resolved by voice: first-person athlete
+content vs. third-person/sponsor-voice brand copy) — both already `creator_id: null`, no further
+action needed. Final: **52 pairs holds, 259 creators, standing rule respected (window untouched
+at 1095 days).**
+
+**Still genuinely open, both explicitly waiting on the user, not Track A**: (1) Instagram's
+*adapter* (distinct from the zero-network date-decode workaround) remains throttled — an 18-hour
+cooldown didn't clear it, confirmed Instagram-side. The ownership-contamination census is stuck
+at 690/1,752 (39.4%) as a result — durable, not at risk, won't finish on a same-day timescale.
+(2) Further recency-window widening beyond 1095 days is data-supported but capped by standing
+rule pending the current-status-vs-historical-context split (see the rule above) — not
+re-opened without that split being designed first.
+
+⇒ **Track A's work is in a clean, stable stopping state.** Track B has not yet trained against
+the current 52-pair set — its last real run was against the much smaller pre-shortcode-fix
+graph. This is the natural next move.
+
+✅ **Tech-debt loop closed 2026-08-19 (5 cycles, all 3 items terminal).** Superseding the open
+items above:
+
+- **Position-matching: FIXED.** Root cause was worse than "which index" — Instagram's adapter
+  hard-caps at its 12-post first-paint grid (confirmed: `--limit` 3/5/12 pass through exactly,
+  15/20/25/40 all clamp to 12 — no pagination exists, not fixable adapter-side). Replaced with a
+  caption-content join (refuses ambiguous matches) plus per-post `og:description`, verified
+  end-to-end on a real creator (6/6 dated, 6/6 comment counts exact, 0 foreign posts written).
+- ⚠️ **A worse bug surfaced during verification: Instagram profile grids mix in OTHER accounts'
+  posts** (same bug class as the historic caption-authorship incident, new form). Measured:
+  14.3% of random posts, 5.8% of sponsorship events. **Independently traced by the orchestrator
+  to 2 of the 3 misattributed posts landing inside the P0.4 milestone**: `DLrSRdqTcEQ` (attributed
+  to Kohli, actually anushkasharma's) and `DUkDWOYiL8x` (attributed to Kohli, actually
+  duroflexworld's — a brand) each produced 2 rows in the recomputed 38-pair set (dates
+  2025-07-03 and 2026-02-09). **RE-ATTRIBUTED 2026-08-19** — both re-pointed to their real
+  owners (brands get no creator attribution, matching existing schema convention), `DW3hIgJDI3P`
+  (reliancejewels) corrected too. **Full ownership audit run on a larger, unbiased sample: true
+  contamination rate 14.1%** (184 verified, 26 misattributed — sponsored posts are actually
+  *less* likely to be affected than average, 0% vs 3% baseline). Census incomplete — ~1,500 of
+  1,752 posts still need checking, blocked on an Instagram throttle the audit itself
+  accidentally triggered (caught and fixed: pacing reverted, a 12-strike abort now catches this
+  in ~2 minutes instead of hours). Resume once the throttle clears.
+- **`account_classify.py`: CHARACTERIZED, not fixable with more keywords.** 4 held-out sets,
+  scored honestly (not against the tuned suite): mean ~45% at first exposure, plateaus after
+  tuning — a lexicon classifier ceiling, not a bug. 2 of the classifier's own prior "fixes" were
+  found net-harmful and reverted (`_ATHLETE_CLASS`, an "use code" brand-marker that was
+  misfiring on real creators' affiliate codes). Real, honest negative result — don't keep
+  throwing keywords at it; a different approach would be needed to move past ~50%.
+- **Reddit real-name gate: RESOLVED, 200 → 24 unresolvable.** 168 recovered via live Instagram
+  re-fetch (now that dates/metadata work correctly), 8 via Wikipedia, 5 via YouTube description.
+  Creators with a real name: 43 → 211+. Reddit-attempted: 54 → 230 (20.8% → 88.8%).
+  **New binding constraint surfaced, not yet solved**: names were never the only gate — Reddit's
+  *recency window* now caps yield the same way Instagram's did. **DECIDED 2026-08-19: widen
+  both Reddit's and Instagram's recency windows.** Two independent measurements pointed at the
+  same cause: relevance INCREASES with post age (0-90d: 22% on-topic; 2y+: 100% on-topic) — the
+  window excludes 133 highly-relevant results while keeping 31 low-relevance ones; separately,
+  56 of 137 event×neighbor straddle checks fail *solely* because the neighbor has no pre-event
+  activity, exactly what a 183-day window truncates. Widening doesn't reopen the earlier 88%
+  Reddit-noise purge (a different, already-fixed cause — handle-shaped queries).
+- ⚠️ **The "100% of 259 attempted on all 3 platforms" exhaustion bar (§1a) is confirmed
+  unreachable as literally written** — 2 creators have no Instagram handle at all, ~5 have no
+  searchable Reddit presence (niche sports, unsearchable single-word names). Revise §1a to
+  exclude structurally-unreachable creators from the denominator rather than treat 100% as the
+  bar.
+- **Flagged for Track C**: brand-co-authored posts on creator grids are largely not labelled as
+  sponsorships, though a brand co-authoring with a creator is close to the working definition.
+  Worth a look, not yet actioned.
+
+⇒ Track B is unblocked to attempt a real training run with a genuine, if still small, training
+set (~27-30 pairs, see the top of this section). Not yet at the ~50-100 thesis-defensible tier —
+treat this as a real but early attempt, not a validated model.
 
 *Superseded text follows, kept for the record:*
 
@@ -567,10 +702,46 @@ present in real captions. Track C's re-label is the immediate next step, and tho
 disclosures are a concrete validation target — if the labeler misses them, that's a labeler bug,
 not an absence of signal.~~
 
-**P0.5 Deepening not completed** *(Track A)* — the full IG→YT→Reddit cycle per approved creator
-did not run; time went to the caption incident. **We still have no per-creator datapoint counts
-or wall-clock timings**, which Phase 2 feasibility projections depend on. Real gap, carried
-forward.
+**⚠️ P0.5 — RESCOPED 2026-08-18, more serious than previously recorded.** The user's own instinct
+("YT/Reddit deepening feels incomplete") was correct and the orchestrator quantified it directly
+against the live DB: of 259 creators, **257 (99.2%) have an Instagram handle, but only 11 (4.2%)
+have a YouTube handle on file**, and only **10 creators (3.9%) have any YouTube content at all** —
+the same small original set from early phases, untouched since bulk promotion grew the creator
+set 63→259. Reddit has content for 13 creators (5.0%, mostly via the topic-sub name-search
+mechanism, which doesn't strictly need a discovered handle) but the pattern is the same: the
+240+ bulk-promoted creators have essentially never had YouTube or Reddit attempted at all.
+
+This is primarily a **YouTube discovery gap**, not a deepening-capacity problem — almost nobody
+has a handle to deepen in the first place. Fix: search for each handle-less creator's actual
+YouTube channel (by name/known aliases) and populate `youtube_handle` before attempting any
+video fetch. Once found, YouTube deepening is safe to run **in parallel with Instagram** (official
+API, no shared browser resource — confirmed safe per §3.6). Reddit's topic-sub search needs to run
+for the same 240+ creators, but must run **sequentially after Instagram**, same tab-lease
+constraint as always.
+
+**✅ Progress 2026-08-18** — YouTube: 45 auto-matched handles caught and audited before sticking
+(3 successive verification-rule failures found and fixed: circular self-match, corroboration-only,
+namesake collision); 9 genuine handles applied, 36 `needs_review`, 44 confirmed absent. 89 of 248
+searched, quota-capped (100 units/search, 10k/day budget) — expected to span several more rounds.
+Instagram: blocked on a sustained 429 (3 consecutive after ~3.5h) — real, not a false alarm from
+`opencli doctor` misreading a disconnected daemon as a throttle (checked separately, cause
+confirmed distinct). Reddit: root cause found, not just a symptom — bulk promotion set
+`creators.name = instagram_handle` for **231 of 264 creators** (topic-sub search queries by
+`name`, so a handle-shaped name returns 0 results — proven directly: `"rohitsharma45"` → 0
+results, `"Rohit Sharma"` → 10). 13 real names already recovered at zero network cost from
+`instagram_profiles.full_name` / `youtube_channels.title`. **Real-name backfill for the remaining
+231 is now the actual blocker for all Reddit work**, not a Reddit-side problem — flagged as the
+next Track A priority given it's foundational (also likely affects any other name-based matching,
+not just Reddit).
+
+**⚠️ Incomplete cleanup, found by the orchestrator, not self-reported.** A separate bug this
+round (`--platform reddit --handles <ig_handle>` treating an Instagram handle as a subreddit) was
+caught and the `reddit_handles` pollution was cleaned — but the bug's `get_or_create_creator`
+path had already created 5 new, fully blank creator rows (name only, no platform handles at all:
+`delhipremierleaguet20`, `karanaujla`, `ptushaofficial`, `gujarat_titans`, `ajinkyarahane` — all
+created at the identical timestamp 2026-08-17 19:46:58, all bridge-queue-shaped names). These
+were never deleted — `creators` is 264 live, not 259. Needs a real DELETE, not just a field
+cleanup, next round.
 
 ### P1 — blocking scale or quality
 
