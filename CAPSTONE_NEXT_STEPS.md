@@ -609,6 +609,18 @@ prints all 4 plausible readings of "how many pairs" explicitly (event-neighbor r
 pairs, undirected pairs, events-yielding-a-pair) — this is what caused every prior recomputation
 disagreement, now named instead of re-litigated each round.
 
+**⛔ STANDING RULE 2026-08-21: `DEFAULT_RECENCY_DAYS = 1095` (3 years) is a hard ceiling — do
+not widen further.** Track A flagged further widening as data-supported (the 3y+ Reddit band
+scored 100% on-topic) and it was queued for approval; the user held it back on reflection and
+capped it here explicitly. Reasoning worth keeping: this constant does two conceptually
+different jobs at once — (1) how far back to look for historical sponsorship-event context
+(where wide is genuinely fine, since a training pair is anchored to its own event's date, not
+"today"), and (2) implicitly, how far back any *current-creator-status* feature might draw from
+if built carelessly against the same pool (where 3-year-old data would misrepresent who a
+creator is now). Job (1) justified the widening to 1095; job (2) is the reason not to go
+further without first separating the two uses — **not yet done**, worth a real task before
+either Track B's feature-building or Track A's collection touches this distinction again.
+
 **Still genuinely open**: Instagram's *adapter* (not the date-decode workaround) has now been
 throttled long enough that an 18-hour cooldown didn't clear it — ruled out as bridge/pacing/
 concurrency issues by direct check, confirmed Instagram-side. The ownership-contamination census
