@@ -77,6 +77,7 @@ def train(
             has_sponsored,
             config.loss_weights,
             prediction_mask=train_mask,
+            treatment=treatment,
         )
         loss.backward()
         optimizer.step()

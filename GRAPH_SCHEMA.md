@@ -306,6 +306,128 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   `Optional`/unpopulated in their ingestion schemas, matching Track A's
   real DB. No longer open.
 
+## Real-data status (2026-08-22, Phase 1 round 3 — first genuine held-out training attempt)
+
+Orchestrator flagged this round as different in kind: the canonical pair count
+(`pair_count.py`, Track A — one shared definition after two rounds of independent
+recomputation disagreeing) is **54**, live-reconfirmed before building on it,
+clearing the ~50-100 thesis-defensible tier in `CAPSTONE_NEXT_STEPS.md`, not just
+the >=20 floor. First round where a real held-out evaluation is warranted rather
+than premature.
+
+**Task 1 — rebuilt the real HeteroData, current state.** Pulled fresh via Track
+C's `/feature-store/*` (259 creators, 340 directed collab edges, **1,414
+co_occurs_with edges — up from 0 at round 2**, 19 brands (up from 10), 16
+sponsorship edges). The co-occurrence jump is the real structural story this
+round, bigger than the collaboration-edge growth:
+
+| | round 2 (08-17) | round 3 (08-22) |
+|---|---|---|
+| isolated nodes | 36.3% | **27.8%** (72/259) |
+| non-trivial components | 12 | **2** |
+| largest component | 53 nodes | **185 nodes** |
+| max degree | 18 | 39 |
+| collab edges (directed) | 322 | 340 |
+| co_occurs_with edges | 0 | **1,414** |
+
+The graph went from a dozen small clusters to essentially one giant component
+(185 of 259 creators) plus a lone 2-node pair — driven almost entirely by
+co-occurrence data landing for the first time, not by collaboration-edge growth.
+Worth flagging to Track A/C: co-occurrence was reported "still 0" as recently as
+2026-08-17's entry below; it clearly isn't anymore, and nothing in this round's
+brief flagged that change, so this was caught only by re-pulling the endpoint
+live rather than trusting the prior number.
+
+**Task 2 — GAT forward pass + inductive check re-passed on the current
+topology.** No NaN on 259 creators/19 brands; same trained instance handled 15
+appended synthetic nodes with no retraining. Not assumed to generalize from
+round 2's sparser graph — re-run for real.
+
+**Task 3 — computed real before/after engagement deltas for all 54 canonical
+pairs (`scripts/compute_training_pair_deltas.py`, imports `pair_count.py`
+directly rather than re-deriving the pair definition).** Found and fixed two
+real NULL-handling data-quality bugs while doing this, not silently averaged
+past:
+
+1. **Fully-unmeasured posts miscounted as zero engagement.** Instagram
+   `like_count`/`comment_count` are sparse (28%/40% populated) and the
+   population is temporally skewed — most of Virat Kohli's and Anushka
+   Sharma's pre-2026 posts have BOTH columns NULL, only their mid-2026 posts
+   are populated. Coalescing NULL to 0 fabricated a near-zero "before" baseline
+   against a real "after" value, producing multi-million-percent fake lifts.
+   Fix: exclude posts where both columns are NULL from the before/after pools.
+2. **Partial measurement still biased after fix #1.** Of Instagram's
+   measured-or-partial posts, 208 have `comment_count` but NULL `like_count`,
+   and zero have the reverse — `like_count` (the dominant-magnitude metric) is
+   selectively missing on real posts, not missing at random. Same pattern on
+   Reddit (`score` selectively missing, `num_comments` always present). A post
+   with only its small metric measured still looked artificially low. Fix:
+   require BOTH engagement columns non-null to count a post at all.
+
+After both fixes: **34 of 54 canonical pairs have a same-platform-computable
+relative-engagement-lift** `(after_avg - before_avg) / (before_avg + 1)`; the
+other 20 satisfy the STRADDLE clause only via different platforms on each side
+(e.g. before-activity on Reddit only, after-activity on YouTube only) and have
+no same-unit lift to compute — reported separately rather than mixed into one
+number. Distribution over the 34: min -0.998, median +0.39, mean +12.07 (mean
+pulled hard by one real but pseudo-replicated outlier — Virat Kohli's Reddit
+engagement genuinely jumped from near-zero scores across 2023-2025 to real
+double/triple-digit scores starting 2026-08-05, and 16 of the 34 rows are all
+different Anushka Sharma sponsorship-event anchor dates measuring that SAME
+underlying jump, not 16 independent signals).
+
+**Task 4 — leave-one-out held-out evaluation, the first real one.** The target
+tensor is one scalar PER CREATOR NODE (transductive), not per (event,
+neighbour) pair, so multiple events on the same neighbour collapse to one
+averaged target — the honest N for a node-level held-out split is **10
+distinct labeled creator-nodes**, not 54 or 34. At N=10, an 80/20 split holds
+out ~2 nodes on one random draw with no way to know if that draw was lucky;
+leave-one-out uses each of the 10 as the held-out example exactly once (10
+folds, fresh model per fold, 50 epochs), the standard choice at this scale.
+Also wired `doubly_robust_weights` (defined in `ml/causal_regularization.py`
+since Weeks 3-4, never actually called) into `compute_gail_loss` as an opt-in
+`treatment` parameter — inverse-propensity-weighted supervised loss, real
+doubly-robust correction exercised for the first time, not just a
+standalone-tested primitive. Backward-compatible: existing callers/tests
+untouched, new test added (`test_treatment_arg_applies_doubly_robust_weighting`).
+
+**Task 5 — calibration, reported honestly:**
+- Raw LOO mean squared error: **67.19** across 10 folds, vs. an always-predict-
+  zero baseline of 67.36 — a 0.26% "improvement" that is entirely noise: one
+  fold (Kohli, target≈+25.87) contributes 668.3 of the total 671.9 squared-error
+  sum (>99%). This headline number is not a meaningful result on its own.
+- **Excluding the Kohli fold**, the other 9: model mean sq_err ≈0.397 vs.
+  baseline ≈0.463 — a real, if modest, ~14% reduction, but N=9 with no formal
+  significance test is nowhere close to establishing generalization.
+- **Propensity model saturated to 1.000 for the held-out node in all 10
+  folds.** The overlap penalty should push extreme propensity scores back
+  toward the interior, but a linear+sigmoid propensity head over the real
+  1,289-dim creator feature space appears to saturate immediately (classic
+  sigmoid-saturation/vanishing-gradient behavior on high-dimensional,
+  unnormalized real features) and doesn't recover within 50 epochs. **The
+  overlap assumption (no unit's propensity extremely close to 0 or 1) is not
+  empirically satisfied by this run** — flagged as a real identification-
+  assumption limitation, not glossed over. Doubly-robust weights computed from
+  a saturated propensity are unreliable; this caveats the Task 4 result
+  further, on top of the small-N and pseudo-replication issues above.
+- No NaN in any of the 10 folds.
+
+**Direct sufficiency call.** 54 canonical (event, neighbour) pairs clears the
+pair-COUNT bar the orchestrator set. But the current node-level target
+architecture collapses that to 10 independent labeled examples, one of which
+(Kohli) is a single underlying signal restated 16 times and dominates any
+aggregate metric. **This is real evidence the pipeline produces a genuine,
+non-trivial, non-crashing result on real data end-to-end — a real training
+signal exists, doubly-robust correction is now actually exercised, and there
+is a small real (non-outlier-driven) improvement over baseline — but it is
+NOT yet a validated, generalizable model.** Reportable in the thesis as
+pipeline/methods validation with explicit small-N caveats; not reportable as
+a proven predictive result. Two concrete levers, in order: (1) redesign the
+target to be per-(event, neighbour) rather than per-node, so Kohli's 16 rows
+become 16 genuinely separate training signals instead of collapsing to one
+node's dominant value — architecturally the bigger fix; (2) normalize/scale
+creator features before the propensity head so it stops saturating.
+
 ## Real-data status (2026-08-17, Phase 1 round 2 — systematic pair enumeration, real target)
 
 Base state grew substantially since 2026-08-15 (63→259 creators, 10→161

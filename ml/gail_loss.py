@@ -16,6 +16,7 @@ import torch.nn.functional as F
 
 from ml.causal_regularization import (
     consistency_penalty,
+    doubly_robust_weights,
     laplacian_smoothness_penalty,
     overlap_penalty,
 )
@@ -38,6 +39,7 @@ def compute_gail_loss(
     has_sponsored_neighbor_mask: torch.Tensor,
     weights: GAILLossWeights | None = None,
     prediction_mask: torch.Tensor | None = None,
+    treatment: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """`predicted_spillover`/`target_spillover`/`propensity`/
     `has_sponsored_neighbor_mask` must all be over the SAME full node set
@@ -48,12 +50,24 @@ def compute_gail_loss(
     contribute to the supervised MSE term; smoothness/consistency/overlap
     are structural/unsupervised and always use the full graph, standard
     practice for transductive GNN train/val splits.
+
+    `treatment`, if given, applies `doubly_robust_weights` (inverse-
+    propensity weighting) to the supervised term — the doubly-robust
+    correction named in `ml/causal_regularization.py` but left unwired
+    until now because no real outcome predictor/held-out data existed to
+    apply it to. Optional and defaults to plain unweighted MSE so existing
+    callers/tests are unaffected.
     """
     weights = weights or GAILLossWeights()
     if prediction_mask is None:
         prediction_mask = torch.ones_like(predicted_spillover, dtype=torch.bool)
 
-    prediction_loss = F.mse_loss(predicted_spillover[prediction_mask], target_spillover[prediction_mask])
+    if treatment is None:
+        prediction_loss = F.mse_loss(predicted_spillover[prediction_mask], target_spillover[prediction_mask])
+    else:
+        dr_weights = doubly_robust_weights(treatment, propensity)[prediction_mask]
+        sq_err = (predicted_spillover[prediction_mask] - target_spillover[prediction_mask]).pow(2)
+        prediction_loss = (dr_weights * sq_err).sum() / dr_weights.sum()
     overlap = overlap_penalty(propensity)
     smoothness = laplacian_smoothness_penalty(predicted_spillover, collab_edge_index, collab_edge_weight)
     # Applied to the PREDICTED spillover, not exposure: ml/exposure.py's

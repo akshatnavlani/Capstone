@@ -1,45 +1,61 @@
 # Handoff — Track B (ML-Core)
 
-Start here. Last updated 2026-08-17. Read `CAPSTONE_NEXT_STEPS.md` at repo
+Start here. Last updated 2026-08-22. Read `CAPSTONE_NEXT_STEPS.md` at repo
 root FIRST, every session (`git pull origin main` — it lives on `main`,
 rewritten frequently, supersedes this file and memory when they disagree),
 then this file, then `GRAPH_SCHEMA.md` (the full technical spec, kept
 current every round) for depth on any item below.
 
-## What changed this round (2026-08-17)
+## What changed this round (2026-08-22)
 
-**Base graph grew substantially since 2026-08-15** (259 creators, 161
-resolved collaboration pairs, 32 sponsorship events — up from 63/10/18 —
-re-verified live via direct SQL before building on it, matched
-`CAPSTONE_NEXT_STEPS.md` P0.2/P0.4 exactly). Built
-`scripts/find_computable_training_pairs.py` to check **all 32 events**
-against the graph (only 1, mrbeast→CarryMinati, had been individually
-confirmed before) and re-ran `scripts/build_real_hetero_data.py` against
-the new 259-creator graph with real (not placeholder) targets. Full detail
-in `GRAPH_SCHEMA.md`'s newest "Real-data status" section — summary:
+**The graph and pair count crossed the orchestrator's thesis-defensible
+tier this round: canonical computable pairs (`pair_count.py`, Track A's
+single shared definition) is 54**, re-verified live before building on it.
+This round attempted the first genuine held-out evaluation rather than
+another pipeline-correctness check. Full detail in `GRAPH_SCHEMA.md`'s
+newest "Real-data status" section — summary:
 
-- **Real computable training pairs: 2 distinct events (mrbeast, Cristiano
-  Ronaldo), 5 (event, neighbor, platform) triples, 2 distinct neighbor
-  creators (CarryMinati, LeBron James) with a real, non-placeholder target
-  value.** Up from 1 known / 0 systematically-checked. Real numbers (avg
-  engagement before/after, by platform) are in `GRAPH_SCHEMA.md`.
-- **Graph structure changed shape, not just size:** 36.3% isolated (was
-  74.6%), 12 non-trivial components (was 6), largest component now 53
-  nodes (was 6) — degree distribution now has real hubs up to degree 18.
-- **GAT + inductive check re-passed on the new, denser topology** — no
-  assumption that the first pass generalized; re-run and re-confirmed.
-- **First real (non-placeholder) training run** — 2 real target values is
-  still a pipeline-correctness check, not a trained model (see Task 6 /
-  sufficiency call below), but it's a genuine step up from the all-zero
-  plumbing-only run last round.
-- **Direct sufficiency call: still too early for any generalization claim.**
-  2 real training examples is far below even the ~20-30 floor for a
-  legitimate held-out split, let alone ~50-100 for a defensible thesis
-  claim. See `GRAPH_SCHEMA.md` for the full reasoning and what would close
-  the gap.
-- New script this round: `scripts/find_computable_training_pairs.py` —
-  the reusable, systematic version of the manual check; re-run every round
-  to track the real pair count as data grows.
+- **Co-occurrence edges went from 0 to 1,414** — the real structural story
+  this round, bigger than collaboration-edge growth (322→340 directed).
+  Graph consolidated from 12 small clusters (largest 53 nodes) into
+  essentially one giant component (185 of 259 nodes) plus one 2-node pair.
+  Isolated nodes dropped 36.3%→27.8%. This wasn't flagged in this round's
+  brief — caught only by re-pulling the feature-store endpoint live.
+- **Computed real before/after engagement deltas for all 54 canonical
+  pairs** (`scripts/compute_training_pair_deltas.py`) and found + fixed two
+  real NULL-handling bugs while doing it: (1) fully-unmeasured Instagram
+  posts were being coalesced to zero engagement, fabricating fake
+  million-percent "lifts" on Kohli/Anushka Sharma pairs; (2) even after
+  excluding those, posts with only their smaller engagement metric measured
+  (comment_count present, like_count NULL — a real, non-random pattern, not
+  missing-at-random) still biased the average. Fixed by requiring both
+  engagement columns non-null. After both fixes: 34 of 54 pairs have a
+  same-platform-computable lift.
+- **First genuine leave-one-out held-out evaluation.** The target is
+  per-creator-node (not per-pair), so the honest N for a held-out split is
+  10 distinct labeled creators, not 54 or 34 — see `GRAPH_SCHEMA.md` for why
+  LOO (not an 80/20 split) is the right choice at this N.
+- **Wired `doubly_robust_weights` into the loss for the first time**
+  (defined since Weeks 3-4, never called) — real doubly-robust correction,
+  not just a standalone-tested primitive. Backward-compatible, one new test.
+- **Honest calibration result: real but fragile.** Headline LOO MSE (67.19)
+  is ~99% driven by one pseudo-replicated outlier (Kohli, 16 of 34 rows
+  measuring the same underlying Reddit-engagement jump). Excluding it, the
+  model beats the always-zero baseline by ~14% on the other 9 — a real,
+  modest signal, not a validated result. Also found: the propensity model
+  saturates to 1.000 on held-out nodes in all 10 folds — the overlap
+  assumption is not empirically satisfied by this run, a real limitation,
+  not glossed over.
+- **Direct sufficiency call: pipeline validated on real, non-trivial data
+  for the first time — not yet a generalizable model.** See
+  `GRAPH_SCHEMA.md` for the full reasoning and the two concrete next levers
+  (per-pair rather than per-node targets; feature normalization before the
+  propensity head).
+- New scripts this round: `scripts/compute_training_pair_deltas.py` (real
+  delta computation, imports Track A's canonical `pair_count.py` directly
+  rather than re-deriving the pair definition) and
+  `scripts/train_holdout_round3.py` (graph rebuild + GAT/inductive + LOO
+  held-out training).
 
 ## Current state (one paragraph)
 
@@ -53,59 +69,62 @@ combined loss (`ml/gail_loss.py`) → training loop (`ml/training.py`,
 `ml/gail_model.py` wires it together) → evaluation harness
 (`ml/evaluation.py`). CLIP+BERT feature extraction (`ml/feature_extraction.py`)
 is validated against real scraped data (259 real creators as of this
-round). **68 tests pass** (`pytest tests/`, ~20-30s). The full GAIL
-pipeline has now been run twice against **real** creators/brands/edges/
-events end-to-end (`scripts/build_real_hetero_data.py`) — GAT forward pass
-and inductive check are real results both times; the training-loop run now
-has 2 real (non-placeholder) target values (2026-08-17, up from an
-all-zero plumbing-only run 2026-08-15) but is still a pipeline-correctness
-check, not a trained model — see Open Items and the sufficiency call in
-`GRAPH_SCHEMA.md`. Bot detection (`ml/bot_detection.py`) is separately
-complete and unrelated to the training-loop work.
+round). **69 tests pass** (`pytest tests/`, ~90s). The full GAIL
+pipeline has now been run three times against **real** creators/brands/
+edges/events end-to-end — GAT forward pass and inductive check are real
+results all three times; this round (2026-08-22) ran the first genuine
+leave-one-out held-out evaluation, with `doubly_robust_weights` (defined
+since Weeks 3-4) wired into the loss for real for the first time. Real,
+but fragile: a small held-out improvement over baseline survives once one
+pseudo-replicated outlier is excluded, but N=10 labeled nodes and a
+saturated propensity model mean this is still evidence the pipeline works
+on real data, not a validated model — see Open Items and the sufficiency
+call in `GRAPH_SCHEMA.md`. Bot detection (`ml/bot_detection.py`) is
+separately complete and unrelated to the training-loop work.
 
 ## Open items (tagged with why)
 
-- **Real collaboration edges: 161 real pairs (322 directed edges) as of
-  2026-08-17**, up from 10 two rounds ago. *P0.2's "structurally sparse"
-  finding was retracted by the orchestrator* — the graph wasn't sparse, its
-  endpoints just weren't promoted to `creators` yet; bulk-promoting the
-  reviewed sheet backlog converted 142 dangling rows into real pairs with
-  zero new scraping. 36.3% of 259 creators are still isolated (was 74.6%),
-  12 non-trivial components (was 6), largest now 53 nodes (was 6).
-- **Real co-occurrence edges: still 0.** Re-confirmed this round via the
-  live `/feature-store/edges/co-occurrence` endpoint. `reddit_post_creators`
-  still has no post linked to 2+ creators.
-- **Real sponsorship events: 32 confirmed (`is_sponsored=true`), 10 with
-  `brand_id` resolved**, up from 18/10. 13 distinct creators are
-  "sponsored" by the broader (any is_sponsored) definition.
-- **Real training PAIRS (treatment + measured neighbor outcome): 2 distinct
-  events / 5 (event, neighbor, platform) triples / 2 distinct neighbor
-  creators, confirmed this round via
-  `scripts/find_computable_training_pairs.py` checking all 32 events**, up
-  from 0 (1 known-but-unsystematically-checked). mrbeast→CarryMinati
-  (Instagram + Reddit) and Cristiano Ronaldo→LeBron James (Reddit) both
-  have real dated content straddling the sponsorship event. The other 30
-  events fail either the graph-connection test or the straddling test (28
-  of 32 events have no `posted_at` at all — a separate, larger gap than
-  straddling). See `GRAPH_SCHEMA.md`'s 2026-08-17 entry for the full table
-  with real before/after engagement numbers.
-- **Temporal engagement-delta computation: now real, not placeholder, for
-  the first time** (`scripts/build_real_hetero_data.py`'s
-  `load_real_targets`) — relative engagement lift `(after-before)/(before+1)`
-  per computable triple, averaged per neighbor creator. Still only 2
-  creators have a real value; everyone else is 0 ("no signal computed", not
-  "confirmed zero"). Re-run every round as more events/edges land.
-- **Propensity model real-fitting: not started.** *Blocked on real
-  treated/untreated examples with enough N* — architecturally ready
-  (`PropensityScoreModel` in `ml/causal_regularization.py`), 13 treated
-  creators exist now but with only 2 real outcomes, fitting would be
-  meaningless.
-- **GraphSAGE-vs-GAT: settled.** Real-graph-structure validation re-passed
-  this round on the new, much denser topology (not assumed to generalize
-  from the sparser first pass) — no open validation question left blocking
-  the GAT choice. Fallback custom weighted layer still exists
-  (`ml/weighted_sage_conv.py`) if GraphSAGE is ever wanted for unrelated
-  reasons (large-scale neighbor sampling).
+- **Real collaboration edges: 170 real pairs (340 directed edges) as of
+  2026-08-22**, up from 161 two rounds ago — steady, no longer the fast-
+  moving number.
+- **Real co-occurrence edges: 1,414 as of 2026-08-22 — up from 0.** The
+  real structural story this round: consolidated the graph from 12 small
+  clusters (largest 53 nodes) into one 185-node giant component + one
+  2-node pair. Not flagged in this round's brief; caught only by re-pulling
+  `/feature-store/edges/co-occurrence` live rather than trusting the prior
+  "still 0" note. Flag to Track A/C: worth confirming this is real
+  `reddit_post_creators` growth and not a resolver-side change.
+- **Real sponsorship events: 16 sponsorship-edges (brand_id-resolved) as of
+  2026-08-22**, up from 10; 19 brands now (up from 10), still no real
+  category/follower/post/verified data on all but 2 (`duroflexworld`,
+  `reliancejewels`, which have 1 platform handle each).
+- **Real training PAIRS: 54 canonical (event, neighbour) pairs
+  (`pair_count.py`, Track A's single shared definition — see that file's
+  docstring for why a canonical script now exists), up from 2 two rounds
+  ago.** Of those, 34 have a same-platform-computable engagement delta
+  (`scripts/compute_training_pair_deltas.py`, which found and fixed two
+  real NULL-handling bugs — see `GRAPH_SCHEMA.md`'s 2026-08-22 entry). The
+  target tensor is per-creator-node, not per-pair, so those 34 rows
+  collapse to **10 distinct labeled creator-nodes** — the honest N for a
+  held-out split.
+- **Temporal engagement-delta computation: now computed for all 54
+  canonical pairs**, not a handful by hand — real relative-lift values,
+  full distribution in `GRAPH_SCHEMA.md`. One pair (Virat Kohli, 16 of 34
+  rows) is a real but pseudo-replicated outlier dominating any raw average;
+  reported separately from the other 9, not silently blended in.
+- **Propensity model: now actually exercised, with a real finding.**
+  `doubly_robust_weights` (defined since Weeks 3-4) is wired into
+  `compute_gail_loss` as of this round. Real result: the propensity head
+  saturates to 1.000 on held-out nodes within 50 epochs on the real
+  1,289-dim feature space — the overlap assumption is not empirically
+  satisfied by this run. *Next lever: normalize/scale creator features
+  before the propensity head.*
+- **GraphSAGE-vs-GAT: settled**, unchanged this round — GAT forward pass +
+  inductive check re-passed on the new, much denser (giant-component)
+  topology, no assumption it would generalize from the prior shape.
+  Fallback custom weighted layer still exists (`ml/weighted_sage_conv.py`)
+  if GraphSAGE is ever wanted for unrelated reasons (large-scale neighbor
+  sampling).
 - **`NUM_BRAND_CATEGORIES = 5` (in `ml/schema.py`): a placeholder.** *Needs
   a decision from Track A* — `brands.category` is free-text/nullable with
   no fixed taxonomy defined yet.
@@ -170,22 +189,28 @@ complete and unrelated to the training-loop work.
    lives on `main` and this branch doesn't auto-sync.
 2. `git status` (expect clean) and `pytest tests/` fresh (expect 68
    passing, ~20-30s) — standard self-check.
-3. **Re-run `scripts/find_computable_training_pairs.py` fresh against a
-   live pull** — the real pair count (2 events / 5 triples as of
-   2026-08-17) is the single most important number to re-check every
-   round; it's grown every round so far and there's no reason to assume
-   it's stable. Feed the output into `scripts/build_real_hetero_data.py`.
-4. **28 of 32 events have no `posted_at` at all** — a bigger, more
-   tractable lever than straddling depth: fixing/backfilling event dates
-   (Track A/C's side) could unlock checking many more events at once,
-   versus waiting for scraping depth to grow slowly. Worth flagging to the
-   orchestrator.
-5. **Sufficiency bar for real progress:** per this round's reference
-   points (~20-30 pairs for a legitimate held-out split, ~50-100 for a
-   defensible thesis claim), 2 is still far below either. Don't attempt a
-   real held-out evaluation or trained-model claim until re-running step 3
-   shows meaningfully more. Reasonable filler while waiting: early prep for
-   Sentiment Propagation (same "de-risk against dummy data early" pattern).
-6. Update `GRAPH_SCHEMA.md` and this file together with whatever you find —
+3. **Re-run `pair_count.py` (Track A) fresh against a live pull, then
+   `scripts/compute_training_pair_deltas.py`** — 54 canonical pairs as of
+   2026-08-22, growing fast; re-check every round. Feed the deltas output
+   into `scripts/train_holdout_round3.py` (or its successor).
+4. **The per-node target design is now the binding constraint, not the
+   pair count.** 54 canonical pairs collapsed to 10 distinct labeled nodes
+   this round because the target is one scalar per creator, not per pair —
+   redesigning toward a per-(event, neighbour) target (e.g. a
+   pair-indexed loss instead of a node-indexed one) would use Kohli's 16
+   rows as 16 real signals instead of 1, likely the single highest-leverage
+   change available right now, bigger than growing the pair count further.
+5. **Propensity saturation found this round** — normalize/scale creator
+   features before the propensity head; re-check whether propensity scores
+   spread out across [0.05, 0.95] instead of collapsing to an extreme.
+6. **Sufficiency bar:** 54 canonical pairs clears the ~50-100
+   thesis-defensible tier on the pair-COUNT question, but the effective
+   held-out-evaluable N is still ~10, one of which is a dominant outlier.
+   Real evidence the pipeline works on real data now exists; a
+   generalizable-model claim still doesn't. Don't inflate this round's LOO
+   result (67.19 MSE, ~99% driven by one fold) into a validated result —
+   report the outlier-excluded comparison (~14% better than baseline on 9
+   folds) as the honest read.
+7. Update `GRAPH_SCHEMA.md` and this file together with whatever you find —
    both are living docs, not append-only logs; correct stale sections
    rather than only adding new ones.
