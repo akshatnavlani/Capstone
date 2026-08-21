@@ -71,17 +71,14 @@ event have `brand_id`, does a connected neighbor have pre-event history) — not
 structural criteria before declaring a milestone's data "ready," not just the headline counts.
 
 **Review 1 — "basic dry run," the bar for THIS check-in:**
-- [x] ~100 creators (259, well past the floor)
-- [x] **At least one fully computable training pair** — a sponsorship event that is BOTH
-      graph-connected to another creator AND has pre-event data on that neighbor. **Now at 3**
-      (2026-08-18): mrbeast↔CarryMinati, Ronaldo↔LeBron (Reddit-only straddle), Sania
-      Mirza↔parikshitbalochi (YouTube-only straddle) — see P0.4. Comfortably past the original
-      "at least one" bar; still well below the ~20-pair sufficiency floor (§1a) for anything
-      beyond a pipeline-correctness check.
-- [x] Real collaboration edges comfortably above the old 10 pairs — now 161, from bulk-promoting
-      the reviewed sheet backlog, not from coverage. See the retired P0.2 finding above.
+- [x] ~100 creators (260, well past the floor)
+- [x] **Computable training pairs: 52** (2026-08-21, canonical script, orchestrator-verified
+      directly) — past not just "at least one" but the ~50-100 thesis-defensible tier. See P0.4
+      for the full breakdown and how it got here.
+- [x] Real collaboration edges: 170 (unchanged since bulk promotion, still healthy).
 - [ ] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a
-      sentiment/reputation signal, even if the full pipeline isn't built yet.
+      sentiment/reputation signal — likely already true given Reddit's growth (55 creators with
+      content, 2,649 posts) but not yet explicitly checked against this specific bar.
 
 **Review 2 — "GAIL trains for real, fusion produces real scores":**
 - [ ] Sponsorship events: 300+ (established Phase 2 target)
@@ -636,8 +633,49 @@ is the second round running where independent recomputation gave a different num
 Notable pairs, re-confirmed post-correction: Kerala Blasters↔Mumbai City FC, all 5 previously-
 blocked priority creators, Ronaldo↔LeBron now has 2 separate dated events producing pairs.
 
-**This still clears the ~20-30 "any legitimate held-out split" floor.** Not yet at the ~50-100
-thesis-defensible tier — Track B should treat this as a genuine but still-small training set.
+**⬆️ SUPERSEDED AGAIN 2026-08-21. Computable pairs: 52**, verified by the orchestrator running
+Track A's own new canonical script (`pair_count.py`) directly against the live DB, not by
+trusting a report. **This crosses the ~50-100 thesis-defensible tier**, not just the ≥20 floor —
+a real, substantial jump from the ~27-30 two days prior. Full breakdown from the canonical
+script: 137 event×neighbor checks evaluated, 49 dated sponsorship events, 37 events yielding at
+least one pair, 23 distinct directed / 20 undirected creator pairs, 170 collaboration edges.
+
+**The jump was driven by one genuinely excellent technical discovery, not just more scraping**:
+an Instagram post's shortcode IS its media ID in base64, and the media ID's high bits encode a
+millisecond timestamp — the date was sitting inside the primary key the whole time. Fitted (not
+guessed) against 881 independently-dated ground-truth posts (via `og:description`, so not
+circular): the correct bit-shift lands 99.4% of dates within 72 hours, median error 0.5 days.
+Filled NULLs only, self-checks and refuses to write if agreement drops below 95%, flagged
+(didn't touch) 5 stored dates it found to conflict — **all 1,811 Instagram posts are now dated**,
+up from 881 (49%). This is a zero-network-call fix, so it fully sidesteps the Instagram
+adapter/throttle problem for dating purposes specifically. Combined with the recency-window
+widening (183→1095 days) and the Reddit name-unblock cascading into real content growth, pairs
+went 27→46 (shortcode fix alone)→48→50→**52**.
+
+**Canonical pair-counting is now solved structurally, not just for this round**: `pair_count.py`
+is the single definition, `loop_stats.py` imports it rather than keeping a second copy, and it
+prints all 4 plausible readings of "how many pairs" explicitly (event-neighbor rows, directed
+pairs, undirected pairs, events-yielding-a-pair) — this is what caused every prior recomputation
+disagreement, now named instead of re-litigated each round.
+
+**⛔ STANDING RULE 2026-08-21: `DEFAULT_RECENCY_DAYS = 1095` (3 years) is a hard ceiling — do
+not widen further.** Track A flagged further widening as data-supported (the 3y+ Reddit band
+scored 100% on-topic) and it was queued for approval; the user held it back on reflection and
+capped it here explicitly. Reasoning worth keeping: this constant does two conceptually
+different jobs at once — (1) how far back to look for historical sponsorship-event context
+(where wide is genuinely fine, since a training pair is anchored to its own event's date, not
+"today"), and (2) implicitly, how far back any *current-creator-status* feature might draw from
+if built carelessly against the same pool (where 3-year-old data would misrepresent who a
+creator is now). Job (1) justified the widening to 1095; job (2) is the reason not to go
+further without first separating the two uses — **not yet done**, worth a real task before
+either Track B's feature-building or Track A's collection touches this distinction again.
+
+**Still genuinely open**: Instagram's *adapter* (not the date-decode workaround) has now been
+throttled long enough that an 18-hour cooldown didn't clear it — ruled out as bridge/pacing/
+concurrency issues by direct check, confirmed Instagram-side. The ownership-contamination census
+is stuck at 690/1,752 (39.4%) as a result — durable checkpoint, not at risk, but won't finish on
+a same-day timescale. Track B has not yet trained against the current 52-pair set — its last
+real run was against the much smaller pre-shortcode-fix graph.
 
 ✅ **Tech-debt loop closed 2026-08-19 (5 cycles, all 3 items terminal).** Superseding the open
 items above:
