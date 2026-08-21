@@ -189,6 +189,34 @@ safe, for a more precise reason than "that's fixed":
   that creator's own dedicated subreddit** (r/CarryMinati, r/shubmangill), where relevance is
   structural and the gate correctly does not apply.
 
+### ⚠️ The Instagram throttle is long-lived, and that is the finding (2026-08-21)
+
+Probed with a real sustained scan (not a single request) after **~18 hours** of cooldown, with
+the browser bridge confirmed up and no other job holding the tab lease. Still throttled:
+12 consecutive `chrome-error://chromewebdata/` loads, 0 posts verified, aborted in ~2 minutes.
+
+That changes the planning assumption. Earlier rounds treated this as a short cooldown; two
+probes 18 hours apart say it is not. **The ownership census (690/1,752) and the Instagram arm
+of the exhaustion bar cannot be finished on a same-day timescale.** Neither is at risk -- the
+audit checkpoint is durable and resumes exactly where it stopped -- but they need either a
+much longer wait or a different access path.
+
+What is NOT the cause, each ruled out by direct check rather than assumption: the bridge is
+connected (`opencli profile list` names the profile); the pacing was already reverted to the
+slow setting; no concurrent Instagram job exists; and Reddit through the SAME bridge works
+fine, so this is Instagram-side, not local.
+
+### The Reddit run ended by aborting loudly, which is the fix working
+
+`psycopg2.OperationalError: could not translate host name` -- the local network dropped, so the
+cycle-7 reconnect could not reconnect. It logged `reconnect failed -- aborting batch with 10
+creators unprocessed rather than reporting a false completion` and stopped. Before that fix the
+same event would have logged "skipping, continuing batch" 10 times and reported success.
+
+195 of 230 creators were searched; the true unsearched remainder is 36 (the 10 in the message
+were only those still queued at the moment of abort). Re-running those 36 from
+`reddit_finish.json`.
+
 ### Live collection results at the widened window (2026-08-21, in progress)
 
 | platform | rows before | rows now | oldest before | oldest now | creators w/ content |
