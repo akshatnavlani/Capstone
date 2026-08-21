@@ -197,7 +197,7 @@ safe, for a more precise reason than "that's fixed":
 | Reddit | 822 | **1,005** | 2026-02-22 | **2023-11-29** | 22 → **35** |
 | Instagram | 1,802 | — | — | 2016-08-25 (all dated) | blocked on throttle |
 
-**Computable pairs: 27 → 46 (date backfill) → 50 (Reddit collection).** 50 is the bottom
+**Computable pairs: 27 → 46 (date backfill) → 52 (Reddit collection, 329/460 calls in).** 50 is the bottom
 of the ~50-100 thesis-defensible tier the plan file names as the next milestone; the loop
 started this round at 27. The Reddit arm is the
 first time COLLECTION rather than re-dating moved the number.
