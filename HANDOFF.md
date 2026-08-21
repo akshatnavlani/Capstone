@@ -1,5 +1,41 @@
 # Handoff — Track C (Fusion + Backend)
 
+**⚠️ 2026-08-22 (second round today) — Fusion Layer wiring PAUSED, real
+blocker found, decision deferred to the user.** Prompted by P1.6 being
+marked "unblocked" (Track B trained on real data, `a4b3bed`) — task was to
+wire real `spillover_score` into `/scores`/`/recommendations`, replacing
+the flat 0.5 placeholder, distinguishing trained vs. inductive-inferred
+values with real (wide) confidence bounds. **Before writing any code,
+checked whether an actual loadable model exists — it doesn't.** Read
+`ml/gail_model.py`, `ml/training.py`, and the round-3 script
+(`scripts/train_holdout_round3.py`) in full, then grepped the whole
+`track-b-ml-core` branch for `torch.save`/checkpoints/`.pt`/`.pth`/any
+serving or inference entrypoint: **zero hits.** Every training run in
+Track B's repo trains fresh in-memory, prints metrics, and discards the
+weights — the round-3 LOO-CV script trains **10 separate throwaway models**
+(one per held-out fold) purely to estimate generalization error; none of
+them is "the" model a serving layer could load. "Track B trained on real
+data" is accurate as a **validation/methodology finding**, but there is no
+deployable model artifact — that's a different, more consequential fact
+than the task's framing assumed.
+
+Surfaced this to the user with two real options before proceeding (rather
+than silently picking one, since it's a scope/ownership call, not a coding
+one): **(A)** Track C trains a single production model itself, at startup,
+using Track B's unmodified `ml/` classes as a library (real inference
+ships this round, but Track C ends up running the actual training job,
+crossing the Track B/C ownership line functionally, and there's no
+versioned checkpoint — it retrains from scratch on every restart); or
+**(B)** report the gap and leave `spillover_score` on the honest
+placeholder until Track B (or a future round) produces an actual
+checkpoint or scoring script Track C can load. **User's call: report
+findings and solutions, continue the actual wiring decision/implementation
+later — no code changed this round.** `spillover_score` stays the flat 0.5
+placeholder for now. Nothing in Tasks 1-4 (real inference wiring,
+confidence bounds, fusion-weight documentation, end-to-end verification)
+was implemented — this entry exists so the next session doesn't have to
+re-discover the missing-checkpoint finding from scratch.
+
 **Read this first, before memory, before re-deriving anything from git log.**
 This is the canonical "start here" doc for a fresh session on this track.
 Memory (`C:\Users\Sonic\.claude\projects\D--Capstone\memory\`) has the
