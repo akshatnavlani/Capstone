@@ -621,12 +621,26 @@ creator is now). Job (1) justified the widening to 1095; job (2) is the reason n
 further without first separating the two uses — **not yet done**, worth a real task before
 either Track B's feature-building or Track A's collection touches this distinction again.
 
-**Still genuinely open**: Instagram's *adapter* (not the date-decode workaround) has now been
-throttled long enough that an 18-hour cooldown didn't clear it — ruled out as bridge/pacing/
-concurrency issues by direct check, confirmed Instagram-side. The ownership-contamination census
-is stuck at 690/1,752 (39.4%) as a result — durable checkpoint, not at risk, but won't finish on
-a same-day timescale. Track B has not yet trained against the current 52-pair set — its last
-real run was against the much smaller pre-shortcode-fix graph.
+**✅ CLOSED 2026-08-22.** The duplicate "Athletics" creator merged cleanly (61 = 40+40-19 posts,
+independently confirmed; creators 260→259) and its root cause fixed (`get_or_create_creator` now
+has a guarded last-resort name key for handle-less creators, regression-tested against the
+Saina/Sindhu collision it was designed to avoid — 3/3 tests pass). Both flagged misattributions
+independently confirmed genuine (not false positives, resolved by voice: first-person athlete
+content vs. third-person/sponsor-voice brand copy) — both already `creator_id: null`, no further
+action needed. Final: **52 pairs holds, 259 creators, standing rule respected (window untouched
+at 1095 days).**
+
+**Still genuinely open, both explicitly waiting on the user, not Track A**: (1) Instagram's
+*adapter* (distinct from the zero-network date-decode workaround) remains throttled — an 18-hour
+cooldown didn't clear it, confirmed Instagram-side. The ownership-contamination census is stuck
+at 690/1,752 (39.4%) as a result — durable, not at risk, won't finish on a same-day timescale.
+(2) Further recency-window widening beyond 1095 days is data-supported but capped by standing
+rule pending the current-status-vs-historical-context split (see the rule above) — not
+re-opened without that split being designed first.
+
+⇒ **Track A's work is in a clean, stable stopping state.** Track B has not yet trained against
+the current 52-pair set — its last real run was against the much smaller pre-shortcode-fix
+graph. This is the natural next move.
 
 ✅ **Tech-debt loop closed 2026-08-19 (5 cycles, all 3 items terminal).** Superseding the open
 items above:
