@@ -36,6 +36,82 @@ Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRA
 
 ---
 
+# ⏹️ BACKLOG LOOP STOPPED BY USER DECISION (2026-08-21, 50 cycles)
+
+**This was a decision checkpoint, not a stop-condition exit.** Two of the four items were still
+open when the loop was cancelled. Cron `77b2ad16` deleted; `CronList` confirms no scheduled jobs.
+
+## Where the 4 items actually stand
+
+| item | terminal? | state |
+|---|---|---|
+| 1 — window widening | **YES for Reddit/YouTube, NO for Instagram** | constant 183→1095 shipped; re-verified live; YouTube 41/41 and Reddit ~230/230 re-collected; Instagram re-collection never ran (throttle) |
+| 2 — full ownership census | **NO** | 690 of 1,752 (39%). Blocked on a long-lived Instagram throttle |
+| 3 — exhaustion bar | **NO** | Reddit arm effectively done (content 22→117); Instagram arm blocked |
+| 4 — canonical pair script | **YES** | `pair_count.py` owns the definition, `loop_stats.py` imports it |
+
+## 🚨 OPEN DEFECT I INTRODUCED AND COULD NOT FIX — duplicate `Athletics` creator
+
+My `reddit_widen` run created a SECOND `creators` row named `Athletics`
+(`83d01ca9-9c3f-4b4a-b4e4-6fc5b28a8d3c`, created 2026-08-20 21:40) alongside the original
+(`33d17cfb-3f60-4ca7-90b6-e7911fd249c1`, 2026-08-10). The orchestrator's duplicate guard
+**logged the warning and inserted anyway** — the guard warns, it does not block.
+
+Both rows now hold real Reddit data, so this creator's data is SPLIT:
+
+| row | reddit_posts | reddit_post_creators |
+|---|---|---|
+| `33d17cfb` (keep) | 40 | 40 |
+| `83d01ca9` (dup) | 21 | 40 |
+
+**The fix, not applied** — the merge was blocked by the permission classifier (DELETE/UPDATE),
+and I deliberately did not work around it:
+1. delete the 19 `reddit_post_creators` rows on the dup whose `post_id` is ALREADY linked to
+   `33d17cfb` (they would violate the PK on re-point);
+2. `update reddit_post_creators, reddit_posts set creator_id='33d17cfb…' where
+   creator_id='83d01ca9…'`;
+3. re-check all 6 `creator_id` tables are empty for the dup, and only then delete the row.
+
+Until then `creators` reads 260, not 259, and `Athletics` is one creator counted twice.
+This is cosmetic for the pair count (Athletics is in neither) but it is wrong data.
+
+⚠️ **The underlying bug is worth fixing before the next bulk run**: `get_or_create_creator`
+matches on `youtube_handle`/`instagram_handle` only — deliberately NOT on `reddit_handles`,
+because that caused the PV Sindhu/Saina Nehwal merge. A creator with NEITHER a YouTube nor an
+Instagram handle therefore has no identity key at all and is re-created on every run.
+
+## Instagram throttle — the operative fact for planning
+
+Probed with a sustained scan after ~18 hours, bridge up, no competing job: **still throttled**,
+0 posts verified, 12 consecutive `chrome-error://chromewebdata/`. Ruled out by direct check:
+bridge is connected, pacing is already the slow setting, no concurrent job, and Reddit through
+the SAME bridge works. It is Instagram-side.
+
+**Realistic time to finish the census: not a same-day task.** 1,062 posts remain at ~10s each =
+~3 hours of clean running, but only once Instagram lets us back in, and 18 hours was not enough.
+
+## Final numbers (canonical script + direct DB, 2026-08-21)
+
+| metric | value |
+|---|---|
+| **COMPUTABLE TRAINING PAIRS** | **52** |
+| events yielding ≥1 pair | 37 of 49 dated events |
+| distinct directed / undirected creator pairs | 23 / 20 |
+| collaboration edge pairs (graph) | 170 |
+| creators | 260 (259 real + 1 duplicate, see above) |
+| instagram_posts | 1,811 — **100% dated** |
+| youtube_videos | 1,594 |
+| reddit_posts | 2,698 |
+| comments (IG / YT / Reddit) | 24,822 / 52,898 / 53,642 |
+
+| platform | attempted | **with real content** |
+|---|---|---|
+| Instagram | 163/260 (62.7%) | 56 (21.5%) |
+| YouTube | 259/260 (99.6%) | 40 of 41 handle-holders deepened |
+| Reddit | 231/260 (88.8%) | **117 (45.0%)** |
+
+---
+
 # BACKLOG LOOP (2026-08-21) — cycles 2-5
 
 ## ITEM 1 — the window was widened, and it did NOT move the pair count. Here is why.
