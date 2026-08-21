@@ -266,6 +266,55 @@ curl -s ".../rest/v1/<table>?select=id" -H "apikey: $K" -H "Prefer: count=exact"
 ```
 No `psycopg2` in the orchestrator env; REST is the route. **Read-only in practice — never write.**
 
+### 3.2c Live DB state — **Track A verified 2026-08-16, close of Phase 1G** (NEWEST — supersedes 3.2a/3.2b for creators + edges)
+
+| Table | Rows | Note |
+|---|---|---|
+| `creators` | **259** | was 63. Bulk promotion of 258 accepted sheet rows: 196 new, 60 enriched, **0 duplicates/collisions** |
+| `creator_related_accounts` | 505 rows / **157 resolved** / **152 DISTINCT PAIRS** | was 15 resolved / 10 pairs. **No new scraping** — the same 505 rows resolve now that the endpoints are creators |
+| Resolve rate | **31%** | was 2.4% |
+| Creator categories | athlete 95 · fitness_influencer 82 · lifestyle_influencer 38 · team 20 · other 15 · league 9 | 132 of 146 `other` sheet rows were misclassified and corrected |
+| Sheet | 994 rows | 258 accepted / 230 rejected / 506 not-decided. `approval_status` untouched by agents |
+| IG coverage | 31 of 259 creators | **228 creators now have no Instagram content** — deepening is the gap |
+
+🚨 **THE "STRUCTURALLY SPARSE GRAPH" FINDING IS OBSOLETE — Tracks B and C must be told.**
+Both recorded "10 pairs / 2.4% resolve rate, structurally sparse, not a coverage gap" as a
+settled property. It was true *of the 63-creator set* and is now **152 pairs at 31%**. The
+graph was never structurally sparse; its endpoints simply weren't creators yet. Track B in
+particular planned its first training run around a 10-pair graph.
+
+**What this round proves about the lever** (Phase 1F predicted it; this confirms it at scale):
+
+| Action | Distinct pairs added |
+|---|---|
+| Covering 7 new creators (Phase 1F — 275 posts scraped) | **0** |
+| Promoting 196 already-observed co-authors (this round — no scraping at all) | **+142** |
+
+⚠️ **Brands found accepted on the sheet, excluded from promotion and flagged for the user:**
+`sporting.beyond` ("Sporting Beyond Pvt Ltd", a company — **already in `creators`** from a
+Phase 1E targeted promotion and carrying a live resolved edge, so it was left in place rather
+than deleted) and `sportsclaus` (sports media company). Agents **cannot** auto-reject these:
+`approval_status` is the user's column. The brand is instead recorded against the creator it
+was seen on via `brand_signals`. Note `brand_signals` is **live on the sheet now** — §3.4
+below still calls it "TO ADD", which is stale.
+
+### 3.2a Live DB state — **Track A verified 2026-08-15, close of Phase 1F** (superseded by 3.2c for creators/edges)
+
+| Table | Rows | Note |
+|---|---|---|
+| `creators` | **63** | +3, all targeted promotions naming the row each resolved |
+| `creator_related_accounts` | **505 rows / 15 resolved / 10 DISTINCT PAIRS** | **report pairs.** 15 resolved rows include reciprocal directions of the same collaboration; deduplicate with `least(name)/greatest(name)` |
+| `instagram_posts` | **1,092** | 31 of 63 creators covered (was 24). **120 unscanned** — a throttle stopped the scan |
+| `instagram_comments` | **13,097** | +1,546 |
+| `has_paid_partnership_label` true | **12** | +1; Track C's highest-precision sponsorship signal |
+| `is_sponsored=true` / with `brand_id` | 11 / 9 | unchanged — Track C hasn't relabelled the new posts yet |
+| `brands` | 10 | unchanged |
+| Sheet | 488 rows / 131 accepted | grown by co-author candidate pushes |
+
+**Pairs added this round: 7 → 10. All 3 from targeted promotion; 0 from covering 7 new
+creators.** That is the second independent confirmation that coverage does not add graph
+structure — see the P0.2 rewrite above.
+
 ### 3.2b Live DB state — **Track C verified 2026-08-15, Phase 1F re-labeling** (newest; supersedes 3.2a's labeling row)
 
 | Table | Rows | Note |
@@ -650,6 +699,9 @@ items above:
   1,752 posts still need checking, blocked on an Instagram throttle the audit itself
   accidentally triggered (caught and fixed: pacing reverted, a 12-strike abort now catches this
   in ~2 minutes instead of hours). Resume once the throttle clears.
+  `DW3hIgJDI3P`'s `is_sponsored` is NULL but `has_paid_partnership_label` is TRUE, and the
+  events query is `(is_sponsored OR has_paid_partnership_label)` -- so it did count toward the
+  pair set before correction (verified against the live row 2026-08-19).
 - **`account_classify.py`: CHARACTERIZED, not fixable with more keywords.** 4 held-out sets,
   scored honestly (not against the tuned suite): mean ~45% at first exposure, plateaus after
   tuning — a lexicon classifier ceiling, not a bug. 2 of the classifier's own prior "fixes" were
@@ -657,7 +709,11 @@ items above:
   misfiring on real creators' affiliate codes). Real, honest negative result — don't keep
   throwing keywords at it; a different approach would be needed to move past ~50%.
 - **Reddit real-name gate: RESOLVED, 200 → 24 unresolvable.** 168 recovered via live Instagram
-  re-fetch (now that dates/metadata work correctly), 8 via Wikipedia, 5 via YouTube description.
+  re-fetch (now that dates/metadata work correctly) and 8 via verified Wikipedia; 168 + 8 + 24
+  = 200. (Corrected 2026-08-19: an earlier draft credited "5 via YouTube description".
+  **Zero** names were applied from that source -- 5 was its measured CEILING, i.e. how many
+  name-gated creators own a YouTube channel at all. The source is real but capped:
+  @jumper_aj_'s title is the useless "jumperAj" while its description names him in prose.)
   Creators with a real name: 43 → 211+. Reddit-attempted: 54 → 230 (20.8% → 88.8%).
   **New binding constraint surfaced, not yet solved**: names were never the only gate — Reddit's
   *recency window* now caps yield the same way Instagram's did. **DECIDED 2026-08-19: widen

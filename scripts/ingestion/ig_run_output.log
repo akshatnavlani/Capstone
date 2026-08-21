@@ -1,0 +1,130 @@
+2026-08-09 21:08:50,618 INFO Running instagram with post_cap=40, recency cutoff=2026-02-07
+2026-08-09 21:09:29,687 INFO brand lead: 'Agilitas' -> brand_id=358c268d-a157-4f72-878f-65037a6ba78e (confidence=explicit)
+2026-08-09 21:09:31,634 INFO Instagram: virat.kohli post DaDJji0DY_x -> 14 comments
+2026-08-09 21:09:37,902 INFO Instagram: virat.kohli post DZh470dtCr5 -> 15 comments
+2026-08-09 21:09:43,705 INFO Instagram: virat.kohli post DZZ8lRptve1 -> 15 comments
+2026-08-09 21:09:49,727 INFO Instagram: virat.kohli post DZWaRYBIA8O -> 14 comments
+2026-08-09 21:09:55,594 INFO Instagram: virat.kohli post DZHR_3_NcCr -> 15 comments
+2026-08-09 21:10:01,174 INFO Instagram: virat.kohli post DZCAuVxDWGQ -> 15 comments
+2026-08-09 21:10:06,828 INFO Instagram: virat.kohli post DYuLMR3t180 -> 15 comments
+2026-08-09 21:10:12,743 INFO Instagram: virat.kohli post DYleZMHz9z5 -> 15 comments
+2026-08-09 21:10:18,419 INFO Instagram: virat.kohli post DYjMlcbNvy1 -> 15 comments
+2026-08-09 21:10:26,257 INFO Instagram: virat.kohli post DXs1enKiA1A -> 13 comments
+2026-08-09 21:10:31,763 INFO Instagram: virat.kohli post DVuz3sDCIGe -> 13 comments
+2026-08-09 21:10:39,235 INFO Instagram: virat.kohli post DVobGBGjbwk -> 15 comments
+2026-08-09 21:10:44,778 INFO Instagram: virat.kohli post DUkDWOYiL8x -> 14 comments
+2026-08-09 21:10:49,962 INFO Instagram: virat.kohli post DUY07Xyjf1Y -> 15 comments
+2026-08-09 21:10:55,346 INFO Instagram: virat.kohli post DTzVFyJCBof -> 15 comments
+2026-08-09 21:11:01,530 INFO Instagram: virat.kohli post DTQfTTfkni5 -> 13 comments
+2026-08-09 21:11:06,960 INFO Instagram: virat.kohli post DS9fE0skfUp -> 15 comments
+2026-08-09 21:11:12,423 INFO Instagram: virat.kohli post DS7nlKVkZWw -> 15 comments
+2026-08-09 21:11:18,452 INFO Instagram: virat.kohli post DSKdvOwkQsw -> 15 comments
+2026-08-09 21:11:24,451 INFO Instagram: virat.kohli post DR_TeHFCB9m -> 15 comments
+2026-08-09 21:11:30,249 INFO Instagram: virat.kohli post DQkJWrZDfyV -> 15 comments
+2026-08-09 21:11:37,363 INFO Instagram: virat.kohli post DPG-14viCQR -> 14 comments
+2026-08-09 21:11:43,955 INFO Instagram: virat.kohli post DMjzAl1Nzct -> 15 comments
+2026-08-09 21:11:50,516 INFO Instagram: virat.kohli post DLrSRdqTcEQ -> 14 comments
+2026-08-09 21:11:56,802 INFO Instagram: virat.kohli post DK7TPPTNsic -> 15 comments
+2026-08-09 21:12:03,001 INFO Instagram: virat.kohli post DKfKQnwSeKD -> 14 comments
+2026-08-09 21:12:09,639 INFO Instagram: virat.kohli post DKeg3xsRLPM -> 15 comments
+2026-08-09 21:12:16,036 INFO Instagram: virat.kohli post DKdkNwQIQTe -> 15 comments
+2026-08-09 21:12:22,634 INFO Instagram: virat.kohli post DJjH0kFMj3K -> 14 comments
+2026-08-09 21:12:28,830 INFO Instagram: virat.kohli post DJiwQm0RbiM -> 13 comments
+2026-08-09 21:12:35,401 INFO Instagram: virat.kohli post DJgq_CvNZkV -> 15 comments
+2026-08-09 21:12:42,074 INFO Instagram: virat.kohli post DJbPjADN4Qr -> 14 comments
+2026-08-09 21:12:48,325 INFO Instagram: virat.kohli post DJG30gLyiNA -> 15 comments
+2026-08-09 21:12:54,904 INFO Instagram: virat.kohli post DCEi-cGtXAw -> 13 comments
+2026-08-09 21:13:00,641 INFO Instagram: virat.kohli post C8_ohdORG-n -> 14 comments
+2026-08-09 21:13:07,139 INFO Instagram: virat.kohli post C82UlomxBy9 -> 14 comments
+2026-08-09 21:13:13,738 INFO Instagram: virat.kohli post C80EI7NNDFK -> 14 comments
+2026-08-09 21:13:20,579 INFO Instagram: virat.kohli post C7WXPJINqc0 -> 14 comments
+2026-08-09 21:13:27,639 INFO Instagram: virat.kohli post C6bGvvzvQma -> 15 comments
+2026-08-09 21:13:34,437 INFO Instagram: virat.kohli post C3kvKa5Nr6m -> 12 comments
+2026-08-09 21:13:34,438 INFO Instagram: virat.kohli -> 40 posts kept (0 skipped as older than the 2026-02-07 cutoff, 48 links found)
+2026-08-09 21:13:52,617 INFO Instagram: neeraj____chopra grid stopped growing at 0 links
+2026-08-09 21:13:52,618 ERROR Failed for Neeraj Chopra (neeraj____chopra) on instagram — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 399, in process_creator
+    raise RuntimeError(f"no post links found for {handle} after scrolling")
+RuntimeError: no post links found for neeraj____chopra after scrolling
+2026-08-09 21:14:12,585 INFO Instagram: pvsindhu1 grid stopped growing at 0 links
+2026-08-09 21:14:12,585 ERROR Failed for PV Sindhu (pvsindhu1) on instagram — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 399, in process_creator
+    raise RuntimeError(f"no post links found for {handle} after scrolling")
+RuntimeError: no post links found for pvsindhu1 after scrolling
+2026-08-09 21:14:37,742 INFO Instagram: nehwalsaina grid stopped growing at 12 links
+2026-08-09 21:14:44,942 INFO Instagram: nehwalsaina post DYUbNIOv3o0 -> 13 comments
+2026-08-09 21:14:50,612 INFO Instagram: nehwalsaina post Db0h5fOPWa- -> 14 comments
+2026-08-09 21:14:55,321 INFO Instagram: nehwalsaina post Db0C59gRbnN -> 2 comments
+2026-08-09 21:15:00,566 INFO Instagram: nehwalsaina post DbzvZMpCW50 -> 2 comments
+2026-08-09 21:15:05,643 INFO Instagram: nehwalsaina post DbyHoq0pKTD -> 2 comments
+2026-08-09 21:15:10,487 INFO Instagram: nehwalsaina post DbvohcCiTzf -> 4 comments
+2026-08-09 21:15:15,867 INFO Instagram: nehwalsaina post Dbva9y6BKNd -> 7 comments
+2026-08-09 21:15:20,352 INFO Instagram: nehwalsaina post DbvSwReBQ9_ -> 3 comments
+2026-08-09 21:15:24,880 INFO Instagram: nehwalsaina post DbvN36WJ3Vc -> 4 comments
+2026-08-09 21:15:29,264 INFO Instagram: nehwalsaina post DbvFIT0JjGw -> 1 comments
+2026-08-09 21:15:33,986 INFO Instagram: nehwalsaina post DbvD61YNErC -> 4 comments
+2026-08-09 21:15:39,748 INFO Instagram: nehwalsaina post Dbu7X3BMdSF -> 6 comments
+2026-08-09 21:15:39,764 INFO Instagram: nehwalsaina -> 12 posts kept (0 skipped as older than the 2026-02-07 cutoff, 12 links found)
+2026-08-09 21:15:58,892 INFO Instagram: mirzasaniar grid stopped growing at 0 links
+2026-08-09 21:15:58,892 ERROR Failed for Sania Mirza (mirzasaniar) on instagram — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 399, in process_creator
+    raise RuntimeError(f"no post links found for {handle} after scrolling")
+RuntimeError: no post links found for mirzasaniar after scrolling
+2026-08-09 21:16:23,606 INFO Instagram: mcmary.kom grid stopped growing at 12 links
+2026-08-09 21:16:28,792 INFO Instagram: mcmary.kom post DbsqQO-umF5 -> 8 comments
+2026-08-09 21:16:34,858 INFO Instagram: mcmary.kom post DbAkoNOPAXS -> 15 comments
+2026-08-09 21:16:40,458 INFO Instagram: mcmary.kom post DYJsMJ9Ecs1 -> 13 comments
+2026-08-09 21:16:45,549 INFO Instagram: mcmary.kom post DYCJI5SDMxZ -> 11 comments
+2026-08-09 21:16:51,195 INFO Instagram: mcmary.kom post DX53gosoghr -> 13 comments
+2026-08-09 21:16:56,984 INFO Instagram: mcmary.kom post DXlfRpZDId_ -> 15 comments
+2026-08-09 21:17:03,104 INFO Instagram: mcmary.kom post DXT7zUHE_w7 -> 15 comments
+2026-08-09 21:17:09,458 INFO Instagram: mcmary.kom post DWqKgncjMoE -> 15 comments
+2026-08-09 21:17:15,368 INFO Instagram: mcmary.kom post DWocfyWs-Q8 -> 14 comments
+2026-08-09 21:17:20,659 INFO Instagram: mcmary.kom post DWlAV7KDEP4 -> 9 comments
+2026-08-09 21:17:25,948 INFO Instagram: mcmary.kom post DWdUO2pkrO2 -> 8 comments
+2026-08-09 21:17:31,167 INFO Instagram: mcmary.kom post DWQXbMpkzZ6 -> 6 comments
+2026-08-09 21:17:31,167 INFO Instagram: mcmary.kom -> 12 posts kept (0 skipped as older than the 2026-02-07 cutoff, 12 links found)
+2026-08-09 21:17:53,925 INFO Instagram: beerbiceps grid stopped growing at 12 links
+2026-08-09 21:17:59,697 INFO Instagram: beerbiceps post DakDezOq9eF -> 15 comments
+2026-08-09 21:18:05,839 INFO Instagram: beerbiceps post DambuByqr_T -> 15 comments
+2026-08-09 21:18:13,260 INFO Instagram: beerbiceps post DakIOBoCrR_ -> 15 comments
+2026-08-09 21:18:19,559 INFO Instagram: beerbiceps post DZrOmqVAGjH -> 15 comments
+2026-08-09 21:18:25,348 INFO Instagram: beerbiceps post DZff7GEqJKG -> 15 comments
+2026-08-09 21:18:31,167 INFO Instagram: beerbiceps post DZZZefiAANB -> 15 comments
+2026-08-09 21:18:37,135 INFO Instagram: beerbiceps post DZZLgEvqcxH -> 14 comments
+2026-08-09 21:18:43,608 INFO Instagram: beerbiceps post DZSUkq8qdgj -> 15 comments
+2026-08-09 21:18:49,175 INFO Instagram: beerbiceps post DZP-KwqqYmi -> 15 comments
+2026-08-09 21:18:55,741 INFO Instagram: beerbiceps post DZNX3x3KPna -> 12 comments
+2026-08-09 21:19:01,422 INFO Instagram: beerbiceps post DZICVPrCtQl -> 15 comments
+2026-08-09 21:19:07,322 INFO Instagram: beerbiceps post DZH-GO5KosS -> 15 comments
+2026-08-09 21:19:07,322 INFO Instagram: beerbiceps -> 12 posts kept (0 skipped as older than the 2026-02-07 cutoff, 12 links found)
+2026-08-09 21:19:26,546 INFO Instagram: kingjames grid stopped growing at 0 links
+2026-08-09 21:19:26,546 ERROR Failed for LeBron James (kingjames) on instagram — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 399, in process_creator
+    raise RuntimeError(f"no post links found for {handle} after scrolling")
+RuntimeError: no post links found for kingjames after scrolling
+2026-08-09 21:19:45,695 INFO Instagram: cristiano grid stopped growing at 0 links
+2026-08-09 21:19:45,695 ERROR Failed for Cristiano Ronaldo (cristiano) on instagram — skipping, continuing batch
+Traceback (most recent call last):
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 187, in run_batch
+    self.process_creator(creator, handle, conn)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Capstone-worktrees\track-a-data-infra\scripts\ingestion\orchestrator.py", line 399, in process_creator
+    raise RuntimeError(f"no post links found for {handle} after scrolling")
+RuntimeError: no post links found for cristiano after scrolling

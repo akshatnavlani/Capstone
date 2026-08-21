@@ -1,0 +1,396 @@
+2026-08-10 01:17:56,999 INFO Running reddit with post_cap=40, recency cutoff=2026-02-07
+2026-08-10 01:18:15,292 INFO Reddit: post 1sqntaa -> 1 comments
+2026-08-10 01:18:26,145 INFO Reddit: post 1sqnstj -> 0 comments
+2026-08-10 01:18:26,145 INFO Reddit[creator_sub] r/KingKohli for Virat Kohli -> 2 kept (0 off-topic, 38 stale, 40 returned)
+2026-08-10 01:18:44,641 INFO Reddit: post 1vju7ln -> 4 comments
+2026-08-10 01:18:57,301 INFO Reddit: post 1vjqql3 -> 1 comments
+2026-08-10 01:19:09,490 INFO Reddit: post 1vjorsf -> 2 comments
+2026-08-10 01:19:21,630 INFO Reddit: post 1vjnkzd -> 3 comments
+2026-08-10 01:19:34,289 INFO Reddit: post 1vjkgck -> 1 comments
+2026-08-10 01:19:46,307 INFO Reddit: post 1vjkawg -> 1 comments
+2026-08-10 01:19:59,529 INFO Reddit: post 1vji3i6 -> 3 comments
+2026-08-10 01:20:11,699 INFO Reddit: post 1vjg9h5 -> 5 comments
+2026-08-10 01:20:23,540 INFO Reddit: post 1vj2lpj -> 3 comments
+2026-08-10 01:20:36,780 INFO Reddit: post 1viy21u -> 15 comments
+2026-08-10 01:20:49,410 INFO Reddit: post 1vixsee -> 1 comments
+2026-08-10 01:21:01,336 INFO Reddit: post 1viqf0b -> 1 comments
+2026-08-10 01:21:13,221 INFO Reddit: post 1vipx29 -> 1 comments
+2026-08-10 01:21:25,713 INFO Reddit: post 1viokai -> 14 comments
+2026-08-10 01:21:38,359 INFO Reddit: post 1vicmfn -> 10 comments
+2026-08-10 01:21:52,717 INFO Reddit: post 1vicitq -> 4 comments
+2026-08-10 01:22:05,322 INFO Reddit: post 1vibk4x -> 10 comments
+2026-08-10 01:22:17,461 INFO Reddit: post 1vib3dl -> 1 comments
+2026-08-10 01:22:31,440 INFO Reddit: post 1vi29zb -> 1 comments
+2026-08-10 01:22:44,390 INFO Reddit: post 1vi1t3i -> 2 comments
+2026-08-10 01:22:56,397 INFO Reddit: post 1vhzk0m -> 1 comments
+2026-08-10 01:23:08,902 INFO Reddit: post 1vhy3fh -> 3 comments
+2026-08-10 01:23:21,977 INFO Reddit: post 1vhy09j -> 6 comments
+2026-08-10 01:23:36,286 INFO Reddit: post 1vhwf5e -> 6 comments
+2026-08-10 01:23:48,514 INFO Reddit: post 1vhvopo -> 2 comments
+2026-08-10 01:24:00,415 INFO Reddit: post 1vhvlbi -> 1 comments
+2026-08-10 01:24:14,119 INFO Reddit: post 1vhmqkt -> 13 comments
+2026-08-10 01:24:26,710 INFO Reddit: post 1vhc650 -> 2 comments
+2026-08-10 01:24:39,833 INFO Reddit: post 1vhalfo -> 7 comments
+2026-08-10 01:24:52,876 INFO Reddit: post 1vhac9p -> 6 comments
+2026-08-10 01:25:05,468 INFO Reddit: post 1vha33i -> 12 comments
+2026-08-10 01:25:17,748 INFO Reddit: post 1vh80z5 -> 1 comments
+2026-08-10 01:25:30,878 INFO Reddit: post 1vh7wtv -> 16 comments
+2026-08-10 01:25:43,378 INFO Reddit: post 1vh7hlk -> 1 comments
+2026-08-10 01:25:57,204 INFO Reddit: post 1vh78pl -> 19 comments
+2026-08-10 01:26:09,278 INFO Reddit: post 1vh4c4i -> 1 comments
+2026-08-10 01:26:21,447 INFO Reddit: post 1vgxgwg -> 1 comments
+2026-08-10 01:26:46,243 INFO Reddit: post 1vguf1n -> 9 comments
+2026-08-10 01:26:59,758 INFO Reddit: post 1vg9ukr -> 4 comments
+2026-08-10 01:27:15,520 INFO Reddit: post 1vg9bxg -> 28 comments
+2026-08-10 01:27:15,520 INFO Reddit[creator_sub] r/ViratKohli for Virat Kohli -> 40 kept (0 off-topic, 38 stale, 40 returned)
+2026-08-10 01:27:38,133 INFO Reddit: post 1vjqbbp -> 30 comments
+2026-08-10 01:27:52,008 INFO Reddit: post 1vimzdm -> 7 comments
+2026-08-10 01:28:06,130 INFO Reddit: post 1vikruv -> 6 comments
+2026-08-10 01:28:20,655 INFO Reddit: post 1vdoty9 -> 9 comments
+2026-08-10 01:28:32,506 INFO Reddit: post 1vdb07w -> 1 comments
+2026-08-10 01:28:46,869 INFO Reddit: post 1vatvm6 -> 7 comments
+2026-08-10 01:29:01,723 INFO Reddit: post 1vamhu5 -> 13 comments
+2026-08-10 01:29:14,250 INFO Reddit: post 1v8yhz8 -> 10 comments
+2026-08-10 01:29:27,532 INFO Reddit: post 1v5zq3w -> 11 comments
+2026-08-10 01:29:42,466 INFO Reddit: post 1v5mpe4 -> 29 comments
+2026-08-10 01:29:55,200 INFO Reddit: post 1v4myde -> 8 comments
+2026-08-10 01:30:08,415 INFO Reddit: post 1v4h3kl -> 2 comments
+2026-08-10 01:30:23,481 INFO Reddit: post 1v4d5wd -> 31 comments
+2026-08-10 01:30:36,104 INFO Reddit: post 1v467wc -> 8 comments
+2026-08-10 01:30:53,030 INFO Reddit: post 1v3nij3 -> 39 comments
+2026-08-10 01:31:06,419 INFO Reddit: post 1v3hei2 -> 11 comments
+2026-08-10 01:31:20,354 INFO Reddit: post 1v36zsh -> 10 comments
+2026-08-10 01:31:36,106 INFO Reddit: post 1v2j9p1 -> 8 comments
+2026-08-10 01:31:48,807 INFO Reddit: post 1v2g88z -> 4 comments
+2026-08-10 01:32:02,557 INFO Reddit: post 1v1d7yq -> 2 comments
+2026-08-10 01:32:18,599 INFO Reddit: post 1v19px4 -> 31 comments
+2026-08-10 01:32:32,775 INFO Reddit: post 1v16hwz -> 11 comments
+2026-08-10 01:32:46,201 INFO Reddit: post 1v15rrv -> 8 comments
+2026-08-10 01:33:00,577 INFO Reddit: post 1v0xj7z -> 13 comments
+2026-08-10 01:33:12,337 INFO Reddit: post 1v0vbvg -> 0 comments
+2026-08-10 01:33:25,213 INFO Reddit: post 1uzq5xr -> 10 comments
+2026-08-10 01:33:25,214 INFO Reddit[topic_search] r/IndianCricket for Virat Kohli -> 26 kept (14 off-topic, 38 stale, 40 returned)
+2026-08-10 01:33:44,339 INFO Reddit: post 1vhb0br -> 12 comments
+2026-08-10 01:34:02,225 INFO Reddit: post 1vgn8kd -> 34 comments
+2026-08-10 01:34:20,212 INFO Reddit: post 1v6u4nx -> 46 comments
+2026-08-10 01:34:35,769 INFO Reddit: post 1v0pgfj -> 23 comments
+2026-08-10 01:34:48,452 INFO Reddit: post 1v0kqdn -> 11 comments
+2026-08-10 01:35:01,730 INFO Reddit: post 1ux8jrq -> 14 comments
+2026-08-10 01:35:14,865 INFO Reddit: post 1uvw4es -> 14 comments
+2026-08-10 01:35:27,856 INFO Reddit: post 1uqkphn -> 5 comments
+2026-08-10 01:35:43,345 INFO Reddit: post 1uortjc -> 25 comments
+2026-08-10 01:35:57,768 INFO Reddit: post 1uo020d -> 23 comments
+2026-08-10 01:36:10,332 INFO Reddit: post 1ue5g58 -> 2 comments
+2026-08-10 01:36:28,732 INFO Reddit: post 1ucmoph -> 49 comments
+2026-08-10 01:36:57,655 INFO Reddit: post 1u97u1x -> 47 comments
+2026-08-10 01:37:15,001 INFO Reddit: post 1u3s1r9 -> 53 comments
+2026-08-10 01:37:30,872 INFO Reddit: post 1u23vj5 -> 39 comments
+2026-08-10 01:37:44,195 INFO Reddit: post 1u1v2se -> 17 comments
+2026-08-10 01:37:57,569 INFO Reddit: post 1u0ek6f -> 11 comments
+2026-08-10 01:38:10,720 INFO Reddit: post 1tydhmh -> 4 comments
+2026-08-10 01:38:25,972 INFO Reddit: post 1tx3dmy -> 22 comments
+2026-08-10 01:38:43,511 INFO Reddit: post 1twdy9a -> 49 comments
+2026-08-10 01:39:00,087 INFO Reddit: post 1ttii3i -> 30 comments
+2026-08-10 01:39:15,959 INFO Reddit: post 1tt6udf -> 32 comments
+2026-08-10 01:39:43,002 INFO Reddit: post 1tt51yc -> 22 comments
+2026-08-10 01:40:09,347 INFO Reddit: post 1tt3gjy -> 13 comments
+2026-08-10 01:40:26,176 INFO Reddit: post 1tt2ewg -> 39 comments
+2026-08-10 01:40:42,285 INFO Reddit: post 1tt0tsf -> 33 comments
+2026-08-10 01:40:59,284 INFO Reddit: post 1ts5tmz -> 46 comments
+2026-08-10 01:41:12,358 INFO Reddit: post 1try7r4 -> 9 comments
+2026-08-10 01:41:25,552 INFO Reddit: post 1tqoiec -> 2 comments
+2026-08-10 01:41:55,610 INFO Reddit: post 1tq02yg -> 44 comments
+2026-08-10 01:42:11,530 INFO Reddit: post 1tprbst -> 28 comments
+2026-08-10 01:42:40,170 INFO Reddit: post 1toxi4e -> 37 comments
+2026-08-10 01:42:57,018 INFO Reddit: post 1tody2g -> 42 comments
+2026-08-10 01:43:12,865 INFO Reddit: post 1tiqk42 -> 22 comments
+2026-08-10 01:43:29,864 INFO Reddit: post 1tfq3l0 -> 40 comments
+2026-08-10 01:43:29,881 INFO Reddit[topic_search] r/Cricket for Virat Kohli -> 35 kept (5 off-topic, 38 stale, 40 returned)
+2026-08-10 01:43:49,194 INFO Reddit: post 1v1gbpy -> 9 comments
+2026-08-10 01:44:06,028 INFO Reddit: post 1v0xeu5 -> 31 comments
+2026-08-10 01:44:20,552 INFO Reddit: post 1usjxah -> 13 comments
+2026-08-10 01:44:36,498 INFO Reddit: post 1urwsgl -> 27 comments
+2026-08-10 01:44:50,007 INFO Reddit: post 1uehpjo -> 13 comments
+2026-08-10 01:45:03,929 INFO Reddit: post 1u8xkqh -> 6 comments
+2026-08-10 01:45:20,053 INFO Reddit: post 1u3v6lv -> 23 comments
+2026-08-10 01:45:35,919 INFO Reddit: post 1u10vog -> 35 comments
+2026-08-10 01:45:49,977 INFO Reddit: post 1u0mp22 -> 17 comments
+2026-08-10 01:46:04,399 INFO Reddit: post 1tz76pb -> 19 comments
+2026-08-10 01:46:18,643 INFO Reddit: post 1ty300t -> 18 comments
+2026-08-10 01:46:31,169 INFO Reddit: post 1txjuge -> 10 comments
+2026-08-10 01:46:44,225 INFO Reddit: post 1txgo7z -> 8 comments
+2026-08-10 01:47:00,351 INFO Reddit: post 1txck4n -> 34 comments
+2026-08-10 01:47:15,482 INFO Reddit: post 1txc9m5 -> 32 comments
+2026-08-10 01:47:28,465 INFO Reddit: post 1txc169 -> 2 comments
+2026-08-10 01:47:42,121 INFO Reddit: post 1txa2t6 -> 8 comments
+2026-08-10 01:48:11,040 INFO Reddit: post 1twa2cq -> 42 comments
+2026-08-10 01:48:24,545 INFO Reddit: post 1tviki6 -> 12 comments
+2026-08-10 01:48:40,623 INFO Reddit: post 1tvg8kl -> 40 comments
+2026-08-10 01:48:58,444 INFO Reddit: post 1tvb4bb -> 20 comments
+2026-08-10 01:49:11,519 INFO Reddit: post 1ttwp60 -> 3 comments
+2026-08-10 01:49:29,587 INFO Reddit: post 1ttwevc -> 49 comments
+2026-08-10 01:49:41,146 INFO Reddit: post 1ttvv40 -> 0 comments
+2026-08-10 01:49:53,402 INFO Reddit: post 1ttrw6o -> 2 comments
+2026-08-10 01:50:07,083 INFO Reddit: post 1ttpi7l -> 15 comments
+2026-08-10 01:50:21,212 INFO Reddit: post 1tto4fp -> 9 comments
+2026-08-10 01:50:34,388 INFO Reddit: post 1tteufh -> 11 comments
+2026-08-10 01:50:48,586 INFO Reddit: post 1tt9qxs -> 21 comments
+2026-08-10 01:51:01,271 INFO Reddit: post 1tt9f5k -> 10 comments
+2026-08-10 01:51:01,271 INFO Reddit[topic_search] r/ipl for Virat Kohli -> 30 kept (10 off-topic, 38 stale, 40 returned)
+2026-08-10 01:51:01,271 INFO Reddit: Virat Kohli -> 133 posts across 2 creator-sub(s) + 3 topic sub(s)
+2026-08-10 01:51:06,190 INFO Reddit[topic_search] r/Athletics for Neeraj Chopra -> 0 kept (0 off-topic, 0 stale, 0 returned)
+2026-08-10 01:51:12,187 INFO Reddit[topic_search] r/india for Neeraj Chopra -> 0 kept (1 off-topic, 39 stale, 40 returned)
+2026-08-10 01:51:31,314 INFO Reddit: post 1u4sui0 -> 9 comments
+2026-08-10 01:51:31,314 INFO Reddit[topic_search] r/olympics for Neeraj Chopra -> 1 kept (3 off-topic, 59 stale, 24 returned)
+2026-08-10 01:51:31,314 INFO Reddit: Neeraj Chopra -> 1 posts across 0 creator-sub(s) + 3 topic sub(s)
+2026-08-10 01:51:37,071 INFO Reddit[topic_search] r/badminton for PV Sindhu -> 0 kept (0 off-topic, 28 stale, 28 returned)
+2026-08-10 01:51:56,411 INFO Reddit: post 1v0hh8c -> 1 comments
+2026-08-10 01:51:56,411 INFO Reddit[topic_search] r/india for PV Sindhu -> 1 kept (1 off-topic, 66 stale, 40 returned)
+2026-08-10 01:51:56,411 INFO Reddit: PV Sindhu -> 1 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 01:52:02,953 INFO Reddit[topic_search] r/badminton for Saina Nehwal -> 0 kept (0 off-topic, 19 stale, 19 returned)
+2026-08-10 01:52:22,692 INFO Reddit: post 1v6720c -> 21 comments
+2026-08-10 01:52:22,693 INFO Reddit[topic_search] r/india for Saina Nehwal -> 1 kept (0 off-topic, 58 stale, 40 returned)
+2026-08-10 01:52:22,693 INFO Reddit: Saina Nehwal -> 1 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 01:52:28,282 INFO Reddit[topic_search] r/india for Sania Mirza -> 0 kept (0 off-topic, 40 stale, 40 returned)
+2026-08-10 01:52:34,446 INFO Reddit[topic_search] r/tennis for Sania Mirza -> 0 kept (3 off-topic, 77 stale, 40 returned)
+2026-08-10 01:52:34,446 INFO Reddit: Sania Mirza -> 0 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 01:52:40,221 INFO Reddit[topic_search] r/india for MC Mary Kom -> 0 kept (2 off-topic, 38 stale, 40 returned)
+2026-08-10 01:52:45,652 INFO Reddit[topic_search] r/Boxing for MC Mary Kom -> 0 kept (0 off-topic, 46 stale, 8 returned)
+2026-08-10 01:52:45,652 INFO Reddit: MC Mary Kom -> 0 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 01:53:03,171 INFO Reddit: post 1vjy86m -> 0 comments
+2026-08-10 01:53:20,489 INFO Reddit: post 1vjs42a -> 39 comments
+2026-08-10 01:53:32,198 INFO Reddit: post 1vjmixz -> 0 comments
+2026-08-10 01:53:49,277 INFO Reddit: post 1vjfwli -> 44 comments
+2026-08-10 01:54:01,102 INFO Reddit: post 1vj8evf -> 0 comments
+2026-08-10 01:54:13,765 INFO Reddit: post 1vj508t -> 4 comments
+2026-08-10 01:54:30,255 INFO Reddit: post 1vj4plw -> 24 comments
+2026-08-10 01:54:46,951 INFO Reddit: post 1vj36s8 -> 37 comments
+2026-08-10 01:55:00,924 INFO Reddit: post 1vj245u -> 21 comments
+2026-08-10 01:55:13,783 INFO Reddit: post 1vj1ttv -> 1 comments
+2026-08-10 01:55:27,570 INFO Reddit: post 1vj1jrd -> 2 comments
+2026-08-10 01:55:42,162 INFO Reddit: post 1vix7dz -> 26 comments
+2026-08-10 01:55:54,493 INFO Reddit: post 1vivwzt -> 2 comments
+2026-08-10 01:56:13,644 INFO Reddit: post 1vitt8v -> 56 comments
+2026-08-10 01:56:29,874 INFO Reddit: post 1vioi7v -> 42 comments
+2026-08-10 01:56:45,283 INFO Reddit: post 1vhrbsy -> 0 comments
+2026-08-10 01:57:00,514 INFO Reddit: post 1vhbadq -> 18 comments
+2026-08-10 01:57:14,453 INFO Reddit: post 1vh69ol -> 9 comments
+2026-08-10 01:57:26,398 INFO Reddit: post 1vh2f7k -> 1 comments
+2026-08-10 01:57:39,628 INFO Reddit: post 1vgtzty -> 4 comments
+2026-08-10 01:57:58,078 INFO Reddit: post 1vgplrw -> 55 comments
+2026-08-10 01:58:11,809 INFO Reddit: post 1vgn0o0 -> 4 comments
+2026-08-10 01:58:28,510 INFO Reddit: post 1vgk7eu -> 36 comments
+2026-08-10 01:58:39,273 INFO Reddit: post 1vgi9ek -> 0 comments
+2026-08-10 01:58:51,267 INFO Reddit: post 1vgc9i8 -> 0 comments
+2026-08-10 01:59:03,058 INFO Reddit: post 1vgarqs -> 0 comments
+2026-08-10 01:59:16,022 INFO Reddit: post 1vg90h4 -> 8 comments
+2026-08-10 01:59:29,907 INFO Reddit: post 1vg6war -> 17 comments
+2026-08-10 01:59:42,099 INFO Reddit: post 1vg3r33 -> 0 comments
+2026-08-10 02:00:09,178 INFO Reddit: post 1vfudjx -> 24 comments
+2026-08-10 02:00:22,763 INFO Reddit: post 1vfmush -> 15 comments
+2026-08-10 02:00:36,019 INFO Reddit: post 1vfe5og -> 17 comments
+2026-08-10 02:00:52,716 INFO Reddit: post 1vf9t2f -> 43 comments
+2026-08-10 02:01:06,823 INFO Reddit: post 1vet6hr -> 7 comments
+2026-08-10 02:01:19,084 INFO Reddit: post 1veimpd -> 0 comments
+2026-08-10 02:01:32,085 INFO Reddit: post 1ve2muq -> 7 comments
+2026-08-10 02:01:46,004 INFO Reddit: post 1vdrquv -> 26 comments
+2026-08-10 02:01:59,463 INFO Reddit: post 1vdgfcx -> 2 comments
+2026-08-10 02:02:14,886 INFO Reddit: post 1vd807d -> 27 comments
+2026-08-10 02:02:26,311 INFO Reddit: post 1vd6gq8 -> 1 comments
+2026-08-10 02:02:26,311 INFO Reddit[creator_sub] r/lebron for LeBron James -> 40 kept (0 off-topic, 0 stale, 40 returned)
+2026-08-10 02:02:44,066 INFO Reddit: post 1vjw0z1 -> 11 comments
+2026-08-10 02:02:59,894 INFO Reddit: post 1vjtqq2 -> 38 comments
+2026-08-10 02:03:17,052 INFO Reddit: post 1vjq6km -> 56 comments
+2026-08-10 02:03:32,207 INFO Reddit: post 1vjjf9y -> 30 comments
+2026-08-10 02:03:44,809 INFO Reddit: post 1vjj2kx -> 19 comments
+2026-08-10 02:04:00,930 INFO Reddit: post 1vje8yi -> 47 comments
+2026-08-10 02:04:14,296 INFO Reddit: post 1vjdwp8 -> 23 comments
+2026-08-10 02:04:28,750 INFO Reddit: post 1vj4ioi -> 43 comments
+2026-08-10 02:04:45,292 INFO Reddit: post 1vj2fh5 -> 38 comments
+2026-08-10 02:04:58,327 INFO Reddit: post 1vj09g9 -> 21 comments
+2026-08-10 02:05:16,730 INFO Reddit: post 1vix75r -> 54 comments
+2026-08-10 02:05:35,293 INFO Reddit: post 1vintbb -> 44 comments
+2026-08-10 02:05:47,586 INFO Reddit: post 1vifan9 -> 4 comments
+2026-08-10 02:06:01,516 INFO Reddit: post 1vi9ets -> 34 comments
+2026-08-10 02:06:17,110 INFO Reddit: post 1vh8q1z -> 37 comments
+2026-08-10 02:06:30,595 INFO Reddit: post 1vgo0ax -> 15 comments
+2026-08-10 02:06:48,471 INFO Reddit: post 1vgnhhq -> 51 comments
+2026-08-10 02:07:05,569 INFO Reddit: post 1vglvhh -> 52 comments
+2026-08-10 02:07:20,907 INFO Reddit: post 1vgkptx -> 38 comments
+2026-08-10 02:07:37,056 INFO Reddit: post 1vgklc8 -> 46 comments
+2026-08-10 02:07:54,921 INFO Reddit: post 1vg5weq -> 52 comments
+2026-08-10 02:08:10,518 INFO Reddit: post 1vg1ze6 -> 46 comments
+2026-08-10 02:08:27,402 INFO Reddit: post 1vfqgci -> 51 comments
+2026-08-10 02:08:43,573 INFO Reddit: post 1vfduff -> 43 comments
+2026-08-10 02:08:59,362 INFO Reddit: post 1ves3zg -> 44 comments
+2026-08-10 02:09:16,603 INFO Reddit: post 1vdmm9g -> 61 comments
+2026-08-10 02:09:33,796 INFO Reddit: post 1vd9xa7 -> 57 comments
+2026-08-10 02:09:49,922 INFO Reddit: post 1vd3hgk -> 51 comments
+2026-08-10 02:10:06,683 INFO Reddit: post 1vcymh4 -> 54 comments
+2026-08-10 02:10:23,857 INFO Reddit: post 1vcmn8g -> 57 comments
+2026-08-10 02:10:41,623 INFO Reddit: post 1vbzs2u -> 51 comments
+2026-08-10 02:10:58,276 INFO Reddit: post 1vbs60x -> 51 comments
+2026-08-10 02:11:14,831 INFO Reddit: post 1vb3lxf -> 43 comments
+2026-08-10 02:11:33,015 INFO Reddit: post 1vatvum -> 46 comments
+2026-08-10 02:11:50,310 INFO Reddit: post 1vatupg -> 49 comments
+2026-08-10 02:12:05,498 INFO Reddit: post 1vatls2 -> 43 comments
+2026-08-10 02:12:33,895 INFO Reddit: post 1vapwz0 -> 38 comments
+2026-08-10 02:12:49,940 INFO Reddit: post 1vads4v -> 52 comments
+2026-08-10 02:13:06,667 INFO Reddit: post 1va9bde -> 56 comments
+2026-08-10 02:13:23,564 INFO Reddit: post 1va7u7w -> 52 comments
+2026-08-10 02:13:23,564 INFO Reddit[topic_search] r/nba for LeBron James -> 40 kept (0 off-topic, 0 stale, 40 returned)
+2026-08-10 02:13:44,603 INFO Reddit: post 1vjgah4 -> 35 comments
+2026-08-10 02:13:59,215 INFO Reddit: post 1vihdbb -> 29 comments
+2026-08-10 02:14:14,374 INFO Reddit: post 1vdusd5 -> 41 comments
+2026-08-10 02:14:31,748 INFO Reddit: post 1vbsk21 -> 40 comments
+2026-08-10 02:14:46,215 INFO Reddit: post 1v99qv8 -> 39 comments
+2026-08-10 02:15:02,285 INFO Reddit: post 1v5qbtj -> 42 comments
+2026-08-10 02:15:18,257 INFO Reddit: post 1v5k8fs -> 43 comments
+2026-08-10 02:15:35,204 INFO Reddit: post 1v5epn2 -> 53 comments
+2026-08-10 02:15:52,090 INFO Reddit: post 1v0x6hn -> 51 comments
+2026-08-10 02:16:05,719 INFO Reddit: post 1uyqt2f -> 29 comments
+2026-08-10 02:16:20,710 INFO Reddit: post 1uwmue1 -> 38 comments
+2026-08-10 02:16:36,077 INFO Reddit: post 1uuuzlo -> 38 comments
+2026-08-10 02:16:51,397 INFO Reddit: post 1urj79j -> 42 comments
+2026-08-10 02:17:06,209 INFO Reddit: post 1ur7v2s -> 21 comments
+2026-08-10 02:17:23,310 INFO Reddit: post 1uquy0h -> 49 comments
+2026-08-10 02:17:40,246 INFO Reddit: post 1uqsq7u -> 50 comments
+2026-08-10 02:17:56,388 INFO Reddit: post 1upwo7s -> 42 comments
+2026-08-10 02:18:12,159 INFO Reddit: post 1uow6ll -> 38 comments
+2026-08-10 02:18:26,030 INFO Reddit: post 1uos7vl -> 19 comments
+2026-08-10 02:18:42,184 INFO Reddit: post 1unp8py -> 40 comments
+2026-08-10 02:18:59,163 INFO Reddit: post 1ulho1o -> 51 comments
+2026-08-10 02:19:14,941 INFO Reddit: post 1uldh1i -> 34 comments
+2026-08-10 02:19:32,777 INFO Reddit: post 1ul82y6 -> 51 comments
+2026-08-10 02:19:48,587 INFO Reddit: post 1ul78kg -> 42 comments
+2026-08-10 02:20:02,236 INFO Reddit: post 1ukvkfu -> 23 comments
+2026-08-10 02:20:02,236 INFO Reddit[topic_search] r/lakers for LeBron James -> 25 kept (15 off-topic, 0 stale, 40 returned)
+2026-08-10 02:20:02,236 INFO Reddit: LeBron James -> 105 posts across 1 creator-sub(s) + 2 topic sub(s)
+2026-08-10 02:20:23,735 INFO Reddit: post 1vbya5d -> 47 comments
+2026-08-10 02:20:39,958 INFO Reddit: post 1vbc0ua -> 46 comments
+2026-08-10 02:20:53,325 INFO Reddit: post 1vb63y3 -> 12 comments
+2026-08-10 02:21:10,925 INFO Reddit: post 1vahwab -> 57 comments
+2026-08-10 02:21:27,702 INFO Reddit: post 1v833o5 -> 52 comments
+2026-08-10 02:21:43,860 INFO Reddit: post 1v298lh -> 60 comments
+2026-08-10 02:22:01,323 INFO Reddit: post 1v26arb -> 63 comments
+2026-08-10 02:22:17,707 INFO Reddit: post 1uz9cnm -> 35 comments
+2026-08-10 02:22:36,202 INFO Reddit: post 1uyw8yv -> 58 comments
+2026-08-10 02:22:55,915 INFO Reddit: post 1ux1tbm -> 61 comments
+2026-08-10 02:23:13,424 INFO Reddit: post 1uvcxin -> 46 comments
+2026-08-10 02:23:32,301 INFO Reddit: post 1uvbstv -> 61 comments
+2026-08-10 02:23:50,168 INFO Reddit: post 1uukjvq -> 57 comments
+2026-08-10 02:24:08,045 INFO Reddit: post 1uufxex -> 51 comments
+2026-08-10 02:24:24,311 INFO Reddit: post 1ut6w0d -> 50 comments
+2026-08-10 02:24:36,939 INFO Reddit: post 1ut2dbd -> 7 comments
+2026-08-10 02:25:05,365 INFO Reddit: post 1usrroq -> 42 comments
+2026-08-10 02:25:23,146 INFO Reddit: post 1uspm0e -> 61 comments
+2026-08-10 02:25:36,995 INFO Reddit: post 1us75cr -> 23 comments
+2026-08-10 02:25:50,477 INFO Reddit: post 1urtran -> 9 comments
+2026-08-10 02:26:07,182 INFO Reddit: post 1uq15mj -> 45 comments
+2026-08-10 02:26:24,677 INFO Reddit: post 1upzihs -> 56 comments
+2026-08-10 02:26:40,831 INFO Reddit: post 1uplzkz -> 48 comments
+2026-08-10 02:26:54,374 INFO Reddit: post 1uphp5t -> 22 comments
+2026-08-10 02:27:11,733 INFO Reddit: post 1upa3e9 -> 49 comments
+2026-08-10 02:27:29,075 INFO Reddit: post 1up5w46 -> 34 comments
+2026-08-10 02:27:47,145 INFO Reddit: post 1up430i -> 60 comments
+2026-08-10 02:28:02,529 INFO Reddit: post 1uolnvn -> 22 comments
+2026-08-10 02:28:20,444 INFO Reddit: post 1uoglog -> 56 comments
+2026-08-10 02:28:38,001 INFO Reddit: post 1uocukj -> 62 comments
+2026-08-10 02:28:56,284 INFO Reddit: post 1uoa6x8 -> 52 comments
+2026-08-10 02:29:10,963 INFO Reddit: post 1uned3c -> 30 comments
+2026-08-10 02:29:10,963 INFO Reddit[topic_search] r/soccer for Cristiano Ronaldo -> 32 kept (8 off-topic, 0 stale, 40 returned)
+2026-08-10 02:29:31,381 INFO Reddit: post 1vjn8xv -> 16 comments
+2026-08-10 02:29:46,996 INFO Reddit: post 1vdw1yt -> 36 comments
+2026-08-10 02:30:01,446 INFO Reddit: post 1v63cly -> 19 comments
+2026-08-10 02:30:17,842 INFO Reddit: post 1v4e0d8 -> 42 comments
+2026-08-10 02:30:33,125 INFO Reddit: post 1v2q44o -> 18 comments
+2026-08-10 02:30:48,193 INFO Reddit: post 1uv2pg1 -> 20 comments
+2026-08-10 02:31:02,452 INFO Reddit: post 1urgnzu -> 10 comments
+2026-08-10 02:31:14,705 INFO Reddit: post 1ur8poj -> 4 comments
+2026-08-10 02:31:27,567 INFO Reddit: post 1ur59wb -> 3 comments
+2026-08-10 02:31:43,715 INFO Reddit: post 1upxdkl -> 32 comments
+2026-08-10 02:32:00,483 INFO Reddit: post 1uptvny -> 45 comments
+2026-08-10 02:32:16,027 INFO Reddit: post 1upb774 -> 17 comments
+2026-08-10 02:32:28,554 INFO Reddit: post 1upab61 -> 3 comments
+2026-08-10 02:32:44,827 INFO Reddit: post 1uocrel -> 34 comments
+2026-08-10 02:33:00,027 INFO Reddit: post 1umjwvi -> 16 comments
+2026-08-10 02:33:25,238 INFO Reddit: post 1um4zot -> 1 comments
+2026-08-10 02:33:41,144 INFO Reddit: post 1ul5esp -> 37 comments
+2026-08-10 02:33:53,737 INFO Reddit: post 1uh9bsr -> 4 comments
+2026-08-10 02:34:06,693 INFO Reddit: post 1ugh69y -> 4 comments
+2026-08-10 02:34:23,702 INFO Reddit: post 1uduuzl -> 33 comments
+2026-08-10 02:34:40,517 INFO Reddit: post 1tjwgo1 -> 52 comments
+2026-08-10 02:34:57,025 INFO Reddit: post 1sn4zsk -> 40 comments
+2026-08-10 02:35:10,168 INFO Reddit: post 1shwvgi -> 8 comments
+2026-08-10 02:35:23,514 INFO Reddit: post 1rz3cwx -> 22 comments
+2026-08-10 02:35:51,564 INFO Reddit: post 1rjse3w -> 46 comments
+2026-08-10 02:36:08,923 INFO Reddit: post 1rb7842 -> 62 comments
+2026-08-10 02:36:08,924 INFO Reddit[topic_search] r/football for Cristiano Ronaldo -> 26 kept (0 off-topic, 14 stale, 40 returned)
+2026-08-10 02:36:08,924 INFO Reddit: Cristiano Ronaldo -> 58 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 02:36:25,152 INFO Reddit: post 1t2hrpj -> 0 comments
+2026-08-10 02:36:25,152 INFO Reddit[topic_search] r/india for Ranveer Allahbadia -> 1 kept (0 off-topic, 19 stale, 20 returned)
+2026-08-10 02:36:30,235 INFO Reddit[topic_search] r/IndianYoutubers for Ranveer Allahbadia -> 0 kept (0 off-topic, 19 stale, 0 returned)
+2026-08-10 02:36:30,235 INFO Reddit: Ranveer Allahbadia -> 1 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 02:36:49,263 INFO Reddit: post 1vjmj00 -> 0 comments
+2026-08-10 02:36:49,263 INFO Reddit[topic_search] r/india for Bhuvan Bam -> 1 kept (0 off-topic, 10 stale, 11 returned)
+2026-08-10 02:36:54,383 INFO Reddit[topic_search] r/IndianYoutubers for Bhuvan Bam -> 0 kept (0 off-topic, 10 stale, 0 returned)
+2026-08-10 02:36:54,383 INFO Reddit: Bhuvan Bam -> 1 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 02:37:12,541 INFO Reddit: post 1vjtngc -> 4 comments
+2026-08-10 02:37:26,493 INFO Reddit: post 1vix3bt -> 2 comments
+2026-08-10 02:37:40,979 INFO Reddit: post 1vivy17 -> 28 comments
+2026-08-10 02:37:52,887 INFO Reddit: post 1vi0ln7 -> 9 comments
+2026-08-10 02:38:06,512 INFO Reddit: post 1vh1322 -> 3 comments
+2026-08-10 02:38:21,634 INFO Reddit: post 1vgz0gy -> 26 comments
+2026-08-10 02:38:34,891 INFO Reddit: post 1vgywmq -> 7 comments
+2026-08-10 02:38:47,430 INFO Reddit: post 1vgysh5 -> 13 comments
+2026-08-10 02:38:59,938 INFO Reddit: post 1vgx26f -> 8 comments
+2026-08-10 02:39:14,589 INFO Reddit: post 1vgg77e -> 25 comments
+2026-08-10 02:39:27,179 INFO Reddit: post 1vg8xde -> 0 comments
+2026-08-10 02:39:42,442 INFO Reddit: post 1vg1khi -> 22 comments
+2026-08-10 02:39:56,288 INFO Reddit: post 1vg1dwn -> 20 comments
+2026-08-10 02:40:11,489 INFO Reddit: post 1vf9q1d -> 32 comments
+2026-08-10 02:40:27,474 INFO Reddit: post 1vf71qb -> 39 comments
+2026-08-10 02:40:41,985 INFO Reddit: post 1veeugg -> 26 comments
+2026-08-10 02:40:54,933 INFO Reddit: post 1vec8kp -> 5 comments
+2026-08-10 02:41:09,131 INFO Reddit: post 1ve428d -> 10 comments
+2026-08-10 02:41:21,998 INFO Reddit: post 1vdsamn -> 8 comments
+2026-08-10 02:41:38,026 INFO Reddit: post 1vds6kh -> 27 comments
+2026-08-10 02:41:53,463 INFO Reddit: post 1vdg74h -> 33 comments
+2026-08-10 02:42:07,860 INFO Reddit: post 1vddq37 -> 28 comments
+2026-08-10 02:42:20,227 INFO Reddit: post 1vcuvk6 -> 10 comments
+2026-08-10 02:42:36,081 INFO Reddit: post 1vclwu9 -> 31 comments
+2026-08-10 02:42:52,939 INFO Reddit: post 1vc2xph -> 40 comments
+2026-08-10 02:43:04,533 INFO Reddit: post 1vbtm4s -> 2 comments
+2026-08-10 02:43:19,592 INFO Reddit: post 1v9qwds -> 27 comments
+2026-08-10 02:43:31,891 INFO Reddit: post 1v9qj5n -> 7 comments
+2026-08-10 02:43:46,203 INFO Reddit: post 1v8ztgq -> 14 comments
+2026-08-10 02:43:59,525 INFO Reddit: post 1v8w1o6 -> 2 comments
+2026-08-10 02:44:11,565 INFO Reddit: post 1v7d5ij -> 3 comments
+2026-08-10 02:44:23,404 INFO Reddit: post 1v655cc -> 1 comments
+2026-08-10 02:44:37,281 INFO Reddit: post 1v60viq -> 13 comments
+2026-08-10 02:44:51,737 INFO Reddit: post 1v47c4g -> 23 comments
+2026-08-10 02:45:03,637 INFO Reddit: post 1v479hh -> 4 comments
+2026-08-10 02:45:17,625 INFO Reddit: post 1v2liig -> 14 comments
+2026-08-10 02:45:30,784 INFO Reddit: post 1v2jkxu -> 5 comments
+2026-08-10 02:45:48,841 INFO Reddit: post 1v1obu4 -> 54 comments
+2026-08-10 02:46:01,245 INFO Reddit: post 1uwg01w -> 12 comments
+2026-08-10 02:46:16,093 INFO Reddit: post 1uwb98s -> 20 comments
+2026-08-10 02:46:16,093 INFO Reddit[creator_sub] r/CarryMinati for CarryMinati -> 40 kept (0 off-topic, 0 stale, 40 returned)
+2026-08-10 02:46:51,337 INFO Reddit: post 1tyr3p8 -> 41 comments
+2026-08-10 02:46:51,337 INFO Reddit[topic_search] r/IndianGaming for CarryMinati -> 1 kept (1 off-topic, 10 stale, 12 returned)
+2026-08-10 02:46:56,293 INFO Reddit[topic_search] r/IndianYoutubers for CarryMinati -> 0 kept (0 off-topic, 14 stale, 4 returned)
+2026-08-10 02:46:56,293 INFO Reddit: CarryMinati -> 41 posts across 1 creator-sub(s) + 2 topic sub(s)
+2026-08-10 02:47:01,120 INFO Reddit[topic_search] r/india for Prajakta Koli -> 0 kept (0 off-topic, 0 stale, 0 returned)
+2026-08-10 02:47:06,206 INFO Reddit[topic_search] r/IndianYoutubers for Prajakta Koli -> 0 kept (0 off-topic, 0 stale, 0 returned)
+2026-08-10 02:47:06,206 INFO Reddit: Prajakta Koli -> 0 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 02:47:28,324 INFO Reddit: post 1v3vhqy -> 25 comments
+2026-08-10 02:47:28,324 INFO Reddit[topic_search] r/india for Technical Guruji -> 1 kept (0 off-topic, 9 stale, 10 returned)
+2026-08-10 02:47:34,211 INFO Reddit[topic_search] r/IndianYoutubers for Technical Guruji -> 0 kept (0 off-topic, 12 stale, 3 returned)
+2026-08-10 02:47:34,211 INFO Reddit: Technical Guruji -> 1 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 02:47:39,396 INFO Reddit[topic_search] r/india for Mumbiker Nikhil -> 0 kept (0 off-topic, 1 stale, 1 returned)
+2026-08-10 02:47:45,233 INFO Reddit[topic_search] r/IndianYoutubers for Mumbiker Nikhil -> 0 kept (0 off-topic, 2 stale, 1 returned)
+2026-08-10 02:47:45,233 INFO Reddit: Mumbiker Nikhil -> 0 posts across 0 creator-sub(s) + 2 topic sub(s)
+2026-08-10 02:48:03,214 INFO Reddit: post 1u79mk4 -> 1 comments
+2026-08-10 02:48:03,215 INFO Reddit[topic_search] r/india for Guru Mann -> 1 kept (0 off-topic, 3 stale, 4 returned)
+2026-08-10 02:48:21,248 INFO Reddit[topic_search] r/indianfitness for Guru Mann -> 0 kept (0 off-topic, 3 stale, 0 returned)
+2026-08-10 02:48:21,248 INFO Reddit: Guru Mann -> 1 posts across 0 creator-sub(s) + 2 topic sub(s)

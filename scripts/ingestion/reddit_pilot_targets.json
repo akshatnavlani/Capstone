@@ -1,0 +1,52 @@
+[
+ {
+  "name": "Karan Aujla",
+  "category": "lifestyle_influencer",
+  "instagram_handle": "karanaujla",
+  "reddit_handles": [],
+  "reddit_topic_subs": [
+   "india",
+   "IndianMusic"
+  ]
+ },
+ {
+  "name": "P.T.Usha",
+  "category": "athlete",
+  "instagram_handle": "ptushaofficial",
+  "reddit_handles": [],
+  "reddit_topic_subs": [
+   "india",
+   "Athletics"
+  ]
+ },
+ {
+  "name": "Ajinkya Rahane",
+  "category": "athlete",
+  "instagram_handle": "ajinkyarahane",
+  "reddit_handles": [],
+  "reddit_topic_subs": [
+   "Cricket",
+   "IndianCricket"
+  ]
+ },
+ {
+  "name": "Gujarat Titans",
+  "category": "team",
+  "instagram_handle": "gujarat_titans",
+  "reddit_handles": [],
+  "reddit_topic_subs": [
+   "ipl",
+   "Cricket"
+  ]
+ },
+ {
+  "name": "Delhi Premier League T20",
+  "category": "league",
+  "instagram_handle": "delhipremierleaguet20",
+  "reddit_handles": [],
+  "reddit_topic_subs": [
+   "Cricket",
+   "IndianCricket"
+  ]
+ }
+]
