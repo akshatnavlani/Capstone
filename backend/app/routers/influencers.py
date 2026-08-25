@@ -1,10 +1,11 @@
 """Brand-input -> ranked influencer list endpoint (PROJECT_PLAN.md Section 5,
 recommendation engine).
 
-Real ranking still depends on ML-Core's GAIL/Temporal outputs feeding the
-Fusion Layer -- until then, `final_score` is either a real stored
-FusionScore or a placeholder 0.5/0.5/0.5 fusion computation, and ordering
-among eligible candidates is always by `final_score` descending.
+Spillover is now real via GAIL checkpoint (c6488a6) — see app/spillover.py.
+w1 (spillover) real, w2 (sentiment_risk) still 0.5 placeholder (Temporal
+0% built, CAPSTONE_NEXT_STEPS.md:822); confidence reflects honest small-N
+(N=10) via spillover_half_width (trained ±15pts, inferred/placeholder ±25pts
+on 0-100). Track D must read spillover_basis to distinguish.
 
 What changed 2026-08-09 (was previously a no-op stub, see API_CONTRACTS.md):
 - budget: hard filter via `estimated_cost` (a placeholder followers/subscribers
@@ -42,6 +43,7 @@ from app.schemas import (
     InfluencerRecommendation,
     ScoreBreakdown,
 )
+from app.spillover import get_spillover_batch
 
 router = APIRouter(tags=["recommendations"])
 
@@ -104,8 +106,22 @@ def _to_recommendation(
     score: FusionScore | None,
     youtube_channel: YouTubeChannel | None,
     instagram_profile: InstagramProfile | None,
+    spillover_info: dict | None = None,
 ) -> InfluencerRecommendation:
-    if score is not None:
+    # Resolve spillover: live GAIL if available, else stored or placeholder.
+    # spillover_info comes from get_spillover_batch (has spillover_score, basis, confidence_*).
+    if spillover_info is not None:
+        spillover_score = spillover_info["spillover_score"]
+        spillover_basis = spillover_info["basis"]
+        spillover_hw = abs(spillover_info["confidence_high"] - spillover_score)
+        # Use stored sentiment/creator_feature if we have a row, else 0.5 placeholder (w2 placeholder)
+        sentiment = score.sentiment_risk_score if score is not None else 0.5
+        creator_feat = score.creator_feature_score if score is not None else 0.5
+        final_score, confidence_low, confidence_high, _risk_adj, breakdown = compute_fusion_score(
+            spillover_score, sentiment, creator_feat,
+            spillover_half_width=spillover_hw, spillover_basis=spillover_basis,
+        )
+    elif score is not None:
         breakdown = ScoreBreakdown(
             spillover_score=score.spillover_score,
             sentiment_risk_score=score.sentiment_risk_score,
@@ -115,9 +131,11 @@ def _to_recommendation(
             weight_creator_feature=settings.fusion_weight_creator_feature,
         )
         final_score, confidence_low, confidence_high = score.final_score, score.confidence_low, score.confidence_high
+        spillover_basis = getattr(score, "spillover_basis", "placeholder")
     else:
-        # No real score yet: placeholder inputs pending ML-Core output.
+        # No stored row and no GAIL info (should not happen — batch always provides), fallback
         final_score, confidence_low, confidence_high, _risk_adj, breakdown = compute_fusion_score(0.5, 0.5, 0.5)
+        spillover_basis = "placeholder"
 
     reach = max((youtube_channel.subscriber_count if youtube_channel else 0) or 0,
                 (instagram_profile.follower_count if instagram_profile else 0) or 0)
@@ -132,6 +150,7 @@ def _to_recommendation(
         final_score=final_score,
         confidence_low=confidence_low,
         confidence_high=confidence_high,
+        spillover_basis=spillover_basis,  # type: ignore[arg-type]
         estimated_reach=reach or None,
         estimated_cost=(reach * COST_PER_FOLLOWER_INR) if reach else None,
         score_breakdown=breakdown,
@@ -163,6 +182,14 @@ def get_recommendations(
     region_keywords = _extract_keywords(request.target_region)
     demographic_keywords = _extract_keywords(request.target_demographic)
     category_keywords = _extract_keywords(request.product_category)
+
+    # Batch-resolve spillover for all creators once (single GAT forward, cached)
+    spillover_map = {}
+    if not using_mock_creators:
+        try:
+            spillover_map = get_spillover_batch([c.creator_id for c in creators])
+        except Exception:
+            spillover_map = {}
 
     eligible: list[InfluencerRecommendation] = []
     for creator in creators:
@@ -215,11 +242,6 @@ def get_recommendations(
 
         score = None
         if not using_mock_creators:
-            # Looked up per-creator regardless of any_score_missing from a prior
-            # iteration -- a bug in the Weeks 1-2 version gated this on a single
-            # shared flag, so one creator lacking a score silently stopped real
-            # scores from being fetched for every creator after it in the loop.
-            # Found via adversarial self-check on 2026-08-09.
             score = session.exec(
                 select(FusionScore)
                 .where(FusionScore.creator_id == creator.creator_id)
@@ -228,7 +250,8 @@ def get_recommendations(
             if score is None:
                 any_score_missing = True
 
-        eligible.append(_to_recommendation(creator, score, youtube_channel, instagram_profile))
+        spillover_info = spillover_map.get(str(creator.creator_id)) if not using_mock_creators else None
+        eligible.append(_to_recommendation(creator, score, youtube_channel, instagram_profile, spillover_info))
 
     eligible.sort(key=lambda r: r.final_score, reverse=True)
     results = eligible[: request.max_results]

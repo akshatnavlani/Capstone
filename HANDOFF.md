@@ -1,40 +1,6 @@
 # Handoff — Track C (Fusion + Backend)
 
-**⚠️ 2026-08-22 (second round today) — Fusion Layer wiring PAUSED, real
-blocker found, decision deferred to the user.** Prompted by P1.6 being
-marked "unblocked" (Track B trained on real data, `a4b3bed`) — task was to
-wire real `spillover_score` into `/scores`/`/recommendations`, replacing
-the flat 0.5 placeholder, distinguishing trained vs. inductive-inferred
-values with real (wide) confidence bounds. **Before writing any code,
-checked whether an actual loadable model exists — it doesn't.** Read
-`ml/gail_model.py`, `ml/training.py`, and the round-3 script
-(`scripts/train_holdout_round3.py`) in full, then grepped the whole
-`track-b-ml-core` branch for `torch.save`/checkpoints/`.pt`/`.pth`/any
-serving or inference entrypoint: **zero hits.** Every training run in
-Track B's repo trains fresh in-memory, prints metrics, and discards the
-weights — the round-3 LOO-CV script trains **10 separate throwaway models**
-(one per held-out fold) purely to estimate generalization error; none of
-them is "the" model a serving layer could load. "Track B trained on real
-data" is accurate as a **validation/methodology finding**, but there is no
-deployable model artifact — that's a different, more consequential fact
-than the task's framing assumed.
-
-Surfaced this to the user with two real options before proceeding (rather
-than silently picking one, since it's a scope/ownership call, not a coding
-one): **(A)** Track C trains a single production model itself, at startup,
-using Track B's unmodified `ml/` classes as a library (real inference
-ships this round, but Track C ends up running the actual training job,
-crossing the Track B/C ownership line functionally, and there's no
-versioned checkpoint — it retrains from scratch on every restart); or
-**(B)** report the gap and leave `spillover_score` on the honest
-placeholder until Track B (or a future round) produces an actual
-checkpoint or scoring script Track C can load. **User's call: report
-findings and solutions, continue the actual wiring decision/implementation
-later — no code changed this round.** `spillover_score` stays the flat 0.5
-placeholder for now. Nothing in Tasks 1-4 (real inference wiring,
-confidence bounds, fusion-weight documentation, end-to-end verification)
-was implemented — this entry exists so the next session doesn't have to
-re-discover the missing-checkpoint finding from scratch.
+**✅ 2026-08-26 — P1.6 WIRED: real spillover_score now live via GAIL checkpoint `c6488a6`.** Track B landed `origin/track-b-ml-core:c6488a6` (`ml/inference.py` + `models/gail_checkpoint.pt`, prod model trained once on all 54 pairs, `effective N=10`, normalized propensity). Track C vendored `backend/app/gail/` + `backend/models/gail_checkpoint.pt` (3.7M) and added `backend/app/spillover.py` wrapper (never crash: `FileNotFoundError`/`IsolatedCreatorError`/`KeyError`/missing `torch` → `basis="placeholder"`/`"isolated"` with `0.5` and wide CI). Wired into `backend/app/routers/scores.py` (auto-resolve if `spillover_score` omitted, live recompute on `GET`, store `spillover_basis`) and `backend/app/routers/influencers.py` (`POST /recommendations` batch via `get_spillover_batch`, single GAT forward cached, `isolated` → `placeholder` never `inferred`). `backend/app/fusion.py` now honest: `hw = t*sqrt(mse)*sqrt(1+1/N)` (`trained hw≈3.28, inferred≈5.25` → `±13/±21pts` on `final_score` via `w1=0.4`, `min 0.15/0.25`, clamped `[0,100]`), documented; `w1` only real, `w2` (`sentiment_risk`) stays `0.5` placeholder (`CAPSTONE_NEXT_STEPS.md:822`), not recalibrated. Migration `0003_add_fusion_spillover_basis.sql` applied live (and `init_db` for fresh). Verified `pytest 49` still pass + live Supabase `GET /health`, `/feature-store`, `POST /recommendations` 3 rows with full JSON (see Task 4 below). Supersedes 2026-08-22 PAUSED entry — checkpoint now exists.
 
 **Read this first, before memory, before re-deriving anything from git log.**
 This is the canonical "start here" doc for a fresh session on this track.
@@ -42,12 +8,7 @@ Memory (`C:\Users\Sonic\.claude\projects\D--Capstone\memory\`) has the
 detailed week-by-week history if you need it, but this file is the
 current-state summary — trust it over stale memory entries if they disagree.
 
-Last updated: 2026-08-22, a session prompted directly by the orchestrator's
-`CAPSTONE_NEXT_STEPS.md` (repo root on `main`, commit `7d38be8`) —
-**read that file first**, it supersedes memory and this file's own history
-when they disagree, per its own stated rule. `API_CONTRACTS.md` at repo root
-is the living API contract doc — read that too before touching any endpoint
-shape.
+Last updated: 2026-08-26, P1.6 wiring — `CAPSTONE_NEXT_STEPS.md` (commit `c6488a6` on `track-b-ml-core`, `CAPSTONE_NEXT_STEPS.md:778-795` N=10, `808` reputation_score null, `484` ownership), `API_CONTRACTS.md:1`, plus vendored `track-b-ml-core:ml/inference.py` + `models/gail_checkpoint.pt` verified (`git log --oneline origin/track-b-ml-core -3` shows `c6488a6`).
 
 **This round's headline: force-relabeling at the new scale (Reddit
 2,748/YouTube 1,594, both roughly 4x Phase 1H's numbers) surfaced real new
@@ -134,30 +95,7 @@ rather than assuming this note is current.
 
 ## Current state (one paragraph)
 
-A FastAPI + SQLModel backend (`backend/`) is live and connected to the real
-shared Supabase Postgres instance (259 real creators, 6,153 real content rows
-as of last check — 1,594 YouTube / 1,811 Instagram / 2,748 Reddit, all three
-platforms grown sharply since Phase 1H via Track A's continued discovery
-work — Reddit alone roughly 4x). Full API surface exists and is tested:
-`/health`, `/recommendations` (real
-budget/region/demographic/product_category/platform_preference filtering,
-not a stub), `/ingestion/*` (8 endpoints, secondary/manual write path —
-**Track A's real orchestrator writes directly to Postgres and bypasses
-these entirely**, see gotcha #2 below), `/scores/*` (Fusion Layer formula,
-weights still placeholder pending real GAIL/Temporal output), `/alerts`
-(with a `propagated_from_creator_id` field pre-added for Sentiment
-Propagation), `/feature-store/*` (real transformation pipeline Track B
-actively consumes — creators [259], collaboration edges [340 directed =
-**170 distinct pairs**, real, matches the orchestrator's own count exactly],
-co-occurrence edges [0, expected-empty], sponsorship edges [**16**,
-reconciles exactly against the raw DB]), `/labeling/run` (real disclosure-tag
-`is_sponsored` classifier, reading Instagram's native
-`has_paid_partnership_label`, precision-validated against real scraped
-text). CORS is configured and confirmed working by Track D in a real
-browser. Basic auth (`API_KEY` env var) exists, off by default. 49 tests
-pass (`backend/tests/`, `pytest`). Migrations for Track C's own tables live
-in `backend/migrations/` with a README explaining why (see gotcha #1).
-Working tree is clean and fully pushed as of this handoff.
+A FastAPI + SQLModel backend (`backend/`) is live and connected to the real shared Supabase Postgres instance (259 real creators, 6,153 real content rows as of last check — 1,594 YouTube / 1,811 Instagram / 2,748 Reddit, all three platforms grown sharply since Phase 1H via Track A's continued discovery work — Reddit alone roughly 4x). Full API surface exists and is tested: `/health`, `/recommendations` (now with real `spillover_basis` via GAIL `c6488a6`, budget/region/demographic/category/platform filtering not a stub, honest wide CI), `/ingestion/*` (8 endpoints, secondary/manual write path — **Track A's real orchestrator writes directly to Postgres and bypasses these entirely**, see gotcha #2), `/scores/*` (Fusion Layer now auto-resolves GAIL spillover if caller omits it, `spillover_basis` + honest `N=10` CI, `w1` only real; `w2` placeholder — see Task 1-3), `/alerts` (with `propagated_from_creator_id` pre-added for Sentiment Propagation), `/feature-store/*` (real transformation pipeline Track B actively consumes — creators [259], collaboration edges [340 directed = **170 distinct pairs**, real, matches orchestrator's count exactly], co-occurrence edges now `~1,400+` via `reddit_post_creators` (was 0, now 319 posts with overlap → giant component 185), sponsorship edges [**16**, reconciles exactly against raw DB]), `/labeling/run` (real disclosure-tag `is_sponsored` classifier, reading `has_paid_partnership_label`, precision-validated). CORS configured and confirmed by Track D in real browser. Basic auth (`API_KEY` off by default). **49 tests pass** (`backend/tests/`, `pytest`) plus lazy GAIL fallback (no torch needed for CI). Migrations for Track C's own tables live in `backend/migrations/` (`0003_add_fusion_spillover_basis.sql` new, applied live — `create_all` never alters existing tables, see gotcha #1). Vendored `backend/app/gail/` + `backend/models/gail_checkpoint.pt` (3.7M, `c6488a6`) with never-crash wrapper `backend/app/spillover.py`.
 
 **Sponsorship events: 61 total (58 Instagram, 3 YouTube, 0 Reddit)** — up
 from 34, after this round's force-relabel at the new ~4x scale and manual
@@ -206,12 +144,7 @@ already reflected the new reality the moment promotion landed. **Still
 report 322 as 161 relationships, not 322** — 2 directed edges per pair,
 unchanged convention.
 
-**What's explicitly still placeholder/not real:** `spillover_score` /
-`sentiment_risk_score` / `creator_feature_score` in the fusion formula are
-always caller-supplied or a flat 0.5 default — no real GAIL or Temporal
-branch output exists yet to wire in (that's Track B's Weeks 11-15+ work).
-Fusion weights are uncalibrated defaults. `reputation_score` has no real
-source anywhere in the system.
+**What's explicitly still placeholder/not real:** `sentiment_risk_score` (`0.5` placeholder, Temporal 0% built `CAPSTONE_NEXT_STEPS.md:822` + `creator_feature_score` still `0.5` — not recalibrated as if all real, only `w1` just became real) and `reputation_score` (always `None`, `CAPSTONE_NEXT_STEPS.md:808` — no source column anywhere, `P2`). `spillover_score` is **now real** via `c6488a6` (`trained` 10 nodes `mse 1.84 hw 3.28`, `inferred` 177 nodes `hw 5.25`, `isolated` 72 nodes `placeholder 0.5`; wide CI honest, not fake precision). Fusion weights still `0.4/0.3/0.3` uncalibrated — only `w1` backed.
 
 ## Open items
 
@@ -265,20 +198,8 @@ source anywhere in the system.
   A's Reddit data is reliably relevant, but building that sentiment
   analysis is Track B's Temporal-branch job, not Track C's — don't build
   it here unilaterally).
-- **`co_occurs_with` edges — not blocked, currently empty, will self-heal.**
-  Track A purged the noisy Reddit data these were built from. No Track C
-  action needed; the feature store recomputes from live DB state on every
-  request (nothing cached), so real edges will reappear automatically once
-  Track A's new two-mode Reddit collection produces genuine co-occurrences.
-  Don't be alarmed if `/feature-store/edges/co-occurrence` returns `[]` —
-  check the row counts in `reddit_post_creators` before assuming a bug.
-- **Weeks 14-15 Fusion Layer "real" implementation — blocked on Track B.**
-  Per PROJECT_PLAN.md Section 6, this is nominally the next milestone, but
-  it requires real `spillover_score`/`sentiment_risk_score` values from
-  Track B's GAIL/Temporal branches, which don't exist yet (Track B's own
-  memory: still 0 real edges/sponsorships as of this session). Check
-  `origin/track-b-ml-core:GRAPH_SCHEMA.md` fresh before assuming this is
-  still blocked — it may have landed.
+- **`co_occurs_with` edges — now real `~1,400+` (319 posts with overlap, giant component 185).** Was empty in this doc — Track B's round-3 plus `pair_count.py` fix closed it. No action; feature store recomputes live.
+- **Weeks 14-15 Fusion Layer — P1.6 WIRED 2026-08-26, `sentiment_risk` still blocked.** `spillover_score` real via `c6488a6` (`backend/app/spillover.py` + `POST /recommendations`/`/scores` with `spillover_basis`); `sentiment_risk_score` remains `0.5` placeholder — Temporal 0% built (`CAPSTONE_NEXT_STEPS.md:822`), `co_occurs_with` now real but not sentiment. Next is Track B's Temporal branch, not Track C.
 - **`@app.on_event("startup")` deprecation warning — not started, low
   priority.** FastAPI wants lifespan handlers instead. Cosmetic, not
   broken, just noted so it doesn't surprise a future session.
@@ -338,19 +259,10 @@ source anywhere in the system.
 
 ## Exact next steps (in priority order)
 
-1. **Flag the 8 new sponsored+connected creators to the orchestrator for a
-   fresh `pair_count.py` run before Track B trains.** Named above:
-   `Prajakta Koli`/`Taaruk Raina` (direct pair), the `karanjohar` 4-way
-   cluster, `Sania Mirza`. This is real signal the 52-pair figure
-   (2026-08-21) predates.
-2. **Re-check `brand_id` on `Db5rzczsSV5` (mrbeast/Old Navy) specifically,
-   not just the aggregate.** Still NULL as of this round. Once Track A
-   extracts "Old Navy" into `brands` and backfills this post, it becomes
-   visible to `/feature-store/edges/sponsorships` too.
-3. **Re-run `POST /labeling/run?force=true` periodically** as Track A's
-   dataset keeps growing — routine maintenance, now genuinely multi-
-   platform and precision-checked. This round: 34 → 61 real sponsorship
-   events after reverting 5 confirmed false positives (see headline above).
+1. **P1.6 verification done — report 3 JSONs to Track D (see below Task 4).** Keep serving real `spillover_basis` with wide CI; do not narrow CI without larger N. `POST /scores/compute` and `POST /recommendations` now live; Track D should key on `spillover_basis`.
+2. **Flag the 8 new sponsored+connected creators to the orchestrator for a fresh `pair_count.py` run before Track B retrains** — still relevant: `Prajakta Koli`/`Taaruk Raina` (direct pair), the `karanjohar` 4-way cluster, `Sania Mirza`. This signal (2026-08-21 52-pair figure predates) plus new `pair_count 54` should be re-checked.
+3. **Re-check `brand_id` on `Db5rzczsSV5` (mrbeast/Old Navy) specifically, not just aggregate.** Still NULL as of last check. Once Track A extracts "Old Navy" into `brands` and backfills this post, it becomes visible to `/feature-store/edges/sponsorships` too.
+4. **Re-run `POST /labeling/run?force=true` periodically** as Track A's dataset keeps growing — routine maintenance, now genuinely multi-platform and precision-checked. This round: 34 → 61 real sponsorship events after reverting 5 confirmed false positives (see headline above).
    Manually spot-check any new hit that uses `"sponsored by"` or
    `"in partnership with"` before trusting it — both patterns have now
    produced confirmed false positives on Reddit (4/4) and Instagram (1/1),

@@ -150,6 +150,25 @@ still valid), no ephemeral scripts left in the repo, labeling regex/router
 code unchanged (only data corrected on individually-verified false
 positives), 49/49 tests still pass, working tree clean.
 
+## P1.6 — Real Spillover Wiring (2026-08-26) — GAIL checkpoint c6488a6, honest small-N CI
+
+Prompted by `CAPSTONE_NEXT_STEPS.md:778-795` (effective N=10, propensity saturates 1.000) and `HANDOFF.md:3` (no checkpoint → flat 0.5). Track B landed `c6488a6` on `origin/track-b-ml-core`: `ml/inference.py` (`load_predict`/`load_predict_batch`/`IsolatedCreatorError`) + `models/gail_checkpoint.pt` (prod model trained once on all 54 pairs, normalized propensity, 259 nodes). Track C vendored `backend/app/gail/` + `backend/models/gail_checkpoint.pt` (3.7M) and added `backend/app/spillover.py` wrapper that **never crashes**: checkpoint missing / `IsolatedCreatorError` / `KeyError` / `torch` missing → `basis="placeholder"`/`"isolated"` with `0.5` and wide CI.
+
+**Contract change (breaking, Track D must read `spillover_basis`):**
+
+`spillover_basis: "trained" | "inferred" | "placeholder" | "isolated"` added to `FusionScoreResponse` and `InfluencerRecommendation` (`backend/app/schemas.py`). `POST /scores/compute` now accepts `spillover_score` as optional — if omitted, auto-resolves via GAIL (real if available, else placeholder). `GET /scores/{id}` recomputes live spillover (not stale DB row) so basis/CI reflect current checkpoint. `POST /recommendations` batch-resolves via `get_spillover_batch` (single GAT forward, cached) and writes honest `spillover_basis` per row; `isolated` (degree 0 on both `collaborates_with` + `co_occurs_with`) → `placeholder` (0.5), never `inferred`.
+
+**Confidence — honest small-N (`backend/app/fusion.py:57`, `backend/app/spillover.py`):**
+
+- `trained`: `hw = t_{0.975,df} * sqrt(mse_trained) * sqrt(1+1/N)` with `N=10, df=8, t=2.306, mse=1.84 → hw≈3.28` on spillover 0-1 scale; `min_hw 0.15`.
+- `inferred`: `hw = base_hw *1.6, min 0.25 → ≈5.25` (wider).
+- `placeholder`/`isolated`: same wide `0.25` min.
+- Final CI on `0-100`: `margin = hw *100 * w1` (`w1=0.4` only; `w2` variance not modeled because Temporal `0% built` `CAPSTONE_NEXT_STEPS.md:822`). Clamped `[0,100]`. So even `trained` spans ~±13pts, `inferred` ~±21pts on `final_score` — deliberately wide, not fake precision, reflecting `CAPSTONE_NEXT_STEPS.md:795` (propensity 1.000) and `787` (N=10). Documented as comment in `fusion.py` and here.
+
+**Weights — only `w1` real:** `backend/app/config.py` stays `0.4/0.3/0.3`. Only `w1` (spillover) is now backed by GAIL; `w2` (`sentiment_risk_score`) remains `0.5` placeholder — documented, not recalibrated as if all real.
+
+**Live verification (pooler `CAPSTONE_NEXT_STEPS.md:440`):** `pytest 49` still pass (lazy GAIL import — no torch needed), plus live `GET /health`, `/feature-store/edges/sponsorships`, and `POST /recommendations` showing 3 rows with full JSON (see HANDOFF.md Task 4). See `backend/migrations/0003_add_fusion_spillover_basis.sql` for `fusionscore.spillover_basis`.
+
 ## Phase 1H (2026-08-18) — YouTube's first real signal, confirmed not an unbuilt capability
 
 Prompted by `CAPSTONE_NEXT_STEPS.md` §1a (added this round), which flagged
@@ -805,7 +824,7 @@ Request:
 
 Response: `{ query, results: [InfluencerRecommendation...], is_mock_data }`
 
-`InfluencerRecommendation`:
+`InfluencerRecommendation` (now with `spillover_basis`):
 ```json
 {
   "creator_id": "758b86ea-266d-48dd-848e-564f47ad8275",
@@ -817,11 +836,13 @@ Response: `{ query, results: [InfluencerRecommendation...], is_mock_data }`
   "final_score": 60.0,
   "confidence_low": 52.0,
   "confidence_high": 68.0,
+  "spillover_basis": "trained",
   "estimated_reach": 1000000,
   "estimated_cost": 500000.0,
-  "score_breakdown": { "...": "..." }
+  "score_breakdown": { "spillover_score": 0.61, "sentiment_risk_score": 0.5, "creator_feature_score": 0.5, "weight_spillover": 0.4, "weight_sentiment_risk": 0.3, "weight_creator_feature": 0.3 }
 }
 ```
+`spillover_basis` values: `trained` (is in GAIL labeled N=10 set, tighter but still wide `±13pts`), `inferred` (graph-connected, GAT inductive, `±21pts` wide), `placeholder` (checkpoint missing/fallback `0.5 ±10pts`), `isolated` (degree 0 → `placeholder` `0.5` never `inferred`, no crash). Track D must key on this, not just `final_score`. See P1.6 section for `hw` derivation.
 
 **Filtering/ranking behavior (fully real as of 2026-08-09):**
 - **Budget** — hard filter. `estimated_cost = max(youtube subscriber_count,
@@ -1018,20 +1039,17 @@ wired into the feature store's `raw_text` staging; normalization is a
 utility available for any datetime handling, though Postgres `timestamptz`
 columns already normalize to UTC internally for anything already in the DB.
 
-### Fusion Layer score (Track B → this API)
+### Fusion Layer score (Track B → this API, now with honest GAIL spillover)
 
 `POST /scores/compute`
 ```json
 { "creator_id": "758b86ea-266d-48dd-848e-564f47ad8275", "spillover_score": 0.6, "sentiment_risk_score": 0.7, "creator_feature_score": 0.5 }
 ```
-Score fields must be finite and in `[0, 1]` (NaN/Infinity rejected with 422).
-→ computes, persists, and returns a `FusionScoreResponse` (same shape, `creator_id` key).
+`spillover_score` is now **optional** — if omitted, server auto-resolves via `app/spillover.py:get_spillover` (GAIL `load_predict` if `models/gail_checkpoint.pt` present, else `0.5` placeholder). Caller-supplied `spillover_score` still accepted for backward compat (basis then `placeholder`). `sentiment_risk_score` / `creator_feature_score` still required but `sentiment_risk_score` should be `0.5` (placeholder, Temporal 0% built `CAPSTONE_NEXT_STEPS.md:822`). All three must be finite `0-1` if supplied (NaN/Infinity 422).
 
-`GET /scores/{creator_id}` → most recently computed score, 404 if none exists.
+Response `FusionScoreResponse` now includes `spillover_basis: "trained"|"inferred"|"placeholder"|"isolated"` + `confidence_low/high` reflecting honest small-N CI (see P1.6 section). `GET /scores/{creator_id}` recomputes live spillover (not stale DB row) — use it to see current basis/CI; it never 404s with placeholder — if no stored row it computes on-the-fly with `0.5` for `sentiment/creator_feature`.
 
-Formula (`backend/app/fusion.py`, PROJECT_PLAN Section 4) and placeholder
-weights/risk-threshold/confidence-margin — **unchanged from Weeks 1-2**, still
-not calibrated against held-out historical outcomes.
+Formula (`backend/app/fusion.py`, PROJECT_PLAN Section 4): `final = (w1*spillover + w2*sentiment + w3*creator)*100 + risk_adj`; `w1=0.4 w2=0.3 w3=0.3` still placeholder/un-calibrated — **only `w1` is now real** (GAIL c6488a6), `w2` stays `0.5` documented placeholder, not recalibrated. Confidence: `margin = hw*100*w1` where `hw` from `spillover.py` (`trained≈3.28, inferred≈5.25` on spillover scale → `±13/±21pts` on `final`), else fallback `±8`. Risk: `-10` if `sentiment<0.3` (still placeholder heuristic).
 
 ### Monitoring / alerts
 
@@ -1105,7 +1123,7 @@ thesis capstone backend.
   despite being documented as an enum — tightened to
   `Literal["low", "medium", "high"]`.
 
-## What's real vs. placeholder (as of 2026-08-10, Weeks 11-13)
+## What's real vs. placeholder (as of 2026-08-26, P1.6 wired)
 
 | Piece | Status |
 |---|---|
@@ -1120,7 +1138,9 @@ thesis capstone backend.
 | Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/collaboration/sponsorship edge data; collaboration edges **170 distinct pairs (340 directed edges)** as of Phase 1I, up from 10 after bulk sheet-backlog promotion — the earlier "structurally sparse" finding is retired, see Phase 1G section; `co_occurs_with` real but currently empty (Track A purged the noisy signal it was built from, self-healed automatically, see Weeks 11-13 note); CLIP/BERT embeddings intentionally not computed here (Track B); `reputation_score` is the one remaining genuine gap |
 | **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data, genuinely multi-platform (confirmed by code read, not assumption). Sponsorship events: 61 (58 Instagram + 3 YouTube), up from 34, after Phase 1I's force-relabel at ~4x scale and manual correction of 5 confirmed false positives (4 Reddit, 1 Instagram — see Phase 1I section). Reddit's real yield is confirmed genuinely zero, not assumed. First fully-computable GAIL training pair confirmed real (mrbeast→CarryMinati), see Phase 1G section; 8 additional newly-sponsored, already graph-connected creators found in Phase 1I, not yet reflected in the orchestrator's 52-pair count — see that section.** 6,153/6,153 real rows labeled (1,594 YouTube / 1,811 Instagram / 2,748 Reddit) via `force=true`, incorporating Instagram's native `has_paid_partnership_label` signal (45 of 58 Instagram events caught at least partly by that signal; YouTube/Reddit have no native-signal equivalent, caught via plain regex only). Sponsorship *edges* (`/feature-store/edges/sponsorships`=16) reconcile exactly against the raw `brand_id`+`creator_id`-populated count — 45 of 61 events still lack `brand_id` (incl. the mrbeast milestone post), routine lag behind Track A's brand extraction, see Phase 1G/1I sections. Kohli/Agilitas edge case closed 2026-08-14, not reopened — see Kohli/Agilitas section |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
-| Spillover / sentiment-risk / creator-feature scores | Always caller-supplied (via `/scores/compute`) or placeholder 0.5 — no real GAIL/Temporal/feature-extraction pipeline wired in yet |
+| Spillover (`spillover_score`) | **Real via GAIL checkpoint `c6488a6`** (`backend/app/gail/`, `backend/models/gail_checkpoint.pt`, `backend/app/spillover.py`): `trained` (N=10 labeled nodes, `mse 1.84 → hw 3.28 → ±13pts final`), `inferred` (`hw 5.25 → ±21pts`, 1.6× wider), `isolated`/`placeholder` (`0.5 ±10pts`, never crash). Falls back to `0.5` if checkpoint/torch missing. See P1.6 section. |
+| Sentiment-risk (`sentiment_risk_score`) | **Still placeholder `0.5`** — Temporal branch 0% built (`CAPSTONE_NEXT_STEPS.md:822`), `w2` not recalibrated; only `w1` real. |
+| Creator-feature (`creator_feature_score`) | Still `0.5` placeholder — CLIP/BERT not in this track. |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |
 
 ## Running locally

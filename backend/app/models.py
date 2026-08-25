@@ -253,6 +253,7 @@ class FusionScore(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     creator_id: uuid.UUID = Field(index=True)
     spillover_score: float
+    spillover_basis: str = Field(default="placeholder", description="trained|inferred|placeholder|isolated — honest provenance for Track D")
     sentiment_risk_score: float
     creator_feature_score: float
     final_score: float

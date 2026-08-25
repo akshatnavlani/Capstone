@@ -38,6 +38,9 @@ class BrandRecommendationRequest(BaseModel):
     max_results: int = Field(default=10, ge=1, le=50)
 
 
+SpilloverBasis = Literal["trained", "inferred", "placeholder", "isolated"]
+
+
 class InfluencerRecommendation(BaseModel):
     creator_id: uuid.UUID
     name: str
@@ -48,6 +51,7 @@ class InfluencerRecommendation(BaseModel):
     final_score: float = Field(description="0-100")
     confidence_low: float
     confidence_high: float
+    spillover_basis: SpilloverBasis = Field(description="trained=in labeled GAIL pair, inferred=graph-connected unlabeled (GAT inductive), placeholder=checkpoint missing/fallback, isolated=degree 0")
     estimated_reach: Optional[int] = Field(default=None, description="Engagement-per-rupee proxy, not sales/conversion")
     estimated_cost: Optional[float] = Field(default=None, description="Placeholder cost heuristic used for budget filtering, see API_CONTRACTS.md")
     score_breakdown: ScoreBreakdown
@@ -176,7 +180,7 @@ class IngestionResponse(BaseModel):
 
 class FusionScoreComputeRequest(BaseModel):
     creator_id: uuid.UUID
-    spillover_score: float = Field(ge=0, le=1, allow_inf_nan=False, description="From GAIL branch")
+    spillover_score: Optional[float] = Field(default=None, ge=0, le=1, allow_inf_nan=False, description="From GAIL branch; if omitted, auto-resolved via GAIL checkpoint (or placeholder)")
     sentiment_risk_score: float = Field(ge=0, le=1, allow_inf_nan=False, description="From Temporal branch (incl. sentiment propagation)")
     creator_feature_score: float = Field(ge=0, le=1, allow_inf_nan=False, description="From creator feature extraction")
 
@@ -188,6 +192,7 @@ class FusionScoreResponse(BaseModel):
     confidence_high: float
     risk_adjustment: float
     breakdown: ScoreBreakdown
+    spillover_basis: SpilloverBasis = Field(description="trained/inferred/placeholder/isolated — see InfluencerRecommendation.spillover_basis")
     computed_at: datetime
     is_placeholder_formula: bool = Field(
         description="True until weights are calibrated against held-out historical outcomes (Section 4)"
