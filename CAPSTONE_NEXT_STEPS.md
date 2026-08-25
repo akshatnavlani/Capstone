@@ -770,9 +770,39 @@ classification: individual / team-or-club (keep) / business-brand (exclude) / me
 dedup migration already resolved it; this doc's claim was stale. Left here as a record that it
 was checked, not assumed.
 
-**P1.6 Fusion layer has never received a real spillover score** *(B → C)*
-The last unclosed integration seam. Track C's formula uses placeholder weights. Blocked until B
-trains on real data.
+**✅ P1.6 UNBLOCKED 2026-08-22 — Track B trained on real data for the first time.** Fusion Layer
+can now receive a real (if limited) spillover score; wiring it in is the immediate next Track C
+task, not blocked anymore. See the Phase 1 round 3 findings directly below for what "real" means
+here — genuine but small-N, honestly characterized, not a validated model yet.
+
+**📌 REVIEW 2 BACKLOG — Track B Phase 1 round 3 findings (2026-08-22), deliberately deferred,
+don't lose these:**
+- **`co_occurs_with` edges: 0 → ~1,400+, independently confirmed by the orchestrator (319 Reddit
+  posts now show genuine multi-creator overlap, up from a documented structural zero).** This
+  consolidated the graph from 12 small clusters into 2, with a 185-node giant component (was 53).
+  **`pair_count.py`'s adjacency may only draw from `creator_related_accounts` and miss this
+  entirely** — if so, the current 54/57-pair figure is an undercount. Highest-value Review 2
+  follow-up: check and fix this before trusting any future pair count as complete.
+- **The 54-pair headline collapses to an effective N of 10 distinct creator-nodes** for the
+  current per-node prediction target — 16 of the 34 lift-computable rows are all the same
+  underlying Kohli signal (his Reddit engagement genuinely jumped starting 2026-08-05) measured
+  from different anchor dates, not 16 independent examples. **Track B's own top-ranked fix**:
+  redesign the target to be per-(event, neighbor) rather than per-node — turns those 16 rows into
+  16 real signals. Likely bigger leverage than further data collection.
+  - LOO-CV (N=10, the honest count): headline MSE 67.19 vs. 67.36 baseline — meaningless, one
+    outlier fold (Kohli) is >99% of total error. Excluding it: 14% better than baseline on the
+    other 9, real but statistically unprovable at N=9.
+  - **Propensity model saturates to 1.000 on held-out nodes in all 10 folds** — the overlap
+    identification assumption is not empirically satisfied by this run. Real, honestly
+    documented limitation, not glossed over. Track B's second-ranked fix: normalize creator
+    features before the propensity head.
+  - Two real data-quality bugs found and fixed in the delta computation before they corrupted
+    results: NULL→0 coalescing on sparse engagement columns was fabricating fake multi-million-
+    percent phantom lifts; partial (non-random) missingness on `like_count` required both
+    engagement columns present before treating a delta as computable.
+- **Current framing for the thesis**: this is genuine pipeline/methods validation with honest
+  small-N caveats, not yet a validated predictive result. Correct and sufficient for Review 1;
+  the three items above are what closes the gap toward Review 2.
 
 ### P2 — known gaps, not yet blocking
 
