@@ -272,19 +272,10 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
 - Edge weight semantics (raw counts vs. normalized) for `collaborates_with`
   — currently unspecified pending real data shape from Track A;
   `ml/schema.py` just reserves a scalar `edge_attr` slot.
-- **`co_occurs_with` has no data source at all** (confirmed by Track C's
-  feature-store code, not just unbuilt) — no co-starring/tagging signal
-  exists anywhere in Track A's schema. Either needs a new Track A ingestion
-  field or gets inferred from something not yet collected. Not Track B's
-  call to add scope to Track A's pipeline unilaterally.
+- **`co_occurs_with` now HAS a data source (resolved 2026-08-22, updated 2026-08-26: 0 → 1414 directed via `reddit_post_creators` junction, 185-node giant).** Was "no source" until Track A's junction landed — now real, verified live via `pair_count` and `scripts/train_prod_model.py` build. `pair_count.py` still draws only from `creator_related_accounts` (REVIEW 2 BACKLOG undercount) — pair count may undercount until co_occurs is included in its adjacency.
 - **`reputation_score` has no source column anywhere** (same — confirmed by
   Track C, always `None`). Open, no owner assigned yet.
-- **Real-data validation of the GAT/GraphSAGE finding is real-feature-value
-  validated but STILL NOT real-graph-structure validated as of 2026-08-10**
-  — re-checked this round, still 0 real `collaborates_with` edges (data
-  collection gap, not evidence against real collaborations). Re-run
-  `scripts/validate_gat_on_real_data.py` the moment real edges exist — see
-  "Real-data status" below for exact current counts.
+- **Real-data validation of the GAT/GraphSAGE finding is now real-graph-structure validated (340 collab directed, 1414 co_occurs, 259 creators) as of 2026-08-22/26** — forward pass + inductive (append 15 synthetic nodes, no retrain, no NaN) re-passed on both. See newest Real-data status.
 - **GraphSAGE backbone decision — provisionally accepted 2026-08-09,
   PROJECT_PLAN.md Section 3a updated** (see "Why GAT over GraphSAGE"
   above): GAT already satisfies the plan's stated inductive rationale, so
@@ -305,6 +296,18 @@ the Weeks 11-15 timeline (Causal Inference combiner validation).
   below) — `is_sponsored`/`sponsorship_raw_matches` are now correctly
   `Optional`/unpopulated in their ingestion schemas, matching Track A's
   real DB. No longer open.
+
+## Real-data status (2026-08-26, prod artifact — train ONCE on ALL pairs, P1.6 unblock)
+
+**Same live graph as 2026-08-22 LOO** — re-pulled via `pair_count.py` + `scripts/train_prod_model.py:1` DB-direct build (not feature-store dump): **259 creators, 19 brands, 340 directed collab edges (170 undirected pairs), 1414 co_occurs_with directed, 16-17 sponsorship edges, 185-node giant component + 2-node pair + 72 isolates (27.8 %)**, max degree 39-40, `checks_evaluated` 138 / `events_total` 53 / `events_yielding` 40. **Canonical pair count unchanged: 54 rows, 23 directed / 19 undirected pairs** (`pair_count.py` fresh import, Track A's single definition).
+
+**Prod vs LOO — what changed beyond the graph staying put.** `scripts/train_holdout_round3.py:1` is LEAVE-ONE-OUT (10 folds, hold out 1 of 10 nodes, 50 epochs/fold) for *evaluation* — headline MSE 67.19 vs 67.36 baseline (>99 % from Kohli outlier). `scripts/train_prod_model.py:1` is the *deployable* path: train **ONCE on ALL 10** labelled nodes (100 epochs, full `train_mask` over all, `doubly_robust_weights` with `treatment`, same `ml/gail_model.py:1` / `ml/training.py:1` / `ml/schema.py:1` stack). **Fixes the two NULL bugs** (`WHERE e1 IS NOT NULL AND e2 IS NOT NULL`, per-platform lift `(after-before)/(before+1)` mean, cross-platform-only 20/54 counted separately) — same fixes as `scripts/compute_training_pair_deltas.py`. **Fixes propensity saturation** (`CAPSTONE_NEXT_STEPS.md:795`, `GRAPH_SCHEMA.md:402`): per-dim z-score `feature_scaler` (mean abs 0.224 std 0.236, std clamped 1e-6) applied as `data["creator"].x = x_norm` so `PropensityScoreModel` sees normalized 1289-dim input.
+
+**Prod calibration (honest, not held-out):** `MSE trained 1.84 vs baseline 67.36` — headline 97 % drop is *not* generalization (no held-out), it is in-sample fit on N=10 and is dominated by Virat Kohli (`target +25.874 pred +21.616 sq_err 18.13` = 98 % of residual sum). Other 9 all sq_err <0.10 (Gurfateh 0.092, Wamiqa 0.063, Mohitt 0.055, ...). LOO 67.19 remains the honest held-out number; prod is for shipment. Propensity now mean 0.61 min 0.00 max 1.00 (was 1.000 on held-out in all 10 LOO folds) — centred, not stuck, but extremes (0, 1) persist at N=10: overlap not fully satisfied, reported as limitation. No NaN. Deterministic (seed 0, `hidden 16 heads 2`).
+
+**Artifact & loader (Track C integration point).** `models/gail_checkpoint.pt` (3.7 MB, git SHA `ef826cd` baked, <100 MB so committed) — `state_dict` + `config` + `feature_scaler` (z-score) + `training_pair_ids` (10) + 4-reading + `graph` (order, names) + `tensors` (creator_x_norm, brand_x, 340/1414 edges, treatment/target) + `training_stats` (per-node, final propensity). `ml/inference.py:1` — `load_predict(creator_id: str) -> {spillover_score, basis: "trained"|"inferred", confidence_low/high}` (`IsolatedCreatorError` for degree 0, `FileNotFoundError` if checkpoint missing) + `load_predict_batch`; **confidence WIDE for small-N** (t 2.306 df=8 × residual_std 1.355 × sqrt(1+1/10) ≈ 3.28 half-width trained, 5.25 inferred, floors 0.15/0.25). GAT inductive for `inferred` (single cached forward pass, no retrain). Verified on live HeteroData: `trained` CarryMinati `0.339 [-2.94,3.62]`, `inferred` abdevilliers17 `1.191 [-4.06,6.44]`, `isolated` _bungy_lover_.01 raises `IsolatedCreatorError`; batch + missing-file also verified. `report.md` at worktree root is the durable trail; `backend/app/routers/scores.py:1` 0.5 placeholder at `deaf630` can now be wired via `load_predict`.
+
+**Sufficiency call unchanged in kind:** 54 rows / 10 nodes clears pair-COUNT bar (~50-100 tier) but N=10 with one pseudo-replicated outlier (16 of 34 rows = same Kohli Reddit jump) is **pipeline/methods validation, not a validated predictive result** for the thesis. Top lever remains per-(event,neighbour) target design (16 real signals vs 1); second lever (propensity norm) now done.
 
 ## Real-data status (2026-08-22, Phase 1 round 3 — first genuine held-out training attempt)
 
