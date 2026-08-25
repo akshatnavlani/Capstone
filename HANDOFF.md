@@ -1,28 +1,55 @@
 # HANDOFF — Track A (Data/Infra)
 
 **Start here.** Canonical entry point for a fresh session on this track. Last updated
-**2026-08-19 — tech-debt loop CLOSED; attribution/coverage loop IN PROGRESS. Pairs 37 -> 26 after verified re-attribution; the ownership audit had a real defect, see the top section.** Branch: `track-a-data-infra`.
+**2026-08-26 02:00 IST — read-only verification; canonical 54 pairs (was 52), 259 creators, 170-edge graph stable, 8 newly-sponsored+connected creators verified.** Branch: `track-a-data-infra`.
 Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
 ## ⏩ 30-SECOND RESUME — read this before anything else
 
-- **The loop is finished. Do not restart it and do not re-run Phase 0 from scratch.** It
-  stopped on its own "Sufficient" condition: **37 computable training pairs**, target was
-  ≥ 20. Both cron jobs (`225af3a3` and the pre-crash `8b00cead`) are cancelled — `CronList`
-  reports no scheduled jobs. If a loop prompt fires again, that is a stale schedule, not work.
-- **The live state is the `✅ LOOP COMPLETE (2026-08-18)` section** (search for it — it sits
-  partway down this file). Everything between here and it is *older* than it. Chronology in
-  this file runs newest-at-top *within* each block but the blocks themselves are appended, so
-  trust the dates, not the position.
-- **Re-verify before acting on any number**: `python scripts/ingestion/loop_stats.py` reprints
-  the entire Phase 0 table in ~10s against the live DB. That is the only thing worth re-running.
-- **Instagram and Reddit must run SEQUENTIALLY.** The resource-separation hypothesis was
-  tested this loop and **failed** — see "Phase 1" below. Do not casually re-test it.
-- **Four decisions are waiting on the user** (out-of-window posts, ±1-day dates, 3
-  mis-routed handles, Reddit's weakness). None were actioned unilaterally.
+- **Current canonical: 54 computable pairs** (was 52 `CAPSTONE_NEXT_STEPS.md:641`). Verified 2026-08-26 02:00 IST via `python scripts/ingestion/pair_count.py` (sole definition `pair_count.py:92`) and `loop_stats.py`. `259` creators, `170` undirected edge pairs, `1811/1811` Instagram dated. Report at `report.md` (this round).
+- **8 newly-sponsored+connected creators flagged in `track-c:36bebd4` Phase 1I (Prajakta↔Taaruk mutual, karanjohar↔Bhuvan↔Pratibha↔Gurfateh 4-way, Sania) were NOT in the 52. Re-verified live: they now contribute 23 of 54 pairs (42%, 12 distinct directed) — real signal predating 52 — but net delta is only **+2** because 70 of their 93 checks still fail on `BEFORE=0` / silent neighbours (`nikkhiladvani`, `jimmysheirgill` etc). See `report.md` and `## 2026-08-26` below.**
+- **No scraping / no schema change this round — read-only.** Instagram adapter still throttled 18h+ (`chrome-error://chromewebdata/`, Reddit via same bridge works); ownership census `690/1752 (39.4%)` remains blocked but durable.
+- **Next to do: nothing blocks Track B.** Train on **54-pair** set (not pre-shortcode 10-pair). Track B backlog `CAPSTONE_NEXT_STEPS.md:834`: `co_occurs_with` ~1400 edges not counted by `pair_count.py:65`, per-node `54→10`, propensity saturates.
+- **Re-verify before acting on any number:** `python scripts/ingestion/pair_count.py` + `loop_stats.py` reprint the entire state in ~10s against live DB via pooler `CAPSTONE_NEXT_STEPS.md:486`. Instagram+Reddit must run **SEQUENTIALLY** (resource-separation failed — `HANDOFF.md` Phase 1).
 
-Then read `DATA_COLLECTION_STATUS.md` (backend state + measurements), `ORCHESTRATION.md`
-(pipeline design + the parallelization rule), `SCHEMA.md` (DB contract for other tracks).
+Then read `DATA_COLLECTION_STATUS.md`, `ORCHESTRATION.md`, `SCHEMA.md`, and this round's `report.md`.
+
+## 2026-08-26 02:00 IST — Read-only verification round (54 pairs) — Track A
+
+**Task:** `python scripts/ingestion/pair_count.py` + `loop_stats.py` (canonical, no hand-roll) against live DB, 4 readings, delta vs 52 `CAPSTONE_NEXT_STEPS.md:587`, cross-check 8 newly sponsored+connected creators `HANDOFF.md:108`/`36bebd4`, re-print creators / `creator_related_accounts` directed+distinct / `instagram_posts` dated / `is_sponsored` with `brand_id` for Track B.
+
+**Commands + timestamps (IST):**
+- `2026-08-26 01:58` `git pull origin main` — already up-to-date
+- `2026-08-26 01:59` `python scripts/ingestion/pair_count.py` — see 4 readings below
+- `2026-08-26 01:59` `python scripts/ingestion/loop_stats.py` — see §Final numbers
+- `2026-08-26 02:00` `psycopg2` pooler queries — see Live DB state
+
+**4 readings (canonical `pair_count.py:127`):**
+- event×neighbor rows (CANONICAL) **54** (was 52, **+2**)
+- event×neighbour checks evaluated **138** (was 137, +1)
+- dated sponsorship events **53** (was 49, +4) — `57` total dated `54 IG+3 YT` minus 4 orphan (Jeet Selal 2, RAGI, SAGAR)
+- events yielding ≥1 pair **40** (was 37, +3)
+- distinct directed **23** (was 23, 0)
+- distinct undirected **19** (was 20, −1)
+- collab edge pairs **170** (was 170, 0)
+- fail: `BEFORE 37 / AFTER 9 / silent 38` (was `56/6/48` in older 27-pair era; now tighter)
+
+**Live DB state (pooler, `orchestrator.ENV["DATABASE_URL"]`):**
+`creators 259` / `creator_related_accounts 873 rows / 203 directed distinct / 170 undirected` / `instagram_posts 1811 total / 1811 dated (100%)` / `instagram is_sponsored 58 / has_paid_partnership_label 45 / (is_sponsored OR label) dated+creator_id 54 / total 58 = 18 with brand_id / 40 without` / `youtube_videos 1607 / is_sponsored 3 (0 with brand_id)` / `reddit_posts 2748 / is_sponsored 0` / `brands 19`.
+
+**8 creators cross-check (live re-derived via `pair_count.py:86` CANDIDATES):**
+All 7 handles exist: `mostlysane`, `taarukraina`, `karanjohar`, `bhuvan.bam22`, `pratibha_ranta`, `gurfatehpirzada`, `mirzasaniar`. Sponsored events among them `22` (Bhuvan 6, karanjohar 6, Prajakta 2, Taaruk 4, Pratibha 2, Gurfateh 1, Sania 1). Resolved edges among them `8` directed rows (Bhuvan→karanjohar/pratibha/gurfateh, Gurfateh→pratibha, karanjohar→pratibha, Prajakta→Taaruk, Pratibha→karanjohar/gurfateh); Sania's outgoing is to family/academy (`parikshitbalochi/nasimamirza/saniamirzatennisacademy/suhan.khnofficial`), not directly to karanjohar — incoming from `saniamirzatennisacademy/nasimamirza`. **93 checks** with an 8-member as owner produce **23 pairs** (12 distinct directed) — i.e. the 8 dominate current `54`. Net `+2` only because many early events still `BEFORE=0` and neighbours `nikkhiladvani/jimmysheirgill/mihirahuja_*` silent.
+
+**Bugs / throttle / verification proof:**
+No writes, no throttle hit (read-only). Prior Instagram 18h+ throttle still operative but not exercised. Verification proof: verbatim `pair_count.py` + `loop_stats.py` logs captured 01:59, `psycopg2` counts 02:00, per-check audit re-deriving `CANDIDATES` and mapping `creator_id→handle` captured at 02:00 — all in `report.md`.
+
+**Resolved vs still-open:**
+- ✅ This round: canonical pair count re-verified, 8-creator delta quantified, Track B N snapshot produced, durable trail `report.md` written.
+- ⏳ Still open (waiting on user/not Track A): ownership census `690/1752`, 95 Instagram-unattempted handles, any window widening beyond `1095` (`CAPSTONE_NEXT_STEPS.md:661` capped), `co_occurs_with` undercount in `pair_count.py:65`.
+
+**Next priority:** Track B trains on **54**; Track C wires `P1.6` spillover; Track A resumes census only after throttle clears (sustained scan). Do not re-run Phase 0 loops.
+
+---
 
 ---
 
