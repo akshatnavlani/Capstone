@@ -1,7 +1,7 @@
 # HANDOFF — Track A (Data/Infra)
 
 **Start here.** Canonical entry point for a fresh session on this track. Last updated
-**2026-08-26 02:00 IST — read-only verification; canonical 54 pairs (was 52), 259 creators, 170-edge graph stable, 8 newly-sponsored+connected creators verified.** Branch: `track-a-data-infra`.
+**2026-08-26 17:41 IST — Review 1 closing; canonical 54 pairs (was 52), 259 creators, 170-edge graph stable, 8 newly-sponsored+connected creators verified, stopping state clean CAPSTONE_NEXT_STEPS.md:690.** Branch: `track-a-data-infra`.
 Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
 ## ⏩ 30-SECOND RESUME — read this before anything else
@@ -14,15 +14,18 @@ Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
 Then read `DATA_COLLECTION_STATUS.md`, `ORCHESTRATION.md`, `SCHEMA.md`, and this round's `report.md`.
 
-## 2026-08-26 02:00 IST — Read-only verification round (54 pairs) — Track A
+## 2026-08-26 — Review 1 closing (54 pairs, re-verified 17:41 IST) — Track A — stopping state clean
 
-**Task:** `python scripts/ingestion/pair_count.py` + `loop_stats.py` (canonical, no hand-roll) against live DB, 4 readings, delta vs 52 `CAPSTONE_NEXT_STEPS.md:587`, cross-check 8 newly sponsored+connected creators `HANDOFF.md:108`/`36bebd4`, re-print creators / `creator_related_accounts` directed+distinct / `instagram_posts` dated / `is_sponsored` with `brand_id` for Track B.
+**Review 1 closing — stopping state clean `CAPSTONE_NEXT_STEPS.md:690`, window capped `1095` `CAPSTONE_NEXT_STEPS.md:614`, census `690/1752` pending throttle — a fresh session resumes without chat by reading this section + `report.md`.**
+
+**Task:** `python scripts/ingestion/pair_count.py:1` + `loop_stats.py:1` (canonical, no hand-roll) against live DB, 4 readings, delta vs 52 `CAPSTONE_NEXT_STEPS.md:587`, cross-check 8 newly sponsored+connected creators `HANDOFF.md:108`/`36bebd4`, re-print creators / `creator_related_accounts` directed+distinct / `instagram_posts` dated / `is_sponsored` with `brand_id` for Track B. No scraping/writes this round.
 
 **Commands + timestamps (IST):**
 - `2026-08-26 01:58` `git pull origin main` — already up-to-date
-- `2026-08-26 01:59` `python scripts/ingestion/pair_count.py` — see 4 readings below
-- `2026-08-26 01:59` `python scripts/ingestion/loop_stats.py` — see §Final numbers
-- `2026-08-26 02:00` `psycopg2` pooler queries — see Live DB state
+- `2026-08-26 01:59` `python scripts/ingestion/pair_count.py` — 54 pairs (see 4 readings below)
+- `2026-08-26 01:59` `python scripts/ingestion/loop_stats.py` — 259 creators, 170 edges
+- `2026-08-26 02:00` `psycopg2` pooler queries — live DB state re-verified (see below)
+- `2026-08-26 17:41` `git pull origin main` + `pair_count.py:1`/`loop_stats.py:1`/`psycopg2` — re-verified **same 54/23/19/40**, `259`/`873/203/170`/`1811`/`58 (18 brand)`/`1607`/`2748`/`19` — report not stale, no overwrite needed
 
 **4 readings (canonical `pair_count.py:127`):**
 - event×neighbor rows (CANONICAL) **54** (was 52, **+2**)
