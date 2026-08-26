@@ -1,6 +1,6 @@
 # Handoff — Track B (ML-Core)
 
-Start here. Last updated 2026-08-26 (prod artifact + sentiment sanity check). Read `CAPSTONE_NEXT_STEPS.md` at repo
+Start here. Last updated 2026-08-26 — Review 1 close (prod artifact + sentiment PASS: 259/340/170/1414, N=10). Read `CAPSTONE_NEXT_STEPS.md` at repo
 root FIRST, every session (`git pull origin main` — it lives on `main`,
 rewritten frequently, supersedes this file and memory when they disagree),
 then this file, then `GRAPH_SCHEMA.md` (the full technical spec, kept
