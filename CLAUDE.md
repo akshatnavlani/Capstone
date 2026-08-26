@@ -1,5 +1,22 @@
 # CLAUDE.md
 
+## 0. READ FIRST, EVERY SESSION
+
+**Before doing anything else in this project, read [`CAPSTONE_NEXT_STEPS.md`](CAPSTONE_NEXT_STEPS.md).**
+
+It is the living source of truth for: current project state, the verified live DB schema and its
+constraints, known problems ranked by severity, the phased plan through to thesis submission,
+track ownership, and standing rules earned from real incidents. It supersedes memory when the two
+disagree.
+
+Two habits that go with it:
+- **Re-verify before acting on a specific number** — the file records when each fact was last
+  live-checked, and data changes daily.
+- **Update it when something changes** — fixed problems, completed phases, new findings. A stale
+  plan is worse than none. Commit the update.
+
+---
+
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
