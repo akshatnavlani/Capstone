@@ -4,7 +4,7 @@ Owner: Track C (Fusion+Backend). Updated whenever the contract changes — treat
 edits to this file as high-signal for Tracks A/B/D, since there's no live
 channel between sessions, only git.
 
-**Status as of 2026-08-22 (post-Phase-1I round):** all endpoints below are live
+**Status as of 2026-08-26 (Review 1 close — P1.6 wired, `65ec502`):** all endpoints below are live
 (FastAPI + SQLModel, `backend/`). Full OpenAPI/Swagger UI is auto-generated at
 `/docs` when the server is running (`GET /openapi.json` for the raw spec).
 
