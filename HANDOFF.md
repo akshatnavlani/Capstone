@@ -1,10 +1,22 @@
 # Handoff — Track B (ML-Core)
 
-Start here. Last updated 2026-08-26 (prod artifact). Read `CAPSTONE_NEXT_STEPS.md` at repo
+Start here. Last updated 2026-08-26 (prod artifact + sentiment sanity check). Read `CAPSTONE_NEXT_STEPS.md` at repo
 root FIRST, every session (`git pull origin main` — it lives on `main`,
 rewritten frequently, supersedes this file and memory when they disagree),
 then this file, then `GRAPH_SCHEMA.md` (the full technical spec, kept
 current every round) for depth on any item below.
+
+## What changed this round (2026-08-26 — sentiment sanity check, read-only)
+
+**Sentiment sanity check — read-only, no schema/model changes.** Verified live via pooler `CAPSTONE_NEXT_STEPS.md:440` (`DATABASE_URL` pooler) that comment volume suffices for `reputation_score`/`Sentiment Propagation` (`CAPSTONE_NEXT_STEPS.md:808` 0% built, `818-822` Temporal 0% + `w2` placeholder).
+
+- **Pools (live):** `youtube_comments` 54181, `instagram_comments` 24822, `reddit_comments` 55194, `reddit_posts` 2748 (`reddit_post_creators` 3359 junction not counted for sentiment). Per-creator with ≥1: YT 39 avg 1389 median 592, IG 56 avg 416 median 434, RD comments via post join 109 avg 506 median 304, RD posts 111 avg 24.8. **149/259 creators (57.5 %) have ≥1 comment any platform** — not all, but dozens sufficient.
+- **Top-10 total volume (yt+ig+rd_c):** Ronaldo 9012, LeBron 6970, Mumbiker 5540, mrbeast 5328, **CarryMinati 5174 (GAIL N)** , Gaurav 4756, Gujarat 4424, Prajakta 4391, ATHLEAN-X 4345, **Virat Kohli 4283 (GAIL N, natural candidate c4b20…)** — adapted task SQL: `reddit_comments` has no `creator_id` (verified `information_schema`), so counted via `JOIN reddit_posts ON rc.post_id=rp.post_id WHERE rp.creator_id=c.creator_id`.
+- **Top-3 sampled (20-50 texts each, `ORDER BY posted_at DESC`, non-null verified):** Ronaldo 70 texts (17.1 % emoji-only), CarryMinati 70 (10 % emoji), Virat 50 (32 % emoji) — each ≥30 non-empty, `std` 0.88/0.87/0.825 measurable.
+- **Pipeline used (honest):** `transformers pipeline('sentiment-analysis', model='distilbert-base-uncased-finetuned-sst-2-english')` — binary SST-2, available in `.venv` 5.14.1 (no VADER fallback needed; stated explicitly).
+- **Sentiment per creator (50 texts, mean_signed -1..1, std, %pos/%neg/%neu @0.60):** Ronaldo **-0.003 std 0.884 %pos 42 %neg 52 %neu 6**; Carry **-0.349 std 0.869 %pos 30 %neg 70**; Kohli **-0.210 std 0.825 %pos 30 %neg 62 %neu 8** — range 0.346 (not all 0.5, variance real). Bucket examples with excerpts in `report.md`. SST-2 mislabels Hindi/emoji (e.g., `Relatable` → NEG 0.999) — reported honestly, English-only limitation noted.
+- **Verdict for `CAPSTONE_NEXT_STEPS.md:79` Review 1 last box:** **PASS** — ≥1 creator (in fact 3 demonstrated, 149 overall) has ≥30 comments with non-empty text (70/70/50 pooled, >68 % alphanum) and measurable variance (range 0.346, std >0.8, not all 0.5). Overall pools 134k comments support per-creator `reputation_score` and time-series bucketing; pipeline variance proves signal not constant. **Blockers remain** per `808`/`818-822`: `reputation_score` computation 0% built, Temporal `w2` placeholder, SST-2 English-only needs multilingual, 110/259 creators still 0 comments (isolated), brand features sparse — volume passes but implementation remains 0% built, as expected for sanity check.
+- **Trail:** `report.md` § `## Sentiment sanity check 2026-08-26` appended with exact SQL, top-10 table, 3-creator breakdowns, verdict verbatim. No DB writes, no new tables.
 
 ## What changed this round (2026-08-26 — prod artifact, P1.6 unblock)
 

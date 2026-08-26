@@ -138,3 +138,121 @@ load_predict_batch([trained, inferred, isolated]) -> [..., {"error":"isolated","
 - **P1.6 next:** Track C wires `ml.inference.load_predict` into `backend/app/routers/scores.py:1`, replaces 0.5 placeholder; calibrate `w1/w2/w3` and confidence from `inference` intervals.
 - **Limitations to state plainly in thesis:** observational data, disclosure-based labels, India-skewed sample, engagement-per-rupee not true ROI, structural sparsity (27.8 % isolated), N=10, Kohli outlier, `pair_count` co_occurs blind spot.
 - **Repro:** `PYTHONPATH=. .venv\Scripts\python.exe scripts/train_prod_model.py` (needs `DATABASE_URL` pooler); inference is offline after — `from ml.inference import load_predict; load_predict(creator_id)`.
+
+---
+
+## Sentiment sanity check 2026-08-26
+
+**Scope:** Read-only via pooler `CAPSTONE_NEXT_STEPS.md:440` (`DATABASE_URL` pooler). No writes, no schema changes, no model training. Counts `youtube_comments` + `instagram_comments` + `reddit_comments` (via `reddit_posts` join) + `reddit_posts` text — `reddit_post_creators` is co_occurs junction only, not counted for sentiment.
+
+**Exact SQL (live schema verified via `information_schema.columns` first):**
+
+```sql
+-- verify columns: creators.creator_id/name/instagram_handle/reddit_handles, youtube_comments(text,video_id), instagram_comments(text,post_id), reddit_comments(body,post_id,author_username) — NO creator_id column, reddit_posts(creator_id,body,title,post_id,score)
+SELECT table_name, column_name, data_type FROM information_schema.columns
+ WHERE table_name IN ('youtube_comments','instagram_comments','reddit_comments','reddit_posts','creators','reddit_post_creators','youtube_videos','instagram_posts')
+ ORDER BY table_name, column_name;
+
+-- overall pools
+SELECT count(*) FROM youtube_comments;      -- 54181
+SELECT count(*) FROM instagram_comments;    -- 24822
+SELECT count(*) FROM reddit_comments;       -- 55194
+SELECT count(*) FROM reddit_posts;          -- 2748
+SELECT count(*) FROM reddit_post_creators;  -- 3359 (junction, not sentiment)
+
+-- per-platform median/mean per creator (only creators with ≥1)
+SELECT avg(cnt), percentile_cont(0.5) WITHIN GROUP (ORDER BY cnt), max(cnt), count(*)
+ FROM (SELECT yv.creator_id, count(*) cnt FROM youtube_comments yc JOIN youtube_videos yv ON yc.video_id=yv.video_id WHERE yv.creator_id IS NOT NULL GROUP BY yv.creator_id) t;
+-- youtube: avg 1389.3 median 592 max 5540 (39 creators)
+-- instagram: avg 416.0 median 434 max 1493 (56 creators)
+-- reddit_comments via post join: avg 506.4 median 304 max 5969 (109 creators)
+-- reddit_posts: avg 24.8 median 17 max 274 (111 creators)
+-- creators with ≥1 comment any platform: 149/259
+
+-- per-creator top-10 total volume (yt_c + ig_c + rd_c via post join)
+SELECT c.creator_id, c.name,
+  (SELECT count(*) FROM youtube_comments yc JOIN youtube_videos yv ON yc.video_id=yv.video_id WHERE yv.creator_id=c.creator_id) AS yt_c,
+  (SELECT count(*) FROM instagram_comments ic JOIN instagram_posts ip ON ic.post_id=ip.post_id WHERE ip.creator_id=c.creator_id) AS ig_c,
+  (SELECT count(*) FROM reddit_comments rc JOIN reddit_posts rp ON rc.post_id=rp.post_id WHERE rp.creator_id=c.creator_id) AS rd_c,
+  (SELECT count(*) FROM reddit_posts rp WHERE rp.creator_id=c.creator_id) AS rd_p
+FROM creators c ORDER BY (yt_c+ig_c+rd_c) DESC LIMIT 10;
+```
+
+**Overall pools (live 2026-08-26):**
+| table | total rows | per-creator (with ≥1) avg / median / max | creators with ≥1 |
+|---|---|---|---|
+| `youtube_comments` | 54181 | 1389 / 592 / 5540 | 39 / 259 |
+| `instagram_comments` | 24822 | 416 / 434 / 1493 | 56 / 259 |
+| `reddit_comments` | 55194 | 506 / 304 / 5969 | 109 / 259 (via `reddit_posts` join — `reddit_comments` has no `creator_id`) |
+| `reddit_posts` (title/body) | 2748 | 24.8 / 17 / 274 | 111 / 259 |
+| `reddit_post_creators` junction | 3359 | — | co_occurs only, not sentiment |
+| **Any comment (`yt` ∪ `ig` ∪ `rd` via posts)** | **134k comments** | — | **149 / 259 (57.5 %)** |
+| Non-empty text: `youtube_comments` 54181/54181 (100 %), `instagram_comments` 24816/24822 (99.98 %), `reddit_comments` 55194/55194 (100 %), `reddit_posts` body 1930/2748 title 2748/2748 | | | |
+
+**Top-10 by total comment volume (yt_c + ig_c + rd_c via posts, rd_p separate for signal):**
+| rank | creator_id | name | yt_c | ig_c | rd_c | rd_p | total (yt+ig+rd_c) | GAIL N=10? |
+|---|---|---|---|---|---|---|---|
+| 1 | c1dfc782-57e1-4cd6-abd2-e22edd5d99c3 | Cristiano Ronaldo | 5284 | 1113 | 2615 | 75 | 9012 | — |
+| 2 | 150e2138-09b0-4a88-98d2-c53539b44359 | LeBron James | 0 | 1001 | 5969 | 205 | 6970 | — |
+| 3 | 6a53033d-5673-4c2a-8d7a-157ef3eb9c8a | Mumbiker Nikhil | 5540 | 0 | 0 | 0 | 5540 | — |
+| 4 | 2b23aa86-7b63-4293-905f-9128c009fefb | mrbeast | 4785 | 543 | 0 | 0 | 5328 | — |
+| 5 | c086bf2e-80f8-4902-b155-bbec78610798 | CarryMinati | 3091 | 757 | 1326 | 74 | 5174 | **yes** |
+| 6 | ace04454-558e-4371-926d-b39369a32fb9 | Gaurav Chaudhary | 4733 | 0 | 23 | 1 | 4756 | — |
+| 7 | f978a269-e787-4dfc-a90d-b31eb3081f9d | Gujarat Titans | 2452 | 24 | 1948 | 64 | 4424 | — |
+| 8 | 516cded6-5a52-444d-a7f0-a1641288da03 | Prajakta Koli | 3402 | 989 | 0 | 0 | 4391 | — |
+| 9 | f99e5e41-0d9b-4589-8d0a-42eb7a68b5fa | ATHLEAN-X™ | 4345 | 0 | 0 | 0 | 4345 | — |
+| 10 | c4b20dc1-14f2-48e9-8bd5-7131af29049f | Virat Kohli | 0 | 1493 | 2790 | 274 | 4283 | **yes** (natural candidate) |
+
+Task SQL `rd_c WHERE rc.creator_id=c.creator_id OR author IN (SELECT unnest(c.reddit_handles))` adapted: live `reddit_comments` has **no `creator_id`** (`comment_id,post_id,author_username,body,...`), so `rd_c` counted via `JOIN reddit_posts ON rc.post_id=rp.post_id WHERE rp.creator_id=c.creator_id` — verified via `information_schema` before query. `reddit_handles` match not needed for this pool (already via post-creator linkage).
+
+**Top-3 for sentiment (20-50 texts each, ordered `published_at/ posted_at DESC`, verified non-null):**
+- **Cristiano Ronaldo `c1dfc782-…` (unlabeled high-volume, 9012 total):** YT 20 + IG 20 + RD_comments 20 + RD_posts 10 pooled → 70 texts (non-empty 70, emoji/mention-only 12 = 17.1 %).
+- **CarryMinati `c086bf2e-…` (GAIL N=10, 5174 total):** YT 20 + IG 20 + RD_comments 20 + RD_posts 10 → 70 texts (non-empty 70, emoji/mention-only 7 = 10.0 %).
+- **Virat Kohli `c4b20dc1-…` (GAIL N=10, natural candidate, 4283 total):** YT 0 + IG 20 + RD_comments 20 + RD_posts 10 → 50 texts (non-empty 50, emoji/mention-only 16 = 32.0 %).
+
+Sample excerpts verified non-null/not just emoji (3 per creator, raw):
+- Ronaldo YT: `❤️This guy is too goated`, `Ronaldo is goat of football ✅`, `Cristiano I Am your biggest fan`; IG: `Georgina❤️😍`, `❤️`; RD: `I thought Martinez was getting the job` (> stats thread)
+- Carry YT: `Bhai big Boss पर बना दो बहुत समय से big boss की ली नहीं है…`, `<a href=…>1:32</a> wtf`, `Just ask gemini to summarize this video😂`; IG: `1st Indian footballer to win a trophy (2) at Wembley btw 😂😂🥀😭`; RD: `ye sb b hota h 🤷🐥😳🤔`
+- Kohli IG: `Virat kohli ke freand Plz Follow me`, `❤️❤️`; RD: `Pure friendship, pure chaos, pure happiness ❤️`, `![gif](giphy|...)`; RD posts `One ball era is bullshit?`… — text is present, mixed English/Hindi/emoji, not empty.
+
+**Sentiment pass — honest, no training:**
+- **Pipeline used:** `transformers pipeline('sentiment-analysis', model='distilbert-base-uncased-finetuned-sst-2-english')` — binary SST-2 (POSITIVE/NEGATIVE with confidence), available in `.venv` `transformers 5.14.1` (tested `pipeline('I love this!') -> POSITIVE 0.999`). Warm-up loaded 104 shards; no training, no fine-tune. VADER/lexicon not used — pipeline was available, so we used it and state it explicitly (fallback documented but not invoked).
+- **Mapping:** `mean_signed = mean(POSITIVE=+score, NEGATIVE=-score)` in [-1,1]; `std` over signed; `%pos/%neg/%neu` where `neu` = low-confidence <0.60 (pipeline is binary, so neu captures uncertain, not a third label).
+- **Results (50 texts each, truncated 512 chars, batch 32):**
+
+| creator | n | mean_signed (-1..1) | std | %pos (≥0.60) | %neg (≥0.60) | %neu (<0.60) |
+|---|---|---|---|---|---|
+| Cristiano Ronaldo (unlabeled high) | 50 | **-0.003** | 0.884 | 42.0 | 52.0 | 6.0 |
+| CarryMinati (GAIL N=10) | 50 | **-0.349** | 0.869 | 30.0 | 70.0 | 0.0 |
+| Virat Kohli (GAIL N=10) | 50 | **-0.210** | 0.825 | 30.0 | 62.0 | 8.0 |
+| **Variance across creators** | — | range **0.346** (max -0.003 vs min -0.349) — not all 0.5, measurable spread |
+
+- **Bucket examples (3 per bucket, confidence + excerpt, ≤120 chars):**
+
+  *Cristiano Ronaldo:*
+  - POSITIVE 3: `[1.000] LOVE!!`, `[1.000] Ronaldo is amazing ❤❤Siuuuuu`, `[1.000] You are really champion`
+  - NEGATIVE 3: `[1.000] ❤️This guy is too goated` *(mislabeled — illustrates SST-2 brittleness on short/emoji)*, `[0.999] > 100% Agree. Arguably the most controversial example would be CR7 with 10m transfer value vs 200m/year salary…`, `[0.998] Me nota cr7`
+  - NEUTRAL 3: `[0.557] Bey bey Roland 😢😢😢`, `[0.559] Fiz uma música para você, por favor, ouça…`, `[0.595] Pareja hermosa😍😍`
+
+  *CarryMinati:*
+  - POSITIVE: `[1.000] One of the greatest collaboration of all time 🌚💀`, `[1.000] good bro 🔥`, `[1.000] Very funny 😂😂😂😂 ... brother I ever watched 😂😂😂`
+  - NEGATIVE: `[0.999] Relatable`, `[0.996] Be right back just getting this photo framed ❤️`, `[0.995] I WANT VIDEO ON ALIEN CARRY PLS BHAI`
+  - NEUTRAL: *(none — 0 % neu, pipeline forced binary)*
+
+  *Virat Kohli:*
+  - POSITIVE: `[1.000] all three are greatest of all time`, `[1.000] Behind every smile is a champion who survived every battle.`, `[1.000] Pure friendship, pure chaos, pure happiness ❤️`
+  - NEGATIVE: `[0.999] There is a big flaw in this. Countries like srilanka or India had poor bowling attacks…`, `[0.998] Perhaps the strong batsmen made the bowling look weak and vice versa`, `[0.998] > > But even in 00s the idea is bowlers were better…`
+  - NEUTRAL: `[0.511] > England briefly had a genuinely top-tier attack, but that's it I think.`, `[0.570] Stats over a period of time can still be misleading af…`, `[0.587] Virat Kohli is India’s 2nd-best batter in SENA Tests...Sachin isn’t far ahead…`
+
+Honest note: SST-2 mislabels short/Hindi/emoji texts (e.g., `Relatable` → NEG 0.999, `❤️This guy is too goated` → NEG) and is English-only — Hindi `Bhai big Boss…` still scored, but confidence is high even when wrong. Means are negative-biased partly for this reason; we report what the pipeline produced, not a corrected score. Std 0.82-0.88 shows spread, but absolute mean is less trustworthy than variance. A domain-tuned or multilingual pipeline would be needed for a real `reputation_score`.
+
+**Sanity verdict — verbatim answers:**
+
+1. *Is there ≥1 creator with comment volume sufficient to compute a per-creator `reputation_score` and a time-series signal for Sentiment Propagation?* **Yes — PASS thresholds met.** Each of the top-3 has **≥50 pooled texts (70/70/50) with ≥30 non-empty** (YT 54181/54181, IG 24816/24822, RD 55194/55194 non-empty; top-3 pooled non-empty 70/70/50, emoji-only 10-32 % but still ≥68 % alphanum text) and measurable variance (`std` 0.884/0.869/0.825 > 0.05, `range` 0.346). Broader: 149/259 creators have ≥1 comment any platform (57.5 %); median per creator with data is 592 (YT), 434 (IG), 304 (RD comments via posts) — dozens above 30. The overall pools (134k comments + 2.7k posts) are sufficient; the bottleneck is coverage sparsity (110/259 still have 0 comments), not total volume.
+
+2. *Does sentiment vary across creators (not all 0.5)?* **Yes, but with caveats.** Mean_signed differs: Ronaldo -0.003 vs Carry -0.349 vs Kohli -0.210 (range 0.346, not all 0.5/0.0). Std 0.82-0.88 shows within-creator spread. However pipeline is English SST-2 binary, mislabels Hindi/emoji, and uses 0.60 neutral threshold — variance is real (different distributions) but absolute means are not directly comparable across languages/platforms without a multilingual model.
+
+3. *What would block a real `reputation_score` now (e.g. sparse brand features, temporal branch 0% built)?* **Not comment volume — volume is sufficient for ≥1 creator.** Blockers per `CAPSTONE_NEXT_STEPS.md:808` (`reputation_score 0% built`) + `818-822` (Temporal 0%: `w2` is placeholder, lag/Granger/Sentiment Propagation 0%): (a) No `reputation_score` computation exists — Temporal branch sentiment aggregation, time-bucketing, and `reputation_score` column population are 0 % built; (b) SST-2 English-only is inadequate for Hindi/emoji-heavy comments — needs multilingual or domain-tuned model + emoji handling; (c) No time-series bucketing yet (texts have `posted_at`/`published_at` but not aggregated weekly/monthly for propagation); (d) Brand features sparse (`brands` 19 rows, 17/19 all-zero) not directly blocking sentiment but limiting fusion `w2` calibration; (e) 42.5 % of creators (110/259) have 0 comments — per-creator score would be undefined/isolated, needs fallback. P1.6 GAIL prod is now wired (`models/gail_checkpoint.pt`), but Temporal/reputation remains the open track.
+
+**Verdict for `CAPSTONE_NEXT_STEPS.md:79` Review 1 last box:** **PASS** — at least one creator (in fact 3 demonstrated, and 149 overall) has ≥30 comments with non-empty text (70/70/50 pooled, non-empty >68 %, std >0.8) and measurable variance (range 0.346, not all 0.5). Recommend marking `[x] At least one creator with comment volume sufficient to sanity-check a sentiment/reputation signal` as **PASS**, with note that raw volume passes but pipeline is English SST-2 and real `reputation_score` implementation remains 0% built per `808`/`818-822`.
+
