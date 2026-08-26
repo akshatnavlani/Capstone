@@ -4,7 +4,7 @@
 the project actually is, what's broken, and what remains between here and the thesis. It
 supersedes memory when they disagree — memory is a pointer, this is the record.
 
-Last verified: **2026-08-11** (live DB queried directly, all four worktrees inspected).
+Last verified: **2026-08-26** (live DB via pooler + 4 worktrees — Review 1 closed: 259/54/170 wired end-to-end, see §1 Review 1 closed).
 
 ---
 
@@ -71,14 +71,10 @@ event have `brand_id`, does a connected neighbor have pre-event history) — not
 structural criteria before declaring a milestone's data "ready," not just the headline counts.
 
 **Review 1 — "basic dry run," the bar for THIS check-in:**
-- [x] ~100 creators (260, well past the floor)
-- [x] **Computable training pairs: 52** (2026-08-21, canonical script, orchestrator-verified
-      directly) — past not just "at least one" but the ~50-100 thesis-defensible tier. See P0.4
-      for the full breakdown and how it got here.
-- [x] Real collaboration edges: 170 (unchanged since bulk promotion, still healthy).
-- [ ] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a
-      sentiment/reputation signal — likely already true given Reddit's growth (55 creators with
-      content, 2,649 posts) but not yet explicitly checked against this specific bar.
+- [x] ~100 creators (259, well past the floor — 260→259 after Athletics dedup)
+- [x] **Computable training pairs: 54** (2026-08-26, canonical `pair_count.py` 138 checks / 53 dated events / 40 yielding / 23 directed / 19 undirected / 170 graph — was 52 on 2026-08-21, +2 from 8 newly sponsored+connected creators; see P0.4)
+- [x] Real collaboration edges: 170 (340 directed / 1,414 `co_occurs_with`, giant 185 — unchanged undirected since bulk promotion, still healthy).
+- [x] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a sentiment/reputation signal — **PASS 2026-08-26 Track B**: 149/259 with ≥1 comment (134k pools: 54k YT + 24.8k IG + 55k Reddit) — top-3 50 texts each (Ronaldo 9012, Carry 5174, Kohli 4283), SST-2 mean range 0.346 std>0.8, English-only mislabels noted — `reputation_score` still 0% `§5` but volume sufficient for sanity.
 
 **Review 2 — "GAIL trains for real, fusion produces real scores":**
 - [ ] Sponsorship events: 300+ (established Phase 2 target)
@@ -97,6 +93,10 @@ structural criteria before declaring a milestone's data "ready," not just the he
 - [ ] Limitations section grounded in what was actually found this project (observational data,
       disclosure-based treatment labels, structural graph sparsity, India-skewed sample,
       engagement-per-rupee not true ROI) — not a generic boilerplate list
+
+### 2026-08-26 - Review 1 CLOSED - end-to-end wired, demoable
+
+Frozen main @ this commit + tag review1-2026-08-26 + branch review-1. Live DB: 259 creators / 54 pairs (138 checks, 53 events, 40 yielding, 23 directed/19 undirected, 170 graph) / 340 directed collaborates_with + 1,414 co_occurs_with (giant 185, 72 isolates 27.8%) / 6,153 posts (1,607 YT /1,811 IG 100% dated /2,748 Reddit) / 58 is_sponsored IG +3 YT +0 Reddit (18 with brand_id) / 19 brands / 134k comments (54k YT +24.8k IG +55k Reddit). Track A 918fb5c re-verified 54; B 5f8706f prod artifact models/gail_checkpoint.pt c6488a6 (N=10, hw 3.28 trained +/-13pts, inferred x1.6 +/-21pts, propensity mean 0.61 after z-score fix, sentiment 149/259 PASS); C b3905ef wired backend/app/spillover.py:1 + fusion.py:57 (basis trained|inferred|isolated|placeholder, w2 placeholder) 65ec502 - 3 archetypes c4b20 Virat trained 21.61->100 [0-100] / 89972 AB inferred 1.19->77 [0-100] / 78e48 _bungy isolated 0.5->50 [40-60]; D 5861f4d SpilloverBadge.tsx:1 wired, npm run build + lint pass, CORS localhost:3000 verified, 5 routes 200. Review 1 demo: brand-input -> dashboard -> explainability shows emerald/violet/zinc badges + wide CI + placeholder footnotes - honest small-N thesis story. PENDING_TRACK_D.md deleted. Next: Review 2 (300+ events /500+ edges / sentiment reputation_score real / brand profile data).
 
 ### 1a. Batch-readiness criteria (added 2026-08-18) — when to stop deepening the current 259 and
 promote the next batch
