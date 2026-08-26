@@ -1,2 +1,12 @@
 .claude/settings.local.json
 .agents/
+
+# Backend (track-c-fusion-backend)
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.env
+backend/*.db
+backend/*.sqlite3
+backend/.pytest_cache/
+backend/**/.pytest_cache/
