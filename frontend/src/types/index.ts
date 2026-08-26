@@ -1,11 +1,13 @@
 // Mirrors Track C's backend/app/schemas.py exactly (re-checked against
-// origin/track-c-fusion-backend commit ec9833d, 2026-08-09/10). See
+// origin/track-c-fusion-backend commit 65ec502, 2026-08-26 P1.6). See
 // WIREFRAMES.md for the full mismatch history.
 
+export type SpilloverBasis = "trained" | "inferred" | "placeholder" | "isolated";
+
 export interface ScoreBreakdown {
-  spillover_score: number; // 0-1
-  sentiment_risk_score: number; // 0-1
-  creator_feature_score: number; // 0-1
+  spillover_score: number; // nominal 0-1, but live GAIL can be >>1 (e.g. Virat 21.6) — render raw
+  sentiment_risk_score: number; // 0-1 — STILL PLACEHOLDER 0.5 per CAPSTONE_NEXT_STEPS.md:822 (Temporal branch 0% built) — do not present as real
+  creator_feature_score: number; // 0-1 — still placeholder 0.5 (CLIP/BERT not in this track)
   weight_spillover: number;
   weight_sentiment_risk: number;
   weight_creator_feature: number;
@@ -30,6 +32,9 @@ export interface InfluencerRecommendation {
   final_score: number; // 0-100
   confidence_low: number;
   confidence_high: number;
+  // Honest provenance per backend/app/schemas.py:65ec502 + API_CONTRACTS.md P1.6.
+  // Optional for stale sessionStorage (old cache lacks field) — render fallback ?? "placeholder".
+  spillover_basis?: SpilloverBasis;
   estimated_reach: number | null;
   estimated_cost: number | null; // placeholder cost heuristic used for budget filtering
   score_breakdown: ScoreBreakdown;

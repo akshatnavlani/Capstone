@@ -12,5 +12,18 @@ export function useStoredRecommendationResult(): BrandRecommendationResponse | n
     () => sessionStorage.getItem("recommendationResult"),
     () => null
   );
-  return raw ? (JSON.parse(raw) as BrandRecommendationResponse) : null;
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as BrandRecommendationResponse;
+    // Defensive: old sessionStorage (pre-65ec502) lacks spillover_basis → fallback to "placeholder"
+    // so stale cache never crashes rendering. New responses always carry the field.
+    if (parsed.results) {
+      for (const r of parsed.results) {
+        if (!r.spillover_basis) r.spillover_basis = "placeholder";
+      }
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
 }

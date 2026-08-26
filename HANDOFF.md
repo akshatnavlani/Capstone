@@ -1,142 +1,62 @@
 # Track D (Frontend+App) — Handoff
 
-Last updated: 2026-08-10, end of Weeks 11-13 round. Written for a fresh
-session with no memory of prior conversations — start here before reading
-anything else, including your own memory files (which are scattered across
-many small entries and easy to piece together wrong).
-
-Worktree: `D:\Capstone-worktrees\track-d-frontend-app`, branch
-`track-d-frontend-app`, off `github.com/akshatnavlani/Capstone`. Frontend
-code lives in `frontend/` (not repo root). `WIREFRAMES.md` at repo root is
-the living wireframe/API-contract doc — read it alongside this file, don't
-duplicate it here.
+Last updated: 2026-08-26, P1.6 wired. Branch `track-d-frontend-app`, worktree `D:\Capstone-worktrees\track-d-frontend-app`, off `github.com/akshatnavlani/Capstone`. Frontend code lives in `frontend/` (not repo root). `WIREFRAMES.md` is the living wireframe/API-contract doc — read it alongside this file. `CAPSTONE_NEXT_STEPS.md:1` (restored this round via `git pull origin main`) and `API_CONTRACTS.md:1` (from `track-c-fusion-backend:65ec502`) are the cross-track sources of truth.
 
 ## Current state (one paragraph)
 
-Next.js 16 + TypeScript + Tailwind v4 app with 5 routes (`/`, `/brand-input`,
-`/dashboard`, `/monitoring`, `/explainability`), all wired to Track C's real
-backend API (no mock data in the frontend code itself — `is_mock_data` is a
-real field Track C returns and the UI surfaces it honestly). Docker
-build/run is fully verified for real (not just `next build` succeeding —
-actual `docker build` + `docker run` + curl against all 5 routes, 200s with
-real content). The full brand-input → dashboard → explainability →
-monitoring flow has been real-browser-tested twice against the live
-Supabase DB (once against athlete creators, once against a diversified set
-including content creators with different data-completeness shapes), with
-zero console errors both times. Monitoring resolves creator names
-client-side with a graceful fallback for orphaned references. What's *not*
-built: the explainability network-graph/causal-insights view is still an
-explicit, honest placeholder — correctly so, see open items below, not an
-oversight.
+Next.js 16 + TypeScript + Tailwind v4 app with 5 routes (`/`, `/brand-input`, `/dashboard`, `/monitoring`, `/explainability`), wired to Track C's real backend at `NEXT_PUBLIC_API_BASE_URL` (default `http://127.0.0.1:8000`). **NEW this round:** `/recommendations` now serves honest `spillover_basis: "trained"|"inferred"|"placeholder"|"isolated"` + `confidence_low/high` + `score_breakdown` where `sentiment_risk_score` is still **placeholder 0.5** per `CAPSTONE_NEXT_STEPS.md:822` (Temporal branch 0% built, only `w1=0.4` real). Dashboard and explainability render a `SpilloverBadge` per creator (Trained / Inferred — wide CI / Placeholder / Isolated — no graph signal) with a custom accessible hover card explaining `N=10 df=8 t=2.306 mse1.84 → hw≈3.28 trained / 5.25 inferred` → final margin `hw·100·w1` clamped [0,100] (`±13pts` trained, `±21pts` inferred, `±10pts` placeholder/isolated) and propensity `1.000` uncertainty — never present inferred as validated. Isolated creators (degree 0) degrade gracefully to placeholder `0.5` with explicit "no graph signal" text, never inferred. `sentiment_risk_score` is labeled as placeholder in both views; we do not invent a sentiment score. `useStoredRecommendationResult` falls back `spillover_basis ?? "placeholder"` for old cached `sessionStorage`. Docker `next build` verified; `frontend/.env.local` points at live backend. Prior browser-verified flow (brand-input → dashboard → explainability → monitoring, creator-name resolution, CORS) remains intact.
+
+## Real response shape (Track C 65ec502, API_CONTRACTS.md P1.6)
+
+```ts
+// frontend/src/types/index.ts mirrors backend/app/schemas.py exactly (65ec502)
+type SpilloverBasis = "trained" | "inferred" | "placeholder" | "isolated";
+interface InfluencerRecommendation {
+  creator_id: string; // uuid
+  name: string; category: string | null;
+  youtube_handle: string | null; instagram_handle: string | null; reddit_handles: string[];
+  final_score: number; // 0-100, clamped
+  confidence_low: number; confidence_high: number; // honest: hw*100*w1, see fusion.py:57
+  spillover_basis?: SpilloverBasis; // optional on client for stale cache, ?? "placeholder"
+  estimated_reach: number | null; estimated_cost: number | null;
+  score_breakdown: {
+    spillover_score: number; // nominal 0-1, but live GAIL can be >>1 (Virat 21.61) — render raw
+    sentiment_risk_score: number; // still 0.5 placeholder per CAPSTONE_NEXT_STEPS.md:822 — not real
+    creator_feature_score: number; // still 0.5 placeholder
+    weight_spillover: number; weight_sentiment_risk: number; weight_creator_feature: number;
+  };
+}
+```
+
+- `trained` = in GAIL N=10 labeled set (tighter but still wide `±13pts`);
+- `inferred` = graph-connected unlabeled via GAT inductive (`±21pts` wide, 1.6×);
+- `placeholder` = checkpoint missing/fallback `0.5 ±10pts`;
+- `isolated` = degree 0 on both `collaborates_with` + `co_occurs_with` → `0.5` with `±10pts`, never `inferred`, rendered as "no graph signal".
+- `sentiment_risk_score` remains `0.5` placeholder — only `w1` (spillover) real per CAPSTONE_NEXT_STEPS:822, weights stay `0.4/0.3/0.3` not recalibrated. See `frontend/src/components/SpilloverBadge.tsx` for badge colors + tooltip copy.
+
+Verified against live `POST /recommendations` via pooler: Virat Kohli `c4b20…` trained `21.6→100`, PV Sindhu/AB `inferred` ~`8.59/1.19`, Nisha/_bungy `isolated` `0.5→50` with CI `40-60` — all with correct `spillover_basis` (see report.md from 65ec502).
 
 ## Open items
 
-- **Explainability network-graph view — not started, blocked on real graph
-  edge data.** Two edge types matter: `collaborates_with`
-  (`frequent_collaborator` relations) has **no producer at all** anywhere
-  in Track A's pipeline — not just empty, structurally not built.
-  `co_occurs_with` (via Track A's `reddit_post_creators`) has real
-  *infrastructure* and was briefly populated, but as of the last check is
-  back to zero — a side effect of Track A's own necessary Reddit
-  relevance-gating fix (it correctly purged the noisy shared-subreddit
-  links that co-occurrence depended on). **Re-verify this fresh every
-  round** — it has already flipped from real-and-populated to empty once
-  within a single round; do not trust a prior round's "it's real now"
-  claim without re-querying the live DB.
-- **Kohli/Agilitas sponsorship labeling — blocked, needs Track A to
-  actually re-run collection.** Track A's caption-truncation fix is
-  shipped in their scraper code, but as of the last direct DB check the
-  stored row is still exactly 100 characters (the fix hasn't been
-  re-applied to already-collected data). No frontend action needed either
-  way — `is_sponsored` isn't part of `InfluencerRecommendation`, this only
-  matters for the network-graph sponsorship edges above.
-- **`product_category`/`platform_preference` filtering — not started,
-  Track C's stated open item, not frontend's.** No action needed from this
-  track; just don't assume it's implemented when testing.
-- **Real Fusion Layer scores — blocked on Track B/C.** Every real creator
-  currently gets a flat placeholder `spillover=sentiment_risk=
-  creator_feature=0.5` (`final_score=50`) because the GAIL/Temporal
-  branches aren't trained yet. Dashboard/explainability already label this
-  correctly as placeholder/mock data — no frontend change needed until
-  Track B/C wire real scoring (weeks 11-13+ per timeline, still pending as
-  of last check).
+- **Explainability network-graph/causal-insights — still honest placeholder.** `co_occurs_with` is now `~1,400+` (319 posts overlap, giant component 185) per CAPSTONE_NEXT_STEPS Review 2 backlog, but no causal insights UI built yet. Keep explicit placeholder text; do not fabricate.
+- **Kohli/Agilitas — closed 2026-08-14** (full text confirms `is_sponsored=false`, not blocked).
+- **`product_category`/`platform_preference` filtering — fully real** per API_CONTRACTS.md (soft/hard filters, keyword-overlap). No frontend action.
+- **Sentiment/risk (`sentiment_risk_score`, `reputation_score`) — still placeholder 0.5** (`CAPSTONE_NEXT_STEPS:822`, `808`). Labeled honestly in UI; Temporal branch 0% built, do not invent scores.
+- **Real Fusion Layer scores — partially wired.** `spillover_score` now real via GAIL `c6488a6`; `sentiment_risk`/`creator_feature` remain `0.5`. Dashboard/explainability correctly badge each basis with wide CI; no flat `0.5` mock across all creators anymore.
 
-## Non-obvious lessons (the kind you can't get from reading the code)
+## Non-obvious lessons (carry-forward)
 
-1. **"Tool X is now enabled/available" is a claim about the user's/other
-   session's actions, not a guarantee this session picked it up — always
-   verify directly, and if it's genuinely not reachable, a session
-   restart (not a workaround) is usually what actually fixes it.** This
-   happened twice for this track alone (Docker Desktop, the
-   `claude-in-chrome` browser tool) — both were confirmed unreachable via
-   direct checks (`docker --version`, process list, `Skill`/`ToolSearch`)
-   across multiple sessions until an actual restart, at which point they
-   worked immediately. Don't spend time on workarounds when the fix is
-   "ask the user to restart."
-2. **`curl`-based "verified end-to-end" is not real verification for
-   anything user-facing.** `curl` doesn't enforce CORS, cookie
-   `SameSite`, or other real-browser security behavior. This exact gap
-   caused an *8-week*, project-wide blind spot: Track C's backend had zero
-   CORS middleware from Weeks 1-2 onward, and every track's curl-based
-   "it works" checks were structurally incapable of catching it. It only
-   surfaced the first time this track got a real browser tool working and
-   tried the actual flow. Lesson generalizes: use the real browser for
-   anything user-facing, reserve curl strictly for backend-only sanity
-   checks (row counts, endpoint shapes, preflight headers as a
-   *secondary* confirmation after a real browser check, not instead of
-   one).
-3. **Track C's API contract has broken more than once *on the same day*
-   — always re-fetch fresh (`git show origin/track-c-fusion-backend:
-   backend/app/schemas.py`) rather than trusting even a same-session
-   reconciliation table.** Re-diff field-by-field before touching any
-   frontend code that consumes the API, every single round, no exceptions.
-4. **Real infrastructure existing (an endpoint, a schema field) is not
-   the same as real data existing behind it — check row counts on the
-   live DB, don't infer from the endpoint's presence or a prior round's
-   memory note.** The `co_occurs_with` endpoint is real and correctly
-   built, and was genuinely populated for one round, then genuinely empty
-   the next, because of an upstream data-quality fix elsewhere in the
-   pipeline. Treat "is there real data right now" as a question to
-   re-answer every round, not a fact that persists once true.
-5. **Verifying code works is not the same as it being safe — always
-   explicitly decide whether to commit, don't let a clean `git status`
-   (no stray files) stand in for "committed and pushed."** This is the
-   lesson that prompted writing this handoff doc in the first place: real,
-   browser-verified, working code (the monitoring creator-name-resolution
-   feature) sat uncommitted in this worktree for two full rounds because
-   no one — including this agent — ever explicitly asked "should this be
-   committed?" A `git status` check that shows only your own intentional
-   edits is not the same claim as "this is safely persisted." **Before
-   ending any round from now on: run `git status`, and if anything is
-   uncommitted, make an explicit, stated decision (commit + push it, or
-   explain plainly why not) rather than leaving it ambiguous.**
-6. **When real Supabase DB access is needed, ask the user for the
-   connection string fresh each time — it is never persisted.** Write it
-   only to `backend/.env` in Track C's worktree (already gitignored,
-   confirmed before writing), never to memory or any tracked file, and
-   delete it the moment the check is done. This has been asked for and
-   handled this way multiple times already; it's the expected pattern, not
-   something to second-guess.
+1. "Tool X enabled" ≠ reachable — verify directly, restart if needed (Docker, browser tool).
+2. `curl` does not enforce CORS — use real browser. Fixed via `CORSMiddleware` in `backend/app/main.py` (allow `localhost:3000`).
+3. Track C's contract has broken same-day — always `git show origin/track-c-fusion-backend:backend/app/schemas.py` fresh.
+4. Infrastructure ≠ data — re-query live DB row counts each round.
+5. Clean `git status` ≠ safe — explicitly commit+push before ending round.
+6. Supabase `DATABASE_URL` pooler is `aws-0-ap-south-1.pooler.supabase.com:5432`, not direct `db.*` (IPv6 fails `WinError 10051`).
+7. **New:** `spillover_basis` must be honored — never collapse `inferred`/`isolated` into `trained`; `isolated` → placeholder, never inferred; `hw` margins are wide by design at N=10.
 
-## Exact next steps for the next round
+## Exact next steps
 
-1. **Run `git status` first, before anything else** — confirm clean, or
-   resolve explicitly per lesson #5 above.
-2. Re-fetch Track B and Track C's branches fresh (`git fetch origin` +
-   `git log`/`git show`, not memory) and check: has real GAIL training
-   started, do real collaboration/co-occurrence edges exist now, has the
-   Kohli/Agilitas post been re-labeled. If yes to any of the graph-edge
-   questions, re-verify by querying the live DB directly (ask the user for
-   the connection string) before deciding whether the explainability
-   network-graph view is now honestly buildable — don't build it on faith
-   that a memory note from another track is still current.
-3. Check whether Track A's target list has grown further or added new
-   creator "shapes" (different platforms, different completeness
-   patterns) — if so, re-run the real browser click-through against it,
-   watching specifically for field combinations not yet seen (the pattern
-   so far: every new creator batch has surfaced at least one genuinely new
-   null/empty-field combination worth confirming the UI handles).
-4. If nothing above has moved, this track is genuinely light on
-   non-data-dependent work right now — check with the user before
-   inventing scope (per this track's own project-wide risk note: don't
-   manufacture busywork to look thorough).
+1. `npm run lint` + `npm run build` must pass before any claim deployable.
+2. `npm run dev` + real-browser check against live backend (`NEXT_PUBLIC_API_BASE_URL`), confirming CORS and 3 archetypes render differently (trained / inferred / isolated).
+3. Keep `WIREFRAMES.md` in sync with any future `spillover_basis` changes; commit+push both docs immediately.
+4. Periodically re-check Track B temporal branch — when `sentiment_risk_score` becomes real, remove placeholder labels (per CAPSTONE_NEXT_STEPS Phase 5).

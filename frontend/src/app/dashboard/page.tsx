@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import SpilloverBadge from "@/components/SpilloverBadge";
 import { getAlerts } from "@/lib/api";
 import { useStoredRecommendationResult } from "@/lib/useStoredRecommendationResult";
-import type { AlertResponse } from "@/types";
+import type { AlertResponse, SpilloverBasis } from "@/types";
 
 // Reads the /recommendations response left in sessionStorage by the
 // brand-input form. Risk-flag badges are NOT part of InfluencerRecommendation
@@ -56,13 +57,16 @@ export default function DashboardPage() {
 
       {result.is_mock_data && (
         <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-          Showing mock/placeholder data — the real Fusion Layer model isn&apos;t wired in yet.
+          Showing mock/placeholder data — some creators lack stored FusionScore or the creator table was empty when queried.
         </p>
       )}
 
       <ul className="flex flex-col gap-4">
         {result.results.map((influencer, index) => {
           const alerts = alertsByCreator.get(influencer.creator_id) ?? [];
+          const basis = (influencer.spillover_basis ?? "placeholder") as SpilloverBasis;
+          const spilloverRaw = influencer.score_breakdown.spillover_score;
+          const isOutOfRange = spilloverRaw < 0 || spilloverRaw > 1;
           return (
             <li
               key={influencer.creator_id}
@@ -82,24 +86,47 @@ export default function DashboardPage() {
                       est. cost ₹{influencer.estimated_cost.toLocaleString()} (placeholder rate)
                     </p>
                   )}
+                  <div className="mt-2">
+                    <SpilloverBadge basis={basis} />
+                  </div>
+                  {basis === "isolated" && (
+                    <p className="mt-1 text-xs text-zinc-500">
+                      no graph signal — degree 0 on collaborates_with + co_occurs_with; placeholder 0.5, never inferred.
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-semibold">{influencer.final_score.toFixed(0)}</div>
                   <div className="text-xs text-zinc-500">
                     confidence {influencer.confidence_low.toFixed(0)}–{influencer.confidence_high.toFixed(0)}
                   </div>
+                  <p className="mt-1 text-[11px] text-zinc-400">basis: {basis}</p>
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
-                <ScorePart label="Spillover" value={influencer.score_breakdown.spillover_score.toFixed(2)} />
+                <ScorePart
+                  label="Spillover"
+                  value={spilloverRaw.toFixed(2)}
+                  sublabel={
+                    isOutOfRange
+                      ? "raw GAIL output; final_score clamped [0,100]"
+                      : basis === "trained"
+                        ? "±13pts wide (N=10)"
+                        : basis === "inferred"
+                          ? "±21pts wide"
+                          : "±10pts"
+                  }
+                />
                 <ScorePart
                   label="Sentiment / Risk"
                   value={influencer.score_breakdown.sentiment_risk_score.toFixed(2)}
+                  sublabel="placeholder 0.5 (Temporal 0%)"
                 />
                 <ScorePart
                   label="Feature Score"
                   value={influencer.score_breakdown.creator_feature_score.toFixed(2)}
+                  sublabel="placeholder 0.5"
                 />
               </div>
 
@@ -122,11 +149,20 @@ export default function DashboardPage() {
   );
 }
 
-function ScorePart({ label, value }: { label: string; value: string }) {
+function ScorePart({
+  label,
+  value,
+  sublabel,
+}: {
+  label: string;
+  value: string;
+  sublabel?: string;
+}) {
   return (
     <div className="rounded-md bg-zinc-50 px-3 py-2 dark:bg-zinc-900">
       <div className="text-zinc-500">{label}</div>
       <div className="mt-1 font-medium">{value}</div>
+      {sublabel && <div className="mt-0.5 text-[11px] text-zinc-500">{sublabel}</div>}
     </div>
   );
 }
