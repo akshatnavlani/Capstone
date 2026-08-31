@@ -33,16 +33,20 @@ const BASIS_META: Record<
   },
 };
 
-const TOOLTIP_COPY: Record<SpilloverBasis, string> = {
-  trained:
-    "Trained on GAIL labeled set (effective N=10, df=8, t=2.306, mse=1.84 → hw≈3.28 on 0-1 scale). Final CI = hw·100·w1 (w1=0.4) → ±13pts, clamped [0,100]. Still wide due small-N and propensity saturates 1.000 (CAPSTONE_NEXT_STEPS:795). See backend/app/fusion.py:57 + API_CONTRACTS.md P1.6. Do not present as validated beyond this N.",
-  inferred:
-    "Graph-connected but unlabeled — GAT inductive (no retrain). hw≈5.25 (1.6× trained, min 0.25) → ±21pts on final_score, clamped [0,100]. Wide interval reflects small-N and propensity 1.000 (CAPSTONE_NEXT_STEPS:795). Do not present as validated — wide CI by design.",
-  placeholder:
-    "Checkpoint missing or fallback 0.5 (hw 0.25 → ±10pts). No GAIL signal — honest placeholder, never fabricated.",
-  isolated:
-    'Isolated creator (degree 0 on collaborates_with + co_occurs_with). No spillover can be inferred — IsolatedCreatorError mapped to placeholder 0.5 (hw 0.25 → ±10pts). Shown as "no graph signal", never as inferred.',
-};
+function tooltipCopy(basis: SpilloverBasis, influencerName?: string): string {
+  const name = influencerName ? ` for ${influencerName}` : "";
+  switch (basis) {
+    case "trained":
+      return `Based on real collaboration data${name} — this score was directly learned from labeled examples.`;
+    case "inferred":
+      return `Estimated${name} from similar creators they collaborate with — not directly trained, so treat the score as a wider estimate.`;
+    case "isolated":
+      return `No collaboration data available${name} — we show a neutral default instead of guessing.`;
+    case "placeholder":
+    default:
+      return `Default score${name} — no collaboration signal was available to personalize this.`;
+  }
+}
 
 export function basisLabel(basis: SpilloverBasis): string {
   return BASIS_META[basis]?.label ?? basis;
@@ -51,12 +55,14 @@ export function basisLabel(basis: SpilloverBasis): string {
 export default function SpilloverBadge({
   basis,
   compact = false,
+  influencerName,
 }: {
   basis: SpilloverBasis;
   compact?: boolean;
+  influencerName?: string;
 }) {
   const meta = BASIS_META[basis] ?? BASIS_META.placeholder;
-  const copy = TOOLTIP_COPY[basis] ?? TOOLTIP_COPY.placeholder;
+  const copy = tooltipCopy(basis, influencerName);
   const [open, setOpen] = useState(false);
   const id = useId();
   const tooltipId = `spillover-tip-${id}`;
@@ -91,9 +97,6 @@ export default function SpilloverBadge({
           className="absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs leading-relaxed text-zinc-700 shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
         >
           <span className="font-medium">{meta.label}:</span> {copy}
-          <span className="mt-1 block text-[11px] text-zinc-500 dark:text-zinc-400">
-            sentiment_risk_score is still placeholder 0.5 (Temporal 0% — CAPSTONE_NEXT_STEPS:822); only w1 real.
-          </span>
         </span>
       )}
     </span>

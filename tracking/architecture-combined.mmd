@@ -1,0 +1,66 @@
+%% Architecture — Combined (Slides A+B merged, full interdependency)
+%% For handout: shows both the pipeline and the I/O contracts in one view
+flowchart TD
+    %% Data
+    DS1@{ shape: cyl, label: "YouTube\nVideos/Comments/Metrics" }
+    DS2@{ shape: cyl, label: "Instagram\nPosts/Captions/Metrics\n(100ch trunc)" }
+    DS3@{ shape: cyl, label: "Reddit\nPosts/Subreddits\ncommunity" }
+    DS4@{ shape: cyl, label: "Historical\nPartnerships/Collabs\ncreator_related_accounts" }
+    DB[("Supabase\nPooler\ncreators 259\nchannels/profiles")]
+
+    DS1 --> DB
+    DS2 --> DB
+    DS3 --> DB
+    DS4 --> DB
+
+    RAW["Raw Data"]
+
+    DB --> RAW
+
+    subgraph Pre["2. Edge Preprocessing & Staging — C"]
+        BOT["Fake Follower / Bot\nis_bot_flagged PH"]
+        FEAT["Feature Staging\nraw_text + thumbnails\nCLIP/BERT not here"]
+        DISC["Disclosure\nis_sponsored 58/3\nbrands 19 → 16"]
+        LINK["Cross-Platform Linking\n_normalize_handle\nambig dropped"]
+        BOT --> PROC["Processed\nCreatorFeatureRecord"]
+        FEAT --> PROC
+        DISC --> PROC
+        LINK --> PROC
+    end
+
+    RAW --> Pre
+
+    subgraph Dual["3. Dual Framework — B (+C)"]
+        GAIL["GAIL Adaptive\nGNN + Attention\nSpillover\n340+1414 edges\nc6488a6 N=10"]
+        TEMP["Temporal\nSentiment propagation\n0% PH"]
+        CAUS["Causal\nRegularization\nGranger future"]
+        GAIL --- TEMP --- CAUS
+    end
+
+    PROC --> GAIL
+    DISC -.-> TEMP
+    LINK -.-> TEMP
+    FEAT -.-> GAIL
+
+    COMB["Scores\nspillover + 0.5 + 0.5"]
+
+    GAIL --> COMB
+    TEMP -.-> COMB
+
+    subgraph Fusion["4. Fusion — C"]
+        FUSE["Multi-Modal Fusion\n0.4/0.3/0.3\nCI ±13/±21/±10"]
+        ROI["ROI Aggregator\nreach*CATEGORY_RATE\nRanking"]
+        FUSE --> ROI
+    end
+
+    COMB --> FUSE
+
+    subgraph App["5. Application — C+D"]
+        REC["Recommendation\nPOST /recommendations\n≤50, explanation+counts"]
+        MON["Monitoring\nGET /alerts\nLeBron resolved"]
+        EXP["Explainability\nvis-network 259\nfilters + search\nExplainability Graph"]
+        REC --- MON --- EXP
+    end
+
+    ROI --> App
+    EXP --> OUT["Final Response\n{results, is_mock_data}\nDashboard"]

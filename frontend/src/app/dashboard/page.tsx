@@ -46,6 +46,35 @@ export default function DashboardPage() {
     );
   }
 
+  if (result.results.length === 0) {
+    return (
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-start gap-4 px-6 py-16">
+        <h1 className="text-2xl font-semibold tracking-tight">Recommendation Dashboard</h1>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          No creators matched "{result.query.product_category}", budget ₹{result.query.budget.toLocaleString()}.
+        </p>
+        {result.explanation && (
+          <p className="mt-2 rounded-md border border-zinc-300 p-3 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+            {result.explanation}
+          </p>
+        )}
+        {result.counts && Object.values(result.counts).some(v => v > 0) && (
+          <div className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
+            <div>Considered: {result.counts.considered}</div>
+            <div>Dropped by budget: {result.counts.dropped_by_budget}</div>
+            <div>Dropped by platform: {result.counts.dropped_by_platform}</div>
+            <div>Dropped by region: {result.counts.dropped_by_region}</div>
+            <div>Dropped by demographic: {result.counts.dropped_by_demographic}</div>
+            <div>Dropped by product category: {result.counts.dropped_by_product}</div>
+          </div>
+        )}
+        <Link href="/brand-input" className="text-sm font-medium underline mt-4">
+          Start a brand request
+        </Link>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-16">
       <div>
@@ -66,7 +95,19 @@ export default function DashboardPage() {
           const alerts = alertsByCreator.get(influencer.creator_id) ?? [];
           const basis = (influencer.spillover_basis ?? "placeholder") as SpilloverBasis;
           const spilloverRaw = influencer.score_breakdown.spillover_score;
-          const isOutOfRange = spilloverRaw < 0 || spilloverRaw > 1;
+          // Primary profile URL — priority instagram -> youtube -> reddit
+          const profileUrl = (() => {
+            const ig = influencer.instagram_handle?.replace(/^@/, "");
+            if (ig) return `https://www.instagram.com/${ig}`;
+            const yt = influencer.youtube_handle?.replace(/^@/, "");
+            if (yt) return `https://www.youtube.com/@${yt}`;
+            const rd = influencer.reddit_handles?.[0];
+            if (rd) {
+              const handle = rd.replace(/^u\//, "").replace(/^r\//, "");
+              return rd.startsWith("r/") ? `https://www.reddit.com/r/${handle}` : `https://www.reddit.com/user/${handle}`;
+            }
+            return null;
+          })();
           return (
             <li
               key={influencer.creator_id}
@@ -75,11 +116,34 @@ export default function DashboardPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <span className="text-xs font-medium text-zinc-500">#{index + 1}</span>
-                  <h2 className="text-lg font-medium">{influencer.name}</h2>
+                  {profileUrl ? (
+                    <h2 className="text-lg font-medium">
+                      <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-600">
+                        {influencer.name}
+                      </a>
+                    </h2>
+                  ) : (
+                    <h2 className="text-lg font-medium">{influencer.name}</h2>
+                  )}
                   <p className="text-xs text-zinc-500">
-                    {[influencer.youtube_handle, influencer.instagram_handle, ...influencer.reddit_handles]
-                      .filter(Boolean)
-                      .join(" · ") || "no linked handles"}
+                    {(() => {
+                      const links: React.ReactNode[] = [];
+                      if (influencer.instagram_handle) {
+                        const h = influencer.instagram_handle.replace(/^@/, "");
+                        links.push(<a key="ig" href={`https://www.instagram.com/${h}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-zinc-700">{influencer.instagram_handle}</a>);
+                      }
+                      if (influencer.youtube_handle) {
+                        const h = influencer.youtube_handle.replace(/^@/, "");
+                        links.push(<a key="yt" href={`https://www.youtube.com/@${h}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-zinc-700">{influencer.youtube_handle}</a>);
+                      }
+                      influencer.reddit_handles.forEach((rh) => {
+                        const clean = rh.replace(/^u\//, "").replace(/^r\//, "");
+                        const url = rh.startsWith("r/") ? `https://www.reddit.com/r/${clean}` : `https://www.reddit.com/user/${clean}`;
+                        links.push(<a key={rh} href={url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-zinc-700">{rh}</a>);
+                      });
+                      if (links.length === 0) return "no linked handles";
+                      return links.reduce<React.ReactNode[]>((acc, cur, i) => (i === 0 ? [cur] : [...acc, " · ", cur]), []);
+                    })()}
                   </p>
                   {influencer.estimated_cost != null && (
                     <p className="mt-1 text-xs text-zinc-500">
@@ -87,7 +151,7 @@ export default function DashboardPage() {
                     </p>
                   )}
                   <div className="mt-2">
-                    <SpilloverBadge basis={basis} />
+                    <SpilloverBadge basis={basis} influencerName={influencer.name} />
                   </div>
                   {basis === "isolated" && (
                     <p className="mt-1 text-xs text-zinc-500">
@@ -97,9 +161,6 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-semibold">{influencer.final_score.toFixed(0)}</div>
-                  <div className="text-xs text-zinc-500">
-                    confidence {influencer.confidence_low.toFixed(0)}–{influencer.confidence_high.toFixed(0)}
-                  </div>
                   <p className="mt-1 text-[11px] text-zinc-400">basis: {basis}</p>
                 </div>
               </div>
@@ -108,25 +169,14 @@ export default function DashboardPage() {
                 <ScorePart
                   label="Spillover"
                   value={spilloverRaw.toFixed(2)}
-                  sublabel={
-                    isOutOfRange
-                      ? "raw GAIL output; final_score clamped [0,100]"
-                      : basis === "trained"
-                        ? "±13pts wide (N=10)"
-                        : basis === "inferred"
-                          ? "±21pts wide"
-                          : "±10pts"
-                  }
                 />
                 <ScorePart
                   label="Sentiment / Risk"
                   value={influencer.score_breakdown.sentiment_risk_score.toFixed(2)}
-                  sublabel="placeholder 0.5 (Temporal 0%)"
                 />
                 <ScorePart
                   label="Feature Score"
                   value={influencer.score_breakdown.creator_feature_score.toFixed(2)}
-                  sublabel="placeholder 0.5"
                 />
               </div>
 

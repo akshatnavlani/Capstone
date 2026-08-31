@@ -1,0 +1,85 @@
+%% Architecture — Slide A: Complete Module Map (review-1 as-built)
+%% Rendering: mermaid-cli mmdc -i architecture-module-map.mmd -o architecture-module-map.png -w 1920 -H 1080 --backgroundColor white
+flowchart TD
+
+    subgraph S1["1. Data Source Collection — Track A"]
+        direction TB
+        YT["YouTube<br/>- Videos<br/>- Comments<br/>- Metrics<br/>channel_id, view/like/comment"]
+        IG["Instagram<br/>- Posts<br/>- Captions (100ch trunc)<br/>- Metrics<br/>bio, follower_count"]
+        RD["Reddit<br/>- Posts / Comments<br/>- Subreddits<br/>community (r/badminton)"]
+        HIST["Historical Data<br/>- Partnerships<br/>- Collaborations<br/>creator_related_accounts<br/>relation_type='frequent_collaborator'"]
+        YT --> DB
+        IG --> DB
+        RD --> DB
+        HIST --> DB
+        DB[("Supabase Postgres<br/>creators / instagram_profiles<br/>youtube_channels/videos<br/>reddit_posts/post_creators<br/>Pooler aws-0-ap-south-1")]
+    end
+
+    S1 --> RAW["Raw Data<br/>JOIN on creator_id<br/>(nullable instagram_profiles.creator_id preserved)"]
+
+    subgraph S2["2. Edge Preprocessing & Feature Staging — Track C (feature_store.py)"]
+        direction TB
+        BOT["Fake Follower / Bot Detection<br/>- account_classify<br/>- is_bot_flagged placeholder<br/>(Track B writes bot_score)"]
+        FEAT["Feature Extraction — STAGING<br/>CLIP/BERT NOT computed here<br/>Stages: raw_text (scrub_text)<br/>+ thumbnail_urls + log_subscriber_count<br/>+ engagement_rate + category_one_hot<br/>reputation_score=None flagged"]
+        SENT_DISC["Disclosure Labelling<br/>is_sponsored / sponsorship_raw_matches<br/>native:paid_partnership_label / #ad<br/>brands source='sponsorship_mention'"]
+        LINK["Cross-Platform Linking<br/>- _normalize_handle<br/>- ambiguous lebron dropped<br/>- unified creator_ids"]
+        BOT --> PROC
+        FEAT --> PROC
+        SENT_DISC --> PROC
+        LINK --> PROC
+        PROC["Processed Data<br/>CreatorFeatureRecord<br/>is_stub flag"]
+    end
+
+    RAW --> S2
+
+    subgraph S3["3. Dual Framework — Track B (+ C disclosure)"]
+        direction TB
+        GAIL["GAIL Adaptive<br/>Graph Neural Network<br/>Attention (WeightedSAGEConv)<br/>Network Spillover<br/>HeteroData: 340 collab + 1414 co_occ<br/>checkpoint c6488a6, N=10, spillover_basis"]
+        TEMP["Cross-Platform Temporal<br/>Temporal modeling<br/>Lag detection<br/>Sentiment propagation<br/>[0% placeholder — sentiment_risk=0.5]"]
+        CAUSAL["Causal Inference<br/>Regularization<br/>Granger causality (future)"]
+        GAIL --- TEMP
+        TEMP --- CAUSAL
+        CAUSAL -.-> GAIL
+    end
+
+    PROC --> GAIL
+    PROC --> TEMP
+    LINK -.-> TEMP
+    SENT_DISC -.-> TEMP
+    FEAT -.-> GAIL
+    BOT -.-> GAIL
+
+    GAIL --> COMB["Intermediate Scores<br/>spillover_score (0-1, live can >1 e.g. Virat 21.6)<br/>sentiment_risk_score=0.5 PH<br/>creator_feature_score=0.5 PH"]
+
+    subgraph S4["4. Fusion Layer — Track C (fusion.py)"]
+        direction TB
+        MMF["Multi-Modal Fusion<br/>final_score = (0.4*spillover + 0.3*sentiment + 0.3*feature)*100 + risk_adj<br/>CI = hw*100*w1, clamped [0,100]<br/>trained ±13 / inferred ±21 / isolated ±10"]
+        ROI["ROI Aggregator<br/>Final scoring<br/>Ranking<br/>estimated_cost = reach * CATEGORY_RATE<br/>(athlete 0.60 / fitness 0.35 ...)"]
+        MMF --> ROI
+    end
+
+    COMB --> MMF
+
+    subgraph S5["5. Application Layer & API — Track C + D"]
+        direction TB
+        REC["Recommendation Engine<br/>POST /recommendations<br/>budget hard / region/product soft<br/>Rank + explanation + counts"]
+        MON["Monitoring Alerts<br/>GET /alerts<br/>Timing warnings / Risk flags<br/>propagated_from_creator_id"]
+        EXP["Explainability<br/>Network visualizations (vis-network 259)<br/>Time series / Causal explanations<br/>Dashboard reports / SpilloverBadge"]
+        REC --- MON
+        MON --- EXP
+    end
+
+    ROI --> REC
+    ROI --> MON
+    ROI --> EXP
+    EXP --> FINAL["Final Recommendation Response<br/>{query, results[], is_mock_data,<br/>explanation, counts, ScoreBreakdown}<br/>Final Report / Dashboard"]
+
+    classDef placeholder fill:#fff7ed,stroke:#fb923c,stroke-width:1.5px,stroke-dasharray: 5 5;
+    class TEMP placeholder
+    class FEAT placeholder
+
+    style S1 fill:#f8fafc,stroke:#334155
+    style S2 fill:#f1f5f9,stroke:#334155
+    style S3 fill:#fefce8,stroke:#a16207
+    style S4 fill:#ecfdf5,stroke:#065f46
+    style S5 fill:#eff6ff,stroke:#1e40af

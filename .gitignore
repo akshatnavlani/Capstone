@@ -1,2 +1,13 @@
 .claude/settings.local.json
 .agents/
+.env
+backend/.env
+__pycache__/
+*.pyc
+*.log
+.obsidian/
+kickbacks-v2.vsix
+tools/sheet_review/__pycache__/
+frontend/dev.log
+backend/uvicorn*.log
+backend/host_review1.ps1

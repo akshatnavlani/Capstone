@@ -48,10 +48,23 @@ from app.spillover import get_spillover_batch
 router = APIRouter(tags=["recommendations"])
 
 # Placeholder cost heuristic: no real rate-card/pricing data exists yet.
-# INR per follower/subscriber, deliberately crude -- revisit once real
-# campaign cost data is available (see PROJECT_PLAN.md Section 5's ROI note:
-# "ROI" here means engagement-per-rupee, not sales/conversion).
-COST_PER_FOLLOWER_INR = 0.5
+# Tiered by category so same budget ranks consistently across segments
+# (single flat 0.5 made athlete vs fitness_influencer costs arbitrary).
+# Still a placeholder pending a real rate-card table (see tracking/TASK2_ANALYSIS.md
+# option 2: brand_rate_cards). Do not present as validated rate-card.
+COST_PER_FOLLOWER_INR = 0.5  # fallback for unknown category
+CATEGORY_RATE = {
+    "athlete": 0.60,
+    "team": 0.45,
+    "league": 0.45,
+    "fitness_influencer": 0.35,
+    "lifestyle_influencer": 0.40,
+    "other": 0.50,
+}
+
+
+def _rate_for(category: str | None) -> float:
+    return CATEGORY_RATE.get(category or "other", COST_PER_FOLLOWER_INR)
 
 _MOCK_CREATORS = [
     Creator(creator_id=uuid.uuid5(uuid.NAMESPACE_DNS, "mock-fitwithpriya"), name="FitWithPriya",
@@ -152,7 +165,7 @@ def _to_recommendation(
         confidence_high=confidence_high,
         spillover_basis=spillover_basis,  # type: ignore[arg-type]
         estimated_reach=reach or None,
-        estimated_cost=(reach * COST_PER_FOLLOWER_INR) if reach else None,
+        estimated_cost=(reach * _rate_for(creator.category)) if reach else None,
         score_breakdown=breakdown,
     )
 
@@ -192,19 +205,28 @@ def get_recommendations(
             spillover_map = {}
 
     eligible: list[InfluencerRecommendation] = []
+    considered = 0
+    dropped_by_budget = 0
+    dropped_by_platform = 0
+    dropped_by_region = 0
+    dropped_by_demographic = 0
+    dropped_by_product = 0
     for creator in creators:
         youtube_channel = youtube_channels.get(creator.creator_id)
         instagram_profile = instagram_profiles.get(creator.creator_id)
+        considered += 1
 
         # --- budget filter (hard, only when cost is computable) ---
         reach = max((youtube_channel.subscriber_count if youtube_channel else 0) or 0,
                     (instagram_profile.follower_count if instagram_profile else 0) or 0)
-        estimated_cost = reach * COST_PER_FOLLOWER_INR if reach else None
+        estimated_cost = reach * _rate_for(creator.category) if reach else None
         if estimated_cost is not None and estimated_cost > request.budget:
+            dropped_by_budget += 1
             continue
 
         # --- platform_preference filter (hard: no handle = directly known fact) ---
         if not _has_preferred_platform(creator, request.platform_preference):
+            dropped_by_platform += 1
             continue
 
         # --- region-proxy filter (soft: only exclude on a confirmed mismatch) ---
@@ -215,6 +237,7 @@ def get_recommendations(
         ]
         has_region_signal = any(region_signals)
         if region_keywords and has_region_signal and not _keyword_overlap(region_keywords, region_signals):
+            dropped_by_region += 1
             continue
 
         # --- demographic-proxy filter (soft, same policy) ---
@@ -226,6 +249,7 @@ def get_recommendations(
         if demographic_keywords and has_demographic_signal and not _keyword_overlap(
             demographic_keywords, demographic_signals
         ):
+            dropped_by_demographic += 1
             continue
 
         # --- product_category filter (soft, same policy) ---
@@ -238,6 +262,7 @@ def get_recommendations(
         if category_keywords and has_category_signal and not _keyword_overlap(
             category_keywords, category_signals
         ):
+            dropped_by_product += 1
             continue
 
         score = None
@@ -257,4 +282,39 @@ def get_recommendations(
     results = eligible[: request.max_results]
 
     is_mock_data = using_mock_creators or any_score_missing
-    return BrandRecommendationResponse(query=request, results=results, is_mock_data=is_mock_data)
+
+    # Build explanation when no results match
+    explanation: str | None = None
+    if not results:
+        parts: list[str] = []
+        if considered:
+            parts.append(f"{considered} creators considered")
+        if dropped_by_budget:
+            parts.append(f"{dropped_by_budget} dropped by budget")
+        if dropped_by_platform:
+            parts.append(f"{dropped_by_platform} dropped by platform")
+        if dropped_by_region:
+            parts.append(f"{dropped_by_region} dropped by region")
+        if dropped_by_demographic:
+            parts.append(f"{dropped_by_demographic} dropped by demographic")
+        if dropped_by_product:
+            parts.append(f"{dropped_by_product} dropped by product category")
+        if parts:
+            explanation = "No creators matched your query. " + ". ".join(parts) + "."
+
+    counts = {
+        "considered": considered,
+        "dropped_by_budget": dropped_by_budget,
+        "dropped_by_platform": dropped_by_platform,
+        "dropped_by_region": dropped_by_region,
+        "dropped_by_demographic": dropped_by_demographic,
+        "dropped_by_product": dropped_by_product,
+    }
+
+    return BrandRecommendationResponse(
+        query=request,
+        results=results,
+        is_mock_data=is_mock_data,
+        explanation=explanation,
+        counts=counts,
+    )

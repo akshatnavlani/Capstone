@@ -1,0 +1,66 @@
+%% Architecture — Slide B: Interdependencies & I/O Contracts
+%% Each box shows I: input / P: processing / O: output per module; arrows = cross-track dependency (who writes who reads)
+flowchart LR
+
+    subgraph A["Track A — Data/Infra"]
+        A1["Module: Ingestion Orchestrator<br/>orchestrator.py (1460 lines)<br/>I: YouTube API + Instagram OpenCLI + Reddit API<br/>P: scraping + upsert, pair_count.py canonical<br/>O: creators(259), creator_related_accounts(54),<br/>youtube_channels/videos(1607), instagram_profiles/posts(1811),<br/>reddit_posts(2748) → Supabase pooler"]
+    end
+
+    subgraph C1["Track C — Edge Resolution & Staging"]
+        C1a["Module: Feature Store<br/>feature_store.py<br/>I: creators + channels/profiles + videos/posts<br/>P: scrub_text, engagement_rate, category_one_hot<br/>O: CreatorFeatureRecord{raw_text, thumbnail_urls,<br/>log_subscriber_count, engagement_rate, is_stub}<br/>↳ staged for B, NOT embedded"]
+        C1b["Module: Collaboration Edges<br/>feature_store.build_collaboration_edges<br/>I: creators.*_handles + creator_related_accounts<br/>P: _normalize_handle, drop ambiguous lebron(2 rows)<br/>O: CollaborationEdge 340 {source,target,weight}"]
+        C1c["Module: Co-occurrence Edges<br/>build_co_occurrence_edges<br/>I: reddit_post_creators junction<br/>P: shared post → pair weight = co-post count<br/>O: CollaborationEdge 1414"]
+        C1d["Module: Disclosure Labelling<br/>labeling.py POST /labeling/run<br/>I: captions/titles/descriptions<br/>P: lexicon #ad/paid_partnership/brought to you by<br/>O: is_sponsored (ig58/yt3) + sponsorship_raw_matches<br/>+ brands(19, source='sponsorship_mention')<br/>→ sponsorships 16"]
+        C1e["Module: Bot/Account Verification<br/>O: is_bot_flagged placeholder (B writes bot_score)"]
+    end
+
+    subgraph B["Track B — ML-Core"]
+        B1["Module: Graph Construction<br/>build_real_hetero_data.py<br/>I: CreatorFeatureRecord + 340 + 1414<br/>P: PyG HeteroData, ToUndirected omitted<br/>O: HeteroData graph (259 nodes)"]
+        B2["Module: GAIL Adaptive<br/>gail_model.py / training.py<br/>I: HeteroData + 54-pair supervision (N=10 LOO)<br/>P: WeightedSAGEConv + spillover_head<br/>O: models/gail_checkpoint.pt c6488a6<br/>+ spillover_score + basis(trained/inferred/isolated)"]
+        B3["Module: Cross-Platform Temporal<br/>temporal.py (0% placeholder)<br/>I: captions/titles<br/>P: sentiment propagation (future)<br/>O: sentiment_risk_score=0.5 PH"]
+        B4["Module: CLIP/BERT Features (pending)<br/>I: raw_text + thumbnails<br/>P: Weeks 9-10 (not run)<br/>O: creator_feature_score=0.5 PH, reputation_score=None"]
+        B5["Module: Causal Inference<br/>causal_regularization.py<br/>I: GAIL + Temporal outputs<br/>P: regularization, future Granger<br/>O: lag / spillover adjustment (future)"]
+    end
+
+    subgraph C2["Track C — Fusion"]
+        C2a["Module: Spillover Inference<br/>spillover.py:get_spillover_batch<br/>I: creator_ids (batch)<br/>P: single GAT forward, cached<br/>O: {spillover_score, basis, confidence_high}"]
+        C2b["Module: Fusion<br/>fusion.py:57<br/>I: spillover + sentiment(0.5) + feature(0.5)<br/>P: final_score=(0.4s+0.3sent+0.3feat)*100+risk_adj<br/>hw*t·σ, CI ±13/±21/±10<br/>O: ScoreBreakdown + final_score 0-100 + CI"]
+        C2c["Module: Recommendation Engine<br/>routers/influencers.py<br/>I: BrandRecommendationRequest{product_category,budget,<br/>target_region, platform}<br/>P: budget hard(_rate_for), region/product soft keyword_overlap<br/>O: BrandRecommendationResponse{results[≤50],<br/>explanation, counts, is_mock_data}"]
+        C2d["Module: Scores API<br/>routers/scores.py<br/>I: creator_id + spillover/sentiment/feature<br/>P: compute_fusion_score<br/>O: FusionScoreResponse {final_score, breakdown}"]
+    end
+
+    subgraph D["Track D — Frontend+App"]
+        D1["Module: Brand Input → Dashboard<br/>brand-input/page.tsx → dashboard/page.tsx<br/>I: BrandRecommendationRequest form<br/>P: POST /recommendations → sessionStorage<br/>O: Ranked cards + SpilloverBadge(humanized) +<br/>clickable instagram→youtube→reddit handles"]
+        D2["Module: Explainability + Graph<br/>explainability/page.tsx + CollabGraph.tsx<br/>I: feature-store/edges/* (259/340/1414/16) +<br/>result.results (active set ≤50)<br/>P: vis-network/standalone full 259 + filters<br/>(basis, edgeType, category, weight≥k, search)<br/>O: Interactive 259-node canvas, haloed active set"]
+        D3["Module: Monitoring<br/>monitoring/page.tsx + routers/alerts.py<br/>I: GET /alerts (riskalert resolved=false)<br/>P: resolveName via feature-store/creators<br/>O: Alert list (LeBron resolved→ [] empty state)"]
+    end
+
+    A1 --> C1a
+    A1 --> C1b
+    A1 --> C1c
+    A1 --> C1d
+    C1a --> B1
+    C1b --> B1
+    C1c --> B1
+    B1 --> B2
+    B2 --> C2a
+    B2 -.-> C2b
+    C2a --> C2b
+    B3 -.-> C2b
+    B4 -.-> C2b
+    B5 -.-> C2b
+    C2b --> C2c
+    C2b --> C2d
+    C2c --> D1
+    C2c --> D2
+    C1b --> D2
+    C1c --> D2
+    C1d --> D2
+    C2d --> D2
+    C2c -.-> D3
+
+    style A fill:#f8fafc,stroke:#0f172a
+    style C1 fill:#f1f5f9,stroke:#334155
+    style B fill:#fefce8,stroke:#854d0e
+    style C2 fill:#ecfdf5,stroke:#065f46
+    style D fill:#eff6ff,stroke:#1e3a8a

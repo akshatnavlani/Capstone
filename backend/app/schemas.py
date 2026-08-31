@@ -61,6 +61,8 @@ class BrandRecommendationResponse(BaseModel):
     query: BrandRecommendationRequest
     results: list[InfluencerRecommendation]
     is_mock_data: bool = Field(description="True until real Fusion Layer + DB data is wired in")
+    explanation: Optional[str] = Field(default=None, description="Human‑readable reason when no creators match the query; e.g. budget too low / product keywords absent")
+    counts: Optional[dict] = Field(default=None, description="Per‑filter drop counts: considered, dropped_by_budget, dropped_by_platform, dropped_by_region, dropped_by_demographic, dropped_by_product")
 
 
 # ---- Ingestion endpoints -----------------------------------------------------

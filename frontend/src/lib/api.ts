@@ -3,6 +3,8 @@ import type {
   BrandRecommendationRequest,
   BrandRecommendationResponse,
   CreatorSummary,
+  CollaborationEdge,
+  SponsorshipEdge,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -39,5 +41,23 @@ export async function getCreators(): Promise<CreatorSummary[]> {
   if (!res.ok) {
     throw new Error(`GET /feature-store/creators failed: ${res.status}`);
   }
+  return res.json();
+}
+
+export async function getCollaborationEdges(): Promise<CollaborationEdge[]> {
+  const res = await fetch(`${API_BASE_URL}/feature-store/edges/collaborations`);
+  if (!res.ok) throw new Error(`GET /feature-store/edges/collaborations failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getCoOccurrenceEdges(): Promise<CollaborationEdge[]> {
+  const res = await fetch(`${API_BASE_URL}/feature-store/edges/co-occurrence`);
+  if (!res.ok) throw new Error(`GET /feature-store/edges/co-occurrence failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getSponsorshipEdges(): Promise<SponsorshipEdge[]> {
+  const res = await fetch(`${API_BASE_URL}/feature-store/edges/sponsorships`);
+  if (!res.ok) throw new Error(`GET /feature-store/edges/sponsorships failed: ${res.status}`);
   return res.json();
 }

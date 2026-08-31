@@ -44,6 +44,8 @@ export interface BrandRecommendationResponse {
   query: BrandRecommendationRequest;
   results: InfluencerRecommendation[];
   is_mock_data: boolean;
+  explanation?: string;
+  counts?: { [k: string]: number };
 }
 
 // Subset of Track C's CreatorFeatureRecord (backend/app/schemas.py) -- only
@@ -51,6 +53,19 @@ export interface BrandRecommendationResponse {
 export interface CreatorSummary {
   creator_id: string; // uuid
   name: string;
+}
+
+export interface CollaborationEdge {
+  source_creator_id: string;
+  target_creator_id: string;
+  weight: number;
+}
+
+export interface SponsorshipEdge {
+  creator_id: string;
+  brand_id: string;
+  content_id: string;
+  platform: "youtube" | "instagram" | "reddit";
 }
 
 export type AlertSeverity = "low" | "medium" | "high";
