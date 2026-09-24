@@ -6,6 +6,7 @@
 # assembled checkout (backend/ + ml/ + frontend/ side by side), pass -BRoot,
 # -CRoot and -DRoot explicitly.
 param(
+    [string]$ARoot = "D:\Capstone-worktrees\track-a-data-infra",
     [string]$BRoot = "D:\Capstone-worktrees\track-b-ml-core",
     [string]$CRoot = "D:\Capstone-worktrees\track-c-fusion-backend",
     [string]$DRoot = "D:\Capstone-worktrees\track-d-frontend-app",
@@ -98,9 +99,21 @@ Invoke-GateStep "docker backend smoke" {
     }
 }
 
+Invoke-GateStep "pair-count canary (A3)" {
+    # Needs the live DB via track-a's gitignored .env (orchestrator.ENV).
+    # Exit 2 = SKIP (no DATABASE_URL), not failure -- the gate must stay
+    # green offline; run this step from a track-a session to enforce it.
+    Push-Location "$ARoot\scripts\ingestion"
+    try {
+        & python pair_count_canary.py
+        if ($LASTEXITCODE -eq 2) { Write-Host "SKIP: no DATABASE_URL in this shell"; $LASTEXITCODE = 0 }
+    }
+    finally { Pop-Location }
+}
+
 Write-Host ""
 if ($failed.Count -gt 0) {
     Write-Host ("GATE RED: " + ($failed -join ", "))
     exit 1
 }
-Write-Host "GATE GREEN: pytest B + pytest C + lint + build + docker smoke all pass"
+Write-Host "GATE GREEN: pytest B + pytest C + lint + build + docker smoke + pair-count canary all pass"
