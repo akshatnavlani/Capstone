@@ -10,3 +10,13 @@ backend/*.db
 backend/*.sqlite3
 backend/.pytest_cache/
 backend/**/.pytest_cache/
+
+.env
+.venv/
+__pycache__/
+scripts/ingestion/google-service-account.json
+
+# transient run artifacts, not source
+scripts/ingestion/logs/
+*.log
+scripts/ingestion/coauthor_checkpoint.json

@@ -1,16 +1,13 @@
-# Track D (Frontend+App) — Handoff
+﻿# Track D (Frontend+App) — Handoff
 
-<<<<<<< HEAD
 Last updated: 2026-08-26, P1.6 wired. Branch `track-d-frontend-app`, worktree `D:\Capstone-worktrees\track-d-frontend-app`, off `github.com/akshatnavlani/Capstone`. Frontend code lives in `frontend/` (not repo root). `WIREFRAMES.md` is the living wireframe/API-contract doc — read it alongside this file. `CAPSTONE_NEXT_STEPS.md:1` (restored this round via `git pull origin main`) and `API_CONTRACTS.md:1` (from `track-c-fusion-backend:65ec502`) are the cross-track sources of truth.
-=======
+
 **✅ 2026-08-26 — Review 1 close: P1.6 WIRED, contracts finalized (`65ec502`).** Real `spillover_score` live via GAIL checkpoint `c6488a6` (`ml/inference.py` + `models/gail_checkpoint.pt`, 54 pairs, `effective N=10`, `mse 1.84`). Vendored `backend/app/gail/` + `backend/models/gail_checkpoint.pt` (3.7M) + `backend/app/spillover.py` wrapper never-crash: `FileNotFoundError`/`IsolatedCreatorError`/`KeyError`/no `torch` → `basis="placeholder"`/`"isolated"` `0.5` `±10pts`. **API shape finalized for Track D:** `SpilloverBasis = Literal["trained","inferred","placeholder","isolated"]` on `FusionScoreResponse` + `InfluencerRecommendation` (`backend/app/schemas.py:41,184`), `POST /scores/compute` `spillover_score` optional (auto `get_spillover`), `GET /scores/{id}` live recompute, `POST /recommendations` batch `get_spillover_batch` (`isolated→placeholder` never `inferred`). `backend/app/fusion.py:57` honest: `hw = t*sqrt(mse)*sqrt(1+1/N)` `N=10 t=2.306 mse1.84` → `trained hw≈3.28 → ±13pts` `inferred hw≈5.25 → ±21pts` `isolated/placeholder 0.25→±10pts` via `hw*100*w1` (`w1=0.4` only, `CAPSTONE_NEXT_STEPS.md:795` propensity 1.000), clamped `[0,100]` — `w2` (`sentiment_risk`) stays `0.5` placeholder `CAPSTONE_NEXT_STEPS.md:822` not recalibrated. `0003` migration live. Verified `pytest backend/tests -q` **49 pass** + `/health` + `/feature-store/edges/sponsorships` 16 + 3 JSONs (`c4b20 Virat 21.61→100 [0-100] trained`, `89972 AB 1.19→77 [0-100] inferred wide`, `78e48 _bungy 0.5→50 [40-60] isolated`) — `report.md`.
->>>>>>> track-c-fusion-backend
 
 ## 2026-09-24 Re-scope — Review 2 = pipeline-complete, Review 3 = improve
 
-<<<<<<< HEAD
 Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-09-24 re-scope section): all 21 PendingWork items are the Review 2 exit gate. This track covers the A2 build gate (`pytest` both suites + `npm run lint` + `npm run build` green, Docker smoke) and the S6 explainability graph surface (PendingWork assigns S6 to Shimona — D provides the UI surface/support against live `GET /feature-store/edges/`; coordinate, don't duplicate). Keep `sentiment_risk_score`/`creator_feature_score` placeholder labels until S1/S2 land; remove them only when the scores go real. Fresh sessions: `git pull origin main` first.
-=======
+
 Last updated: 2026-08-26 — Review 1 close, contracts finalized (`65ec502` wiring, `c6488a6` artifact) — `CAPSTONE_NEXT_STEPS.md` (`778-795` N=10 `795` propensity 1.000, `822` w2 placeholder, `808` reputation_score null, `484` ownership), `API_CONTRACTS.md:1` SpilloverBasis Literal finalized, `report.md` 3 JSONs verified.
 
 ## 2026-09-24 Re-scope — Review 2 = pipeline-complete, Review 3 = improve
@@ -22,7 +19,6 @@ Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-0
 ✅ **A2 (this round):** new `backend/tests/test_spillover.py` — served loader must resolve to `ml.inference` (fails if model code is ever re-vendored) + placeholder/isolated fallback when `ml` is missing (locks the never-crash contract for backend-only deploys). Suite now 50 passed + 1 env-skip (skip = backend-only checkout without `ml/`; both new tests pass where `ml/` is present). The cross-track runner `gate.ps1` lives on track-d (Docker owner).
 
 ✅ **A3 (this round):** new `backend/tests/test_influencers.py` red-team canary — empty/1-char `product_category` must pass through (2026-08-09 wipeout guards hold; tests lock them), genuine mismatch (`zxywq`) must still filter to empty. Suite now 53 passed + 1 env-skip. No source change needed.
->>>>>>> track-c-fusion-backend
 
 ✅ **A2 LANDED 2026-09-24:** `backend/` synced to track-c A1 (vendored `app/gail/` + checkpoint copy deleted — byte-identical to track-c). New `backend/Dockerfile` (python:3.11-slim, placeholder-mode smoke: `ml/` not baked in by design) + `.dockerignore` (excludes `.venv`/`.env`/`node_modules`) + `gate.ps1` (5 steps: pytest B, pytest C, lint, build, docker smoke with `/health` + `/recommendations` 200). Verified `GATE GREEN` this round: 69 + 50(+1 skip) + lint + build + smoke. Gate probes use `curl.exe`, not `Invoke-WebRequest` (PS 5.1 throws a host prompt in non-interactive shells).
 

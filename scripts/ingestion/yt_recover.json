@@ -1,0 +1,38 @@
+[
+ {
+  "name": "Sania Mirza",
+  "category": "athlete",
+  "youtube_handle": "servingitupwithsania",
+  "instagram_handle": "mirzasaniar"
+ },
+ {
+  "name": "Rajasthan Royals",
+  "category": "team",
+  "youtube_handle": "rajasthanroyals",
+  "instagram_handle": "rajasthanroyals"
+ },
+ {
+  "name": "Punjab FC",
+  "category": "team",
+  "youtube_handle": "rgpunjabfc",
+  "instagram_handle": "rgpunjabfc"
+ },
+ {
+  "name": "Tamil Nadu Cricket Association",
+  "category": "team",
+  "youtube_handle": "tncacricket",
+  "instagram_handle": "tncacricket"
+ },
+ {
+  "name": "इंडियन कुश्ती TV",
+  "category": "athlete",
+  "youtube_handle": "indian_kushti_tv",
+  "instagram_handle": "indian_kushti_tv"
+ },
+ {
+  "name": "Shaan Mukherji",
+  "category": "lifestyle_influencer",
+  "youtube_handle": "singershaan",
+  "instagram_handle": "singer_shaan"
+ }
+]

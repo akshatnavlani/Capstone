@@ -1,4 +1,4 @@
-# Track D — Review 1 Close: Real Shape Wired (be89dc1)
+﻿# Track D — Review 1 Close: Real Shape Wired (be89dc1)
 
 **Commit:** `be89dc1` (Wire real /recommendations spillover_basis with honest N=10 CI) on `track-d-frontend-app`, building on `track-c-fusion-backend:65ec502` + `origin/main:a4b3bed`.
 
