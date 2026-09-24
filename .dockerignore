@@ -1,0 +1,10 @@
+# Keep secrets and local-only bulk out of the smoke image context.
+backend/.venv
+backend/__pycache__
+backend/**/__pycache__
+backend/.pytest_cache
+backend/.env
+backend/models
+frontend/node_modules
+frontend/.next
+.git

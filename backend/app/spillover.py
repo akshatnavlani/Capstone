@@ -36,9 +36,9 @@ _IsolatedCreatorError = None
 _get_model_info = None
 
 try:
-    from app.gail.inference import IsolatedCreatorError as _Iso  # noqa: F401
-    from app.gail.inference import get_model_info as _gmi  # noqa: F401
-    from app.gail.inference import load_predict as _lp  # noqa: F401
+    from ml.inference import IsolatedCreatorError as _Iso  # noqa: F401
+    from ml.inference import get_model_info as _gmi  # noqa: F401
+    from ml.inference import load_predict as _lp  # noqa: F401
 
     _load_predict = _lp
     _IsolatedCreatorError = _Iso
@@ -111,7 +111,7 @@ def get_spillover_batch(creator_ids: list[str | uuid.UUID]) -> dict[str, dict]:
 
     # Try batch API if available
     try:
-        from app.gail.inference import load_predict_batch  # lazy
+        from ml.inference import load_predict_batch  # lazy
 
         results = load_predict_batch(str_ids)
         out: dict[str, dict] = {}
