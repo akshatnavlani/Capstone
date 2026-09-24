@@ -4,7 +4,7 @@
 the project actually is, what's broken, and what remains between here and the thesis. It
 supersedes memory when they disagree — memory is a pointer, this is the record.
 
-Last verified: **2026-08-11** (live DB queried directly, all four worktrees inspected).
+Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 closed state unchanged: 259/54/170 wired end-to-end, see §1 Review 1 closed. Team decision 2026-09-24: Review 2 = pipeline-complete per PendingWork 2026-09-20; Review 3 = improvements).
 
 ---
 
@@ -38,13 +38,13 @@ branch (lag detection, sentiment propagation) → combined by a Causal Inference
 Fusion Layer (weighted 0–100 score + risk adjustment) → Application Layer (recommendations,
 alerts, explainability graph).
 
-### Timeline & milestones (confirmed with the user on 2026-08-11)
+### Timeline & milestones (confirmed with the user on 2026-08-11, re-scoped 2026-09-24)
 
 | Milestone | When | Requirement |
 |---|---|---|
-| **Review 1** | late Aug – early Sep 2026 | **≥50% complete, with working examples** — ~2–4 weeks away |
-| **Review 2** | late Oct – early Nov 2026 | **80–100% complete** — ~11–13 weeks away |
-| **Final submission** | late Nov – early Dec 2026 | Complete, **security fixes done, deployable** — ~15–17 weeks away |
+| **Review 1** | late Aug – early Sep 2026 | **≥50% complete, with working examples** — CLOSED 2026-08-26 |
+| **Review 2** | late Oct – early Nov 2026 | **100% pipeline-complete — all PendingWork E/S/A items done** (decided 2026-09-24) |
+| **Review 3 / Final submission** | late Nov – early Dec 2026 | **Improvements on a completed pipeline** — hardening, thesis, **deployable not deployed** |
 
 **Deliverables:** source-code repo + thesis paper are **compulsory**. A live demo earns **extra
 credit**. **Public deployment is explicitly out of scope until after submission** — the bar for
@@ -71,14 +71,10 @@ event have `brand_id`, does a connected neighbor have pre-event history) — not
 structural criteria before declaring a milestone's data "ready," not just the headline counts.
 
 **Review 1 — "basic dry run," the bar for THIS check-in:**
-- [x] ~100 creators (260, well past the floor)
-- [x] **Computable training pairs: 52** (2026-08-21, canonical script, orchestrator-verified
-      directly) — past not just "at least one" but the ~50-100 thesis-defensible tier. See P0.4
-      for the full breakdown and how it got here.
-- [x] Real collaboration edges: 170 (unchanged since bulk promotion, still healthy).
-- [ ] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a
-      sentiment/reputation signal — likely already true given Reddit's growth (55 creators with
-      content, 2,649 posts) but not yet explicitly checked against this specific bar.
+- [x] ~100 creators (259, well past the floor — 260→259 after Athletics dedup)
+- [x] **Computable training pairs: 54** (2026-08-26, canonical `pair_count.py` 138 checks / 53 dated events / 40 yielding / 23 directed / 19 undirected / 170 graph — was 52 on 2026-08-21, +2 from 8 newly sponsored+connected creators; see P0.4)
+- [x] Real collaboration edges: 170 (340 directed / 1,414 `co_occurs_with`, giant 185 — unchanged undirected since bulk promotion, still healthy).
+- [x] At least one creator with comment volume (Reddit/IG/YT) sufficient to sanity-check a sentiment/reputation signal — **PASS 2026-08-26 Track B**: 149/259 with ≥1 comment (134k pools: 54k YT + 24.8k IG + 55k Reddit) — top-3 50 texts each (Ronaldo 9012, Carry 5174, Kohli 4283), SST-2 mean range 0.346 std>0.8, English-only mislabels noted — `reputation_score` still 0% `§5` but volume sufficient for sanity.
 
 **Review 2 — "GAIL trains for real, fusion produces real scores":**
 - [ ] Sponsorship events: 300+ (established Phase 2 target)
@@ -97,6 +93,32 @@ structural criteria before declaring a milestone's data "ready," not just the he
 - [ ] Limitations section grounded in what was actually found this project (observational data,
       disclosure-based treatment labels, structural graph sparsity, India-skewed sample,
       engagement-per-rupee not true ROI) — not a generic boilerplate list
+
+### 2026-09-24 Re-scope — Review 2 = pipeline-complete, Review 3 = improve (team decision)
+
+Source: `Capstone — Pending Work & Track Allocation.pdf` (2026-09-20, repo-root untracked).
+Per the user 2026-09-24, **all 21 PendingWork items are the Review 2 exit gate**; anything
+leftover plus hardening moves to Review 3. Timeline is explicitly not the constraint — scope
+is. Extra data collection and actual public deployment stay out of scope for this comparison.
+
+- **Review 2 DONE means:** Eesha E1–E10 (E1 propensity fix, E2 per-(event,neighbour) targets,
+  E3 doubly-robust, E4 causal-supervised attention, E5 mismeasured-treatment, E6
+  multi-relational exposure, E7 second GNN layer, E8 hidden-dim, E9 rename, E10 bot wiring) +
+  Shimona S1–S8 (S1 Temporal branch, S2 CLIP/BERT, S3 fusion calibration, S4 evaluation suite,
+  S5 novelty rewrite, S6 graph viz, S7 filter/cost error analysis, S8 cross-platform audit) +
+  Akshat A1–A3 (A1 `ml/` vs `backend/app/gail/` dedup first, A2 test/build gate, A3 canaries).
+- **Old Review 2 data targets above (300+ events / 500+ edges / brand profiles / sentiment
+  volume) are background, not the Review 2 exit gate** — they need collection scale-up, which
+  is excluded from this re-scope by explicit user instruction.
+- **Review 3 / submission = improve a completed pipeline:** any unfinished E/S/A items, full
+  security pass beyond the A2 smoke test (auth, Supabase password rotation, RLS/anon-key
+  review, dependency audit), brand-profile enrichment, thesis + repo cleanup + HLD
+  Twitter→Instagram fix, dataset stabilization / honestly-scoped subset declaration, demo
+  polish. Bar stays *deployable, not deployed*.
+
+### 2026-08-26 - Review 1 CLOSED - end-to-end wired, demoable
+
+Frozen main @ this commit + tag review1-2026-08-26 + branch review-1. Live DB: 259 creators / 54 pairs (138 checks, 53 events, 40 yielding, 23 directed/19 undirected, 170 graph) / 340 directed collaborates_with + 1,414 co_occurs_with (giant 185, 72 isolates 27.8%) / 6,153 posts (1,607 YT /1,811 IG 100% dated /2,748 Reddit) / 58 is_sponsored IG +3 YT +0 Reddit (18 with brand_id) / 19 brands / 134k comments (54k YT +24.8k IG +55k Reddit). Track A 918fb5c re-verified 54; B 5f8706f prod artifact models/gail_checkpoint.pt c6488a6 (N=10, hw 3.28 trained +/-13pts, inferred x1.6 +/-21pts, propensity mean 0.61 after z-score fix, sentiment 149/259 PASS); C b3905ef wired backend/app/spillover.py:1 + fusion.py:57 (basis trained|inferred|isolated|placeholder, w2 placeholder) 65ec502 - 3 archetypes c4b20 Virat trained 21.61->100 [0-100] / 89972 AB inferred 1.19->77 [0-100] / 78e48 _bungy isolated 0.5->50 [40-60]; D 5861f4d SpilloverBadge.tsx:1 wired, npm run build + lint pass, CORS localhost:3000 verified, 5 routes 200. Review 1 demo: brand-input -> dashboard -> explainability shows emerald/violet/zinc badges + wide CI + placeholder footnotes - honest small-N thesis story. PENDING_TRACK_D.md deleted. Next: Review 2 (300+ events /500+ edges / sentiment reputation_score real / brand profile data).
 
 ### 1a. Batch-readiness criteria (added 2026-08-18) — when to stop deepening the current 259 and
 promote the next batch
@@ -837,13 +859,39 @@ don't lose these:**
 
 ## 6. THE PLAN — current state → thesis
 
-**Mapped to the three milestones:**
+**Mapped to the three milestones (re-scoped 2026-09-24):**
 
 | Milestone | Phases that must land | The demo story it tells |
 |---|---|---|
-| **Review 1** (~2–4 wks) | Phase 1 complete + Phase 2 to **~100 creators** | "End-to-end pipeline works on real data: here are real creators, a real graph, real recommendations." Small-but-real beats large-but-broken. |
-| **Review 2** (~11–13 wks) | Phases 2–4 complete | "GAIL trains on real data, fusion produces real scores, the app works." |
-| **Submission** (~15–17 wks) | Phase 5 (deployable, not deployed) + Phase 6 | Repo + paper + security fixes + Docker. |
+| **Review 1** | Phase 1 complete + Phase 2 to **~100 creators** — CLOSED | "End-to-end pipeline works on real data: here are real creators, a real graph, real recommendations." Small-but-real beats large-but-broken. |
+| **Review 2** | **PendingWork Phases 1–6 (E1–E10 + S1–S8 + A1–A3) complete** | "Full pipeline with no placeholders: GAIL trains, Temporal + CLIP/BERT are live, fusion is calibrated, evaluation + graph UI work." |
+| **Review 3 / Submission** | Improvements + full security pass + thesis/repo/HLD | Repo + paper + security fixes + Docker (deployable, not deployed). |
+
+### 2026-09-24 plan — PendingWork Phases 1–6 ARE the Review-2 plan
+
+Sequencing per the PendingWork doc (team of 3: Eesha = model core, Shimona = branch +
+proof, Akshat = infra). Old PHASE 2–4 below are kept for the record but superseded for
+Review 2 sequencing.
+
+- **Phase 1 — unblock:** Akshat A1 then A2. Eesha E1, E2, E7, E9. Shimona begins S1.
+  (A1 must land before Eesha touches `exposure.py` / `gail_loss.py`.)
+- **Phase 2 — complete the claimed components:** Eesha E3, E6, E8, E10. Akshat A3, then
+  done. Shimona continues S1, starts S2. Every specified component exists in code.
+- **Phase 3 — new novelty:** Eesha E5 evidence check first (drop E5 if zero
+  false-negatives, put time into E4 ablation instead), then E5 + E4. Shimona continues
+  S1/S2, starts S8.
+- **Phase 4 — prove it:** Shimona S4 in full + S7. Eesha supports ablations
+  (single- vs multi-relational for E6, plain-MSE vs DR-supervised attention for E4).
+- **Phase 5 — remove the placeholders:** Shimona finishes S2, then S3 (recalibrate
+  `w1/w2/w3`, backfill fusionscore, remove `is_mock_data:true`, CI over all 3 branches),
+  then S6. Eesha supports calibration, then S5 with Shimona.
+- **Phase 6 — Temporal to completion:** Shimona finishes S1, propagation exercised,
+  `risk_alerts.propagated_from_creator_id` actually populated — the dual framework is dual.
+
+**Review 2 exit criteria:** E/S/A checklist in the 2026-09-24 re-scope above all done;
+`npm run build` + `lint` + both `pytest` suites green (A2 gate); fusion has zero
+hardcoded `0.5` inputs; S4 rank/score/baseline/ablation numbers exist (suggestive, not
+significance-claimed at small N).
 
 ⚠️ **Review 1 is close and rewards examples over completeness.** Phase 1's outputs — the
 interactive graph, a working recommendation flow on real data — *are* the Review 1 demo. Don't
