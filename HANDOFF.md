@@ -16,6 +16,8 @@ Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-0
 
 ✅ **A1 LANDED 2026-09-24 (Option A):** `backend/app/gail/` deleted (9 vendored files), `spillover.py` imports `ml.inference`, repo-root `sys.path` shim in `backend/app/__init__.py`, orphaned `backend/models/gail_checkpoint.pt` removed (canonical artifact stays track-b `models/`). Verified: 49 backend tests pass; live wiring via a temporary canonical copy returned trained 0.339 / inferred 1.191 / isolated 0.5 — exact match to `c6488a6` artifact values (temp copy removed afterwards). Standalone track-c runs without root `ml/`+`models/` fall back to placeholder by design; deploy/build context must include both.
 
+✅ **A2 (this round):** new `backend/tests/test_spillover.py` — served loader must resolve to `ml.inference` (fails if model code is ever re-vendored) + placeholder/isolated fallback when `ml` is missing (locks the never-crash contract for backend-only deploys). Suite now 50 passed + 1 env-skip (skip = backend-only checkout without `ml/`; both new tests pass where `ml/` is present). The cross-track runner `gate.ps1` lives on track-d (Docker owner).
+
 **This round's headline: force-relabeling at the new scale (Reddit
 2,748/YouTube 1,594, both roughly 4x Phase 1H's numbers) surfaced real new
 signal on all three platforms — but also a genuine precision failure on
