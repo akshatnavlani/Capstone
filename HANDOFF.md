@@ -14,6 +14,8 @@ Last updated: 2026-08-26 — Review 1 close, contracts finalized (`65ec502` wiri
 
 Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-09-24 re-scope section): all 21 PendingWork items are the Review 2 exit gate. This track owns S3 fusion calibration (recalibrate `w1/w2/w3`, backfill fusionscore, remove `is_mock_data:true`, CI over all 3 branches — only after S1+S2 go real), `risk_alerts.propagated_from_creator_id` + alerts-router wiring with Shimona, S8 cross-platform support, and A1 `ml/` vs `backend/app/gail/` dedup (active hazard once Eesha edits `exposure.py`/`gail_loss.py` — land it first). Precision-first labeling discipline unchanged. Fresh sessions: `git pull origin main` first.
 
+✅ **A1 LANDED 2026-09-24 (Option A):** `backend/app/gail/` deleted (9 vendored files), `spillover.py` imports `ml.inference`, repo-root `sys.path` shim in `backend/app/__init__.py`, orphaned `backend/models/gail_checkpoint.pt` removed (canonical artifact stays track-b `models/`). Verified: 49 backend tests pass; live wiring via a temporary canonical copy returned trained 0.339 / inferred 1.191 / isolated 0.5 — exact match to `c6488a6` artifact values (temp copy removed afterwards). Standalone track-c runs without root `ml/`+`models/` fall back to placeholder by design; deploy/build context must include both.
+
 **This round's headline: force-relabeling at the new scale (Reddit
 2,748/YouTube 1,594, both roughly 4x Phase 1H's numbers) surfaced real new
 signal on all three platforms — but also a genuine precision failure on
