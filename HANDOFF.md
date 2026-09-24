@@ -10,6 +10,10 @@ current-state summary — trust it over stale memory entries if they disagree.
 
 Last updated: 2026-08-26 — Review 1 close, contracts finalized (`65ec502` wiring, `c6488a6` artifact) — `CAPSTONE_NEXT_STEPS.md` (`778-795` N=10 `795` propensity 1.000, `822` w2 placeholder, `808` reputation_score null, `484` ownership), `API_CONTRACTS.md:1` SpilloverBasis Literal finalized, `report.md` 3 JSONs verified.
 
+## 2026-09-24 Re-scope — Review 2 = pipeline-complete, Review 3 = improve
+
+Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-09-24 re-scope section): all 21 PendingWork items are the Review 2 exit gate. This track owns S3 fusion calibration (recalibrate `w1/w2/w3`, backfill fusionscore, remove `is_mock_data:true`, CI over all 3 branches — only after S1+S2 go real), `risk_alerts.propagated_from_creator_id` + alerts-router wiring with Shimona, S8 cross-platform support, and A1 `ml/` vs `backend/app/gail/` dedup (active hazard once Eesha edits `exposure.py`/`gail_loss.py` — land it first). Precision-first labeling discipline unchanged. Fresh sessions: `git pull origin main` first.
+
 **This round's headline: force-relabeling at the new scale (Reddit
 2,748/YouTube 1,594, both roughly 4x Phase 1H's numbers) surfaced real new
 signal on all three platforms — but also a genuine precision failure on
