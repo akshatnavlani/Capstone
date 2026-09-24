@@ -4,7 +4,7 @@
 the project actually is, what's broken, and what remains between here and the thesis. It
 supersedes memory when they disagree — memory is a pointer, this is the record.
 
-Last verified: **2026-08-26** (live DB via pooler + 4 worktrees — Review 1 closed: 259/54/170 wired end-to-end, see §1 Review 1 closed).
+Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 closed state unchanged: 259/54/170 wired end-to-end, see §1 Review 1 closed. Team decision 2026-09-24: Review 2 = pipeline-complete per PendingWork 2026-09-20; Review 3 = improvements).
 
 ---
 
@@ -38,13 +38,13 @@ branch (lag detection, sentiment propagation) → combined by a Causal Inference
 Fusion Layer (weighted 0–100 score + risk adjustment) → Application Layer (recommendations,
 alerts, explainability graph).
 
-### Timeline & milestones (confirmed with the user on 2026-08-11)
+### Timeline & milestones (confirmed with the user on 2026-08-11, re-scoped 2026-09-24)
 
 | Milestone | When | Requirement |
 |---|---|---|
-| **Review 1** | late Aug – early Sep 2026 | **≥50% complete, with working examples** — ~2–4 weeks away |
-| **Review 2** | late Oct – early Nov 2026 | **80–100% complete** — ~11–13 weeks away |
-| **Final submission** | late Nov – early Dec 2026 | Complete, **security fixes done, deployable** — ~15–17 weeks away |
+| **Review 1** | late Aug – early Sep 2026 | **≥50% complete, with working examples** — CLOSED 2026-08-26 |
+| **Review 2** | late Oct – early Nov 2026 | **100% pipeline-complete — all PendingWork E/S/A items done** (decided 2026-09-24) |
+| **Review 3 / Final submission** | late Nov – early Dec 2026 | **Improvements on a completed pipeline** — hardening, thesis, **deployable not deployed** |
 
 **Deliverables:** source-code repo + thesis paper are **compulsory**. A live demo earns **extra
 credit**. **Public deployment is explicitly out of scope until after submission** — the bar for
@@ -93,6 +93,28 @@ structural criteria before declaring a milestone's data "ready," not just the he
 - [ ] Limitations section grounded in what was actually found this project (observational data,
       disclosure-based treatment labels, structural graph sparsity, India-skewed sample,
       engagement-per-rupee not true ROI) — not a generic boilerplate list
+
+### 2026-09-24 Re-scope — Review 2 = pipeline-complete, Review 3 = improve (team decision)
+
+Source: `Capstone — Pending Work & Track Allocation.pdf` (2026-09-20, repo-root untracked).
+Per the user 2026-09-24, **all 21 PendingWork items are the Review 2 exit gate**; anything
+leftover plus hardening moves to Review 3. Timeline is explicitly not the constraint — scope
+is. Extra data collection and actual public deployment stay out of scope for this comparison.
+
+- **Review 2 DONE means:** Eesha E1–E10 (E1 propensity fix, E2 per-(event,neighbour) targets,
+  E3 doubly-robust, E4 causal-supervised attention, E5 mismeasured-treatment, E6
+  multi-relational exposure, E7 second GNN layer, E8 hidden-dim, E9 rename, E10 bot wiring) +
+  Shimona S1–S8 (S1 Temporal branch, S2 CLIP/BERT, S3 fusion calibration, S4 evaluation suite,
+  S5 novelty rewrite, S6 graph viz, S7 filter/cost error analysis, S8 cross-platform audit) +
+  Akshat A1–A3 (A1 `ml/` vs `backend/app/gail/` dedup first, A2 test/build gate, A3 canaries).
+- **Old Review 2 data targets above (300+ events / 500+ edges / brand profiles / sentiment
+  volume) are background, not the Review 2 exit gate** — they need collection scale-up, which
+  is excluded from this re-scope by explicit user instruction.
+- **Review 3 / submission = improve a completed pipeline:** any unfinished E/S/A items, full
+  security pass beyond the A2 smoke test (auth, Supabase password rotation, RLS/anon-key
+  review, dependency audit), brand-profile enrichment, thesis + repo cleanup + HLD
+  Twitter→Instagram fix, dataset stabilization / honestly-scoped subset declaration, demo
+  polish. Bar stays *deployable, not deployed*.
 
 ### 2026-08-26 - Review 1 CLOSED - end-to-end wired, demoable
 
@@ -837,13 +859,39 @@ don't lose these:**
 
 ## 6. THE PLAN — current state → thesis
 
-**Mapped to the three milestones:**
+**Mapped to the three milestones (re-scoped 2026-09-24):**
 
 | Milestone | Phases that must land | The demo story it tells |
 |---|---|---|
-| **Review 1** (~2–4 wks) | Phase 1 complete + Phase 2 to **~100 creators** | "End-to-end pipeline works on real data: here are real creators, a real graph, real recommendations." Small-but-real beats large-but-broken. |
-| **Review 2** (~11–13 wks) | Phases 2–4 complete | "GAIL trains on real data, fusion produces real scores, the app works." |
-| **Submission** (~15–17 wks) | Phase 5 (deployable, not deployed) + Phase 6 | Repo + paper + security fixes + Docker. |
+| **Review 1** | Phase 1 complete + Phase 2 to **~100 creators** — CLOSED | "End-to-end pipeline works on real data: here are real creators, a real graph, real recommendations." Small-but-real beats large-but-broken. |
+| **Review 2** | **PendingWork Phases 1–6 (E1–E10 + S1–S8 + A1–A3) complete** | "Full pipeline with no placeholders: GAIL trains, Temporal + CLIP/BERT are live, fusion is calibrated, evaluation + graph UI work." |
+| **Review 3 / Submission** | Improvements + full security pass + thesis/repo/HLD | Repo + paper + security fixes + Docker (deployable, not deployed). |
+
+### 2026-09-24 plan — PendingWork Phases 1–6 ARE the Review-2 plan
+
+Sequencing per the PendingWork doc (team of 3: Eesha = model core, Shimona = branch +
+proof, Akshat = infra). Old PHASE 2–4 below are kept for the record but superseded for
+Review 2 sequencing.
+
+- **Phase 1 — unblock:** Akshat A1 then A2. Eesha E1, E2, E7, E9. Shimona begins S1.
+  (A1 must land before Eesha touches `exposure.py` / `gail_loss.py`.)
+- **Phase 2 — complete the claimed components:** Eesha E3, E6, E8, E10. Akshat A3, then
+  done. Shimona continues S1, starts S2. Every specified component exists in code.
+- **Phase 3 — new novelty:** Eesha E5 evidence check first (drop E5 if zero
+  false-negatives, put time into E4 ablation instead), then E5 + E4. Shimona continues
+  S1/S2, starts S8.
+- **Phase 4 — prove it:** Shimona S4 in full + S7. Eesha supports ablations
+  (single- vs multi-relational for E6, plain-MSE vs DR-supervised attention for E4).
+- **Phase 5 — remove the placeholders:** Shimona finishes S2, then S3 (recalibrate
+  `w1/w2/w3`, backfill fusionscore, remove `is_mock_data:true`, CI over all 3 branches),
+  then S6. Eesha supports calibration, then S5 with Shimona.
+- **Phase 6 — Temporal to completion:** Shimona finishes S1, propagation exercised,
+  `risk_alerts.propagated_from_creator_id` actually populated — the dual framework is dual.
+
+**Review 2 exit criteria:** E/S/A checklist in the 2026-09-24 re-scope above all done;
+`npm run build` + `lint` + both `pytest` suites green (A2 gate); fusion has zero
+hardcoded `0.5` inputs; S4 rank/score/baseline/ablation numbers exist (suggestive, not
+significance-claimed at small N).
 
 ⚠️ **Review 1 is close and rewards examples over completeness.** Phase 1's outputs — the
 interactive graph, a working recommendation flow on real data — *are* the Review 1 demo. Don't
