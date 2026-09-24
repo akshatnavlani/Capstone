@@ -10,6 +10,8 @@ Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-0
 
 **Track A implication: support-only for Review 2.** Old 300+/500+ scale targets are background — extra collection explicitly out of scope for this re-scope. Keep `pair_count.py` canonical (plus A3 canary support), targeted `brand_id` backfill on demand, targeted-promotion rule still in force. Census/throttle/ownership work continues as background; nothing here gates Review 2. Fresh sessions: `git pull origin main` first.
 
+✅ **A3 LANDED 2026-09-24:** `scripts/ingestion/pair_count_canary.py` + `pair_count_snapshot.json` (259 creators / 170 undirected pairs covering the 340 directed / 1,414 directed co-occurrences / pairs floor 57, seeded live 2026-09-24) — exact match on structure, floor on pairs (grows legitimately; shrink = loud fail). Read-only; run after any ingestion or schema change. Wired as a `gate.ps1` step (skip-guarded without DATABASE_URL).
+
 ## ⏩ 30-SECOND RESUME — read this before anything else
 
 - **Current canonical: 54 computable pairs** (was 52 `CAPSTONE_NEXT_STEPS.md:641`). Verified 2026-08-26 02:00 IST via `python scripts/ingestion/pair_count.py` (sole definition `pair_count.py:92`) and `loop_stats.py`. `259` creators, `170` undirected edge pairs, `1811/1811` Instagram dated. Report at `report.md` (this round).

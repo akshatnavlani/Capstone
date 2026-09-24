@@ -1,0 +1,1 @@
+{"coocc_directed":1414,"collab_edge_pairs":170,"computable_pairs_floor":57,"creators":259,"note":"340 directed collaborations = 2 per undirected pair (Track C resolver emits both directions), so collab_edge_pairs==170 covers it. Bump deliberately after legit ingestion (with date) -- never to silence drift.","verified":"2026-09-24"}
