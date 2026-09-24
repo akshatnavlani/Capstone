@@ -4,6 +4,12 @@
 **2026-08-26 17:41 IST — Review 1 closing; canonical 54 pairs (was 52), 259 creators, 170-edge graph stable, 8 newly-sponsored+connected creators verified, stopping state clean CAPSTONE_NEXT_STEPS.md:690.** Branch: `track-a-data-infra`.
 Worktree: `D:\Capstone-worktrees\track-a-data-infra`.
 
+## 2026-09-24 Re-scope — Review 2 = pipeline-complete, Review 3 = improve
+
+Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-09-24 re-scope section): all 21 PendingWork items (Eesha E1–E10, Shimona S1–S8, Akshat A1–A3) are the Review 2 exit gate; Review 3 is improvements. Eesha/Shimona/Akshat are people-tracks, not infra Tracks A/B/C/D — don't conflate.
+
+**Track A implication: support-only for Review 2.** Old 300+/500+ scale targets are background — extra collection explicitly out of scope for this re-scope. Keep `pair_count.py` canonical (plus A3 canary support), targeted `brand_id` backfill on demand, targeted-promotion rule still in force. Census/throttle/ownership work continues as background; nothing here gates Review 2. Fresh sessions: `git pull origin main` first.
+
 ## ⏩ 30-SECOND RESUME — read this before anything else
 
 - **Current canonical: 54 computable pairs** (was 52 `CAPSTONE_NEXT_STEPS.md:641`). Verified 2026-08-26 02:00 IST via `python scripts/ingestion/pair_count.py` (sole definition `pair_count.py:92`) and `loop_stats.py`. `259` creators, `170` undirected edge pairs, `1811/1811` Instagram dated. Report at `report.md` (this round).
