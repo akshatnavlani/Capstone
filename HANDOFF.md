@@ -18,6 +18,8 @@ Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-0
 
 ✅ **A2 (this round):** new `backend/tests/test_spillover.py` — served loader must resolve to `ml.inference` (fails if model code is ever re-vendored) + placeholder/isolated fallback when `ml` is missing (locks the never-crash contract for backend-only deploys). Suite now 50 passed + 1 env-skip (skip = backend-only checkout without `ml/`; both new tests pass where `ml/` is present). The cross-track runner `gate.ps1` lives on track-d (Docker owner).
 
+✅ **A3 (this round):** new `backend/tests/test_influencers.py` red-team canary — empty/1-char `product_category` must pass through (2026-08-09 wipeout guards hold; tests lock them), genuine mismatch (`zxywq`) must still filter to empty. Suite now 53 passed + 1 env-skip. No source change needed.
+
 **This round's headline: force-relabeling at the new scale (Reddit
 2,748/YouTube 1,594, both roughly 4x Phase 1H's numbers) surfaced real new
 signal on all three platforms — but also a genuine precision failure on
