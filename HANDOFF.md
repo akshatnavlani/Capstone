@@ -10,6 +10,8 @@ current every round) for depth on any item below.
 
 Team decision 2026-09-24 (`origin/main c795138`, `CAPSTONE_NEXT_STEPS.md` 2026-09-24 re-scope section): all 21 PendingWork items are the Review 2 exit gate. This track carries the core: Eesha E1–E10 (E1 propensity, E2 per-(event,neighbour) targets, E3 DR, E4 attention supervision, E5 mismeasured-treatment, E6 multi-relational, E7 second layer, E8 hidden-dim, E9 rename, E10 bot wiring) plus Shimona S1/S2/S4 core (Temporal branch, CLIP/BERT, evaluation suite). Order: A1 dedup must land before touching `exposure.py`/`gail_loss.py`; E1+E2 first (gate E3/E4/E5 and S4); E5 evidence-check-or-drop before committing. Fresh sessions: `git pull origin main` first.
 
+✅ **A2 2026-09-24:** ML suite re-verified green for the gate — 69 passed, no code changes on this track (it is the canonical `ml/` source; A1 touched only consumers).
+
 ## What changed this round (2026-08-26 — sentiment sanity check, read-only)
 
 **Sentiment sanity check — read-only, no schema/model changes.** Verified live via pooler `CAPSTONE_NEXT_STEPS.md:440` (`DATABASE_URL` pooler) that comment volume suffices for `reputation_score`/`Sentiment Propagation` (`CAPSTONE_NEXT_STEPS.md:808` 0% built, `818-822` Temporal 0% + `w2` placeholder).
