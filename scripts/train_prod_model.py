@@ -41,6 +41,8 @@ import sys
 from pathlib import Path
 
 import torch
+
+from ml.feature_scaling import compute_feature_scaler
 import torch.nn.functional as F
 
 # ---------------------------------------------------------------------------
@@ -128,15 +130,6 @@ def category_one_hot(category: str | None) -> list[int]:
     if category in CREATOR_CATEGORIES:
         vec[CREATOR_CATEGORIES.index(category)] = 1
     return vec
-
-
-def compute_feature_scaler(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    """Per-dim mean/std over N creators. Std clamped to avoid div/0."""
-    mean = x.mean(dim=0)
-    std = x.std(dim=0, unbiased=False)
-    std = std.clamp(min=1e-6)
-    # One-hot dims have tiny std; keep them as-is — clamping prevents explosion
-    return mean, std
 
 
 def platform_engagement(cur, creator_id: str, platform: str, event_date):
