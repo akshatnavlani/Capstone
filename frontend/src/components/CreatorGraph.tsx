@@ -126,7 +126,7 @@ export default function CreatorGraph({ results }: { results: InfluencerRecommend
   const scored = useMemo(() => new Map((results ?? []).map((r) => [r.creator_id, r])), [results]);
 
   if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
-  if (!links || !positions) return <p className="text-sm text-zinc-500">Loading graph…</p>;
+  if (!links || !positions) return <p className="text-sm text-zinc-500">Loading the graph from the database (a few seconds)…</p>;
 
   const nameOf = (id: string) => names.get(id) ?? id;
   const neighbours = new Set<string>();
@@ -286,7 +286,7 @@ export default function CreatorGraph({ results }: { results: InfluencerRecommend
           {selectedLinks.length > 12 && <p className="mt-1 text-xs text-zinc-500">and {selectedLinks.length - 12} more</p>}
         </div>
       ) : (
-        <p className="text-xs text-zinc-500">Click a creator to highlight their links. Larger dots score higher in the current results.</p>
+        <p className="text-xs text-zinc-500">Click a creator to highlight their links.{results && results.length > 0 ? " Larger dots score higher in the current results." : ""}</p>
       )}
     </div>
   );

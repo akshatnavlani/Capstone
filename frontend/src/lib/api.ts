@@ -5,6 +5,7 @@ import type {
   CreatorSummary,
   GraphEdge,
 } from "@/types";
+import type { AnalysisData } from "@/types/analysis";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
@@ -47,6 +48,14 @@ export async function getCoOccurrenceEdges(): Promise<GraphEdge[]> {
   const res = await fetch(`${API_BASE_URL}/feature-store/edges/co-occurrence`);
   if (!res.ok) {
     throw new Error(`GET /feature-store/edges/co-occurrence failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getAnalysis(): Promise<AnalysisData> {
+  const res = await fetch(`${API_BASE_URL}/analysis`);
+  if (!res.ok) {
+    throw new Error(`GET /analysis failed: ${res.status}`);
   }
   return res.json();
 }

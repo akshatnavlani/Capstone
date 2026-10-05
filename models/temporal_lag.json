@@ -1,0 +1,94 @@
+[
+  {
+    "cause": "yt_posts",
+    "effect": "yt_comments",
+    "bin_hours": 12,
+    "creators_with_both": 39,
+    "creators_usable": 37,
+    "best_lag_bins": 0,
+    "best_lag_hours": 0,
+    "best_corr": 0.5147,
+    "lag_p_value": 0.002,
+    "profile": {
+      "-4": 0.1109,
+      "-3": 0.0482,
+      "-2": 0.1055,
+      "-1": 0.0467,
+      "0": 0.5147,
+      "1": 0.2349,
+      "2": 0.2131,
+      "3": 0.1042,
+      "4": 0.1582
+    },
+    "granger_creators": 35,
+    "granger_combined_p": 0.0
+  },
+  {
+    "cause": "yt_posts",
+    "effect": "reddit_posts",
+    "bin_hours": 12,
+    "creators_with_both": 22,
+    "creators_usable": 7,
+    "best_lag_bins": 0,
+    "best_lag_hours": 0,
+    "best_corr": 0.1398,
+    "lag_p_value": 0.016,
+    "profile": {
+      "-4": -0.0327,
+      "-3": 0.0286,
+      "-2": 0.0039,
+      "-1": 0.0169,
+      "0": 0.1398,
+      "1": 0.0772,
+      "2": 0.0685,
+      "3": -0.0205,
+      "4": 0.0345
+    },
+    "granger_creators": 7,
+    "granger_combined_p": 0.762958
+  },
+  {
+    "cause": "ig_posts",
+    "effect": "reddit_posts",
+    "bin_hours": 24,
+    "creators_with_both": 32,
+    "creators_usable": 9,
+    "best_lag_bins": -3,
+    "best_lag_hours": -72,
+    "best_corr": 0.0427,
+    "lag_p_value": 0.6806,
+    "profile": {
+      "-3": 0.0427,
+      "-2": 0.0233,
+      "-1": 0.0078,
+      "0": 0.0358,
+      "1": -0.0094,
+      "2": 0.0321,
+      "3": 0.0425
+    },
+    "granger_creators": 9,
+    "granger_combined_p": 0.592642
+  },
+  {
+    "cause": "yt_posts",
+    "effect": "ig_posts",
+    "bin_hours": 24,
+    "creators_with_both": 15,
+    "creators_usable": 8,
+    "best_lag_bins": 0,
+    "best_lag_hours": 0,
+    "best_corr": 0.15,
+    "lag_p_value": 0.004,
+    "profile": {
+      "-3": 0.0481,
+      "-2": 0.0583,
+      "-1": 0.1237,
+      "0": 0.15,
+      "1": 0.0005,
+      "2": 0.0432,
+      "3": -0.0332
+    },
+    "granger_creators": 7,
+    "granger_combined_p": 0.989343
+  }
+]
