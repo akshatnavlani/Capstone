@@ -5,10 +5,10 @@ with confidence bounds and risk adjustment (PROJECT_PLAN.md Section 4).
 final_score = w1*spillover + w2*sentiment_risk + w3*creator_feature
 
 Weights: w1=0.4 w2=0.3 w3=0.3 are still placeholder/un-calibrated —
-only w1 (spillover via GAIL checkpoint c6488a6) is now real; w2
-sentiment_risk_score remains 0.5 placeholder until Temporal branch lands
-(CAPSTONE_NEXT_STEPS.md:822, 778-795). Do not recalibrate w1/w2/w3 as if
-all are real; w2 has zero variance modeled and should stay 0.5.
+w1 (spillover via GAIL checkpoint c6488a6) is real; w2 sentiment_risk_score is
+real for creators with scored comments (app/temporal.py, Temporal branch S1)
+and still 0.5 for the rest. Do not recalibrate w1/w2/w3 until the creator
+feature score (w3) is also real (PendingWork S2/S3).
 
 Confidence heuristic (honest small-N, N≈10 effective labeled nodes):
   spillover ~ prediction-interval : hw = t_{0.975,df} * residual_std * sqrt(1+1/N)

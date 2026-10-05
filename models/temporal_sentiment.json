@@ -1,0 +1,2013 @@
+{
+  "share_devanagari": 0.0058,
+  "creators": [
+    {
+      "creator_id": "3089ce76-7f99-4f30-bdbb-43b00d6773b3",
+      "name": "Suhan Khan- Coach PT Mentor",
+      "safety_score": 0.3138,
+      "n_comments": 41,
+      "platforms": {
+        "reddit": {
+          "score": 0.3138,
+          "n": 41
+        }
+      }
+    },
+    {
+      "creator_id": "f68a8fa7-57e3-4d26-b5a9-7d96baf3daeb",
+      "name": "International Cup of Joy",
+      "safety_score": 0.3594,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.3594,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "c4064ae2-44fd-4bea-acd5-f13b40e62204",
+      "name": "Elite Edge",
+      "safety_score": 0.362,
+      "n_comments": 61,
+      "platforms": {
+        "reddit": {
+          "score": 0.362,
+          "n": 61
+        }
+      }
+    },
+    {
+      "creator_id": "9e1e847c-cb32-4421-abd5-73c0db3703cb",
+      "name": "SEKHON INDIAN AIR FORCE MARATHON",
+      "safety_score": 0.3704,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.3704,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "fdbeb8c0-bce9-4446-8917-6909e10ea99a",
+      "name": "Matrix Fight Night",
+      "safety_score": 0.372,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.372,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "7921ac3c-04ab-4121-8314-a6930f7b91f6",
+      "name": "Matthew Delly",
+      "safety_score": 0.3901,
+      "n_comments": 50,
+      "platforms": {
+        "youtube": {
+          "score": 0.5102,
+          "n": 1
+        },
+        "reddit": {
+          "score": 0.3854,
+          "n": 49
+        }
+      }
+    },
+    {
+      "creator_id": "6bcbabf7-7eeb-4847-959d-b8f89755c8b4",
+      "name": "Sunil Narine",
+      "safety_score": 0.41,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.41,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "1328f004-209f-4f5b-a179-044ba88c58c2",
+      "name": "Sporting Beyond Pvt Ltd",
+      "safety_score": 0.4107,
+      "n_comments": 91,
+      "platforms": {
+        "reddit": {
+          "score": 0.4107,
+          "n": 91
+        }
+      }
+    },
+    {
+      "creator_id": "4731f99c-df00-4e4e-99fa-842205df7508",
+      "name": "Nitish Kumar Reddy",
+      "safety_score": 0.4273,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4273,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "0bbab9d5-3bd8-4452-8309-438b551acf8c",
+      "name": "Trent Boult",
+      "safety_score": 0.4292,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4292,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "71e4cffd-f1d0-4765-b34e-f262113398c2",
+      "name": "Ryan Williams",
+      "safety_score": 0.439,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.439,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "2ceb8407-589e-4ba1-b9f3-08dd72339829",
+      "name": "Leander Paes",
+      "safety_score": 0.4407,
+      "n_comments": 12,
+      "platforms": {
+        "reddit": {
+          "score": 0.4407,
+          "n": 12
+        }
+      }
+    },
+    {
+      "creator_id": "4f822bca-87cf-4aee-957c-86f04a1403f6",
+      "name": "Sofie Schmidt Yoga Teacher",
+      "safety_score": 0.4447,
+      "n_comments": 14,
+      "platforms": {
+        "reddit": {
+          "score": 0.4447,
+          "n": 14
+        }
+      }
+    },
+    {
+      "creator_id": "9dc75e6d-759b-49e2-9c9b-9feeefe403bc",
+      "name": "Up Athletes",
+      "safety_score": 0.4487,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4487,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "adfa0864-b5d1-4972-bb2a-effbaf33b4ac",
+      "name": "Tyrese Maxey",
+      "safety_score": 0.4497,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4497,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "207fcf3e-f20a-4ec4-a55c-ab639d58c6a3",
+      "name": "Tilak Varma",
+      "safety_score": 0.4507,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4507,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "98d74fde-72c8-4358-b3ef-18b4b262a59d",
+      "name": "Extreme Bungee Drop",
+      "safety_score": 0.4511,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4511,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "b0120caa-0a68-4224-b21c-41e8274904dd",
+      "name": "FC Goa",
+      "safety_score": 0.4527,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4527,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "47978466-7338-4a00-a29f-8c1df7f3aa6d",
+      "name": "Ramandeep singh",
+      "safety_score": 0.4535,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4535,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "e74c7d3f-8290-477c-afee-189adfc6a154",
+      "name": "A PLUS-SIZE STORE",
+      "safety_score": 0.4575,
+      "n_comments": 7,
+      "platforms": {
+        "reddit": {
+          "score": 0.4575,
+          "n": 7
+        }
+      }
+    },
+    {
+      "creator_id": "3ca64ce3-bed3-40a4-a351-bbccaa21da99",
+      "name": "Tamil Nadu Cricket Association",
+      "safety_score": 0.4587,
+      "n_comments": 118,
+      "platforms": {
+        "youtube": {
+          "score": 0.7036,
+          "n": 18
+        },
+        "reddit": {
+          "score": 0.3881,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "20ccb825-8b0e-4350-8f6e-5ff718082dfe",
+      "name": "Pro Ultimate Gyms - Official Page",
+      "safety_score": 0.4593,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4593,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "063e5615-e1ed-4ffc-9d1b-eb4586d3577e",
+      "name": "Zeeshan Ansari",
+      "safety_score": 0.4613,
+      "n_comments": 29,
+      "platforms": {
+        "reddit": {
+          "score": 0.4613,
+          "n": 29
+        }
+      }
+    },
+    {
+      "creator_id": "5b67f768-c9cc-41e8-a871-4d911d883f3f",
+      "name": "Channing Frye",
+      "safety_score": 0.463,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.463,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "851747c9-35b6-44c5-9b34-7716e5bc202f",
+      "name": "Pat Cummins",
+      "safety_score": 0.4651,
+      "n_comments": 22,
+      "platforms": {
+        "reddit": {
+          "score": 0.4651,
+          "n": 22
+        }
+      }
+    },
+    {
+      "creator_id": "915858c9-fa87-45e1-bbce-8c0454b657f4",
+      "name": "Navdeep Saini",
+      "safety_score": 0.4656,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4656,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "a651fbb0-49b7-4edd-9d45-d3ae808d8eae",
+      "name": "Cricket Association Of Bengal",
+      "safety_score": 0.4666,
+      "n_comments": 51,
+      "platforms": {
+        "reddit": {
+          "score": 0.4666,
+          "n": 51
+        }
+      }
+    },
+    {
+      "creator_id": "2c3b402e-2f46-43ff-9005-1dd39dade27f",
+      "name": "Heinrich Klaasen",
+      "safety_score": 0.467,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.467,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "296c052d-61fd-4361-8fe0-aaa9383fc746",
+      "name": "Ellyse Perry",
+      "safety_score": 0.4685,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4685,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "e40a2961-c232-4a68-8eae-1bf81e414107",
+      "name": "MC Mary Kom",
+      "safety_score": 0.4701,
+      "n_comments": 121,
+      "platforms": {
+        "instagram": {
+          "score": 0.4569,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.5235,
+          "n": 21
+        }
+      }
+    },
+    {
+      "creator_id": "52549fa8-233b-4db5-908c-5f8cade6d21e",
+      "name": "Tim David",
+      "safety_score": 0.4709,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4709,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "eade4ddd-a90e-4ddc-b7a9-1f3a02207eef",
+      "name": "Cameron Green",
+      "safety_score": 0.4709,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4709,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "a0047de0-7172-4458-a48a-6b065e8c4e6e",
+      "name": "Jos Buttler",
+      "safety_score": 0.4718,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4718,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "6325e04c-a353-42ac-9c91-b2c90d7215d3",
+      "name": "Grace Harris",
+      "safety_score": 0.4736,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4736,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "edce915b-0f48-4edd-a678-ce39e5601c12",
+      "name": "Aniket Verma",
+      "safety_score": 0.4742,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4742,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "e88af091-45f2-47cc-b6cc-554c6f172615",
+      "name": "Mitchell Santner",
+      "safety_score": 0.4763,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4763,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "2a7abf18-d306-4a7e-85e5-4951b01bf8df",
+      "name": "Finn Allen",
+      "safety_score": 0.4776,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4776,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "06742b0b-576f-4d41-baf7-675331f87bd7",
+      "name": "Vaibhav Arora",
+      "safety_score": 0.4778,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4778,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "7aa4a4e1-0ff5-49b2-9265-13c27f90a730",
+      "name": "Gujarat Cricket Association",
+      "safety_score": 0.4785,
+      "n_comments": 65,
+      "platforms": {
+        "reddit": {
+          "score": 0.4785,
+          "n": 65
+        }
+      }
+    },
+    {
+      "creator_id": "3499e229-319d-45ff-8696-5ac6a3ba8150",
+      "name": "Tristan Thompson",
+      "safety_score": 0.4788,
+      "n_comments": 119,
+      "platforms": {
+        "instagram": {
+          "score": 0.6483,
+          "n": 19
+        },
+        "reddit": {
+          "score": 0.4272,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "f501fc9b-195f-4574-9dcc-02d954a6920d",
+      "name": "Fully Dosed - India",
+      "safety_score": 0.4801,
+      "n_comments": 9,
+      "platforms": {
+        "reddit": {
+          "score": 0.4801,
+          "n": 9
+        }
+      }
+    },
+    {
+      "creator_id": "77ea2993-6eb7-4ff1-b3b1-072d669c32a8",
+      "name": "bharatoutcome",
+      "safety_score": 0.4809,
+      "n_comments": 39,
+      "platforms": {
+        "instagram": {
+          "score": 0.4809,
+          "n": 39
+        }
+      }
+    },
+    {
+      "creator_id": "398a089f-7ed5-4575-948f-ee8109d5d70a",
+      "name": "Bronny James",
+      "safety_score": 0.4811,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4811,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "2e1e6981-c06b-467d-8f2a-caf238943d58",
+      "name": "Fitness Standards Council",
+      "safety_score": 0.4817,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.4817,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "1e60227a-13a0-46d3-bac2-c41b38e37c08",
+      "name": "Brydon Carse",
+      "safety_score": 0.4817,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4817,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "e2cffd02-946c-4ee3-8b82-08692545e436",
+      "name": "Tim Seifert",
+      "safety_score": 0.4819,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4819,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "5c4e7d70-aa12-401f-ba29-3ec74cc3c0df",
+      "name": "Liam Livingstone",
+      "safety_score": 0.4837,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4837,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "96e8e1f1-0e74-49bb-9bf0-467b2b5a98d6",
+      "name": "Will Jacks",
+      "safety_score": 0.4838,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4838,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "6b33adc0-0a9c-4fcd-b23a-3fffa499774f",
+      "name": "Jordan Cox",
+      "safety_score": 0.4864,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4864,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "434a4931-4f3e-47cb-ae21-1dc3802cc6f5",
+      "name": "Tejasvi Singh Dahiya",
+      "safety_score": 0.4877,
+      "n_comments": 12,
+      "platforms": {
+        "reddit": {
+          "score": 0.4877,
+          "n": 12
+        }
+      }
+    },
+    {
+      "creator_id": "6e259d3b-70e4-4ca3-a0ec-3ebca59eba84",
+      "name": "Vihaan Malhotra",
+      "safety_score": 0.4889,
+      "n_comments": 54,
+      "platforms": {
+        "reddit": {
+          "score": 0.4889,
+          "n": 54
+        }
+      }
+    },
+    {
+      "creator_id": "1385601c-6d5e-43ac-87b1-5609ff150fed",
+      "name": "Ryan Rickelton",
+      "safety_score": 0.4899,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4899,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "e70afacc-b83b-424f-997a-839c68af5789",
+      "name": "Kini Pratap Singh",
+      "safety_score": 0.4919,
+      "n_comments": 36,
+      "platforms": {
+        "reddit": {
+          "score": 0.4919,
+          "n": 36
+        }
+      }
+    },
+    {
+      "creator_id": "114c71b7-df16-4b55-bd65-26fa6d3021c7",
+      "name": "Travis Head",
+      "safety_score": 0.4957,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.4957,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "da0600c1-4aca-40cb-9693-3eeeceb8e49b",
+      "name": "Abhishek Sharma",
+      "safety_score": 0.5055,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5055,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "1669e12b-f6b1-4965-88b7-d4c8a43c0450",
+      "name": "Bhuvneshwar Kumar",
+      "safety_score": 0.5064,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5064,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "211755f6-49b1-44ec-a23c-da1be5e9559f",
+      "name": "Harsh Dubey",
+      "safety_score": 0.5082,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5082,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "33d17cfb-3f60-4ca7-90b6-e7911fd249c1",
+      "name": "Athletics",
+      "safety_score": 0.514,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.514,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "4fe1b9b5-5b3e-4975-863b-677a88bfc75d",
+      "name": "Inspire Institute of Sport",
+      "safety_score": 0.5169,
+      "n_comments": 149,
+      "platforms": {
+        "youtube": {
+          "score": 0.7532,
+          "n": 49
+        },
+        "reddit": {
+          "score": 0.3782,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "2cd18823-329a-4423-98de-bad33ceb0f63",
+      "name": "Kieron Pollard",
+      "safety_score": 0.5181,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5181,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "16b1d55e-6839-4a83-98c1-ab7e0bf855a3",
+      "name": "Naman Dhir",
+      "safety_score": 0.5189,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5189,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "8d7211d1-9d25-4a8a-be5f-b9a62fa73d3a",
+      "name": "Eshan Malinga",
+      "safety_score": 0.5192,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5192,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "552970cf-bd18-4eeb-b7d2-4e1bf1cfe312",
+      "name": "Kevin Love",
+      "safety_score": 0.5213,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5213,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "ecf945bf-2cf8-4a04-8f77-634b453182d6",
+      "name": "Chris Gayle",
+      "safety_score": 0.5243,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5243,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "f689e7a9-7f1e-4223-b6a3-1203bd763ccc",
+      "name": "Abhi Sharma",
+      "safety_score": 0.5283,
+      "n_comments": 21,
+      "platforms": {
+        "instagram": {
+          "score": 0.6023,
+          "n": 11
+        },
+        "reddit": {
+          "score": 0.4329,
+          "n": 10
+        }
+      }
+    },
+    {
+      "creator_id": "3c3d1fb8-722c-4f6c-a47e-89b438f4a066",
+      "name": "shubmangill",
+      "safety_score": 0.5314,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5314,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "e3ed7ff9-0259-4ffc-a545-a6de727fbc75",
+      "name": "Gokulam Kerala FC",
+      "safety_score": 0.5337,
+      "n_comments": 86,
+      "platforms": {
+        "reddit": {
+          "score": 0.5337,
+          "n": 86
+        }
+      }
+    },
+    {
+      "creator_id": "e29eff05-da2f-4170-b16a-7f97f16b2c3c",
+      "name": "Dabang Delhi",
+      "safety_score": 0.5351,
+      "n_comments": 29,
+      "platforms": {
+        "reddit": {
+          "score": 0.5351,
+          "n": 29
+        }
+      }
+    },
+    {
+      "creator_id": "cb8b0d6f-3fca-41e6-8e7b-534179b2bf54",
+      "name": "Sunil Chhetri",
+      "safety_score": 0.5358,
+      "n_comments": 52,
+      "platforms": {
+        "reddit": {
+          "score": 0.5358,
+          "n": 52
+        }
+      }
+    },
+    {
+      "creator_id": "57bf3134-cb29-41d0-9c7f-624c81bccfc3",
+      "name": "Nadine De Klerk",
+      "safety_score": 0.5371,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5371,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "f4203927-d38e-45f5-b4bf-859e321d96ad",
+      "name": "Richard Gleeson",
+      "safety_score": 0.5405,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5405,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "3b207193-98a9-4a4e-b145-60334083f3d1",
+      "name": "dietbysimranvohra",
+      "safety_score": 0.544,
+      "n_comments": 10,
+      "platforms": {
+        "youtube": {
+          "score": 0.544,
+          "n": 10
+        }
+      }
+    },
+    {
+      "creator_id": "8854519a-7d53-4089-a869-ea9acf774957",
+      "name": "Ankit Punia",
+      "safety_score": 0.551,
+      "n_comments": 200,
+      "platforms": {
+        "youtube": {
+          "score": 0.5402,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.5533,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "c5fa1fb2-7fc9-4647-8c81-75f354ffc760",
+      "name": "Kane Williamson",
+      "safety_score": 0.5597,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5597,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "7f78bbec-774f-44a1-ab70-132493f6be91",
+      "name": "Swapnil Singh",
+      "safety_score": 0.5635,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5635,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "f99e5e41-0d9b-4589-8d0a-42eb7a68b5fa",
+      "name": "ATHLEAN-X\u2122",
+      "safety_score": 0.5666,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.5666,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "f88429ec-b73c-4272-a9f2-9f698aa0bb0e",
+      "name": "Shane Watson",
+      "safety_score": 0.5681,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5681,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "8c4d143d-a251-4760-b25f-985a02ff16ae",
+      "name": "Indian Olympic Association",
+      "safety_score": 0.57,
+      "n_comments": 131,
+      "platforms": {
+        "instagram": {
+          "score": 0.7302,
+          "n": 31
+        },
+        "reddit": {
+          "score": 0.4903,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "80e4b2cf-81d5-453f-bd5a-d4c2f6ca1f92",
+      "name": "Lucknow Super Giants",
+      "safety_score": 0.5751,
+      "n_comments": 200,
+      "platforms": {
+        "youtube": {
+          "score": 0.6539,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4838,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "567a2a00-4630-4ffd-a8a1-1115a5374fe0",
+      "name": "Ranveer Allahbadia",
+      "safety_score": 0.5752,
+      "n_comments": 300,
+      "platforms": {
+        "youtube": {
+          "score": 0.6233,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.7234,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.3539,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "5b46b941-8061-4a80-8011-8d7e1d31f2ab",
+      "name": "Melie Kerr",
+      "safety_score": 0.5782,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.5782,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "a9972793-12b3-45b1-a9f4-310913e0a835",
+      "name": "Mumbai City FC",
+      "safety_score": 0.5806,
+      "n_comments": 200,
+      "platforms": {
+        "youtube": {
+          "score": 0.6725,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4753,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "c15b8b47-3780-4573-bbb0-43ab37265924",
+      "name": "Parikshit Balochi",
+      "safety_score": 0.5933,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.5933,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "c086bf2e-80f8-4902-b155-bbec78610798",
+      "name": "CarryMinati",
+      "safety_score": 0.6003,
+      "n_comments": 300,
+      "platforms": {
+        "youtube": {
+          "score": 0.629,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.646,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4925,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "5ac59097-7c8d-4f3e-b99d-4aaaa946a10a",
+      "name": "Ankush Raina",
+      "safety_score": 0.6046,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.6046,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "0dacdd78-a427-4be9-aa83-658cbcdaf56e",
+      "name": "Anushka Sharma",
+      "safety_score": 0.6048,
+      "n_comments": 153,
+      "platforms": {
+        "instagram": {
+          "score": 0.6853,
+          "n": 98
+        },
+        "reddit": {
+          "score": 0.4503,
+          "n": 55
+        }
+      }
+    },
+    {
+      "creator_id": "f284d317-627a-476c-8ab2-63f03d8098b9",
+      "name": "Rajasthan Royals",
+      "safety_score": 0.609,
+      "n_comments": 200,
+      "platforms": {
+        "youtube": {
+          "score": 0.719,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4809,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "e78b98f3-e327-41fd-ac37-16c1661e84e1",
+      "name": "Kanishka Fitness Content Creator",
+      "safety_score": 0.6096,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.6096,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "150e2138-09b0-4a88-98d2-c53539b44359",
+      "name": "LeBron James",
+      "safety_score": 0.6148,
+      "n_comments": 200,
+      "platforms": {
+        "instagram": {
+          "score": 0.795,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4155,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "6134d132-39ca-4381-b0bc-474ee4bc352b",
+      "name": "Total Combat Fitness",
+      "safety_score": 0.6159,
+      "n_comments": 100,
+      "platforms": {
+        "reddit": {
+          "score": 0.6159,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "614aeca6-a861-4f0a-a870-663584f88e9e",
+      "name": "Indian Super League",
+      "safety_score": 0.619,
+      "n_comments": 200,
+      "platforms": {
+        "youtube": {
+          "score": 0.735,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4833,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e",
+      "name": "jumper_aj_",
+      "safety_score": 0.6199,
+      "n_comments": 24,
+      "platforms": {
+        "youtube": {
+          "score": 0.6199,
+          "n": 24
+        }
+      }
+    },
+    {
+      "creator_id": "26fcb67c-1b15-4854-98be-4ef51415c673",
+      "name": "Ohio State Buckeyes",
+      "safety_score": 0.6205,
+      "n_comments": 39,
+      "platforms": {
+        "youtube": {
+          "score": 0.6205,
+          "n": 39
+        }
+      }
+    },
+    {
+      "creator_id": "6a53033d-5673-4c2a-8d7a-157ef3eb9c8a",
+      "name": "Mumbiker Nikhil",
+      "safety_score": 0.622,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.622,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "daacce85-6c3e-40d9-8d32-08ed874b9c56",
+      "name": "Delhi Premier League T20",
+      "safety_score": 0.6239,
+      "n_comments": 200,
+      "platforms": {
+        "instagram": {
+          "score": 0.7647,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4624,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "da011426-1625-4d0f-b18c-6ba05100fb4b",
+      "name": "Bhavishya Sindwani",
+      "safety_score": 0.6336,
+      "n_comments": 11,
+      "platforms": {
+        "instagram": {
+          "score": 0.6336,
+          "n": 11
+        }
+      }
+    },
+    {
+      "creator_id": "3226423d-e312-4ee9-8775-d7c5cac3f38c",
+      "name": "Gaurav Gautam",
+      "safety_score": 0.6352,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.6352,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "39c1cdad-1356-46ba-b1f8-e164e50074eb",
+      "name": "Chennai Super Kings",
+      "safety_score": 0.6377,
+      "n_comments": 200,
+      "platforms": {
+        "instagram": {
+          "score": 0.7655,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.487,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "462094a7-a09d-43e5-b457-bb06c9de2229",
+      "name": "Kerala Blasters",
+      "safety_score": 0.6401,
+      "n_comments": 300,
+      "platforms": {
+        "youtube": {
+          "score": 0.7077,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.732,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4341,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "f978a269-e787-4dfc-a90d-b31eb3081f9d",
+      "name": "Gujarat Titans",
+      "safety_score": 0.6474,
+      "n_comments": 224,
+      "platforms": {
+        "youtube": {
+          "score": 0.7378,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.6516,
+          "n": 24
+        },
+        "reddit": {
+          "score": 0.5064,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "fbea7e53-0c65-4c5f-b03a-a1c7b35d24a5",
+      "name": "SunRisers Hyderabad",
+      "safety_score": 0.6561,
+      "n_comments": 200,
+      "platforms": {
+        "instagram": {
+          "score": 0.8711,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.415,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "c4b20dc1-14f2-48e9-8bd5-7131af29049f",
+      "name": "Virat Kohli",
+      "safety_score": 0.659,
+      "n_comments": 200,
+      "platforms": {
+        "instagram": {
+          "score": 0.7853,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.5061,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "3886e0c6-7341-45d0-b001-7b3ebc08118f",
+      "name": "Philadelphia 76ers",
+      "safety_score": 0.6611,
+      "n_comments": 265,
+      "platforms": {
+        "youtube": {
+          "score": 0.7005,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.7628,
+          "n": 65
+        },
+        "reddit": {
+          "score": 0.4958,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "8a7a6460-fdfd-4aca-be27-7a09e6201c03",
+      "name": "Saina Nehwal",
+      "safety_score": 0.6645,
+      "n_comments": 176,
+      "platforms": {
+        "instagram": {
+          "score": 0.7968,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4649,
+          "n": 76
+        }
+      }
+    },
+    {
+      "creator_id": "ace04454-558e-4371-926d-b39369a32fb9",
+      "name": "Gaurav Chaudhary",
+      "safety_score": 0.6649,
+      "n_comments": 123,
+      "platforms": {
+        "youtube": {
+          "score": 0.6863,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.5285,
+          "n": 23
+        }
+      }
+    },
+    {
+      "creator_id": "f4750bc0-1e62-43c3-a0a9-9d719a2a6242",
+      "name": "Punjab FC",
+      "safety_score": 0.6661,
+      "n_comments": 200,
+      "platforms": {
+        "youtube": {
+          "score": 0.8103,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4942,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "dd6fc18e-1a0b-4fea-862e-30a2aaf35d8a",
+      "name": "Ajinkya Rahane",
+      "safety_score": 0.6831,
+      "n_comments": 200,
+      "platforms": {
+        "instagram": {
+          "score": 0.8467,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.489,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "d187369b-e038-424d-b21d-15f05eac8510",
+      "name": "Kolkata Knight Riders",
+      "safety_score": 0.6841,
+      "n_comments": 200,
+      "platforms": {
+        "instagram": {
+          "score": 0.8494,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4881,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "0916015c-e822-45a9-8056-8d9cb2dc5a2d",
+      "name": "Bhuvan Bam",
+      "safety_score": 0.6908,
+      "n_comments": 214,
+      "platforms": {
+        "youtube": {
+          "score": 0.5937,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.8045,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4074,
+          "n": 14
+        }
+      }
+    },
+    {
+      "creator_id": "91531b7a-67ed-46a9-be20-0a0c9529f3b2",
+      "name": "Aditi Rao Hydari",
+      "safety_score": 0.7009,
+      "n_comments": 15,
+      "platforms": {
+        "instagram": {
+          "score": 0.7009,
+          "n": 15
+        }
+      }
+    },
+    {
+      "creator_id": "c1dfc782-57e1-4cd6-abd2-e22edd5d99c3",
+      "name": "Cristiano Ronaldo",
+      "safety_score": 0.7062,
+      "n_comments": 300,
+      "platforms": {
+        "youtube": {
+          "score": 0.7739,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.8278,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4483,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "c14c444f-4358-4cbe-a4f2-0c359b84729d",
+      "name": "Mumbai Indians",
+      "safety_score": 0.7066,
+      "n_comments": 300,
+      "platforms": {
+        "youtube": {
+          "score": 0.7339,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.8293,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4878,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "97be98d9-bc97-4bd8-b69c-d1887bb332cd",
+      "name": "Kartik Saini",
+      "safety_score": 0.7097,
+      "n_comments": 17,
+      "platforms": {
+        "instagram": {
+          "score": 0.7097,
+          "n": 17
+        }
+      }
+    },
+    {
+      "creator_id": "5ff7c9f5-0ead-4c62-a72b-31ba08c18daa",
+      "name": "PV Sindhu",
+      "safety_score": 0.711,
+      "n_comments": 200,
+      "platforms": {
+        "instagram": {
+          "score": 0.8806,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.5062,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "10c1c2e4-97f4-45f8-ab4a-3a1b17716f1f",
+      "name": "Cory Smith",
+      "safety_score": 0.7114,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.7114,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "c1d29dd3-3224-4e5f-8bb6-963694c6a5b5",
+      "name": "\u0907\u0902\u0921\u093f\u092f\u0928 \u0915\u0941\u0936\u094d\u0924\u0940 TV",
+      "safety_score": 0.7123,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.7123,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "31200108-07eb-47f2-ba04-53dafefa6e71",
+      "name": "zongyenyen",
+      "safety_score": 0.713,
+      "n_comments": 18,
+      "platforms": {
+        "instagram": {
+          "score": 0.713,
+          "n": 18
+        }
+      }
+    },
+    {
+      "creator_id": "b3653abf-2e0b-443e-a8aa-fc87c585bb25",
+      "name": "SAGAR CHAUDHARY",
+      "safety_score": 0.7175,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.7175,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "4a53472c-9ef6-47d0-a4b4-9b27194a8270",
+      "name": "Sania Mirza Tennis Academy",
+      "safety_score": 0.7179,
+      "n_comments": 109,
+      "platforms": {
+        "instagram": {
+          "score": 0.7519,
+          "n": 96
+        },
+        "reddit": {
+          "score": 0.4662,
+          "n": 13
+        }
+      }
+    },
+    {
+      "creator_id": "d7880c9a-0e56-4d93-b4b7-87f6d8625bd0",
+      "name": "Chennaiyin FC",
+      "safety_score": 0.7315,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.7315,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "5b827790-ceb1-44b5-933a-e16acab93c34",
+      "name": "Ohio State Football",
+      "safety_score": 0.7355,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.7355,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "2b23aa86-7b63-4293-905f-9128c009fefb",
+      "name": "mrbeast",
+      "safety_score": 0.7421,
+      "n_comments": 200,
+      "platforms": {
+        "youtube": {
+          "score": 0.6462,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.7977,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "fab5e263-56c7-43df-b0b9-345a659ac005",
+      "name": "Nisha Kumari",
+      "safety_score": 0.7491,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.7491,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "0491b885-53d2-4115-80d1-a1ec38a44f2b",
+      "name": "Royal Challengers Bengaluru",
+      "safety_score": 0.752,
+      "n_comments": 174,
+      "platforms": {
+        "instagram": {
+          "score": 0.8255,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.6045,
+          "n": 74
+        }
+      }
+    },
+    {
+      "creator_id": "b12dd553-81d3-4324-ac59-2ffbf5527da4",
+      "name": "Sania Mirza",
+      "safety_score": 0.7609,
+      "n_comments": 300,
+      "platforms": {
+        "youtube": {
+          "score": 0.7699,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.8575,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.5684,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "93e302fa-dc76-44a8-ba51-7ce2b7472ce0",
+      "name": "Neeraj Chopra",
+      "safety_score": 0.7628,
+      "n_comments": 300,
+      "platforms": {
+        "youtube": {
+          "score": 0.7399,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.8502,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.6108,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "aff9b3d4-2ab4-4a2e-8b45-a6427cbf1122",
+      "name": "servingitupwithsania",
+      "safety_score": 0.7661,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.7661,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "db7bc044-4da1-46bb-9286-8f51a4bd7591",
+      "name": "Delhi cricket team",
+      "safety_score": 0.7693,
+      "n_comments": 129,
+      "platforms": {
+        "instagram": {
+          "score": 0.8309,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.5085,
+          "n": 29
+        }
+      }
+    },
+    {
+      "creator_id": "fbe9b314-6063-4567-a25f-1097d097e9ae",
+      "name": "Chairman Hitesh choudhary",
+      "safety_score": 0.7797,
+      "n_comments": 119,
+      "platforms": {
+        "instagram": {
+          "score": 0.8057,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.5561,
+          "n": 19
+        }
+      }
+    },
+    {
+      "creator_id": "57d98637-c922-4403-8fd7-4484f12a9971",
+      "name": "Piyush Meghwanshi",
+      "safety_score": 0.7858,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.7858,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "a9a5ed5e-37f2-4069-a4e0-31d8bfeee3ff",
+      "name": "Aishwarya Jagadish",
+      "safety_score": 0.7898,
+      "n_comments": 72,
+      "platforms": {
+        "youtube": {
+          "score": 0.7898,
+          "n": 72
+        }
+      }
+    },
+    {
+      "creator_id": "3f5fad5d-d1b6-46c3-9b7a-a13239d0a208",
+      "name": "Shaan Mukherji",
+      "safety_score": 0.797,
+      "n_comments": 100,
+      "platforms": {
+        "youtube": {
+          "score": 0.797,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "8220d4b7-29ca-46fb-81ee-967eae761b59",
+      "name": "Gurfateh Singh Pirzada",
+      "safety_score": 0.7995,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.7995,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "ad2c64c2-5027-4d73-bdda-6772f38fb140",
+      "name": "Jeet Selal Himalayan Stallion",
+      "safety_score": 0.8048,
+      "n_comments": 209,
+      "platforms": {
+        "youtube": {
+          "score": 0.7556,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.8283,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4905,
+          "n": 9
+        }
+      }
+    },
+    {
+      "creator_id": "9ec54feb-2fcd-4e7c-9310-87390b18201b",
+      "name": "RAGI CHAUDHARY",
+      "safety_score": 0.8078,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8078,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "150cbebd-d7f6-439c-8009-fbb9145730b0",
+      "name": "Saurabh Thapa",
+      "safety_score": 0.8114,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8114,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "855e6295-cfdc-4adf-9f22-f66240c7272b",
+      "name": "Bengaluru Football Club",
+      "safety_score": 0.813,
+      "n_comments": 102,
+      "platforms": {
+        "instagram": {
+          "score": 0.8184,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4992,
+          "n": 2
+        }
+      }
+    },
+    {
+      "creator_id": "0d4ad509-ec6b-44e5-8f42-b3465af526c0",
+      "name": "Guru Mann",
+      "safety_score": 0.8142,
+      "n_comments": 201,
+      "platforms": {
+        "youtube": {
+          "score": 0.7499,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.8323,
+          "n": 100
+        },
+        "reddit": {
+          "score": 0.4805,
+          "n": 1
+        }
+      }
+    },
+    {
+      "creator_id": "f05e8ee5-34f5-43f7-bcbf-eb9e65929507",
+      "name": "Nasima Mirza",
+      "safety_score": 0.8186,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8186,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "516cded6-5a52-444d-a7f0-a1641288da03",
+      "name": "Prajakta Koli",
+      "safety_score": 0.8233,
+      "n_comments": 200,
+      "platforms": {
+        "youtube": {
+          "score": 0.7649,
+          "n": 100
+        },
+        "instagram": {
+          "score": 0.8278,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "5cbb34fa-f3fe-4be9-a766-fdc81f830711",
+      "name": "P.T.Usha",
+      "safety_score": 0.8282,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8282,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "2d25abbb-6816-4232-a529-8b5774a806ce",
+      "name": "Taaruk Raina",
+      "safety_score": 0.8298,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8298,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "8ebe282e-88bc-4f86-bfa9-475c2e0f1a28",
+      "name": "Baller Athletik",
+      "safety_score": 0.831,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.831,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "7bc9c22c-9bd7-4d9c-9dd9-cdf5a3828aae",
+      "name": "Etaki",
+      "safety_score": 0.8425,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8425,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "5df6eaa4-cf99-4dfb-be8c-f7654210437b",
+      "name": "Wamiqa Gabbi",
+      "safety_score": 0.8432,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8432,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "eb137801-5eec-4c96-9e0e-8ebd618e3bda",
+      "name": "Mohitt Vaaru",
+      "safety_score": 0.8444,
+      "n_comments": 73,
+      "platforms": {
+        "instagram": {
+          "score": 0.8444,
+          "n": 73
+        }
+      }
+    },
+    {
+      "creator_id": "d14bf7b1-5af4-48db-ad70-8dc5f8243378",
+      "name": "Karan Aujla",
+      "safety_score": 0.8557,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8557,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "a88f56d7-cd67-4342-a097-2b27db21e579",
+      "name": "Pratibha Ranta",
+      "safety_score": 0.8575,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8575,
+          "n": 100
+        }
+      }
+    },
+    {
+      "creator_id": "b0173fb6-a769-46cf-92e6-588fc608f1c6",
+      "name": "karanjohar",
+      "safety_score": 0.8731,
+      "n_comments": 100,
+      "platforms": {
+        "instagram": {
+          "score": 0.8731,
+          "n": 100
+        }
+      }
+    }
+  ]
+}

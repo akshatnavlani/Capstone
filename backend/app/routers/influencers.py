@@ -44,6 +44,7 @@ from app.schemas import (
     ScoreBreakdown,
 )
 from app.spillover import get_spillover_batch
+from app.temporal import get_temporal_batch
 
 router = APIRouter(tags=["recommendations"])
 
@@ -107,6 +108,7 @@ def _to_recommendation(
     youtube_channel: YouTubeChannel | None,
     instagram_profile: InstagramProfile | None,
     spillover_info: dict | None = None,
+    temporal_info: dict | None = None,
 ) -> InfluencerRecommendation:
     # Resolve spillover: live GAIL if available, else stored or placeholder.
     # spillover_info comes from get_spillover_batch (has spillover_score, basis, confidence_*).
@@ -114,8 +116,12 @@ def _to_recommendation(
         spillover_score = spillover_info["spillover_score"]
         spillover_basis = spillover_info["basis"]
         spillover_hw = abs(spillover_info["confidence_high"] - spillover_score)
-        # Use stored sentiment/creator_feature if we have a row, else 0.5 placeholder (w2 placeholder)
-        sentiment = score.sentiment_risk_score if score is not None else 0.5
+        # Real Temporal-branch score when this creator has scored comments
+        # (app/temporal.py); otherwise stored sentiment if we have a row, else 0.5.
+        if temporal_info is not None and temporal_info["basis"] == "scored":
+            sentiment = temporal_info["sentiment_risk_score"]
+        else:
+            sentiment = score.sentiment_risk_score if score is not None else 0.5
         creator_feat = score.creator_feature_score if score is not None else 0.5
         final_score, confidence_low, confidence_high, _risk_adj, breakdown = compute_fusion_score(
             spillover_score, sentiment, creator_feat,
@@ -191,6 +197,9 @@ def get_recommendations(
         except Exception:
             spillover_map = {}
 
+    # Temporal branch: real sentiment where comments were scored (one cached pass).
+    temporal_map = get_temporal_batch(session) if not using_mock_creators else {}
+
     eligible: list[InfluencerRecommendation] = []
     for creator in creators:
         youtube_channel = youtube_channels.get(creator.creator_id)
@@ -251,7 +260,10 @@ def get_recommendations(
                 any_score_missing = True
 
         spillover_info = spillover_map.get(str(creator.creator_id)) if not using_mock_creators else None
-        eligible.append(_to_recommendation(creator, score, youtube_channel, instagram_profile, spillover_info))
+        temporal_info = temporal_map.get(str(creator.creator_id)) if not using_mock_creators else None
+        eligible.append(
+            _to_recommendation(creator, score, youtube_channel, instagram_profile, spillover_info, temporal_info)
+        )
 
     eligible.sort(key=lambda r: r.final_score, reverse=True)
     results = eligible[: request.max_results]
