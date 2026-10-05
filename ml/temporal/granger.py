@@ -5,7 +5,7 @@ Predictive only: asks whether past values of `cause` improve prediction of
 effect and does not need GAIL's identification assumptions; keep the two
 separate in the write-up.
 
-Implemented directly with numpy/scipy as the standard F-test on the
+Implemented directly with numpy and scipy.special as the standard F-test on the
 restricted (effect's own lags) vs unrestricted (plus cause's lags) regression,
 the same test statsmodels reports as `ssr_ftest`. Written this way because
 pandas, which statsmodels requires, is blocked by an Application Control
@@ -28,7 +28,7 @@ def granger_pvalues(cause, effect, max_lag: int, min_obs: int = 30) -> dict[int,
     """F-test p-value per lag 1..max_lag, or None when the series are too
     short or constant to test (a short series gives a meaningless p-value).
     """
-    from scipy.stats import f as f_dist
+    from scipy.special import betainc
 
     cause = np.asarray(cause, dtype=float)
     effect = np.asarray(effect, dtype=float)
@@ -53,7 +53,8 @@ def granger_pvalues(cause, effect, max_lag: int, min_obs: int = 30) -> dict[int,
             pvalues[lag] = 0.0
             continue
         F = ((rss_restricted - rss_unrestricted) / lag) / (rss_unrestricted / df2)
-        pvalues[lag] = float(f_dist.sf(max(F, 0.0), lag, df2))
+        # F survival function via the regularised incomplete beta function
+        pvalues[lag] = float(betainc(df2 / 2.0, lag / 2.0, df2 / (df2 + lag * max(F, 0.0))))
     return pvalues
 
 
@@ -65,7 +66,8 @@ def best_lag_pvalue(pvalues: dict[int, float]) -> tuple[int, float]:
 
 def fisher_combine(pvalues: list[float]) -> float:
     """Combine independent per-creator p-values into one (Fisher's method)."""
-    from scipy.stats import chi2
+    from scipy.special import gammaincc
 
     p = np.clip(np.asarray(pvalues, dtype=float), 1e-300, 1.0)
-    return float(chi2.sf(-2.0 * np.log(p).sum(), 2 * len(p)))
+    # chi-square survival function via the regularised upper incomplete gamma function
+    return float(gammaincc(len(p), -np.log(p).sum()))

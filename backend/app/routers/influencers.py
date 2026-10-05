@@ -34,6 +34,7 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
 from app.config import settings
+from app.creator_features import get_feature_scores
 from app.database import get_session
 from app.fusion import compute_fusion_score
 from app.models import Creator, FusionScore, InstagramProfile, YouTubeChannel
@@ -109,6 +110,7 @@ def _to_recommendation(
     instagram_profile: InstagramProfile | None,
     spillover_info: dict | None = None,
     temporal_info: dict | None = None,
+    feature_info: dict | None = None,
 ) -> InfluencerRecommendation:
     # Resolve spillover: live GAIL if available, else stored or placeholder.
     # spillover_info comes from get_spillover_batch (has spillover_score, basis, confidence_*).
@@ -122,7 +124,12 @@ def _to_recommendation(
             sentiment = temporal_info["sentiment_risk_score"]
         else:
             sentiment = score.sentiment_risk_score if score is not None else 0.5
-        creator_feat = score.creator_feature_score if score is not None else 0.5
+        # Real CLIP/BERT relevance + metadata score (app/creator_features.py) once
+        # the models are loaded; otherwise stored score if we have a row, else 0.5.
+        if feature_info is not None:
+            creator_feat = feature_info["score"]
+        else:
+            creator_feat = score.creator_feature_score if score is not None else 0.5
         final_score, confidence_low, confidence_high, _risk_adj, breakdown = compute_fusion_score(
             spillover_score, sentiment, creator_feat,
             spillover_half_width=spillover_hw, spillover_basis=spillover_basis,
@@ -199,6 +206,8 @@ def get_recommendations(
 
     # Temporal branch: real sentiment where comments were scored (one cached pass).
     temporal_map = get_temporal_batch(session) if not using_mock_creators else {}
+    # Creator feature score for this brief; None until the models have loaded.
+    feature_map = get_feature_scores(request.product_category) if not using_mock_creators else None
 
     eligible: list[InfluencerRecommendation] = []
     for creator in creators:
@@ -261,8 +270,9 @@ def get_recommendations(
 
         spillover_info = spillover_map.get(str(creator.creator_id)) if not using_mock_creators else None
         temporal_info = temporal_map.get(str(creator.creator_id)) if not using_mock_creators else None
+        feature_info = feature_map.get(str(creator.creator_id)) if feature_map else None
         eligible.append(
-            _to_recommendation(creator, score, youtube_channel, instagram_profile, spillover_info, temporal_info)
+            _to_recommendation(creator, score, youtube_channel, instagram_profile, spillover_info, temporal_info, feature_info)
         )
 
     eligible.sort(key=lambda r: r.final_score, reverse=True)

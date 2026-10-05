@@ -6,6 +6,12 @@ supersedes memory when they disagree — memory is a pointer, this is the record
 
 Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 closed state unchanged: 259/54/170 wired end-to-end, see §1 Review 1 closed. Team decision 2026-09-24: Review 2 = pipeline-complete per PendingWork 2026-09-20; Review 3 = improvements).
 
+**Progress update 2026-10-05 (Shimona, branch `review2-shimona-temporal`):**
+- **S1 Temporal branch: DONE** (commit 593c7cf). Real `sentiment_risk_score` for 149 creators (RoBERTa safety score, shrunk to 0.5), risk propagation over `collaborates_with` + `co_occurs_with` (`risk_alerts.propagated_from_creator_id` source via `scripts/generate_propagated_alerts.py`, dry run by default), pooled lag test and Granger test. Result: the 12-24h cross-platform lag is NOT supported on the available data (positive control works). Artifact `models/temporal_sentiment.json`.
+- **S2 CLIP/BERT creator feature score: DONE** (this change). `creator_feature_score` is no longer a constant 0.5: it is brief-dependent relevance (CLIP text-to-image on thumbnails; CLIP-text + mean-pooled BERT on scrubbed text, rank-averaged) blended 0.7/0.3 with engagement/reach percentiles (`ml/feature_score.py`, `backend/app/creator_features.py`, artifact `models/creator_embeddings.npz` from `scripts/compute_creator_embeddings.py`). Models load in a background thread on the first request (fallback 0.5 until ready, about 30 s). Real signal for 167 of 259 creators; the 92 with no text and no image (and creators without data) stay exactly 0.5. Weights 0.7/0.3 are uncalibrated (S3). Measured on real creators: text relevance AUC about 0.85 (fitness brief, 78 matching) vs 0.70 for BERT pooled output alone.
+- **Environment note:** Windows Application Control now blocks scipy's `_bglu_dense` DLL on this machine, which broke `scipy.stats` and any `transformers` import. `ml/_scipy_compat.py` skips that unused solver only when it is blocked; Granger now uses `scipy.special`. The policy itself is untouched.
+- **Still open for Shimona:** S3 (calibrate fusion; backfill `fusion_scores`; interval currently clamps to [0,100] for trained/inferred creators: half-width 3.28 / 5.25 vs the 0-1 scale assumed), S4 (needs Eesha's E2), S5, S6, S7, S8. Dashboard strings that still say sentiment/feature are placeholders (`Temporal 0%`, `placeholder 0.5`, `±13/±21pts`) are out of date after S1/S2.
+
 ---
 
 ## 0. How to use this file

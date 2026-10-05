@@ -79,6 +79,9 @@ class SentimentScorer:
 
     def _pipeline(self):
         if self._pipe is None:
+            from ml._scipy_compat import avoid_blocked_scipy_solver
+
+            avoid_blocked_scipy_solver()
             from transformers import pipeline
 
             self._pipe = pipeline(
