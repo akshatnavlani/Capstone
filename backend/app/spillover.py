@@ -12,6 +12,7 @@ checkpoint is absent (local dev, CI, tests without torch).
 
 from __future__ import annotations
 
+import bisect
 import logging
 import math
 import uuid
@@ -49,6 +50,48 @@ except Exception as e:  # ImportError, ModuleNotFoundError (torch missing), etc.
     logger.warning("GAIL inference unavailable (%s) — spillover will fallback to placeholder", e)
 
 
+# GAIL predicts the relative engagement lift after a sponsorship: unbounded
+# (observed -1 to +23), not a 0-1 score. Fusion needs 0-1, so the lift is turned
+# into its percentile among all graph-connected creators ("spillover_unit"). The
+# raw lift and its interval stay in spillover_score / confidence_*.
+# A creator with no graph signal knows nothing: the middle, with the widest 95%
+# interval a uniform rank allows (0.025 to 0.975).
+NEUTRAL_UNIT = 0.5
+NEUTRAL_UNIT_HALF_WIDTH = 0.475
+
+_reference: list[float] | None = None
+
+
+def unit_rank(value: float, sorted_reference: list[float]) -> float:
+    """Percentile of `value` among an ascending `sorted_reference` (ties share the
+    middle rank), in (0, 1)."""
+    if not sorted_reference:
+        return NEUTRAL_UNIT
+    below = bisect.bisect_left(sorted_reference, value)
+    through = bisect.bisect_right(sorted_reference, value)
+    return (below + through) / 2 / len(sorted_reference)
+
+
+def _reference_lifts() -> list[float]:
+    """Sorted GAIL predictions of every graph-connected creator (cached)."""
+    global _reference
+    if _reference is None:
+        from ml.inference import _ensure_loaded  # lazy, only reached when GAIL is available
+
+        c = _ensure_loaded()
+        _reference = sorted(float(p) for p, d in zip(c["preds"].view(-1).tolist(), c["degree"]) if d > 0)
+    return _reference
+
+
+def _with_unit(res: dict) -> dict:
+    """Add spillover_unit / unit_low / unit_high (0-1) to a real GAIL result."""
+    ref = _reference_lifts()
+    res["spillover_unit"] = unit_rank(res["spillover_score"], ref)
+    res["unit_low"] = unit_rank(res["confidence_low"], ref)
+    res["unit_high"] = unit_rank(res["confidence_high"], ref)
+    return res
+
+
 def _fallback(creator_id: str | uuid.UUID, basis: SpilloverBasis = "placeholder") -> dict:
     """Return placeholder spillover dict. Basis is 'placeholder' or 'isolated'."""
     # Isolated and placeholder both use 0.5 but keep basis distinct for Track D.
@@ -58,6 +101,9 @@ def _fallback(creator_id: str | uuid.UUID, basis: SpilloverBasis = "placeholder"
         "basis": basis,
         "confidence_low": PLACEHOLDER_SPILLOVER - PLACEHOLDER_HALF_WIDTH,
         "confidence_high": PLACEHOLDER_SPILLOVER + PLACEHOLDER_HALF_WIDTH,
+        "spillover_unit": NEUTRAL_UNIT,
+        "unit_low": NEUTRAL_UNIT - NEUTRAL_UNIT_HALF_WIDTH,
+        "unit_high": NEUTRAL_UNIT + NEUTRAL_UNIT_HALF_WIDTH,
     }
 
 
@@ -77,9 +123,8 @@ def get_spillover(creator_id: str | uuid.UUID) -> dict:
         # res already has spillover_score, basis, confidence_low/high
         # Ensure creator_id echoed for batch consistency
         res["creator_id"] = cid
-        # Clamp spillover to [0,1] for safety? Inference can return outside (e.g. -0.9)
-        # but spec says spillover_score is 0-1; keep raw for honesty, clamp only if needed downstream.
-        return res
+        # spillover_score stays the raw lift (unbounded); fusion uses spillover_unit (0-1).
+        return _with_unit(res)
     except Exception as e:
         # Isolated → map to isolated, not inferred
         if _IsolatedCreatorError is not None and isinstance(e, _IsolatedCreatorError):
@@ -136,7 +181,7 @@ def get_spillover_batch(creator_ids: list[str | uuid.UUID]) -> dict[str, dict]:
                     out[cid] = _fallback(cid, "placeholder")
             else:
                 item["creator_id"] = cid
-                out[cid] = item
+                out[cid] = _with_unit(item)
         return out
     except Exception as e:
         logger.warning("batch inference failed (%s) — falling back per-id", e)

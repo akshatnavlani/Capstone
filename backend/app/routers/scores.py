@@ -13,7 +13,7 @@ from sqlmodel import Session, select
 from app.auth import require_api_key
 from app.config import settings
 from app.database import get_session
-from app.fusion import PLACEHOLDER_CONFIDENCE_MARGIN, compute_fusion_score
+from app.fusion import PLACEHOLDER_CONFIDENCE_MARGIN, compute_fusion_score, feature_uncertainty, sentiment_uncertainty
 from app.models import FusionScore
 from app.schemas import FusionScoreComputeRequest, FusionScoreResponse, ScoreBreakdown
 from app.spillover import PLACEHOLDER_HALF_WIDTH, get_spillover
@@ -26,9 +26,9 @@ def compute_score(payload: FusionScoreComputeRequest, session: Session = Depends
     # Auto-resolve spillover if caller omitted it — real GAIL if available, else placeholder
     if payload.spillover_score is None:
         sp = get_spillover(payload.creator_id)
-        spillover_score = sp["spillover_score"]
+        spillover_score = sp["spillover_unit"]
         basis = sp["basis"]
-        hw = abs(sp["confidence_high"] - sp["spillover_score"])
+        hw = (sp["unit_high"] - sp["unit_low"]) / 2
     else:
         spillover_score = payload.spillover_score
         # Caller supplied explicit score — treat as trained if within GAIL range,
@@ -42,6 +42,8 @@ def compute_score(payload: FusionScoreComputeRequest, session: Session = Depends
         payload.creator_feature_score,
         spillover_half_width=hw,
         spillover_basis=basis,
+        sentiment_half_width=sentiment_uncertainty(None),
+        feature_half_width=feature_uncertainty(None),
     )
 
     record = FusionScore(
@@ -77,9 +79,9 @@ def get_latest_score(creator_id: uuid.UUID, session: Session = Depends(get_sessi
     # Live spillover: recompute from GAIL so basis/CI reflect current checkpoint,
     # not stale DB row. Fallback to stored row if no history — but still try GAIL.
     sp = get_spillover(creator_id)
-    live_spillover = sp["spillover_score"]
+    live_spillover = sp["spillover_unit"]
     live_basis = sp["basis"]
-    live_hw = abs(sp["confidence_high"] - live_spillover)
+    live_hw = (sp["unit_high"] - sp["unit_low"]) / 2
 
     record = session.exec(
         select(FusionScore)
@@ -95,6 +97,8 @@ def get_latest_score(creator_id: uuid.UUID, session: Session = Depends(get_sessi
             record.creator_feature_score,
             spillover_half_width=live_hw,
             spillover_basis=live_basis,
+            sentiment_half_width=sentiment_uncertainty(None),
+            feature_half_width=feature_uncertainty(None),
         )
         return FusionScoreResponse(
             creator_id=creator_id,
@@ -109,9 +113,11 @@ def get_latest_score(creator_id: uuid.UUID, session: Session = Depends(get_sessi
         )
 
     # No stored row — compute on-the-fly with live spillover + placeholder other scores
-    # (w2/w3 still 0.5 placeholder per CAPSTONE_NEXT_STEPS.md:822)
+    # (this endpoint has no brief and no comment counts, so w2/w3 stay neutral 0.5
+    # with their widest intervals; /recommendations carries the live values)
     final_score, confidence_low, confidence_high, risk_adjustment, breakdown = compute_fusion_score(
-        live_spillover, 0.5, 0.5, spillover_half_width=live_hw, spillover_basis=live_basis
+        live_spillover, 0.5, 0.5, spillover_half_width=live_hw, spillover_basis=live_basis,
+        sentiment_half_width=sentiment_uncertainty(None), feature_half_width=feature_uncertainty(None),
     )
     from datetime import datetime, timezone
 

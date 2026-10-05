@@ -1,11 +1,11 @@
 """Brand-input -> ranked influencer list endpoint (PROJECT_PLAN.md Section 5,
 recommendation engine).
 
-Spillover is now real via GAIL checkpoint (c6488a6) — see app/spillover.py.
-w1 (spillover) real, w2 (sentiment_risk) still 0.5 placeholder (Temporal
-0% built, CAPSTONE_NEXT_STEPS.md:822); confidence reflects honest small-N
-(N=10) via spillover_half_width (trained ±15pts, inferred/placeholder ±25pts
-on 0-100). Track D must read spillover_basis to distinguish.
+All three branches are live: spillover from the GAIL checkpoint (as a 0-1
+percentile, app/spillover.py), sentiment from the Temporal branch
+(app/temporal.py), creator feature from CLIP/BERT (app/creator_features.py).
+The confidence interval combines all three (app/fusion.py). Track D must read
+spillover_basis to tell trained / inferred / placeholder / isolated apart.
 
 What changed 2026-08-09 (was previously a no-op stub, see API_CONTRACTS.md):
 - budget: hard filter via `estimated_cost` (a placeholder followers/subscribers
@@ -36,7 +36,7 @@ from sqlmodel import Session, select
 from app.config import settings
 from app.creator_features import get_feature_scores
 from app.database import get_session
-from app.fusion import compute_fusion_score
+from app.fusion import compute_fusion_score, feature_uncertainty, sentiment_uncertainty
 from app.models import Creator, FusionScore, InstagramProfile, YouTubeChannel
 from app.schemas import (
     BrandRecommendationRequest,
@@ -115,15 +115,18 @@ def _to_recommendation(
     # Resolve spillover: live GAIL if available, else stored or placeholder.
     # spillover_info comes from get_spillover_batch (has spillover_score, basis, confidence_*).
     if spillover_info is not None:
-        spillover_score = spillover_info["spillover_score"]
+        # Fusion works on the 0-1 percentile of the GAIL lift, not the raw lift.
+        spillover_score = spillover_info["spillover_unit"]
         spillover_basis = spillover_info["basis"]
-        spillover_hw = abs(spillover_info["confidence_high"] - spillover_score)
+        spillover_hw = (spillover_info["unit_high"] - spillover_info["unit_low"]) / 2
         # Real Temporal-branch score when this creator has scored comments
         # (app/temporal.py); otherwise stored sentiment if we have a row, else 0.5.
         if temporal_info is not None and temporal_info["basis"] == "scored":
             sentiment = temporal_info["sentiment_risk_score"]
+            sentiment_hw = sentiment_uncertainty(temporal_info["n_comments"])
         else:
             sentiment = score.sentiment_risk_score if score is not None else 0.5
+            sentiment_hw = sentiment_uncertainty(None)
         # Real CLIP/BERT relevance + metadata score (app/creator_features.py) once
         # the models are loaded; otherwise stored score if we have a row, else 0.5.
         if feature_info is not None:
@@ -133,6 +136,8 @@ def _to_recommendation(
         final_score, confidence_low, confidence_high, _risk_adj, breakdown = compute_fusion_score(
             spillover_score, sentiment, creator_feat,
             spillover_half_width=spillover_hw, spillover_basis=spillover_basis,
+            sentiment_half_width=sentiment_hw,
+            feature_half_width=feature_uncertainty(feature_info["basis"] if feature_info else None),
         )
     elif score is not None:
         breakdown = ScoreBreakdown(
@@ -191,7 +196,6 @@ def get_recommendations(
         for ip in session.exec(select(InstagramProfile).where(InstagramProfile.creator_id.in_(creator_ids))).all()
     } if not using_mock_creators and creator_ids else {}
 
-    any_score_missing = False
     region_keywords = _extract_keywords(request.target_region)
     demographic_keywords = _extract_keywords(request.target_demographic)
     category_keywords = _extract_keywords(request.product_category)
@@ -265,8 +269,6 @@ def get_recommendations(
                 .where(FusionScore.creator_id == creator.creator_id)
                 .order_by(FusionScore.computed_at.desc())
             ).first()
-            if score is None:
-                any_score_missing = True
 
         spillover_info = spillover_map.get(str(creator.creator_id)) if not using_mock_creators else None
         temporal_info = temporal_map.get(str(creator.creator_id)) if not using_mock_creators else None
@@ -278,5 +280,6 @@ def get_recommendations(
     eligible.sort(key=lambda r: r.final_score, reverse=True)
     results = eligible[: request.max_results]
 
-    is_mock_data = using_mock_creators or any_score_missing
-    return BrandRecommendationResponse(query=request, results=results, is_mock_data=is_mock_data)
+    # Scores are computed live from the three branches, so a missing stored row no
+    # longer makes the response mock: only the demo creators do.
+    return BrandRecommendationResponse(query=request, results=results, is_mock_data=using_mock_creators)

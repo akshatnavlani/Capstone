@@ -163,9 +163,9 @@ Prompted by `CAPSTONE_NEXT_STEPS.md:778-795` (effective N=10, propensity saturat
 - `trained`: `hw = t_{0.975,df} * sqrt(mse_trained) * sqrt(1+1/N)` with `N=10, df=8, t=2.306, mse=1.84 → hw≈3.28` on spillover 0-1 scale; `min_hw 0.15`.
 - `inferred`: `hw = base_hw *1.6, min 0.25 → ≈5.25` (wider).
 - `placeholder`/`isolated`: same wide `0.25` min.
-- Final CI on `0-100`: `margin = hw *100 * w1` (`w1=0.4` only; `w2` variance not modeled because Temporal `0% built` `CAPSTONE_NEXT_STEPS.md:822`). Clamped `[0,100]`. So even `trained` spans ~±13pts, `inferred` ~±21pts on `final_score` — deliberately wide, not fake precision, reflecting `CAPSTONE_NEXT_STEPS.md:795` (propensity 1.000) and `787` (N=10). Documented as comment in `fusion.py` and here.
+- **S3 update (2026-10-05):** the figures above are on the raw GAIL lift scale (unbounded, -1 to +23). Fusion uses the creator's percentile instead (`spillover_unit`, 0-1; the interval is mapped through the same percentile, `unit_low`/`unit_high`); no graph signal = `0.5` with the widest uniform interval (`0.025-0.975`). Final CI on `0-100` combines all three branches in quadrature: `margin = 100*sqrt((w1*hw1)^2 + (w2*hw2)^2 + (w3*hw3)^2)`, `hw2 = 1.96*0.5/sqrt(n_comments+20)` (`0.27` with no scored comments), `hw3 = 0.43` when the feature score has evidence, `0.475` otherwise. Clamped `[0,100]`. Typical width is 45-51 pts (it was the whole 0-100 range for every graph-connected creator before). A caller passing only `spillover_half_width` keeps the old spillover-only formula; no half-width at all gives the fixed `±8`. Derivation and constants: `backend/app/fusion.py`.
 
-**Weights — only `w1` real:** `backend/app/config.py` stays `0.4/0.3/0.3`. Only `w1` (spillover) is now backed by GAIL; `w2` (`sentiment_risk_score`) remains `0.5` placeholder — documented, not recalibrated as if all real.
+**Weights — documented priors, not fitted (S3):** `backend/app/config.py` stays `0.4/0.3/0.3`. All three branches are live now (spillover, Temporal sentiment, CLIP/BERT feature) but no outcome exists to fit the weights to: only 10 creators have an observed lift, and sentiment shows no association with it (Spearman -0.05, p 0.89). `scripts/calibrate_fusion.py` (results in `models/fusion_calibration.json`) shows the ranking is stable for weight changes up to 0.1 (median 9 of the top 10 kept) and changes a lot only at extreme weightings.
 
 **Live verification (pooler `CAPSTONE_NEXT_STEPS.md:440`):** `pytest 49` still pass (lazy GAIL import — no torch needed), plus live `GET /health`, `/feature-store/edges/sponsorships`, and `POST /recommendations` showing 3 rows with full JSON (see HANDOFF.md Task 4). See `backend/migrations/0003_add_fusion_spillover_basis.sql` for `fusionscore.spillover_basis`.
 
@@ -842,7 +842,7 @@ Response: `{ query, results: [InfluencerRecommendation...], is_mock_data }`
   "score_breakdown": { "spillover_score": 0.61, "sentiment_risk_score": 0.5, "creator_feature_score": 0.5, "weight_spillover": 0.4, "weight_sentiment_risk": 0.3, "weight_creator_feature": 0.3 }
 }
 ```
-`spillover_basis` values: `trained` (is in GAIL labeled N=10 set, tighter but still wide `±13pts`), `inferred` (graph-connected, GAT inductive, `±21pts` wide), `placeholder` (checkpoint missing/fallback `0.5 ±10pts`), `isolated` (degree 0 → `placeholder` `0.5` never `inferred`, no crash). Track D must key on this, not just `final_score`. See P1.6 section for `hw` derivation.
+`spillover_basis` values: `trained` (is in GAIL labeled N=10 set, tighter but still wide), `inferred` (graph-connected, GAT inductive, wider), `placeholder` (checkpoint missing/fallback, neutral `0.5`, widest interval), `isolated` (degree 0 → neutral `0.5`, never `inferred`, no crash). `score_breakdown.spillover_score` is the 0-1 percentile of the GAIL lift. Track D must key on `spillover_basis`, not just `final_score`. See P1.6 section for `hw` derivation.
 
 **Filtering/ranking behavior (fully real as of 2026-08-09):**
 - **Budget** — hard filter. `estimated_cost = max(youtube subscriber_count,
@@ -871,9 +871,9 @@ Response: `{ query, results: [InfluencerRecommendation...], is_mock_data }`
     reintroduces it while touching this code later.
 - Ordering is always by `final_score` descending among eligible candidates.
 - Falls back to 3 mock creators (FitWithPriya/GymBro/YogaGuru) when the
-  `creators` table is empty; falls back to a placeholder 0.5/0.5/0.5 fusion
-  score per-creator when no `FusionScore` row exists yet for them. Check
-  `is_mock_data` in the response — it's `true` if either fallback applied.
+  `creators` table is empty. Scores are computed live from the three branches, so a
+  creator without a stored `FusionScore` row is no longer a fallback. `is_mock_data`
+  is `true` only when the demo creators are returned (S3).
 
 ### Ingestion (secondary/manual write path — see breaking-change note above)
 
@@ -1049,7 +1049,7 @@ columns already normalize to UTC internally for anything already in the DB.
 
 Response `FusionScoreResponse` now includes `spillover_basis: "trained"|"inferred"|"placeholder"|"isolated"` + `confidence_low/high` reflecting honest small-N CI (see P1.6 section). `GET /scores/{creator_id}` recomputes live spillover (not stale DB row) — use it to see current basis/CI; it never 404s with placeholder — if no stored row it computes on-the-fly with `0.5` for `sentiment/creator_feature`.
 
-Formula (`backend/app/fusion.py`, PROJECT_PLAN Section 4): `final = (w1*spillover + w2*sentiment + w3*creator)*100 + risk_adj`; `w1=0.4 w2=0.3 w3=0.3` still placeholder/un-calibrated — **only `w1` is now real** (GAIL c6488a6), `w2` stays `0.5` documented placeholder, not recalibrated. Confidence: `margin = hw*100*w1` where `hw` from `spillover.py` (`trained≈3.28, inferred≈5.25` on spillover scale → `±13/±21pts` on `final`), else fallback `±8`. Risk: `-10` if `sentiment<0.3` (still placeholder heuristic).
+Formula (`backend/app/fusion.py`, PROJECT_PLAN Section 4): `final = (w1*spillover + w2*sentiment + w3*creator)*100 + risk_adj`, all three inputs on 0-1 (spillover as a percentile); `w1=0.4 w2=0.3 w3=0.3` are documented priors (S3). Confidence: three-branch interval (see P1.6 section), fallback `±8` when no half-width is given. Risk: `-10` if `sentiment<0.3`. `GET /scores/{id}` uses live spillover with the stored sentiment/feature, or neutral `0.5` with the widest intervals when no row exists; `/recommendations` carries the live brief-dependent values.
 
 ### Monitoring / alerts
 
@@ -1138,9 +1138,9 @@ thesis capstone backend.
 | Feature-store pipeline (`/feature-store/*`) | Real for numeric/categorical/collaboration/sponsorship edge data; collaboration edges **170 distinct pairs (340 directed edges)** as of Phase 1I, up from 10 after bulk sheet-backlog promotion — the earlier "structurally sparse" finding is retired, see Phase 1G section; `co_occurs_with` real but currently empty (Track A purged the noisy signal it was built from, self-healed automatically, see Weeks 11-13 note); CLIP/BERT embeddings intentionally not computed here (Track B); `reputation_score` is the one remaining genuine gap |
 | **Disclosure-tag (`is_sponsored`) labeling pipeline** | **Real, run against all live data, genuinely multi-platform (confirmed by code read, not assumption). Sponsorship events: 61 (58 Instagram + 3 YouTube), up from 34, after Phase 1I's force-relabel at ~4x scale and manual correction of 5 confirmed false positives (4 Reddit, 1 Instagram — see Phase 1I section). Reddit's real yield is confirmed genuinely zero, not assumed. First fully-computable GAIL training pair confirmed real (mrbeast→CarryMinati), see Phase 1G section; 8 additional newly-sponsored, already graph-connected creators found in Phase 1I, not yet reflected in the orchestrator's 52-pair count — see that section.** 6,153/6,153 real rows labeled (1,594 YouTube / 1,811 Instagram / 2,748 Reddit) via `force=true`, incorporating Instagram's native `has_paid_partnership_label` signal (45 of 58 Instagram events caught at least partly by that signal; YouTube/Reddit have no native-signal equivalent, caught via plain regex only). Sponsorship *edges* (`/feature-store/edges/sponsorships`=16) reconcile exactly against the raw `brand_id`+`creator_id`-populated count — 45 of 61 events still lack `brand_id` (incl. the mrbeast milestone post), routine lag behind Track A's brand extraction, see Phase 1G/1I sections. Kohli/Agilitas edge case closed 2026-08-14, not reopened — see Kohli/Agilitas section |
 | Text scrubbing / temporal normalization | Real (`app/text_processing.py`), Section 2 |
-| Spillover (`spillover_score`) | **Real via GAIL checkpoint `c6488a6`** (`backend/app/gail/`, `backend/models/gail_checkpoint.pt`, `backend/app/spillover.py`): `trained` (N=10 labeled nodes, `mse 1.84 → hw 3.28 → ±13pts final`), `inferred` (`hw 5.25 → ±21pts`, 1.6× wider), `isolated`/`placeholder` (`0.5 ±10pts`, never crash). Falls back to `0.5` if checkpoint/torch missing. See P1.6 section. |
-| Sentiment-risk (`sentiment_risk_score`) | **Still placeholder `0.5`** — Temporal branch 0% built (`CAPSTONE_NEXT_STEPS.md:822`), `w2` not recalibrated; only `w1` real. |
-| Creator-feature (`creator_feature_score`) | Still `0.5` placeholder — CLIP/BERT not in this track. |
+| Spillover (`spillover_score`) | **Real via GAIL checkpoint `c6488a6`** (`backend/app/spillover.py`): fusion uses the 0-1 percentile of the predicted lift among graph-connected creators; `trained` (N=10 labeled nodes), `inferred` (1.6× wider interval), `isolated`/`placeholder` (neutral `0.5`, widest interval, never crash). Falls back to `0.5` if checkpoint/torch missing. See P1.6 section. |
+| Sentiment-risk (`sentiment_risk_score`) | **Real (S1)** for 149 creators with scored comments (`backend/app/temporal.py`), `0.5` for the rest. |
+| Creator-feature (`creator_feature_score`) | **Real (S2)**: brief-dependent CLIP/BERT relevance + engagement/reach percentile (`backend/app/creator_features.py`); `0.5` when nothing is known. |
 | Auth | Basic (shared `API_KEY`), off by default — see Auth section |
 
 ## Running locally

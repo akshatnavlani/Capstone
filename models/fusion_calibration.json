@@ -1,0 +1,141 @@
+{
+  "labelled_outcomes": 10,
+  "association_with_lift": {
+    "spillover (in-sample, GAIL was fitted on these)": {
+      "spearman": 0.8510677611520905,
+      "perm_p": 0.0026498675066246686
+    },
+    "sentiment": {
+      "spearman": -0.05454545454545454,
+      "perm_p": 0.8940052997350133
+    }
+  },
+  "baseline_weights": [
+    0.4,
+    0.3,
+    0.3
+  ],
+  "per_brief": {
+    "fitness": {
+      "near": {
+        "top10_overlap_median": 0.8,
+        "top10_overlap_min": 0.7,
+        "spearman_median": 0.9855928055899112,
+        "spearman_min": 0.9782444940333824
+      },
+      "all": {
+        "top10_overlap_median": 0.5,
+        "top10_overlap_min": 0.1,
+        "spearman_median": 0.8883606488867184,
+        "spearman_min": 0.10702494337839404
+      },
+      "branch_spearman": {
+        "spillover~sentiment": -0.0326148819656318,
+        "spillover~feature": 0.16140569818979575,
+        "sentiment~feature": -0.23512120741063625
+      }
+    },
+    "cricket bat and gear": {
+      "near": {
+        "top10_overlap_median": 0.9,
+        "top10_overlap_min": 0.7,
+        "spearman_median": 0.9862234700429203,
+        "spearman_min": 0.9792405708583977
+      },
+      "all": {
+        "top10_overlap_median": 0.6,
+        "top10_overlap_min": 0.1,
+        "spearman_median": 0.899932599949256,
+        "spearman_min": 0.13309146633367322
+      },
+      "branch_spearman": {
+        "spillover~sentiment": -0.0326148819656318,
+        "spillover~feature": 0.18055837558480548,
+        "sentiment~feature": -0.17370736268191875
+      }
+    },
+    "chess coaching": {
+      "near": {
+        "top10_overlap_median": 0.9,
+        "top10_overlap_min": 0.8,
+        "spearman_median": 0.9825921414235678,
+        "spearman_min": 0.9766750858874494
+      },
+      "all": {
+        "top10_overlap_median": 0.5,
+        "top10_overlap_min": 0.1,
+        "spearman_median": 0.8801452933652988,
+        "spearman_min": 0.10639255387532175
+      },
+      "branch_spearman": {
+        "spillover~sentiment": -0.0326148819656318,
+        "spillover~feature": 0.14559302482294728,
+        "sentiment~feature": -0.24160084284447664
+      }
+    },
+    "makeup and skincare": {
+      "near": {
+        "top10_overlap_median": 1.0,
+        "top10_overlap_min": 0.8,
+        "spearman_median": 0.9866828258602818,
+        "spearman_min": 0.9786720748618737
+      },
+      "all": {
+        "top10_overlap_median": 0.6,
+        "top10_overlap_min": 0.1,
+        "spearman_median": 0.8987114772719595,
+        "spearman_min": 0.13856484634287997
+      },
+      "branch_spearman": {
+        "spillover~sentiment": -0.0326148819656318,
+        "spillover~feature": 0.18079802102611467,
+        "sentiment~feature": -0.12330715460219377
+      }
+    },
+    "smartphone reviews": {
+      "near": {
+        "top10_overlap_median": 0.9,
+        "top10_overlap_min": 0.7,
+        "spearman_median": 0.9849614503762745,
+        "spearman_min": 0.9766598891536421
+      },
+      "all": {
+        "top10_overlap_median": 0.4,
+        "top10_overlap_min": 0.1,
+        "spearman_median": 0.8824698422544492,
+        "spearman_min": 0.11345598166377649
+      },
+      "branch_spearman": {
+        "spillover~sentiment": -0.0326148819656318,
+        "spillover~feature": 0.16149427058945648,
+        "sentiment~feature": -0.22346928148951886
+      }
+    },
+    "yoga and wellness classes": {
+      "near": {
+        "top10_overlap_median": 1.0,
+        "top10_overlap_min": 0.8,
+        "spearman_median": 0.9867139100885244,
+        "spearman_min": 0.9784655374342178
+      },
+      "all": {
+        "top10_overlap_median": 0.6,
+        "top10_overlap_min": 0.0,
+        "spearman_median": 0.8983979813724334,
+        "spearman_min": 0.14174249889556936
+      },
+      "branch_spearman": {
+        "spillover~sentiment": -0.0326148819656318,
+        "spillover~feature": 0.17306082597418274,
+        "sentiment~feature": -0.1964257237562004
+      }
+    }
+  },
+  "ci_width_points": {
+    "min": 26.174348696123758,
+    "median": 48.54528167555428,
+    "max": 50.89471851733643
+  },
+  "ci_spans_whole_range": 0,
+  "creators": 259
+}

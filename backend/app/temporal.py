@@ -10,8 +10,9 @@ basis:
   "scored"      the creator has comments scored by the sentiment classifier
   "placeholder" no scored comments; sentiment stays the neutral 0.5
 
-Propagation hyperparameters below are uncalibrated starting values; PendingWork
-S3 recalibrates them against held-out outcomes.
+Propagation hyperparameters below are uncalibrated starting values. S3 found no
+held-out outcome that could fit them (see scripts/calibrate_fusion.py), so they
+stay documented priors.
 """
 
 from __future__ import annotations
@@ -74,13 +75,14 @@ def _fallback(creator_id: str) -> dict:
         "own_safety": None,
         "propagated_risk": 0.0,
         "source_creator_id": None,
+        "n_comments": 0,
         "basis": "placeholder",
     }
 
 
 def compute_temporal(session: Session, scores: dict[str, dict] | None = None) -> dict[str, dict]:
     """creator_id -> {sentiment_risk_score, own_safety, propagated_risk,
-    source_creator_id, basis}. sentiment_risk_score is the creator's own safety
+    source_creator_id, n_comments, basis}. sentiment_risk_score is the creator's own safety
     lowered by the risk propagated to them from collaborators.
     """
     scores = load_scores() if scores is None else scores
@@ -124,6 +126,7 @@ def compute_temporal(session: Session, scores: dict[str, dict] | None = None) ->
             "own_safety": float(safety[i]) if scored[i] else None,
             "propagated_risk": float(propagated[i]),
             "source_creator_id": ids[src] if src is not None else None,
+            "n_comments": int(scores[ids[i]].get("n_comments", 0)) if scored[i] else 0,
             "basis": "scored" if scored[i] else "placeholder",
         }
     return out
