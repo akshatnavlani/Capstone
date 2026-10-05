@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import CreatorGraph from "@/components/CreatorGraph";
 import SpilloverBadge from "@/components/SpilloverBadge";
 import { useStoredRecommendationResult } from "@/lib/useStoredRecommendationResult";
 import type { SpilloverBasis } from "@/types";
 
-// Full network-graph visualization needs Track B's graph data (GAIL branch
-// isn't built yet — PROJECT_PLAN.md Section 3a / timeline weeks 11-13), so
-// it's still a placeholder. But the weighted fusion formula and its inputs
-// ARE real data already flowing through the app (same InfluencerRecommendation
-// the dashboard renders), so that part is worth showing now rather than
-// waiting for the network graph.
+// Two parts: the creator graph GAIL reads (live edges from /feature-store/edges/*,
+// PendingWork S6) and, per creator, the weighted fusion formula with its inputs
+// (same InfluencerRecommendation the dashboard renders).
 
 export default function ExplainabilityPage() {
   const result = useStoredRecommendationResult();
@@ -20,10 +18,15 @@ export default function ExplainabilityPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Explainability</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Why each score came out the way it did, plus network-graph causal
-          insights once those are available.
+          The creator graph the model reads, and why each score came out the
+          way it did.
         </p>
       </div>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Creator graph</h2>
+        <CreatorGraph results={result?.results ?? null} />
+      </section>
 
       {!result && (
         <>
@@ -47,7 +50,6 @@ export default function ExplainabilityPage() {
             const featureContribution = b.weight_creator_feature * b.creator_feature_score * 100;
             const weightedSum = spilloverContribution + sentimentContribution + featureContribution;
             const derivedRiskAdjustment = influencer.final_score - weightedSum;
-            const isOutOfRange = b.spillover_score < 0 || b.spillover_score > 1;
 
             return (
               <li
@@ -71,11 +73,6 @@ export default function ExplainabilityPage() {
                   {b.weight_creator_feature}×{b.creator_feature_score.toFixed(2)}) × 100
                   {derivedRiskAdjustment !== 0 && ` + ~${derivedRiskAdjustment.toFixed(1)} risk adjustment (derived, approximate)`}
                 </p>
-                {isOutOfRange && (
-                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                    raw GAIL spillover {b.spillover_score.toFixed(2)} outside nominal 0-1; final_score clamped [0,100]
-                  </p>
-                )}
 
                 <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
                   <Contribution
@@ -83,30 +80,26 @@ export default function ExplainabilityPage() {
                     points={spilloverContribution}
                     hint={
                       basis === "trained"
-                        ? "±13pts (N=10)"
+                        ? "percentile of GAIL lift (N=10)"
                         : basis === "inferred"
-                          ? "±21pts wide"
-                          : "±10pts"
+                          ? "percentile of GAIL lift, wide"
+                          : "neutral 0.5"
                     }
                   />
                   <Contribution
                     label="Sentiment / Risk (Temporal)"
                     points={sentimentContribution}
-                    hint="placeholder 0.5 (Temporal 0%)"
+                    hint="comment sentiment, 0.5 if none scored"
                   />
-                  <Contribution label="Creator Features" points={featureContribution} hint="placeholder 0.5" />
+                  <Contribution label="Creator Features" points={featureContribution} hint="brief relevance + reach, 0.5 if unknown" />
                 </div>
 
                 <p className="mt-3 text-xs text-zinc-500">
                   Confidence bounds {influencer.confidence_low.toFixed(0)}–
-                  {influencer.confidence_high.toFixed(0)} (basis: {basis}
-                  {basis === "trained"
-                    ? ", hw≈3.28 → ±13pts"
-                    : basis === "inferred"
-                      ? ", hw≈5.25 → ±21pts wide"
-                      : ", hw 0.25 → ±10pts"}
-                  ; sentiment is still placeholder per CAPSTONE_NEXT_STEPS:822).{" "}
-                  {result.is_mock_data ? "is_mock_data true — at least one creator lacked a stored FusionScore or creator table was empty." : ""}
+                  {influencer.confidence_high.toFixed(0)} (spillover basis: {basis}). The interval combines the
+                  uncertainty of all three branches in quadrature: spillover (small-N), sentiment (fewer comments →
+                  wider) and feature (no evidence → widest), clamped [0,100].{" "}
+                  {result.is_mock_data ? "Demo creators: the creator table was empty." : ""}
                 </p>
                 <p className="mt-1 text-xs text-zinc-400">
                   {basis === "trained" && "Trained on N=10 labeled nodes — still wide CI due small-N + propensity 1.000. See API_CONTRACTS.md P1.6."}
@@ -121,11 +114,10 @@ export default function ExplainabilityPage() {
       )}
 
       <p className="rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
-        Network-graph visualization of influencer/brand connections and
-        posting-time/lag causal insights (Granger causality) aren&apos;t
-        available yet — they depend on Track B&apos;s GAIL branch and graph
-        data, which per the project timeline are built later (weeks 11-13
-        onward), after the recommendation engine and fusion layer are stable.
+        Not shown: which relationship type drove a creator&apos;s spillover (the
+        learned per-relation weights are not served by the API yet), and
+        posting-time lag insights. The 12-24h cross-platform lag was tested and
+        is not supported by the available data.
       </p>
     </main>
   );

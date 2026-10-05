@@ -5,9 +5,9 @@
 export type SpilloverBasis = "trained" | "inferred" | "placeholder" | "isolated";
 
 export interface ScoreBreakdown {
-  spillover_score: number; // nominal 0-1, but live GAIL can be >>1 (e.g. Virat 21.6) — render raw
-  sentiment_risk_score: number; // 0-1 — STILL PLACEHOLDER 0.5 per CAPSTONE_NEXT_STEPS.md:822 (Temporal branch 0% built) — do not present as real
-  creator_feature_score: number; // 0-1 — still placeholder 0.5 (CLIP/BERT not in this track)
+  spillover_score: number; // 0-1: the creator's percentile among graph-connected creators (raw GAIL lift is unbounded); 0.5 = no graph signal
+  sentiment_risk_score: number; // 0-1 — Temporal branch (comment sentiment + risk propagated from collaborators); 0.5 when the creator has no scored comments
+  creator_feature_score: number; // 0-1 — CLIP/BERT relevance to the brief + engagement/reach percentile; 0.5 when nothing is known
   weight_spillover: number;
   weight_sentiment_risk: number;
   weight_creator_feature: number;
@@ -51,6 +51,14 @@ export interface BrandRecommendationResponse {
 export interface CreatorSummary {
   creator_id: string; // uuid
   name: string;
+}
+
+// GET /feature-store/edges/collaborations and /edges/co-occurrence (same shape).
+// weight = number of matched relations / co-occurrences between the pair.
+export interface GraphEdge {
+  source_creator_id: string; // uuid
+  target_creator_id: string; // uuid
+  weight: number;
 }
 
 export type AlertSeverity = "low" | "medium" | "high";

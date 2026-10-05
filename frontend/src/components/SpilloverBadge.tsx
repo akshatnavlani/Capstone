@@ -35,13 +35,13 @@ const BASIS_META: Record<
 
 const TOOLTIP_COPY: Record<SpilloverBasis, string> = {
   trained:
-    "Trained on GAIL labeled set (effective N=10, df=8, t=2.306, mse=1.84 → hw≈3.28 on 0-1 scale). Final CI = hw·100·w1 (w1=0.4) → ±13pts, clamped [0,100]. Still wide due small-N and propensity saturates 1.000 (CAPSTONE_NEXT_STEPS:795). See backend/app/fusion.py:57 + API_CONTRACTS.md P1.6. Do not present as validated beyond this N.",
+    "Trained on the GAIL labeled set (effective N=10). The score shown is the creator's percentile among graph-connected creators; the interval is the GAIL prediction interval (small-N, so wide) mapped to the same percentile scale. Do not present as validated beyond this N.",
   inferred:
-    "Graph-connected but unlabeled — GAT inductive (no retrain). hw≈5.25 (1.6× trained, min 0.25) → ±21pts on final_score, clamped [0,100]. Wide interval reflects small-N and propensity 1.000 (CAPSTONE_NEXT_STEPS:795). Do not present as validated — wide CI by design.",
+    "Graph-connected but unlabeled — GAT inductive (no retrain). Shown as a percentile among graph-connected creators; the interval is 1.6× the trained one. Do not present as validated — wide CI by design.",
   placeholder:
-    "Checkpoint missing or fallback 0.5 (hw 0.25 → ±10pts). No GAIL signal — honest placeholder, never fabricated.",
+    "Checkpoint missing or fallback: neutral 0.5 with the widest interval. No GAIL signal — honest placeholder, never fabricated.",
   isolated:
-    'Isolated creator (degree 0 on collaborates_with + co_occurs_with). No spillover can be inferred — IsolatedCreatorError mapped to placeholder 0.5 (hw 0.25 → ±10pts). Shown as "no graph signal", never as inferred.',
+    'Isolated creator (degree 0 on collaborates_with + co_occurs_with). No spillover can be inferred — IsolatedCreatorError mapped to neutral 0.5 with the widest interval. Shown as "no graph signal", never as inferred.',
 };
 
 export function basisLabel(basis: SpilloverBasis): string {
@@ -92,7 +92,7 @@ export default function SpilloverBadge({
         >
           <span className="font-medium">{meta.label}:</span> {copy}
           <span className="mt-1 block text-[11px] text-zinc-500 dark:text-zinc-400">
-            sentiment_risk_score is still placeholder 0.5 (Temporal 0% — CAPSTONE_NEXT_STEPS:822); only w1 real.
+            The final score also uses sentiment (Temporal) and creator feature (CLIP/BERT); the interval combines all three.
           </span>
         </span>
       )}

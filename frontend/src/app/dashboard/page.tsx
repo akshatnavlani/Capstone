@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
       {result.is_mock_data && (
         <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-          Showing mock/placeholder data — some creators lack stored FusionScore or the creator table was empty when queried.
+          Showing demo data — the creator table was empty when queried, so built-in example creators are shown.
         </p>
       )}
 
@@ -66,7 +66,6 @@ export default function DashboardPage() {
           const alerts = alertsByCreator.get(influencer.creator_id) ?? [];
           const basis = (influencer.spillover_basis ?? "placeholder") as SpilloverBasis;
           const spilloverRaw = influencer.score_breakdown.spillover_score;
-          const isOutOfRange = spilloverRaw < 0 || spilloverRaw > 1;
           return (
             <li
               key={influencer.creator_id}
@@ -109,24 +108,22 @@ export default function DashboardPage() {
                   label="Spillover"
                   value={spilloverRaw.toFixed(2)}
                   sublabel={
-                    isOutOfRange
-                      ? "raw GAIL output; final_score clamped [0,100]"
-                      : basis === "trained"
-                        ? "±13pts wide (N=10)"
-                        : basis === "inferred"
-                          ? "±21pts wide"
-                          : "±10pts"
+                    basis === "trained"
+                      ? "percentile · trained, N=10"
+                      : basis === "inferred"
+                        ? "percentile · inferred, wide"
+                        : "no graph signal · neutral"
                   }
                 />
                 <ScorePart
                   label="Sentiment / Risk"
                   value={influencer.score_breakdown.sentiment_risk_score.toFixed(2)}
-                  sublabel="placeholder 0.5 (Temporal 0%)"
+                  sublabel="comment sentiment · 0.5 if none scored"
                 />
                 <ScorePart
                   label="Feature Score"
                   value={influencer.score_breakdown.creator_feature_score.toFixed(2)}
-                  sublabel="placeholder 0.5"
+                  sublabel="brief relevance + reach · 0.5 if unknown"
                 />
               </div>
 
