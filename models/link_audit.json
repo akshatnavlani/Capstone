@@ -1,0 +1,623 @@
+{
+  "coverage": {
+    "creators": 259,
+    "youtube": 41,
+    "instagram": 257,
+    "reddit": 4,
+    "platforms_per_creator": {
+      "2": 41,
+      "3": 1,
+      "1": 217
+    },
+    "multi_platform": 42
+  },
+  "youtube": {
+    "links": 41,
+    "evidence": {
+      "corroborated (Instagram handle in channel description)": 15,
+      "name match": 21,
+      "same handle text on both platforms (weak: fan accounts reuse handles)": 3,
+      "NO AUTOMATIC EVIDENCE": 2
+    },
+    "how_obtained": {
+      "original/manual handle": 11,
+      "discovered+verified by script": 30
+    },
+    "rows": [
+      {
+        "creator": "Cristiano Ronaldo",
+        "yt_handle": "cristiano",
+        "channel_title": "UR · Cristiano",
+        "subs": 83400000,
+        "ig_followers": 679635426,
+        "sub_to_follower_ratio": 0.12271284987430893,
+        "how": "original/manual handle",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": ""
+      },
+      {
+        "creator": "Mumbiker Nikhil",
+        "yt_handle": "MumbikerNikhil",
+        "channel_title": "Mumbiker Nikhil",
+        "subs": 4010000,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "original/manual handle",
+        "evidence": "name match",
+        "script_reason": ""
+      },
+      {
+        "creator": "ATHLEAN-X™",
+        "yt_handle": "athleanx",
+        "channel_title": "ATHLEAN-X™",
+        "subs": 14300000,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "original/manual handle",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": ""
+      },
+      {
+        "creator": "CarryMinati",
+        "yt_handle": "CarryMinati",
+        "channel_title": "CarryMinati",
+        "subs": 45800000,
+        "ig_followers": 21416964,
+        "sub_to_follower_ratio": 2.1384917115236313,
+        "how": "original/manual handle",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": ""
+      },
+      {
+        "creator": "Lucknow Super Giants",
+        "yt_handle": "lucknowsupergiants",
+        "channel_title": "Lucknow Super Giants",
+        "subs": 750000,
+        "ig_followers": 3715172,
+        "sub_to_follower_ratio": 0.20187490646462666,
+        "how": "discovered+verified by script",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": "exact handle equality '@lucknowsupergiants' == creator handle (750,000 subs)"
+      },
+      {
+        "creator": "Jeet Selal Himalayan Stallion",
+        "yt_handle": "jeet_selal",
+        "channel_title": "Jeet Selal Fan's Club.       10M views. 2 days ago",
+        "subs": 3340,
+        "ig_followers": 2651146,
+        "sub_to_follower_ratio": 0.001259832540342931,
+        "how": "discovered+verified by script",
+        "evidence": "same handle text on both platforms (weak: fan accounts reuse handles)",
+        "script_reason": "exact handle equality '@jeet_selal' == creator handle (3,340 subs)"
+      },
+      {
+        "creator": "jumper_aj_",
+        "yt_handle": "jumperaj",
+        "channel_title": "jumperAj",
+        "subs": 1020000,
+        "ig_followers": 151541,
+        "sub_to_follower_ratio": 6.730851716697131,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@jumperaj' == creator handle (1,020,000 subs)"
+      },
+      {
+        "creator": "Neeraj Chopra",
+        "yt_handle": "neerajchopra1",
+        "channel_title": "Neeraj Chopra",
+        "subs": 274000,
+        "ig_followers": 9077963,
+        "sub_to_follower_ratio": 0.030182982680145316,
+        "how": "original/manual handle",
+        "evidence": "name match",
+        "script_reason": ""
+      },
+      {
+        "creator": "Prajakta Koli",
+        "yt_handle": "MostlySane",
+        "channel_title": "MostlySane",
+        "subs": 7230000,
+        "ig_followers": 8730593,
+        "sub_to_follower_ratio": 0.82812244254199,
+        "how": "original/manual handle",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": ""
+      },
+      {
+        "creator": "Sania Mirza",
+        "yt_handle": "servingitupwithsania",
+        "channel_title": "Serving it Up with Sania",
+        "subs": 69500,
+        "ig_followers": 12550823,
+        "sub_to_follower_ratio": 0.005537485470076345,
+        "how": "original/manual handle",
+        "evidence": "NO AUTOMATIC EVIDENCE",
+        "script_reason": ""
+      },
+      {
+        "creator": "Kerala Blasters",
+        "yt_handle": "keralablasters.",
+        "channel_title": "Kerala Blasters",
+        "subs": 829000,
+        "ig_followers": 3731374,
+        "sub_to_follower_ratio": 0.22217017109515155,
+        "how": "discovered+verified by script",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": "exact handle equality '@keralablasters.' == creator handle (829,000 subs)"
+      },
+      {
+        "creator": "Matthew Delly",
+        "yt_handle": "matthewdelly",
+        "channel_title": "Matthew Delly",
+        "subs": 4300,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@matthewdelly' == creator handle (4,300 subs)"
+      },
+      {
+        "creator": "Bhuvan Bam",
+        "yt_handle": "BBKiVines",
+        "channel_title": "BB Ki Vines",
+        "subs": 26500000,
+        "ig_followers": 20711494,
+        "sub_to_follower_ratio": 1.2794827838107672,
+        "how": "original/manual handle",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": ""
+      },
+      {
+        "creator": "Ranveer Allahbadia",
+        "yt_handle": "BeerBiceps",
+        "channel_title": "BeerBiceps",
+        "subs": 8230000,
+        "ig_followers": 4188714,
+        "sub_to_follower_ratio": 1.9648035172609064,
+        "how": "original/manual handle",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": ""
+      },
+      {
+        "creator": "Aishwarya Jagadish",
+        "yt_handle": "aishwaryajagadish",
+        "channel_title": "AISHWARYA JAGADISH",
+        "subs": 1150,
+        "ig_followers": 88858,
+        "sub_to_follower_ratio": 0.012941997344077067,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "name match 'aishwarya_jagadish_' vs 'AISHWARYA JAGADISH' (1,150 subs, owner-chosen handle)"
+      },
+      {
+        "creator": "Ankit Punia",
+        "yt_handle": "ankitxlean",
+        "channel_title": "Ankit X Lean",
+        "subs": 3390,
+        "ig_followers": 16789,
+        "sub_to_follower_ratio": 0.20191792244922271,
+        "how": "discovered+verified by script",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": "cross-platform: description references instagram 'ankitxlean'"
+      },
+      {
+        "creator": "Ankush Raina",
+        "yt_handle": "iankushraina",
+        "channel_title": "ankush raina",
+        "subs": 577000,
+        "ig_followers": 517895,
+        "sub_to_follower_ratio": 1.114125450139507,
+        "how": "discovered+verified by script",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": "cross-platform: description references instagram 'iankushraina'"
+      },
+      {
+        "creator": "Cory Smith",
+        "yt_handle": "corysmithhoops",
+        "channel_title": "CorySmithHoops",
+        "subs": 2320,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "name match 'corysmithhoops' vs 'CorySmithHoops' (2,320 subs, owner-chosen handle)"
+      },
+      {
+        "creator": "dietbysimranvohra",
+        "yt_handle": "dietbysimranvohra",
+        "channel_title": "Dietbysimranvohra ",
+        "subs": 1840,
+        "ig_followers": 179955,
+        "sub_to_follower_ratio": 0.01022477841682643,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "name match 'dietbysimranvohra' vs 'Dietbysimranvohra ' (1,830 subs, owner-chosen handle)"
+      },
+      {
+        "creator": "E1 Series",
+        "yt_handle": "e1series",
+        "channel_title": "E1 Series",
+        "subs": 18700,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "name match 'e1series' vs 'E1 Series' (18,700 subs, owner-chosen handle)"
+      },
+      {
+        "creator": "Fitness Standards Council",
+        "yt_handle": "fitnessstandardscouncil",
+        "channel_title": "Fitness Standards Council",
+        "subs": 2580,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "name match 'fitnessstandardscouncil' vs 'Fitness Standards Council' (2,570 subs, owner-chosen handle)"
+      },
+      {
+        "creator": "Gaurav Gautam",
+        "yt_handle": "gauravgautamindia",
+        "channel_title": "Gauravgautamindia",
+        "subs": 1390,
+        "ig_followers": 112898,
+        "sub_to_follower_ratio": 0.0123119984410707,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "name match 'gauravgautamindia' vs 'Gauravgautamindia' (1,390 subs, owner-chosen handle)"
+      },
+      {
+        "creator": "Gujarat Titans",
+        "yt_handle": "gujarattitans",
+        "channel_title": "Gujarat Titans",
+        "subs": 1360000,
+        "ig_followers": 5229890,
+        "sub_to_follower_ratio": 0.2600437102883617,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "cross-platform: description references instagram 'gujarat_titans'"
+      },
+      {
+        "creator": "Indian Super League",
+        "yt_handle": "indiansuperleague",
+        "channel_title": "Indian Super League",
+        "subs": 2560000,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@indiansuperleague' == creator handle (2,560,000 subs)"
+      },
+      {
+        "creator": "Inspire Institute of Sport",
+        "yt_handle": "inspireinstituteofsport",
+        "channel_title": "IIS TV",
+        "subs": 27100,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@inspireinstituteofsport' == creator handle (26,500 subs)"
+      },
+      {
+        "creator": "इंडियन कुश्ती TV",
+        "yt_handle": "indian_kushti_tv",
+        "channel_title": "Indian_Kushti_TV",
+        "subs": 283000,
+        "ig_followers": 73834,
+        "sub_to_follower_ratio": 3.832922501828426,
+        "how": "discovered+verified by script",
+        "evidence": "same handle text on both platforms (weak: fan accounts reuse handles)",
+        "script_reason": "exact handle equality '@indian_kushti_tv' == creator handle (282,000 subs)"
+      },
+      {
+        "creator": "Mumbai City FC",
+        "yt_handle": "mumbaicityfc",
+        "channel_title": "Mumbai City FC",
+        "subs": 119000,
+        "ig_followers": 414085,
+        "sub_to_follower_ratio": 0.2873806102611783,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@mumbaicityfc' == creator handle (119,000 subs)"
+      },
+      {
+        "creator": "Mumbai Indians",
+        "yt_handle": "mumbaiindians",
+        "channel_title": "Mumbai Indians",
+        "subs": 8440000,
+        "ig_followers": 20038122,
+        "sub_to_follower_ratio": 0.42119715610075636,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@mumbaiindians' == creator handle (8,430,000 subs)"
+      },
+      {
+        "creator": "Nisha Kumari",
+        "yt_handle": "nisha_optimist",
+        "channel_title": "Nisha Mishra",
+        "subs": 104000,
+        "ig_followers": 394564,
+        "sub_to_follower_ratio": 0.26358208047363674,
+        "how": "discovered+verified by script",
+        "evidence": "same handle text on both platforms (weak: fan accounts reuse handles)",
+        "script_reason": "exact handle equality '@nisha_optimist' == creator handle (103,000 subs)"
+      },
+      {
+        "creator": "Ohio State Buckeyes",
+        "yt_handle": "ohiostathletics",
+        "channel_title": "Ohio State Buckeyes",
+        "subs": 17400,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@ohiostathletics' == creator handle (17,400 subs)"
+      },
+      {
+        "creator": "Ohio State Football",
+        "yt_handle": "ohiostatefb",
+        "channel_title": "Ohio State Football",
+        "subs": 82400,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@ohiostatefb' == creator handle (82,400 subs)"
+      },
+      {
+        "creator": "Parikshit Balochi",
+        "yt_handle": "parikshitbalochi",
+        "channel_title": "Parikshit Balochi",
+        "subs": 5740,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@parikshitbalochi' == creator handle (5,740 subs)"
+      },
+      {
+        "creator": "Pat Cummins",
+        "yt_handle": "patcummins30",
+        "channel_title": "Pat Cummins",
+        "subs": 271000,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@patcummins30' == creator handle (271,000 subs)"
+      },
+      {
+        "creator": "Philadelphia 76ers",
+        "yt_handle": "sixers",
+        "channel_title": "Philadelphia 76ers",
+        "subs": 106000,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": "exact handle equality '@sixers' == creator handle (106,000 subs)"
+      },
+      {
+        "creator": "Tamil Nadu Cricket Association",
+        "yt_handle": "tncacricket",
+        "channel_title": "Tamil Nadu Cricket Association (TNCA)",
+        "subs": 31900,
+        "ig_followers": 141224,
+        "sub_to_follower_ratio": 0.2258822862969467,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@tncacricket' == creator handle (31,900 subs)"
+      },
+      {
+        "creator": "Rajasthan Royals",
+        "yt_handle": "rajasthanroyals",
+        "channel_title": "rajasthanroyals",
+        "subs": 2890000,
+        "ig_followers": 6647521,
+        "sub_to_follower_ratio": 0.43474853257327056,
+        "how": "discovered+verified by script",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": "exact handle equality '@rajasthanroyals' == creator handle (2,890,000 subs)"
+      },
+      {
+        "creator": "Punjab FC",
+        "yt_handle": "rgpunjabfc",
+        "channel_title": "Punjab FC",
+        "subs": 3790,
+        "ig_followers": 115630,
+        "sub_to_follower_ratio": 0.03277696099628124,
+        "how": "discovered+verified by script",
+        "evidence": "name match",
+        "script_reason": "exact handle equality '@rgpunjabfc' == creator handle (3,360 subs)"
+      },
+      {
+        "creator": "Shaan Mukherji",
+        "yt_handle": "singershaan",
+        "channel_title": "Singer Shaan",
+        "subs": 792000,
+        "ig_followers": null,
+        "sub_to_follower_ratio": null,
+        "how": "discovered+verified by script",
+        "evidence": "NO AUTOMATIC EVIDENCE",
+        "script_reason": "exact handle equality '@singershaan' == creator handle (792,000 subs)"
+      },
+      {
+        "creator": "mrbeast",
+        "yt_handle": "mrbeast",
+        "channel_title": "MrBeast",
+        "subs": 514000000,
+        "ig_followers": 88850292,
+        "sub_to_follower_ratio": 5.785011938959075,
+        "how": "discovered+verified by script",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": "exact handle equality '@mrbeast' == creator handle (513,000,000 subs)"
+      },
+      {
+        "creator": "Gaurav Chaudhary",
+        "yt_handle": "TechnicalGuruji",
+        "channel_title": "Technical Guruji",
+        "subs": 23700000,
+        "ig_followers": 5800000,
+        "sub_to_follower_ratio": 4.086206896551724,
+        "how": "original/manual handle",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": ""
+      },
+      {
+        "creator": "Guru Mann",
+        "yt_handle": "GuruMannFitness",
+        "channel_title": "Guru Mann Fitness",
+        "subs": 2400000,
+        "ig_followers": 5620360,
+        "sub_to_follower_ratio": 0.4270189098207232,
+        "how": "original/manual handle",
+        "evidence": "corroborated (Instagram handle in channel description)",
+        "script_reason": ""
+      }
+    ]
+  },
+  "instagram": {
+    "with_handle": 257,
+    "profile_fetched": 163,
+    "never_fetched": 94,
+    "verified": 15,
+    "linked_profiles": 162,
+    "name_is_handle": 156
+  },
+  "duplicates": {
+    "same_platform_handle_conflicts": {},
+    "cross_platform_same_string": {
+      "servingitupwithsania": [
+        "servingitupwithsania (instagram)",
+        "Sania Mirza (youtube)"
+      ]
+    }
+  },
+  "reddit_roster_posts": {
+    "posts_8plus": 8,
+    "pairs_only_from_them": 362,
+    "pairs": 707
+  },
+  "reddit_weak_pairs": {
+    "pairs": 150,
+    "creators_only_weak": 30,
+    "top": [
+      [
+        "Tejasvi Singh Dahiya",
+        31
+      ],
+      [
+        "International Cup of Joy",
+        24
+      ],
+      [
+        "Ryan Williams",
+        19
+      ],
+      [
+        "Delhi Premier League T20",
+        9
+      ],
+      [
+        "SEKHON INDIAN AIR FORCE MARATHON",
+        8
+      ],
+      [
+        "Chairman Hitesh choudhary",
+        7
+      ],
+      [
+        "Grace Harris",
+        7
+      ],
+      [
+        "Nitish Kumar Reddy",
+        6
+      ],
+      [
+        "Gujarat Cricket Association",
+        6
+      ],
+      [
+        "Chennai Super Kings",
+        5
+      ]
+    ]
+  },
+  "reddit": {
+    "links": 3359,
+    "name_evidenced_lenient": 2929,
+    "name_evidenced_strict": 2182,
+    "multi_creator_posts": 319,
+    "pairs": 707,
+    "pairs_naming_both_lenient": 670,
+    "pairs_naming_both_strict": 557
+  },
+  "post_ownership": {
+    "audited": 690,
+    "wrong_at_audit": 146,
+    "still_wrong_today": 0,
+    "posts_total": 1811,
+    "sponsored_total": 59,
+    "sponsored_audited": 17,
+    "sponsored_wrong_at_audit": 2,
+    "wrong_pre_filter": [
+      146,
+      567
+    ],
+    "wrong_post_filter": [
+      0,
+      123
+    ],
+    "unaudited_pre_filter": 861,
+    "unaudited_sponsored_pre_filter": 27
+  },
+  "null_creator_events": {
+    "events_without_creator": 4,
+    "events": 66
+  },
+  "null_creator_id": {
+    "instagram_profiles": {
+      "null": 17632,
+      "total": 17794
+    },
+    "reddit_profiles": {
+      "null": 27623,
+      "total": 27623
+    },
+    "youtube_channels": {
+      "null": 0,
+      "total": 41
+    },
+    "instagram_posts": {
+      "null": 109,
+      "total": 1811
+    },
+    "youtube_videos": {
+      "null": 0,
+      "total": 1792
+    },
+    "reddit_posts": {
+      "null": 0,
+      "total": 2748
+    }
+  },
+  "cross_platform_pairs": {
+    "pairs": 54,
+    "by_platform_combo": {
+      "no usable lift": 20,
+      "instagram+reddit": 1,
+      "reddit": 16,
+      "instagram": 15,
+      "youtube": 2
+    },
+    "measured_on_2plus": 1,
+    "pair_count_meta": {
+      "computable_pairs": 54,
+      "same_platform_computable": 34,
+      "cross_platform_only": 20,
+      "effective_N_labeled_nodes": 10
+    }
+  }
+}

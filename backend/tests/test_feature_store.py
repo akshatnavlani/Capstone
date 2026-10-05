@@ -63,6 +63,30 @@ def test_creator_features_computed_from_real_signals(session):
     assert record.is_stub is False
 
 
+def test_profiles_and_posts_with_no_creator_id_never_attach_to_a_creator(session):
+    """S8 safety path: 17,632 of 17,794 instagram_profiles (and every reddit_profiles
+    row) have creator_id NULL -- fans, commenters, brands scraped for context. They must
+    neither crash feature building nor leak into a creator's features, even when a
+    creator has no profile of their own.
+    """
+    creator = Creator(name="Real", category="athlete", instagram_handle="@real")
+    session.add(creator)
+    session.commit()
+    session.add(InstagramProfile(username="real", creator_id=None, follower_count=999_999, bio="unlinked bio text"))
+    session.add(InstagramProfile(username="somefan", creator_id=None, follower_count=5, bio="fan bio"))
+    session.add(InstagramPost(
+        post_id="p1", username="somefan", creator_id=None, caption="fan caption", like_count=50, comment_count=5,
+    ))
+    session.commit()
+
+    [record] = feature_store.build_creator_features(session)
+
+    assert record.is_stub is True               # nothing is linked to this creator
+    assert record.log_subscriber_count is None  # the 999,999-follower unlinked row was not picked up
+    assert "bio" not in record.raw_text and "caption" not in record.raw_text
+    assert feature_store.build_collaboration_edges(session) == []
+
+
 def test_creator_with_no_content_is_flagged_stub(session):
     creator = Creator(name="EmptyCreator")
     session.add(creator)
