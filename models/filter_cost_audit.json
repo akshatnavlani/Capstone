@@ -1,0 +1,213 @@
+{
+  "demo_query": {
+    "flat 0.5 (this branch)": {
+      "considered": 259,
+      "budget": 15,
+      "region": 116,
+      "product": 128,
+      "kept": 0
+    },
+    "category-tiered (review-1)": {
+      "considered": 259,
+      "budget": 16,
+      "region": 116,
+      "product": 127,
+      "kept": 0
+    },
+    "follower-tiered (hypothetical rate card)": {
+      "considered": 259,
+      "budget": 5,
+      "product": 132,
+      "region": 122,
+      "kept": 0
+    }
+  },
+  "region": {
+    "dropped": 116,
+    "india_evidence": 48,
+    "iso_code_IN": 9,
+    "foreign": 8,
+    "unknown": 60,
+    "india_in_name": [
+      "Fully Dosed - India",
+      "indian_fitness_girl",
+      "indianfitqueen",
+      "SEKHON INDIAN AIR FORCE MARATHON",
+      "India Yogashala"
+    ]
+  },
+  "product": {
+    "Athletic water bottle": {
+      "current": 2,
+      "whole_word": 1,
+      "stemmed": 104,
+      "recoverable": 102,
+      "substring_only_keeps": 1
+    },
+    "running shoes": {
+      "current": 0,
+      "whole_word": 0,
+      "stemmed": 0,
+      "recoverable": 0,
+      "substring_only_keeps": 0
+    },
+    "protein powder": {
+      "current": 1,
+      "whole_word": 0,
+      "stemmed": 0,
+      "recoverable": 0,
+      "substring_only_keeps": 1
+    },
+    "yoga mat": {
+      "current": 18,
+      "whole_word": 6,
+      "stemmed": 6,
+      "recoverable": 0,
+      "substring_only_keeps": 12
+    },
+    "cricket bat": {
+      "current": 11,
+      "whole_word": 7,
+      "stemmed": 9,
+      "recoverable": 0,
+      "substring_only_keeps": 4
+    },
+    "sports drink": {
+      "current": 9,
+      "whole_word": 5,
+      "stemmed": 6,
+      "recoverable": 1,
+      "substring_only_keeps": 4
+    },
+    "fitness tracker": {
+      "current": 83,
+      "whole_word": 83,
+      "stemmed": 84,
+      "recoverable": 1,
+      "substring_only_keeps": 0
+    },
+    "gym equipment": {
+      "current": 4,
+      "whole_word": 4,
+      "stemmed": 4,
+      "recoverable": 0,
+      "substring_only_keeps": 0
+    },
+    "badminton racket": {
+      "current": 2,
+      "whole_word": 2,
+      "stemmed": 2,
+      "recoverable": 0,
+      "substring_only_keeps": 0
+    },
+    "athletic apparel": {
+      "current": 3,
+      "whole_word": 1,
+      "stemmed": 104,
+      "recoverable": 102,
+      "substring_only_keeps": 2
+    }
+  },
+  "noop": {
+    "no_region_signal": 98,
+    "no_product_signal": 0,
+    "creators": 259
+  },
+  "cost_stability": [
+    {
+      "budget": 1000000,
+      "model": "category-tiered (review-1)",
+      "eligible": 226,
+      "eligible_flat": 226,
+      "jaccard": 0.9911894273127754,
+      "top10_overlap": 10,
+      "flips": 2
+    },
+    {
+      "budget": 1000000,
+      "model": "follower-tiered (hypothetical rate card)",
+      "eligible": 230,
+      "eligible_flat": 226,
+      "jaccard": 0.9826086956521739,
+      "top10_overlap": 10,
+      "flips": 4
+    },
+    {
+      "budget": 2000000,
+      "model": "category-tiered (review-1)",
+      "eligible": 234,
+      "eligible_flat": 233,
+      "jaccard": 0.9872340425531915,
+      "top10_overlap": 9,
+      "flips": 3
+    },
+    {
+      "budget": 2000000,
+      "model": "follower-tiered (hypothetical rate card)",
+      "eligible": 244,
+      "eligible_flat": 233,
+      "jaccard": 0.9549180327868853,
+      "top10_overlap": 7,
+      "flips": 11
+    },
+    {
+      "budget": 5000000,
+      "model": "category-tiered (review-1)",
+      "eligible": 243,
+      "eligible_flat": 244,
+      "jaccard": 0.9959016393442623,
+      "top10_overlap": 10,
+      "flips": 1
+    },
+    {
+      "budget": 5000000,
+      "model": "follower-tiered (hypothetical rate card)",
+      "eligible": 254,
+      "eligible_flat": 244,
+      "jaccard": 0.9606299212598425,
+      "top10_overlap": 7,
+      "flips": 10
+    },
+    {
+      "budget": 10000000,
+      "model": "category-tiered (review-1)",
+      "eligible": 250,
+      "eligible_flat": 248,
+      "jaccard": 0.992,
+      "top10_overlap": 10,
+      "flips": 2
+    },
+    {
+      "budget": 10000000,
+      "model": "follower-tiered (hypothetical rate card)",
+      "eligible": 255,
+      "eligible_flat": 248,
+      "jaccard": 0.9725490196078431,
+      "top10_overlap": 7,
+      "flips": 7
+    },
+    {
+      "budget": 50000000,
+      "model": "category-tiered (review-1)",
+      "eligible": 255,
+      "eligible_flat": 255,
+      "jaccard": 1.0,
+      "top10_overlap": 10,
+      "flips": 0
+    },
+    {
+      "budget": 50000000,
+      "model": "follower-tiered (hypothetical rate card)",
+      "eligible": 257,
+      "eligible_flat": 255,
+      "jaccard": 0.9922178988326849,
+      "top10_overlap": 9,
+      "flips": 2
+    }
+  ],
+  "canary_athlete_5M_India": {
+    "flat 0.5 (this branch)": 77,
+    "category-tiered (review-1)": 76,
+    "follower-tiered (hypothetical rate card)": 78
+  }
+}
