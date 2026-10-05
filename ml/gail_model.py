@@ -24,7 +24,7 @@ from torch import nn
 from torch_geometric.data import HeteroData
 
 from ml.causal_regularization import PropensityScoreModel
-from ml.model import SchemaSmokeTestGAT
+from ml.model import DEFAULT_NUM_LAYERS, HeteroGATBackbone
 from ml.multi_relation_exposure import (
     DEFAULT_EXPOSURE_RELATIONS,
     MultiRelationExposureModule,
@@ -39,10 +39,15 @@ class GAILModel(nn.Module):
         hidden_channels: int = 16,
         heads: int = 2,
         exposure_relations: tuple[str, ...] = DEFAULT_EXPOSURE_RELATIONS,
+        num_layers: int = DEFAULT_NUM_LAYERS,
     ):
         super().__init__()
         self.exposure_relations = tuple(exposure_relations)
-        self.backbone = SchemaSmokeTestGAT(hidden_channels=hidden_channels, heads=heads)
+        # num_layers controls hops of receptive field; 2 lets spillover reach a
+        # creator through an intermediary, which a one-hop backbone cannot see.
+        self.backbone = HeteroGATBackbone(
+            hidden_channels=hidden_channels, heads=heads, num_layers=num_layers
+        )
         self.exposure_module = MultiRelationExposureModule(
             in_channels=hidden_channels,
             hidden_channels=hidden_channels,
