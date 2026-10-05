@@ -76,6 +76,21 @@ class GAILModel(nn.Module):
         prediction = self.prediction_head(embeddings, exposure)
         return prediction, exposure, propensity
 
+    def predict_unexposed(self, data: HeteroData) -> torch.Tensor:
+        """mu(0, X): predicted spillover with exposure forced to zero.
+
+        The counterfactual arm of the doubly robust effect estimator
+        (`ml.causal_regularization.doubly_robust_effect`). GAIL needs no separate
+        counterfactual model: "what if this creator had no sponsored neighbours"
+        is just the prediction head with exposure zeroed and the embedding --
+        which encodes who they are and where they sit in the graph -- unchanged.
+        """
+        embeddings = self.backbone(data)["creator"]
+        zero_exposure = torch.zeros(
+            embeddings.size(0), device=embeddings.device, dtype=embeddings.dtype
+        )
+        return self.prediction_head(embeddings, zero_exposure)
+
     def transmission_shares(self) -> dict[str, float]:
         """Learned `beta_r` per relation — which relationship type carries
         spillover. Inspectable output, not just an internal parameter.

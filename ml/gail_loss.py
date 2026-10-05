@@ -16,6 +16,7 @@ import torch.nn.functional as F
 
 from ml.causal_regularization import (
     consistency_penalty,
+    doubly_robust_pseudo_outcome,
     doubly_robust_weights,
     laplacian_smoothness_penalty,
     overlap_penalty,
@@ -40,6 +41,7 @@ def compute_gail_loss(
     weights: GAILLossWeights | None = None,
     prediction_mask: torch.Tensor | None = None,
     treatment: torch.Tensor | None = None,
+    dr_mode: str = "ipw",
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """`predicted_spillover`/`target_spillover`/`propensity`/
     `has_sponsored_neighbor_mask` must all be over the SAME full node set
@@ -51,19 +53,40 @@ def compute_gail_loss(
     are structural/unsupervised and always use the full graph, standard
     practice for transductive GNN train/val splits.
 
-    `treatment`, if given, applies `doubly_robust_weights` (inverse-
-    propensity weighting) to the supervised term — the doubly-robust
-    correction named in `ml/causal_regularization.py` but left unwired
-    until now because no real outcome predictor/held-out data existed to
-    apply it to. Optional and defaults to plain unweighted MSE so existing
-    callers/tests are unaffected.
+    `treatment` is the interference indicator (1 when the node has a
+    sponsored NEIGHBOUR). Given it, `dr_mode` selects how selection bias is
+    corrected in the supervised term:
+
+      "ipw"  (default) -- weight the squared error by `doubly_robust_weights`.
+               Unbiased only if the propensity model is correct. This is the
+               historical behaviour and stays the default so existing callers
+               and the ablation arm are unaffected.
+      "aipw" -- regress onto the `doubly_robust_pseudo_outcome`, which adds
+               the outcome-model arm. Unbiased if EITHER the propensity or the
+               outcome model is correct, which is the actual doubly robust
+               property; "ipw" alone never had it despite the function name.
+
+    Without `treatment`, both modes fall back to plain unweighted MSE.
     """
     weights = weights or GAILLossWeights()
     if prediction_mask is None:
         prediction_mask = torch.ones_like(predicted_spillover, dtype=torch.bool)
 
+    if dr_mode not in ("ipw", "aipw"):
+        raise ValueError(f"dr_mode must be 'ipw' or 'aipw', got {dr_mode!r}")
+
     if treatment is None:
         prediction_loss = F.mse_loss(predicted_spillover[prediction_mask], target_spillover[prediction_mask])
+    elif dr_mode == "aipw":
+        # Full doubly robust: supervise against the selection-corrected target
+        # rather than the raw observed one. The pseudo-outcome detaches its
+        # nuisances, so this is an ordinary regression onto a fixed target.
+        pseudo = doubly_robust_pseudo_outcome(
+            predicted_spillover, target_spillover, treatment, propensity
+        )
+        prediction_loss = F.mse_loss(
+            predicted_spillover[prediction_mask], pseudo[prediction_mask]
+        )
     else:
         dr_weights = doubly_robust_weights(treatment, propensity)[prediction_mask]
         sq_err = (predicted_spillover[prediction_mask] - target_spillover[prediction_mask]).pow(2)
