@@ -1,0 +1,54 @@
+{
+  "creators": [
+    "Neeraj Chopra",
+    "Ranveer Allahbadia",
+    "Cristiano Ronaldo",
+    "Sania Mirza",
+    "CarryMinati",
+    "Jeet Selal Himalayan Stallion",
+    "Guru Mann",
+    "Prajakta Koli",
+    "mrbeast",
+    "Mumbai Indians",
+    "Bhuvan Bam",
+    "Ankit Punia",
+    "Kerala Blasters"
+  ],
+  "lags": [
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3
+  ],
+  "pairs": [
+    17,
+    20,
+    23,
+    30,
+    23,
+    22,
+    23
+  ],
+  "corr": [
+    -0.5209799694353505,
+    -0.08810365261511945,
+    -0.2885424024999163,
+    0.24309462787953923,
+    0.1099678109436712,
+    -0.00947228039894078,
+    -0.06534415903137494
+  ],
+  "p": [
+    0.9760079973342219,
+    0.6617794068643785,
+    0.9123625458180606,
+    0.08797067644118627,
+    0.2669110296567811,
+    0.6834388537154282,
+    0.6621126291236255
+  ],
+  "min_posts": 6
+}
