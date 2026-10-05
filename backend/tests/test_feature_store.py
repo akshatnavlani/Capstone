@@ -87,6 +87,37 @@ def test_profiles_and_posts_with_no_creator_id_never_attach_to_a_creator(session
     assert feature_store.build_collaboration_edges(session) == []
 
 
+def _reddit_post(session, post_id, title, creators):
+    session.add(RedditPost(post_id=post_id, subreddit="cricket", title=title, body=""))
+    session.commit()
+    for c in creators:
+        session.add(RedditPostCreator(post_id=post_id, creator_id=c.creator_id))
+    session.commit()
+
+
+def test_supported_co_occurrence_needs_both_creators_named_in_full(session):
+    a, b, c = Creator(name="Alpha Runner"), Creator(name="Beta Jumper"), Creator(name="Gamma Thrower")
+    session.add_all([a, b, c])
+    session.commit()
+    _reddit_post(session, "p1", "alpha runner and beta jumper meet", [a, b])  # names both: counts
+    _reddit_post(session, "p2", "alpha runner trains at night", [a, c])        # linked to Gamma by keyword search, but never named
+    plain = {frozenset((e.source_creator_id, e.target_creator_id)) for e in feature_store.build_co_occurrence_edges(session)}
+    supported = feature_store.build_supported_co_occurrence_edges(session)
+    pairs = {frozenset((e.source_creator_id, e.target_creator_id)) for e in supported}
+    assert pairs == {frozenset((a.creator_id, b.creator_id))}
+    assert len(supported) == 2                       # both directions, same shape as the plain builder
+    assert len(plain) == 2                           # the plain builder still links both pairs (unchanged)
+
+
+def test_supported_co_occurrence_ignores_roster_posts(session):
+    people = [Creator(name=f"Player Number{i:02d}") for i in range(feature_store.ROSTER_POST_SIZE)]
+    session.add_all(people)
+    session.commit()
+    _reddit_post(session, "big", " ".join(p.name for p in people), people)  # names everyone, but it is a roster
+    assert feature_store.build_supported_co_occurrence_edges(session) == []
+    assert feature_store.build_co_occurrence_edges(session) != []
+
+
 def test_creator_with_no_content_is_flagged_stub(session):
     creator = Creator(name="EmptyCreator")
     session.add(creator)

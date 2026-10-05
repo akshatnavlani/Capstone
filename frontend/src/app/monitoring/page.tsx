@@ -40,9 +40,10 @@ export default function MonitoringPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Monitoring &amp; Alerts</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Risk flags and sentiment alerts. Each alert shows what generated it
-          (&quot;source&quot;) and, once the Temporal branch&apos;s sentiment
-          propagation ships, which collaborator&apos;s controversy it
-          propagated from.
+          (&quot;source&quot;) and, for propagated risk, which collaborator&apos;s
+          negative audience sentiment it came from. Propagated alerts follow
+          only links backed by a collaboration tag or a post naming both
+          creators, and their severity is relative within the group.
         </p>
       </div>
 

@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 from sqlmodel import Session
 
-from app.feature_store import build_co_occurrence_edges, build_collaboration_edges
+from app.feature_store import build_collaboration_edges, build_supported_co_occurrence_edges
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,9 @@ def compute_temporal(session: Session, scores: dict[str, dict] | None = None) ->
 
     edges_by_relation = {
         "collaborates_with": build_collaboration_edges(session),
-        "co_occurs_with": build_co_occurrence_edges(session),
+        # Only co-occurrences backed by a post that names both creators in full (S8 audit);
+        # the plain builder carries about 24% wrong links and roster-thread pairs.
+        "co_occurs_with": build_supported_co_occurrence_edges(session),
     }
     ids = set(scores)
     for edges in edges_by_relation.values():

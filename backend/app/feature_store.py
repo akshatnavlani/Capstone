@@ -36,6 +36,7 @@ and Saina Nehwal via r/badminton.
 
 import itertools
 import math
+import re
 import uuid
 from collections import defaultdict
 
@@ -263,6 +264,61 @@ def build_co_occurrence_edges(session: Session) -> list[CollaborationEdge]:
         if len(creator_ids) < 2:
             continue
         for a, b in itertools.combinations(sorted(creator_ids, key=str), 2):
+            pair_weights[(str(a), str(b))] += 1
+
+    edges = []
+    for (a, b), weight in pair_weights.items():
+        edges.append(CollaborationEdge(source_creator_id=uuid.UUID(a), target_creator_id=uuid.UUID(b), weight=float(weight)))
+        edges.append(CollaborationEdge(source_creator_id=uuid.UUID(b), target_creator_id=uuid.UUID(a), weight=float(weight)))
+    return edges
+
+
+# A Reddit post that links this many creators is a roster, auction or statistics thread:
+# being listed together is a mention, not a relationship (S8 audit: 51% of co-occurrence
+# pairs exist only because of such posts).
+ROSTER_POST_SIZE = 8
+
+
+def _alnum(text: str | None) -> str:
+    return re.sub(r"[^a-z0-9]", "", (text or "").lower())
+
+
+def _post_names_creator(creator, post_text: str) -> bool:
+    """True when the post text contains the creator's full name or full handle.
+
+    Reddit links are made by a keyword search, so a link alone is weak evidence: the S8
+    audit found about 24% of post-to-creator links wrong (generic words such as "night",
+    shared surnames, a different person with the same name). Every link where the full
+    name or handle was in the text was correct in the hand-reviewed sample.
+    """
+    squashed = _alnum(post_text)
+    candidates = (creator.name, _normalize_handle(creator.instagram_handle or ""), _normalize_handle(creator.youtube_handle or ""))
+    return any(len(key := _alnum(c)) >= 4 and key in squashed for c in candidates)
+
+
+def build_supported_co_occurrence_edges(session: Session) -> list[CollaborationEdge]:
+    """`co_occurs_with` restricted to well-supported pairs: a post counts toward a pair only
+    if it links fewer than ROSTER_POST_SIZE creators AND its text names BOTH creators in
+    full (name or handle). Same shape and both directions as `build_co_occurrence_edges`,
+    which stays unchanged because the GAIL graph and checkpoint are built from it.
+
+    Used by the Temporal branch's risk propagation (app/temporal.py): spreading a risk
+    warning along a wrong link would put a false warning on a real creator.
+    """
+    creators = {c.creator_id: c for c in session.exec(select(Creator)).all()}
+    text_by_post = {
+        p.post_id: f"{p.title or ''} {p.body or ''}" for p in session.exec(select(RedditPost)).all()
+    }
+    creators_by_post: dict[str, set[uuid.UUID]] = defaultdict(set)
+    for row in session.exec(select(RedditPostCreator)).all():
+        creators_by_post[row.post_id].add(row.creator_id)
+
+    pair_weights: dict[tuple[str, str], int] = defaultdict(int)
+    for post_id, ids in creators_by_post.items():
+        if len(ids) < 2 or len(ids) >= ROSTER_POST_SIZE or post_id not in text_by_post:
+            continue
+        named = [i for i in ids if i in creators and _post_names_creator(creators[i], text_by_post[post_id])]
+        for a, b in itertools.combinations(sorted(named, key=str), 2):
             pair_weights[(str(a), str(b))] += 1
 
     edges = []

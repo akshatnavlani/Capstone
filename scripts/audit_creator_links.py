@@ -21,6 +21,8 @@ Checks:
                        re-checked against the database today.
   7. Null creator_id   how many profile rows have none, and that nothing downstream breaks.
   8. Cross-platform    how many creators and how many GAIL training pairs actually span 2+ platforms.
+  9. Collaboration edges  how the 170 `collaborates_with` pairs are supported (mutual listing, entity types, hubs).
+ 10. Account types     stored bios run through Track A's classifier, plus commerce markers, to find non-creator accounts.
 
 Results are saved to models/link_audit.json.
 """
@@ -76,6 +78,7 @@ def main() -> None:
     ap.add_argument("--show-all", action="store_true")
     ap.add_argument("--sample", type=int, default=0, help="print N random Reddit links for hand review")
     ap.add_argument("--sample-weak", type=int, default=0, help="print N random Reddit links that fail the strict name test")
+    ap.add_argument("--sample-pairs", type=int, default=0, help="print N random collaboration pairs for hand review")
     args = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -381,6 +384,83 @@ def main() -> None:
                                        "pair_count_meta": {k: ck["pair_count"].get(k) for k in ("computable_pairs", "same_platform_computable", "cross_platform_only", "effective_N_labeled_nodes")}}
     except Exception as e:  # checkpoint/torch unavailable
         print(f"   skipped ({e})")
+
+    # ---- 9 and 10 need the database again, so they open their own connection ----------------------------------
+    with create_engine(url).connect() as c2:
+        q2 = lambda sql, **k: c2.execute(text(sql), k).all()
+        rel = q2("select creator_id::text, handle from creator_related_accounts where relation_type = 'frequent_collaborator'")
+        owner_of = {}
+        for cid_, r_ in by_id.items():
+            if r_[4]:
+                owner_of.setdefault(norm_handle(r_[4]), set()).add(cid_)
+        listed = collections.defaultdict(set)
+        for cid_, h in rel:
+            owners = owner_of.get(norm_handle(h), set())
+            if len(owners) == 1:
+                tgt = next(iter(owners))
+                if tgt != cid_:
+                    listed[tuple(sorted((cid_, tgt)))].add(cid_)
+        pairs_ = list(listed)
+        mutual = sum(1 for p_ in pairs_ if len(listed[p_]) == 2)
+        cats = collections.Counter(tuple(sorted((by_id[a][2] or "-", by_id[b][2] or "-"))) for a, b in pairs_)
+        deg = collections.Counter(x for p_ in pairs_ for x in p_)
+        team_pairs = sum(v for k_, v in cats.items() if "team" in k_ or "league" in k_)
+        same_entity = [(by_id[a][1], by_id[b][1]) for a, b in pairs_
+                       if len(alnum(by_id[a][1])) >= 5 and len(alnum(by_id[b][1])) >= 5
+                       and (alnum(by_id[a][1]) in alnum(by_id[b][1]) or alnum(by_id[b][1]) in alnum(by_id[a][1]))]
+        print("\n9. COLLABORATION EDGES (collaborates_with)")
+        print(f"   {len(rel)} related-account rows from {len({r[0] for r in rel})} creators resolve to {len(pairs_)} unordered pairs (the API returns 340 directed edges)")
+        print("   a row records that the creator's Instagram collab post lists another account as co-author; the pair exists only if that account's handle belongs to exactly one creator")
+        print(f"   listed by BOTH creators (independent corroboration): {pct(mutual, len(pairs_))}; the other {len(pairs_) - mutual} rest on one creator's row")
+        print(f"   involve a team or league: {pct(team_pairs, len(pairs_))}; most common endpoint types: {cats.most_common(4)}")
+        print("   most connected: " + "; ".join(f"{by_id[i][1]} ({d})" for i, d in deg.most_common(6)))
+        print(f"   the same entity on both ends (an organisation named after its person): {same_entity}")
+        print("   read: these are mostly AFFILIATIONS (a player on a club's collab post), not two creators working together")
+        out["collaboration_edges"] = {"related_rows": len(rel), "pairs": len(pairs_), "mutual": mutual, "team_or_league_pairs": team_pairs,
+                                      "same_entity": same_entity, "top_hubs": [(by_id[i][1], d) for i, d in deg.most_common(6)]}
+        if args.sample_pairs:
+            import random
+
+            rng = random.Random(0)
+            print(f"   HAND-REVIEW SAMPLE: {args.sample_pairs} random pairs; judge: two distinct entities with a real connection?")
+            for a, b in rng.sample(sorted(pairs_), min(args.sample_pairs, len(pairs_))):
+                print(f"     {by_id[a][1][:26]:26s} ({by_id[a][2]}) <-> {by_id[b][1][:26]:26s} ({by_id[b][2]}) | listed by {'both' if len(listed[(a, b)]) == 2 else 'one'}")
+
+        # ---- 10. account types ------------------------------------------------------------------------------------
+        print("\n10. ACCOUNT TYPES (is each 'creator' a person or organisation, or a business, media or fan page?)")
+        try:
+            sys.path.insert(0, str(ROOT / "scripts" / "ingestion"))
+            import account_classify as AC
+        except Exception as e:  # pyyaml missing etc.
+            AC = None
+            print(f"   classifier unavailable ({e})")
+        prof = {r[0]: r for r in q2("select creator_id::text, full_name, bio from instagram_profiles where creator_id is not null")}
+        yt_desc = {r[0]: r[1] for r in q2("select creator_id::text, coalesce(description, '') from youtube_channels")}
+        COMMERCE = re.compile(r"\b(store|shop|boutique|studio|pvt\.? ?ltd|franchise|gym chain|branches|book(?:ing)? (?:your|now)|slot now|supplements?|clothing|apparel|magazine|news|"
+                              r"online (?:classes|trainings?)|fan ?page|we share|official page)\b|\+91 ?\d{5}", re.I)
+        flagged, brand_flagged, disagree = [], 0, 0
+        for cid_, r_ in by_id.items():
+            pr = prof.get(cid_)
+            text_ = " ".join(t for t in [(pr[2] if pr else ""), yt_desc.get(cid_, ""), r_[1]] if t)
+            if r_[2] in ("athlete", "team", "league"):
+                continue
+            if COMMERCE.search(text_):
+                flagged.append((r_[1], r_[2], COMMERCE.search(text_).group(0)))
+            if AC and pr:
+                cat_, _ev = AC.classify_from_profile(pr[1] or r_[1], pr[2] or "", r_[4] or "")
+                brand_flagged += cat_ == AC.BRAND
+                disagree += cat_ not in (r_[2], "other")
+        non_ath = sum(1 for r_ in creators if r_[2] not in ("athlete", "team", "league"))
+        print(f"   creators outside the athlete/team/league categories: {non_ath}. Commerce/media/fan-page markers (store, studio, franchise, magazine, booking, +91 phone, ...) appear in {len(flagged)}:")
+        for nm, ct, mk in flagged[:30]:
+            print(f"      {nm[:30]:30s} ({ct}) '{mk}'")
+        if AC:
+            print(f"   Track A's classifier on the stored bios: flags {brand_flagged} as BRAND (a business, not a creator); its category differs from the stored one for {disagree}")
+        print("   hand review of all", non_ath, "of these creators found about 14 to 17 that are not creators: shops and brands (A PLUS-SIZE STORE, World Wide Store, Baller Athletik, Fully Dosed - India),")
+        print("   booking businesses (Extreme Bungee Drop, _bungy_lover_.01), gyms and studios (Pro Ultimate Gyms, Movement Pilates, India Yogashala, Total Combat Fitness, Elite Edge),")
+        print("   media and fan pages (bharatoutcome, She Inspire Magazine, Up Athletes, servingitupwithsania). The athlete/team/league categories (124) were not reviewed.")
+        out["account_types"] = {"outside_athlete_team_league": non_ath, "commerce_marker_hits": len(flagged), "classifier_brand_flags": brand_flagged,
+                                "classifier_category_disagreements": disagree, "hand_review_non_creators": "14-17 of %d" % non_ath}
 
     (ROOT / "models" / "link_audit.json").write_text(json.dumps(out, indent=2, default=str, ensure_ascii=False), encoding="utf-8")
     print("\nsaved models/link_audit.json")

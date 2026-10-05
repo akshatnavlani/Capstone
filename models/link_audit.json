@@ -619,5 +619,54 @@
       "cross_platform_only": 20,
       "effective_N_labeled_nodes": 10
     }
+  },
+  "collaboration_edges": {
+    "related_rows": 873,
+    "pairs": 170,
+    "mutual": 33,
+    "team_or_league_pairs": 97,
+    "same_entity": [
+      [
+        "Neeraj Chopra Foundation",
+        "Neeraj Chopra"
+      ],
+      [
+        "Sania Mirza Tennis Academy",
+        "Sania Mirza"
+      ]
+    ],
+    "top_hubs": [
+      [
+        "SunRisers Hyderabad",
+        18
+      ],
+      [
+        "Mumbai Indians",
+        17
+      ],
+      [
+        "Kolkata Knight Riders",
+        16
+      ],
+      [
+        "Bengaluru Football Club",
+        16
+      ],
+      [
+        "LeBron James",
+        15
+      ],
+      [
+        "Royal Challengers Bengaluru",
+        14
+      ]
+    ]
+  },
+  "account_types": {
+    "outside_athlete_team_league": 135,
+    "commerce_marker_hits": 18,
+    "classifier_brand_flags": 0,
+    "classifier_category_disagreements": 19,
+    "hand_review_non_creators": "14-17 of 135"
   }
 }
