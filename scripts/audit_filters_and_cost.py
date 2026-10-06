@@ -123,7 +123,9 @@ def main() -> None:
     }
 
     def matcher_current(kw, texts):
-        return R._keyword_overlap(kw, texts)
+        """LEGACY test, frozen: any query word as a plain substring of the text (before the S7 fixes)."""
+        combined = " ".join(t.lower() for t in texts if t)
+        return any(k in combined for k in kw)
 
     def matcher_word(kw, texts):
         ws = set(words(" ".join(t for t in texts if t)))
@@ -133,7 +135,7 @@ def main() -> None:
         ws = {stem(w) for w in words(" ".join(t for t in texts if t))}
         return any(stem(k) in ws for k in kw)
 
-    def run(product, budget, region=None, rate=None, match=matcher_current):
+    def run(product, budget, region=None, rate=None, match=matcher_current, fixed=False):
         rk, pk = R._extract_keywords(region), R._extract_keywords(product)
         counts = collections.Counter()
         dropped = collections.defaultdict(list)
@@ -147,12 +149,14 @@ def main() -> None:
                 dropped["budget"].append(c)
                 continue
             rs = [y.country if y else None, y.description if y else None, i.bio if i else None]
-            if rk and any(rs) and not match(rk, rs):
+            region_ok = R._region_overlap(rk, rs, c.name) if fixed else match(rk, rs)
+            if rk and any(rs) and not region_ok:
                 counts["region"] += 1
                 dropped["region"].append(c)
                 continue
             ps = [c.category.replace("_", " ") if c.category else None, y.description if y else None, i.bio if i else None]
-            if pk and any(ps) and not match(pk, ps):
+            product_ok = R._keyword_overlap(pk, ps) if fixed else match(pk, ps)
+            if pk and any(ps) and not product_ok:
                 counts["product"] += 1
                 dropped["product"].append(c)
                 continue
@@ -167,6 +171,12 @@ def main() -> None:
         demo[name] = {**cnt, "kept": len(kept)}
         print(f"   {name:42s} considered {cnt['considered']}, budget {cnt['budget']}, region {cnt['region']}, product {cnt['product']}, results {len(kept)}")
     print("   counts are sequential: a creator is counted under the first filter that drops it, so they add up to 259 and nothing is left")
+    demo_fixed = {}
+    for name, rate in rates.items():
+        cnt, kept, _ = run("Athletic water bottle", 5_000_000, "India", rate, fixed=True)
+        demo_fixed[name] = {**cnt, "kept": len(kept)}
+        print(f"   AFTER THE FIX  {name:42s} budget {cnt['budget']}, region {cnt['region']}, product {cnt['product']}, results {len(kept)}")
+    out["demo_query_fixed"] = demo_fixed
     cnt, kept, _ = run("athlete", 5_000_000, "India")
     print(f"   the same budget and region with the query 'athlete' (the demo's other word): {len(kept)} results, product drops {cnt['product']}")
     out["demo_query"] = demo
@@ -196,6 +206,11 @@ def main() -> None:
     print(f"   the creator NAME is never read: {len(named_india)} dropped creators have 'India' in their own name: {named_india}")
     print(f"   => at least {100 * len(evid) / len(reg):.0f}% of region drops are creators the data itself places in India; correct drops are at most {100 * (len(foreign) + len(unknown)) / len(reg):.0f}%")
     out["region"] = {"dropped": len(reg), "india_evidence": len(evid), "iso_code_IN": len(code_in), "foreign": len(foreign), "unknown": len(unknown), "india_in_name": named_india}
+    _, kept_f, dr_f = run("athlete", 5_000_000, "India", fixed=True)
+    reg_f = dr_f["region"]
+    ev_f = [c for c in reg_f if (yt.get(c.creator_id) and yt[c.creator_id].country == "IN") or INDIC_SCRIPT.search(" ".join(t for t in [(yt.get(c.creator_id).description if yt.get(c.creator_id) else None), (ig.get(c.creator_id).bio if ig.get(c.creator_id) else None), c.name] if t)) or any(m in " ".join(t for t in [(yt.get(c.creator_id).description if yt.get(c.creator_id) else None), (ig.get(c.creator_id).bio if ig.get(c.creator_id) else None), c.name] if t).lower() for m in INDIA_MARKERS)]
+    print(f"   AFTER THE FIX the same region filter drops {len(reg_f)} (was {len(reg)}); {len(ev_f)} of those still show explicit India evidence ({len(kept_f)} creators survive for 'athlete'/5M/India, was 77)")
+    out["region_fixed"] = {"dropped": len(reg_f), "still_with_india_evidence": len(ev_f), "athlete_5M_India_results": len(kept_f)}
     if args.sample_region:
         for lab, grp in (("INDIA-EVIDENCE", evid), ("FOREIGN", foreign), ("UNKNOWN", unknown)):
             print(f"   -- {lab}")
@@ -212,14 +227,17 @@ def main() -> None:
         k_cur = {c.creator_id for c in run(brief, 5_000_000, None, match=matcher_current)[1]}
         k_word = {c.creator_id for c in run(brief, 5_000_000, None, match=matcher_word)[1]}
         k_stem = {c.creator_id for c in run(brief, 5_000_000, None, match=matcher_stem)[1]}
+        k_fixed = {c.creator_id for c in run(brief, 5_000_000, None, fixed=True)[1]}
         recov = k_stem - k_cur
         sub_only = k_cur - k_word
         by_id = {c.creator_id: c for c in creators}
         recoverable_pool += [(brief, by_id[i]) for i in recov]
         sub_only_pool += [(brief, by_id[i]) for i in sub_only]
-        prod[brief] = {"current": len(k_cur), "whole_word": len(k_word), "stemmed": len(k_stem), "recoverable": len(recov), "substring_only_keeps": len(sub_only)}
-        print(f"   {brief:24s} current {len(k_cur):3d} | whole-word {len(k_word):3d} | stemmed {len(k_stem):3d} | recoverable drops {len(recov):3d} | substring-only keeps {len(sub_only):3d}")
+        prod[brief] = {"current": len(k_cur), "whole_word": len(k_word), "stemmed": len(k_stem), "recoverable": len(recov), "substring_only_keeps": len(sub_only), "fixed": len(k_fixed)}
+        print(f"   {brief:24s} before {len(k_cur):3d} | AFTER THE FIX {len(k_fixed):3d} | whole-word {len(k_word):3d} | stemmed {len(k_stem):3d} | recoverable drops {len(recov):3d} | substring-only keeps {len(sub_only):3d}")
     kept_counts = sorted(v["current"] for v in prod.values())
+    fixed_counts = sorted(v["fixed"] for v in prod.values())
+    print(f"   AFTER THE FIX creators kept per brief: {fixed_counts}; median {fixed_counts[len(fixed_counts) // 2]} (was {kept_counts[len(kept_counts) // 2]})")
     print(f"   creators kept by the current product filter, per brief: {kept_counts} of {n}; the hard product filter leaves a median of {kept_counts[len(kept_counts) // 2]} creators")
     print(f"   briefs with 5 or fewer creators left: {sum(c <= 5 for c in kept_counts)} of {len(kept_counts)}")
     tot_rec = sum(v["recoverable"] for v in prod.values())

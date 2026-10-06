@@ -11,8 +11,10 @@ What changed 2026-08-09 (was previously a no-op stub, see API_CONTRACTS.md):
 - budget: hard filter via `estimated_cost` (a placeholder followers/subscribers
   * flat-rate heuristic -- no real rate-card data exists yet). Candidates with
   unknown reach data aren't excluded (can't compute a cost for them).
-- target_region / target_demographic / product_category: soft filters. A
-  creator is excluded only if we HAVE text signal for them
+- target_region / target_demographic / product_category: soft filters
+  (whole-word, lightly stemmed matching; region also reads country codes,
+  the flag, Indian scripts and the creator's name -- see the helpers below).
+  A creator is excluded only if we HAVE text signal for them
   (youtube_channels.country/description, instagram_profiles.bio, or --
   for product_category -- creator.category itself) and it does NOT match.
   Creators with no signal data at all are kept -- with Weeks 3-4 scraping
@@ -28,6 +30,7 @@ What changed 2026-08-09 (was previously a no-op stub, see API_CONTRACTS.md):
   "no handle on this platform" is a directly known fact, not missing data.
 """
 
+import re
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -71,13 +74,31 @@ def _extract_keywords(query: str | None) -> list[str]:
     return [w for w in query.lower().split() if len(w) >= 3]
 
 
-def _keyword_overlap(keywords: list[str], texts: list[str | None]) -> bool:
-    """True if any of `keywords` appears in the combined `texts`.
+# Matching rules (PendingWork S7 fixes; the S7 audit measured the old plain-substring test):
+#  - a query word matches a whole word of the text after light stemming, so "athletic" finds
+#    "athlete" and "shoes" finds "shoe";
+#  - a LONG query word (6+ letters) may also match inside a longer word ("cricket" in
+#    "cricketer" or "@lancashirecricket");
+#  - a SHORT query word must match a whole word: "mat" no longer matches "cinematic" and
+#    "night" no longer matches "Knight Riders".
+_SUFFIXES = ("ing", "ers", "er", "ies", "es", "ic", "ed", "s", "e")
+_SUBSTRING_MIN_LEN = 6
 
-    Keyword-overlap, not whole-phrase substring: a query like "18-24 fitness
-    enthusiasts" almost never appears verbatim in real bio/description text,
-    so whole-phrase matching effectively never fires. Deliberately crude
-    (no stemming/stopwords) -- a placeholder pending real NLP matching.
+
+def _stem(word: str) -> str:
+    """Strip one common suffix, twice ("athletics" -> "athletic" -> "athlet"), keeping 4+ letters."""
+    for _ in range(2):
+        for suffix in _SUFFIXES:
+            if word.endswith(suffix) and len(word) - len(suffix) >= 4:
+                word = word[: -len(suffix)]
+                break
+        else:
+            break
+    return word
+
+
+def _keyword_overlap(keywords: list[str], texts: list[str | None], substring: bool = True) -> bool:
+    """True if any of `keywords` matches the combined `texts` (rules above).
 
     Callers must treat an empty `keywords` list (query too short/unmatchable,
     e.g. "x") as "can't judge" and skip filtering, NOT as a confirmed
@@ -89,7 +110,51 @@ def _keyword_overlap(keywords: list[str], texts: list[str | None]) -> bool:
     if not keywords:
         return False
     combined = " ".join(t.lower() for t in texts if t)
-    return any(k in combined for k in keywords)
+    stems = {_stem(w) for w in re.findall(r"[a-z0-9]+", combined)}
+    for raw in keywords:
+        k = re.sub(r"[^\w]", "", raw)
+        if not k:
+            continue
+        if substring and len(k) >= _SUBSTRING_MIN_LEN and k in combined:
+            return True
+        if k in stems or _stem(k) in stems:
+            return True
+    return False
+
+
+# Region matching. The old test needed the English word "india" in a bio or description, so it dropped
+# creators whose YouTube country is the code "IN", who wrote the flag or a +91 number, who write in an
+# Indian script, or who have "India" in their own name (S7: ~80% of 116 region drops were Indian creators).
+_COUNTRY_CODE_NAMES = {
+    "in": "india", "us": "united states usa america", "gb": "united kingdom uk britain england", "au": "australia",
+    "ae": "united arab emirates uae dubai", "ca": "canada", "nz": "new zealand", "za": "south africa",
+    "pk": "pakistan", "bd": "bangladesh", "lk": "sri lanka", "np": "nepal",
+}
+_REGION_ALIASES = {"india": ("indian", "bharat", "hindustan")}
+_REGION_MARKERS = {"india": ("\U0001f1ee\U0001f1f3", "+91")}  # flag emoji, phone prefix
+_INDIC_SCRIPT = re.compile("[\u0900-\u0DFF]")  # Devanagari, Bengali, Gurmukhi, Gujarati, Tamil, Telugu, Kannada, Malayalam
+
+
+def _region_overlap(keywords: list[str], texts: list[str | None], name: str | None = None) -> bool:
+    """Like `_keyword_overlap`, plus: a bare ISO country code ("IN") counts as the country's name, the
+    creator's own name counts as text, and for India the flag, a +91 number and Indian scripts count.
+    The name is evidence for a match only: it never makes a creator "have region text", so creators
+    with no region text at all are still kept by the caller."""
+    texts = list(texts) + [name]
+    codes = [_COUNTRY_CODE_NAMES.get(t.strip().lower()) for t in texts if t and len(t.strip()) == 2]
+    all_texts = texts + [c for c in codes if c]
+    if _keyword_overlap(keywords, all_texts):
+        return True
+    # aliases ("indian") match whole words only: as a substring "indian" would match "Indiana"
+    if _keyword_overlap([a for k in keywords for a in _REGION_ALIASES.get(k, ())], all_texts, substring=False):
+        return True
+    raw = " ".join(t for t in all_texts if t)
+    for k in keywords:
+        if any(m in raw for m in _REGION_MARKERS.get(k, ())):
+            return True
+        if k == "india" and _INDIC_SCRIPT.search(raw):
+            return True
+    return False
 
 
 def _has_preferred_platform(creator: Creator, platforms: list[str] | None) -> bool:
@@ -236,7 +301,7 @@ def get_recommendations(
             instagram_profile.bio if instagram_profile else None,
         ]
         has_region_signal = any(region_signals)
-        if region_keywords and has_region_signal and not _keyword_overlap(region_keywords, region_signals):
+        if region_keywords and has_region_signal and not _region_overlap(region_keywords, region_signals, creator.name):
             continue
 
         # --- demographic-proxy filter (soft, same policy) ---

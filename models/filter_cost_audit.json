@@ -1,4 +1,27 @@
 {
+  "demo_query_fixed": {
+    "flat 0.5 (this branch)": {
+      "considered": 259,
+      "budget": 15,
+      "product": 71,
+      "region": 87,
+      "kept": 86
+    },
+    "category-tiered (review-1)": {
+      "considered": 259,
+      "budget": 16,
+      "product": 71,
+      "region": 87,
+      "kept": 85
+    },
+    "follower-tiered (hypothetical rate card)": {
+      "considered": 259,
+      "budget": 5,
+      "product": 75,
+      "region": 92,
+      "kept": 87
+    }
+  },
   "demo_query": {
     "flat 0.5 (this branch)": {
       "considered": 259,
@@ -36,76 +59,91 @@
       "India Yogashala"
     ]
   },
+  "region_fixed": {
+    "dropped": 87,
+    "still_with_india_evidence": 18,
+    "athlete_5M_India_results": 86
+  },
   "product": {
     "Athletic water bottle": {
       "current": 2,
       "whole_word": 1,
       "stemmed": 104,
       "recoverable": 102,
-      "substring_only_keeps": 1
+      "substring_only_keeps": 1,
+      "fixed": 104
     },
     "running shoes": {
       "current": 0,
       "whole_word": 0,
       "stemmed": 0,
       "recoverable": 0,
-      "substring_only_keeps": 0
+      "substring_only_keeps": 0,
+      "fixed": 0
     },
     "protein powder": {
       "current": 1,
       "whole_word": 0,
       "stemmed": 0,
       "recoverable": 0,
-      "substring_only_keeps": 1
+      "substring_only_keeps": 1,
+      "fixed": 1
     },
     "yoga mat": {
       "current": 18,
       "whole_word": 6,
       "stemmed": 6,
       "recoverable": 0,
-      "substring_only_keeps": 12
+      "substring_only_keeps": 12,
+      "fixed": 6
     },
     "cricket bat": {
       "current": 11,
       "whole_word": 7,
       "stemmed": 9,
       "recoverable": 0,
-      "substring_only_keeps": 4
+      "substring_only_keeps": 4,
+      "fixed": 10
     },
     "sports drink": {
       "current": 9,
       "whole_word": 5,
       "stemmed": 6,
       "recoverable": 1,
-      "substring_only_keeps": 4
+      "substring_only_keeps": 4,
+      "fixed": 10
     },
     "fitness tracker": {
       "current": 83,
       "whole_word": 83,
       "stemmed": 84,
       "recoverable": 1,
-      "substring_only_keeps": 0
+      "substring_only_keeps": 0,
+      "fixed": 84
     },
     "gym equipment": {
       "current": 4,
       "whole_word": 4,
       "stemmed": 4,
       "recoverable": 0,
-      "substring_only_keeps": 0
+      "substring_only_keeps": 0,
+      "fixed": 4
     },
     "badminton racket": {
       "current": 2,
       "whole_word": 2,
       "stemmed": 2,
       "recoverable": 0,
-      "substring_only_keeps": 0
+      "substring_only_keeps": 0,
+      "fixed": 2
     },
     "athletic apparel": {
       "current": 3,
       "whole_word": 1,
       "stemmed": 104,
       "recoverable": 102,
-      "substring_only_keeps": 2
+      "substring_only_keeps": 2,
+      "fixed": 105
     }
   },
   "noop": {
