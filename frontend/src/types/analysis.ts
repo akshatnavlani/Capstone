@@ -108,6 +108,7 @@ export interface ProductRow {
   stemmed: number;
   recoverable: number;
   substring_only_keeps: number;
+  fixed: number;
 }
 
 export interface AnalysisData {
@@ -140,6 +141,8 @@ export interface AnalysisData {
   };
   s7: {
     demo_query: Record<string, DemoCounts>;
+    demo_query_fixed: Record<string, DemoCounts>;
+    region_fixed: { dropped: number; still_with_india_evidence: number; athlete_5M_India_results: number };
     region: { dropped: number; india_evidence: number; iso_code_IN: number; foreign: number; unknown: number; india_in_name: string[] };
     product: Record<string, ProductRow>;
     noop: { no_region_signal: number; no_product_signal: number; creators: number };

@@ -26,9 +26,10 @@ export function S7Filters({ data }: { data: AnalysisData }) {
   const s7 = data.s7;
   const models = Object.keys(s7.demo_query);
   const [model, setModel] = useState(models[0]);
+  const [phase, setPhase] = useState<"before" | "after">("after");
   const budgets = Array.from(new Set(s7.cost_stability.map((r) => r.budget)));
   const [budget, setBudget] = useState(5_000_000);
-  const d = s7.demo_query[model];
+  const d = (phase === "after" ? s7.demo_query_fixed : s7.demo_query)[model];
   const afterBudget = d.considered - d.budget;
   const afterRegion = afterBudget - d.region;
   const afterProduct = afterRegion - d.product;
@@ -36,14 +37,23 @@ export function S7Filters({ data }: { data: AnalysisData }) {
   const hr = s7.hand_review;
   const prod = Object.entries(s7.product);
   const kept = prod.map(([, v]) => v.current).sort((a, b) => a - b);
+  const keptFixed = prod.map(([, v]) => v.fixed).sort((a, b) => a - b);
 
   return (
     <div className="flex flex-col gap-4">
-      <Verdict tone="bad" label="Filters: audited. Most of what the soft filters drop should have survived, and the fixes are not applied yet.">
-        The standing demo query (&quot;Athletic water bottle&quot;, ₹5M, India) returns nothing. That is a filter artefact, not an absence of suitable creators.
+      <Verdict tone="warn" label="Filters: audited, then the region and product matching were fixed. The demo query went from 0 results to 86.">
+        The audit found that most of what the soft filters dropped should have survived (a region test that needed the English word &quot;india&quot;, and a product test that could not match &quot;athletic&quot; to &quot;athlete&quot;). Both matchers are fixed and tested. Still open: cleaning the shop, gym and
+        news accounts out of the creator list, and turning the product filter into a soft ranking penalty (a decision for the team).
       </Verdict>
 
       <Card title="Where the 259 creators go" subtitle="The standing demo query. A creator is counted under the first filter that drops it.">
+        <div className="mb-2 flex gap-1" role="group" aria-label="before or after the fix">
+          {(["before", "after"] as const).map((p) => (
+            <button key={p} type="button" onClick={() => setPhase(p)} className={`rounded-md border px-3 py-1 text-xs font-medium ${p === phase ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900" : "border-zinc-300 dark:border-zinc-700"}`}>
+              {p === "before" ? "Before the fix" : "After the fix"}
+            </button>
+          ))}
+        </div>
         <div className="flex flex-wrap gap-2">
           {models.map((m) => (
             <button key={m} type="button" onClick={() => setModel(m)} className={`rounded-full border px-3 py-1 text-xs ${m === model ? "border-sky-500 bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200" : "border-zinc-300 dark:border-zinc-700"}`}>
@@ -58,15 +68,15 @@ export function S7Filters({ data }: { data: AnalysisData }) {
               { label: "Considered", value: d.considered, color: "bg-zinc-400" },
               { label: `After budget (−${d.budget})`, value: afterBudget, color: "bg-sky-500" },
               { label: `After region (−${d.region})`, value: afterRegion, color: "bg-amber-500" },
-              { label: `After product (−${d.product})`, value: afterProduct, color: "bg-rose-500" },
+              { label: `After product (−${d.product})`, value: afterProduct, color: afterProduct > 0 ? "bg-emerald-500" : "bg-rose-500" },
             ]}
           />
         </div>
-        <Note>The flat 0.5 per follower is what this branch ships; the tiered cost lives on the review-1 branch. The Review 1 notes call the counts &quot;tiered&quot;, but they match the flat model exactly.</Note>
+        <Note>{phase === "after" ? `After the fix the same query returns ${d.kept} creators instead of 0.` : "Before the fix every creator was dropped and the query returned nothing."} The flat 0.5 per follower is what this branch ships; the tiered cost lives on the review-1 branch. The Review 1 notes call the counts &quot;tiered&quot;, but they match the flat model exactly.</Note>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Region filter ('India'): who gets dropped" subtitle={`${reg.dropped} creators dropped for missing the word "india"`}>
+        <Card title="Region filter ('India'): who gets dropped" subtitle={`Before the fix: ${reg.dropped} creators dropped for missing the word "india"`}>
           <Stack
             parts={[
               { label: "clear India evidence in the data", value: reg.india_evidence, className: "bg-emerald-500" },
@@ -81,19 +91,23 @@ export function S7Filters({ data }: { data: AnalysisData }) {
               Hand review of the {hr.region_unknown_split.n} undecided: {hr.region_unknown_split.india} look Indian, {hr.region_unknown_split.foreign} foreign, {hr.region_unknown_split.cannot_tell} unclear. That puts the false drops at roughly{" "}
               <strong>{pct(reg.india_evidence + hr.region_unknown_split.india, reg.dropped)}</strong> (a judgement, not data).
             </li>
+            <li>
+              <strong>After the fix</strong> the region filter drops {s7.region_fixed.dropped} instead of {reg.dropped}; {s7.region_fixed.still_with_india_evidence} of those still show India evidence (such as place names like Mumbai, which the filter does not read yet).
+            </li>
             <li>{s7.noop.no_region_signal} of {s7.noop.creators} creators ({pct(s7.noop.no_region_signal, s7.noop.creators)}) have no region text at all, so the filter is a no-op for them.</li>
           </ul>
         </Card>
 
-        <Card title="Product filter: too few left, and some by accident" subtitle="Creators kept per brief (of 259) by three matchers.">
+        <Card title="Product filter: creators kept per brief, before and after the fix" subtitle="Of 259, for ten realistic briefs, under four matchers.">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="text-zinc-500">
                   <th className="py-1 pr-2 font-medium">Brief</th>
-                  <th className="py-1 pr-2 text-right font-medium">Now</th>
+                  <th className="py-1 pr-2 text-right font-medium">Before</th>
                   <th className="py-1 pr-2 text-right font-medium">Whole word</th>
-                  <th className="py-1 text-right font-medium">Stemmed</th>
+                  <th className="py-1 pr-2 text-right font-medium">Stemmed</th>
+                  <th className="py-1 text-right font-medium">After fix</th>
                 </tr>
               </thead>
               <tbody>
@@ -102,14 +116,17 @@ export function S7Filters({ data }: { data: AnalysisData }) {
                     <td className="py-1 pr-2">{b}</td>
                     <td className="py-1 pr-2 text-right tabular-nums">{v.current}</td>
                     <td className="py-1 pr-2 text-right tabular-nums">{v.whole_word}</td>
-                    <td className={`py-1 text-right tabular-nums ${v.stemmed > v.current + 10 ? "font-semibold text-emerald-600" : ""}`}>{v.stemmed}</td>
+                    <td className="py-1 pr-2 text-right tabular-nums">{v.stemmed}</td>
+                    <td className={`py-1 text-right font-semibold tabular-nums ${v.fixed > v.current ? "text-emerald-600" : v.fixed < v.current ? "text-amber-600" : ""}`}>{v.fixed}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-zinc-700 dark:text-zinc-300">
-            <li>Median creators left per brief: <strong>{kept[Math.floor(kept.length / 2)]}</strong> of 259.</li>
+            <li>
+              Median creators left per brief: <strong>{kept[Math.floor(kept.length / 2)]}</strong> before, <strong>{keptFixed[Math.floor(keptFixed.length / 2)]}</strong> after the fix (of 259). &quot;yoga mat&quot; went from 18 to 6 because &quot;mat&quot; no longer matches inside &quot;cinematic&quot;.
+            </li>
             <li>&quot;athlete&quot; is not a substring of &quot;athletic&quot;: stemming recovers 102 athletes; {hr.product_recovered_sensible.correct} of {hr.product_recovered_sensible.n} sampled were sensible.</li>
             <li>3-letter words match inside others (&quot;mat&quot; in &quot;cinematic&quot;): {hr.substring_only_keeps.accidents} of {hr.substring_only_keeps.n} sampled substring-only keeps were accidents.</li>
           </ul>
