@@ -36,7 +36,9 @@ from datetime import datetime, timedelta, timezone
 import yaml
 
 from brand_extraction import extract_brand_mentions
+from ig_time import posted_at_for
 from instagram_comment_extract import parse_caption, parse_comments
+from known_brands import best_brand_for_text
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("orchestrator")
@@ -46,6 +48,9 @@ log = logging.getLogger("orchestrator")
 # session/throughput ceiling (real call volume never came close to it). Raised on
 # explicit user sign-off 2026-08-10 to close the volume gap.
 DEFAULT_POST_CAP = 40
+
+# YouTube comments cost one quota unit per video, so only a creator's newest videos get them.
+COMMENT_VIDEOS_PER_CREATOR = 30
 
 # Recency window. PROJECT_PLAN.md/the original doc scoped "last 6 months" and stated
 # the principle "the newer the data the better" — treated as a ROLLING window relative
@@ -486,6 +491,56 @@ def youtube_api_get(endpoint: str, **params) -> dict:
     raise last_err if last_err else RuntimeError("all YouTube keys exhausted")
 
 
+_ISO_DURATION = re.compile(r"^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$")
+
+
+def parse_iso8601_duration(raw: str | None) -> int | None:
+    """YouTube's "PT1H2M3S" as whole seconds. None for a missing or unrecognised value."""
+    m = _ISO_DURATION.match(raw or "")
+    if not m or not any(m.groups()):
+        return None
+    d, h, mi, s = (int(g or 0) for g in m.groups())
+    return d * 86400 + h * 3600 + mi * 60 + s
+
+
+_snapshot_tables_missing_logged = False
+
+
+def _insert_snapshot(cur, sql: str, params: tuple) -> None:
+    """Append one snapshot row. The snapshot tables come from a migration that may not be applied
+    yet, so a missing table is logged once and skipped; it must never stop a collection run."""
+    global _snapshot_tables_missing_logged
+    import psycopg2.errors
+    cur.execute("savepoint snapshot_insert")
+    try:
+        cur.execute(sql, params)
+        cur.execute("release savepoint snapshot_insert")
+    except psycopg2.errors.UndefinedTable:
+        cur.execute("rollback to savepoint snapshot_insert")
+        if not _snapshot_tables_missing_logged:
+            log.warning("snapshot tables not found; counts are NOT being appended. Apply "
+                         "supabase/migrations/20261009000000_snapshots.sql to keep history.")
+            _snapshot_tables_missing_logged = True
+
+
+def record_post_snapshot(cur, platform: str, post_id: str, creator_id, views, likes, comments) -> None:
+    _insert_snapshot(
+        cur,
+        "insert into post_snapshots (platform, post_id, creator_id, view_count, like_count, comment_count) "
+        "values (%s,%s,%s,%s,%s,%s)",
+        (platform, post_id, creator_id, views, likes, comments),
+    )
+
+
+def record_profile_snapshot(cur, platform: str, account_id: str, creator_id, followers, posts, views=None) -> None:
+    _insert_snapshot(
+        cur,
+        "insert into profile_snapshots (platform, account_id, creator_id, follower_count, post_count, view_count) "
+        "values (%s,%s,%s,%s,%s,%s)",
+        (platform, account_id, creator_id, followers, posts, views),
+    )
+
+
 def upsert_brand(cur, name: str) -> str:
     cur.execute(
         """
@@ -501,6 +556,13 @@ def upsert_brand(cur, name: str) -> str:
 def brand_id_for_text(cur, text: str | None) -> str | None:
     if not text:
         return None
+    # A known fitness / footwear / sportswear brand with real evidence (an @handle, or its name beside a
+    # discount code or disclosure tag) wins over the generic phrase-based leads below.
+    known = best_brand_for_text(text)
+    if known:
+        brand_id = upsert_brand(cur, known.name)
+        log.info("known brand: %r (signals=%s) -> brand_id=%s", known.name, known.signals, brand_id)
+        return brand_id
     mentions = extract_brand_mentions(text)
     if not mentions:
         return None
@@ -509,6 +571,33 @@ def brand_id_for_text(cur, text: str | None) -> str | None:
     brand_id = upsert_brand(cur, best.candidate_name)
     log.info("brand lead: %r -> brand_id=%s (confidence=%s)", best.candidate_name, brand_id, best.confidence)
     return brand_id
+
+
+def upsert_youtube_video(cur, v: dict, channel_id: str, creator_id, brand_id) -> None:
+    """Write one videos.list item: the video row (latest counts) plus a snapshot row (this
+    observation), so the counts' history is kept. Shared by the collector and snapshot_youtube.py."""
+    vs, vstats = v["snippet"], v.get("statistics", {})
+    cur.execute(
+        """
+        insert into youtube_videos
+            (video_id, channel_id, creator_id, title, description, published_at,
+             thumbnail_url, duration_seconds, view_count, like_count, comment_count,
+             tags, brand_id)
+        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        on conflict (video_id) do update set
+            view_count=excluded.view_count, like_count=excluded.like_count,
+            comment_count=excluded.comment_count, brand_id=coalesce(excluded.brand_id, youtube_videos.brand_id),
+            duration_seconds=coalesce(excluded.duration_seconds, youtube_videos.duration_seconds),
+            fetched_at=now()
+        """,
+        (v["id"], channel_id, creator_id, vs.get("title"), vs.get("description"),
+         vs.get("publishedAt"), vs.get("thumbnails", {}).get("high", {}).get("url"),
+         parse_iso8601_duration(v.get("contentDetails", {}).get("duration")),
+         vstats.get("viewCount"), vstats.get("likeCount"), vstats.get("commentCount"),
+         vs.get("tags"), brand_id),
+    )
+    record_post_snapshot(cur, "youtube", v["id"], creator_id, vstats.get("viewCount"),
+                         vstats.get("likeCount"), vstats.get("commentCount"))
 
 
 class PlatformWorker:
@@ -594,6 +683,34 @@ class YouTubeWorker(PlatformWorker):
     def _handle_for(self, creator: Creator) -> str | None:
         return creator.youtube_handle
 
+    def _upload_ids(self, uploads_playlist: str) -> list[str]:
+        """Newest-first upload ids. Follows page tokens (50 per page, one quota unit each) until
+        post_cap is reached, the uploads run out, or an upload older than the recency cutoff."""
+        ids: list[str] = []
+        page_token = None
+        while len(ids) < self.post_cap:
+            self.rate_limiter.wait()
+            params = {"playlistId": uploads_playlist, "part": "contentDetails", "maxResults": 50}
+            if page_token:
+                params["pageToken"] = page_token
+            resp = youtube_api_get("playlistItems", **params)
+            past_cutoff = False
+            for item in resp.get("items", []):
+                published = item["contentDetails"].get("videoPublishedAt")
+                try:
+                    if published and datetime.fromisoformat(published.replace("Z", "+00:00")) < self.cutoff:
+                        past_cutoff = True
+                        break
+                except ValueError:
+                    pass  # unparseable date: keep rather than silently drop
+                ids.append(item["contentDetails"]["videoId"])
+                if len(ids) >= self.post_cap:
+                    break
+            page_token = resp.get("nextPageToken")
+            if past_cutoff or not page_token:
+                break
+        return ids
+
     def process_creator(self, creator: Creator, handle: str, conn) -> None:
         channel_resp = youtube_api_get(
             "channels", forHandle=handle.lstrip("@"),
@@ -625,25 +742,27 @@ class YouTubeWorker(PlatformWorker):
                  snippet.get("description"), stats.get("subscriberCount"),
                  stats.get("viewCount"), stats.get("videoCount"), snippet.get("country")),
             )
+            record_profile_snapshot(cur, "youtube", channel_id, creator.creator_id,
+                                    stats.get("subscriberCount"), stats.get("videoCount"),
+                                    stats.get("viewCount"))
         conn.commit()
 
-        self.rate_limiter.wait()
-        # maxResults caps at 50 per YouTube API; post_cap above that would need
-        # pageToken paging (not implemented — 40 fits in one page).
-        playlist_resp = youtube_api_get(
-            "playlistItems", playlistId=uploads_playlist, part="contentDetails",
-            maxResults=min(self.post_cap, 50),
-        )
-        video_ids = [i["contentDetails"]["videoId"] for i in playlist_resp.get("items", [])]
+        video_ids = self._upload_ids(uploads_playlist)
         if not video_ids:
             return
 
-        self.rate_limiter.wait()
-        videos_resp = youtube_api_get(
-            "videos", id=",".join(video_ids), part="snippet,statistics,contentDetails",
-        )
+        # videos.list takes at most 50 ids per call.
+        videos = []
+        for start in range(0, len(video_ids), 50):
+            self.rate_limiter.wait()
+            videos.extend(youtube_api_get(
+                "videos", id=",".join(video_ids[start:start + 50]),
+                part="snippet,statistics,contentDetails",
+            ).get("items", []))
+        # Newest first, so the comment budget below goes to the newest videos.
+        videos.sort(key=lambda v: v["snippet"].get("publishedAt", ""), reverse=True)
         kept = 0
-        for v in videos_resp.get("items", []):
+        for v in videos:
             vs, vstats = v["snippet"], v["statistics"]
             # Recency filter — skip (don't count toward the cap) anything older than
             # the rolling window, so a raised cap pulls MORE RECENT posts rather than
@@ -659,23 +778,12 @@ class YouTubeWorker(PlatformWorker):
             kept += 1
             with conn.cursor() as cur:
                 brand_id = brand_id_for_text(cur, f"{vs.get('title', '')} {vs.get('description', '')}")
-                cur.execute(
-                    """
-                    insert into youtube_videos
-                        (video_id, channel_id, creator_id, title, description, published_at,
-                         thumbnail_url, view_count, like_count, comment_count, tags, brand_id)
-                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                    on conflict (video_id) do update set
-                        view_count=excluded.view_count, like_count=excluded.like_count,
-                        comment_count=excluded.comment_count, brand_id=coalesce(excluded.brand_id, youtube_videos.brand_id),
-                        fetched_at=now()
-                    """,
-                    (v["id"], channel_id, creator.creator_id, vs.get("title"), vs.get("description"),
-                     vs.get("publishedAt"), vs.get("thumbnails", {}).get("high", {}).get("url"),
-                     vstats.get("viewCount"), vstats.get("likeCount"), vstats.get("commentCount"),
-                     vs.get("tags"), brand_id),
-                )
+                upsert_youtube_video(cur, v, channel_id, creator.creator_id, brand_id)
             conn.commit()
+
+            # Comments cost one quota unit per video, so only the newest videos get them.
+            if kept > COMMENT_VIDEOS_PER_CREATOR:
+                continue
 
             self.rate_limiter.wait()
             try:
@@ -751,6 +859,8 @@ class InstagramWorker(PlatformWorker):
                  prof.get("followers"), prof.get("following"), prof.get("posts"),
                  str(prof.get("verified")).lower() == "yes"),
             )
+            record_profile_snapshot(cur, "instagram", handle, creator.creator_id,
+                                    prof.get("followers"), prof.get("posts"))
         conn.commit()
 
         # Real bug found+fixed 2026-08-10, after 40 real posts across 8 real creators
@@ -873,7 +983,10 @@ class InstagramWorker(PlatformWorker):
             like_count = meta.get("likes") if meta.get("likes") is not None else og["likes"]
             comment_count = (meta.get("comments") if meta.get("comments") is not None
                              else og["comments"])
-            if post_date and self._is_stale(post_date):
+            # Exact instant from the shortcode when it decodes, else the listing's bare date.
+            # Known to the second even when the page gave no date at all.
+            posted_at = posted_at_for(post_id, post_date)
+            if posted_at and posted_at < self.cutoff:
                 self.skipped_stale += 1
                 continue
             kept += 1
@@ -896,19 +1009,32 @@ class InstagramWorker(PlatformWorker):
                     insert into instagram_posts
                         (post_id, username, creator_id, caption, media_type, like_count,
                          comment_count, posted_at, brand_id)
-                    values (%s,%s,%s,%s,%s,%s,%s,to_date(%s,'MM/DD/YYYY'),%s)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     on conflict (post_id) do update set
                         caption=case when length(coalesce(excluded.caption,'')) >
                                           length(coalesce(instagram_posts.caption,''))
                                      then excluded.caption else instagram_posts.caption end,
                         media_type=coalesce(excluded.media_type, instagram_posts.media_type),
-                        posted_at=coalesce(excluded.posted_at, instagram_posts.posted_at),
+                        -- An exact time is never replaced by a bare date (the old to_date write did
+                        -- exactly that on a re-run). A bare date MAY be upgraded to the exact time,
+                        -- but only when the two agree to within 72h, the same guard the shortcode
+                        -- backfill uses, so a wrong stored date is left for a person to look at.
+                        posted_at=case
+                            when instagram_posts.posted_at is null then excluded.posted_at
+                            when excluded.posted_at is null then instagram_posts.posted_at
+                            when (instagram_posts.posted_at at time zone 'UTC')::time = time '00:00'
+                                 and (excluded.posted_at at time zone 'UTC')::time <> time '00:00'
+                                 and abs(extract(epoch from (excluded.posted_at - instagram_posts.posted_at))) <= 259200
+                            then excluded.posted_at
+                            else instagram_posts.posted_at end,
                         like_count=excluded.like_count, comment_count=excluded.comment_count,
                         fetched_at=now(), brand_id=coalesce(excluded.brand_id, instagram_posts.brand_id)
                     """,
                     (post_id, handle, creator.creator_id, caption, meta.get("type"),
-                     like_count, comment_count, post_date, brand_id),
+                     like_count, comment_count, posted_at, brand_id),
                 )
+                record_post_snapshot(cur, "instagram", post_id, creator.creator_id,
+                                     None, like_count, comment_count)
                 comments = parse_comments(markdown)
                 for c in comments:
                     cur.execute(
