@@ -1,8 +1,12 @@
-# Hourly YouTube growth snapshots (first-24-hours curves for the cross-platform lag analysis).
+# YouTube growth snapshots every 2 hours (first-24-hours curves for the cross-platform lag analysis).
 #
 # Each run discovers new uploads for every collected channel and appends one post_snapshots row per video
 # younger than 7 days (scripts/ingestion/snapshot_youtube.py). About 130-160 YouTube quota units per run,
-# so about 3,500 a day against the free 10,000.
+# so about 1,800 a day against the free 10,000.
+#
+# GitHub's free plan gives a private repo 2,000 Actions minutes a month. A run takes a few minutes, so every
+# 2 hours stays inside it; check Settings > Billing > Usage after the first week, and go to every 3 hours
+# ("7 */3 * * *") if it is on track to run out.
 #
 # Needs two repository secrets (Settings > Secrets and variables > Actions):
 #   DATABASE_URL     the Supabase connection string, starting with postgresql:// (NOT postgresql+psycopg2://)
@@ -15,7 +19,7 @@ name: YouTube snapshots
 
 on:
   schedule:
-    - cron: "7 * * * *"
+    - cron: "7 */2 * * *"
   workflow_dispatch: {}
 
 concurrency:

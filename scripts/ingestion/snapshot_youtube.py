@@ -67,7 +67,9 @@ def main() -> None:
                  discover_cost + snapshot_cost, discover_cost, snapshot_cost)
         return
 
-    limiter = RateLimiter()
+    # The YouTube API needs no 3-second gap (that default is for Instagram); 0.25s keeps a run to about a minute,
+    # so an hourly GitHub job stays inside the free 2,000 minutes a month.
+    limiter = RateLimiter(0.25)
     new_ids: dict[str, str] = {}  # video_id -> channel_id for uploads we have never stored
     if not args.no_discover:
         for channel_id, _creator in channels:
