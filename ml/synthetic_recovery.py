@@ -100,9 +100,23 @@ def make_synthetic_world(
     # creators in the same niche transmit strongly, across niches weakly. This
     # is the structure the attention mechanism is supposed to discover.
     niche = torch.randn(num_creators, 4, generator=g)
+
+    # Confounding: popular creators are likelier to be sponsored AND have higher
+    # baseline engagement. Drawn here (before features) because it must be
+    # OBSERVABLE to the model -- see below.
+    confounder = torch.rand(num_creators, generator=g)
+
     features = torch.zeros(num_creators, CREATOR_FEATURE_DIM)
     features[:, :4] = niche
-    features[:, 4:8] = torch.randn(num_creators, 4, generator=g) * 0.1  # distractors
+    # The confounder MUST be in the feature vector. The propensity model reads
+    # `data["creator"].x`; if the thing driving treatment assignment is absent
+    # from it, ignorability is violated by construction, the propensity head can
+    # only fit noise, and the IPW/AIPW corrections are handed meaningless weights
+    # -- making them perform WORSE than no correction at all. An earlier version
+    # of this generator omitted it, and the resulting "causal correction hurts"
+    # reading was an artifact of the harness, not a property of the method.
+    features[:, 4] = confounder
+    features[:, 5:9] = torch.randn(num_creators, 4, generator=g) * 0.1  # distractors
 
     num_edges = num_creators * avg_degree
     src = torch.randint(0, num_creators, (num_edges,), generator=g)
@@ -115,9 +129,6 @@ def make_synthetic_world(
     sim = torch.nn.functional.cosine_similarity(niche[src], niche[dst], dim=1)
     true_edge_weight = torch.sigmoid(3.0 * sim)
 
-    # Confounding: popular creators are likelier to be sponsored AND have
-    # higher baseline engagement. Ignoring this inflates the apparent effect.
-    confounder = torch.rand(num_creators, generator=g)
     true_propensity = 0.15 + 0.7 * confounder
     treatment = (torch.rand(num_creators, generator=g) < true_propensity).float()
 

@@ -29,6 +29,16 @@ class GAILLossWeights:
     overlap: float = 0.1
     smoothness: float = 0.1
     consistency: float = 0.1
+    # E3b. Weight on the propensity-prediction term. Nonzero by default because
+    # without it the propensity head is never told what to predict: the only
+    # other term touching it is `overlap`, which merely pushes values away from
+    # 0 and 1, so the head converges to roughly the same number for every node
+    # (measured std 0.003 on synthetic data). A constant propensity makes the
+    # inverse-propensity weight T/pi a constant multiplier, which carries no
+    # per-node selection information at all -- the doubly robust correction
+    # then has nothing to correct with. Set to 0.0 to recover pre-E3b behaviour
+    # for ablation.
+    propensity: float = 1.0
 
 
 def compute_gail_loss(
@@ -91,6 +101,25 @@ def compute_gail_loss(
         dr_weights = doubly_robust_weights(treatment, propensity)[prediction_mask]
         sq_err = (predicted_spillover[prediction_mask] - target_spillover[prediction_mask]).pow(2)
         prediction_loss = (dr_weights * sq_err).sum() / dr_weights.sum()
+    # E3b: supervise the propensity head against the treatment it is supposed
+    # to model. Skipped when `treatment` is absent, since there is then nothing
+    # to predict -- which also keeps every pre-E3b caller unchanged.
+    #
+    # NOTE on which treatment. This supervises against whatever `treatment` the
+    # caller passes, deliberately, so the head is trained on exactly the signal
+    # the DR weights below divide by; training it on one definition and
+    # weighting by another would reintroduce the mismatch this term exists to
+    # remove. Be aware that `train_prod_model.py` currently passes the
+    # creator's OWN sponsorship, whereas the spillover estimand arguably calls
+    # for P(has a sponsored NEIGHBOUR) -- that choice is open, and changing it
+    # means changing what is passed here, not this term.
+    if treatment is None:
+        propensity_loss = torch.zeros((), dtype=predicted_spillover.dtype)
+    else:
+        propensity_loss = F.binary_cross_entropy(
+            propensity.clamp(1e-6, 1 - 1e-6), treatment.to(propensity.dtype)
+        )
+
     overlap = overlap_penalty(propensity)
     smoothness = laplacian_smoothness_penalty(predicted_spillover, collab_edge_index, collab_edge_weight)
     # Applied to the PREDICTED spillover, not exposure: ml/exposure.py's
@@ -105,6 +134,7 @@ def compute_gail_loss(
 
     total = (
         weights.prediction * prediction_loss
+        + weights.propensity * propensity_loss
         + weights.overlap * overlap
         + weights.smoothness * smoothness
         + weights.consistency * consistency
@@ -112,6 +142,7 @@ def compute_gail_loss(
 
     components = {
         "prediction": prediction_loss.item(),
+        "propensity": propensity_loss.item(),
         "overlap": overlap.item(),
         "smoothness": smoothness.item(),
         "consistency": consistency.item(),

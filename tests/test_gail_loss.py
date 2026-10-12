@@ -84,7 +84,13 @@ def test_treatment_arg_applies_doubly_robust_weighting():
     edge_index = torch.tensor([[0, 1], [1, 0]])
     edge_weight = torch.tensor([1.0, 1.0])
     has_sponsored_neighbor_mask = torch.tensor([False, False, False])
-    weights = GAILLossWeights(prediction=1.0, overlap=0.0, smoothness=0.0, consistency=0.0)
+    # propensity=0.0 isolates the DR weighting, which is what this test is about.
+    # E3b added a propensity-prediction term that is on by default; leaving it
+    # enabled here would make `total` include it and the hand-computed
+    # expectation below would no longer be the whole loss.
+    weights = GAILLossWeights(
+        prediction=1.0, overlap=0.0, smoothness=0.0, consistency=0.0, propensity=0.0
+    )
 
     total_unweighted, components_unweighted = compute_gail_loss(
         predicted, target, propensity, edge_index, edge_weight, has_sponsored_neighbor_mask, weights
