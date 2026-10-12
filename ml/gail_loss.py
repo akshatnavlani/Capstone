@@ -52,6 +52,7 @@ def compute_gail_loss(
     prediction_mask: torch.Tensor | None = None,
     treatment: torch.Tensor | None = None,
     dr_mode: str = "ipw",
+    sample_weight: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """`predicted_spillover`/`target_spillover`/`propensity`/
     `has_sponsored_neighbor_mask` must all be over the SAME full node set
@@ -77,6 +78,15 @@ def compute_gail_loss(
                property; "ipw" alone never had it despite the function name.
 
     Without `treatment`, both modes fall back to plain unweighted MSE.
+
+    `sample_weight` (E2), if given, scales each node's contribution to the
+    supervised term. It exists because a creator's target is not always backed
+    by the same amount of evidence: one engagement change measured sixteen times
+    is one observation, while three separate events are three. Pass the cluster
+    count per creator (`ml.target_clustering.per_creator_targets`) so a target
+    backed by more independent observations carries proportionally more weight.
+    Without it every labelled node counts equally, which over-weights whichever
+    creator happens to have the most overlapping events.
     """
     weights = weights or GAILLossWeights()
     if prediction_mask is None:
@@ -85,8 +95,19 @@ def compute_gail_loss(
     if dr_mode not in ("ipw", "aipw"):
         raise ValueError(f"dr_mode must be 'ipw' or 'aipw', got {dr_mode!r}")
 
+    # E2: per-node evidence weights. Normalized to mean 1 over the supervised
+    # nodes so the prediction term keeps the same scale as the unweighted case —
+    # otherwise changing the weights would silently retune the balance against
+    # the propensity and regularization terms.
+    if sample_weight is None:
+        node_weight = None
+    else:
+        selected = sample_weight[prediction_mask].to(predicted_spillover.dtype)
+        node_weight = selected / selected.mean().clamp(min=1e-12)
+
     if treatment is None:
-        prediction_loss = F.mse_loss(predicted_spillover[prediction_mask], target_spillover[prediction_mask])
+        err = (predicted_spillover[prediction_mask] - target_spillover[prediction_mask]).pow(2)
+        prediction_loss = err.mean() if node_weight is None else (node_weight * err).mean()
     elif dr_mode == "aipw":
         # Full doubly robust: supervise against the selection-corrected target
         # rather than the raw observed one. The pseudo-outcome detaches its
@@ -94,13 +115,14 @@ def compute_gail_loss(
         pseudo = doubly_robust_pseudo_outcome(
             predicted_spillover, target_spillover, treatment, propensity
         )
-        prediction_loss = F.mse_loss(
-            predicted_spillover[prediction_mask], pseudo[prediction_mask]
-        )
+        err = (predicted_spillover[prediction_mask] - pseudo[prediction_mask]).pow(2)
+        prediction_loss = err.mean() if node_weight is None else (node_weight * err).mean()
     else:
         dr_weights = doubly_robust_weights(treatment, propensity)[prediction_mask]
+        if node_weight is not None:
+            dr_weights = dr_weights * node_weight
         sq_err = (predicted_spillover[prediction_mask] - target_spillover[prediction_mask]).pow(2)
-        prediction_loss = (dr_weights * sq_err).sum() / dr_weights.sum()
+        prediction_loss = (dr_weights * sq_err).sum() / dr_weights.sum().clamp(min=1e-12)
     # E3b: supervise the propensity head against the treatment it is supposed
     # to model. Skipped when `treatment` is absent, since there is then nothing
     # to predict -- which also keeps every pre-E3b caller unchanged.

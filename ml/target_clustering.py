@@ -189,3 +189,53 @@ def summarize(cluster_ids: Sequence[str]) -> dict:
         "largest": ordered[:5],
         "max_cluster_share": (ordered[0][1] / len(cluster_ids)) if cluster_ids else 0.0,
     }
+
+def per_creator_targets(
+    rows: Iterable[dict],
+    window_days: int = DEFAULT_WINDOW_DAYS,
+    neighbour_key: str = "neighbour_id",
+    date_key: str = "event_date",
+    value_key: str = "mean_lift",
+) -> dict[str, tuple[float, int]]:
+    """Collapse rows to one target per creator, plus how much evidence backs it.
+
+    Two levels of averaging, and the distinction matters:
+
+      within a cluster  rows measure the SAME engagement change, so averaging
+                        them is just a less noisy reading of one observation
+      across clusters   each cluster is a separate observation, so averaging
+                        these combines genuinely independent evidence
+
+    Returns {neighbour_id: (target, n_clusters)}. `n_clusters` is the honest
+    count of independent observations behind that creator's target, and is what
+    `sample_weight` in the loss should be built from: a creator backed by three
+    separate events deserves more influence on training than one backed by a
+    single event measured sixteen times.
+
+    Rows whose `value_key` is None (cross-platform-only straddles, which have no
+    same-platform lift) are skipped rather than counted as zero.
+    """
+    rows = [r for r in rows if r.get(value_key) is not None]
+    if not rows:
+        return {}
+
+    cluster_ids = cluster_events(
+        rows, window_days=window_days, neighbour_key=neighbour_key, date_key=date_key
+    )
+
+    # cluster id -> values measured within it
+    by_cluster: dict[str, list[float]] = defaultdict(list)
+    cluster_owner: dict[str, str] = {}
+    for row, cid in zip(rows, cluster_ids):
+        by_cluster[cid].append(float(row[value_key]))
+        cluster_owner[cid] = str(row.get(neighbour_key, ""))
+
+    # creator -> one value per cluster
+    per_creator: dict[str, list[float]] = defaultdict(list)
+    for cid, values in by_cluster.items():
+        per_creator[cluster_owner[cid]].append(sum(values) / len(values))
+
+    return {
+        creator: (sum(vals) / len(vals), len(vals))
+        for creator, vals in per_creator.items()
+    }

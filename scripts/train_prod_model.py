@@ -41,8 +41,6 @@ import sys
 from pathlib import Path
 
 import torch
-
-from ml.feature_scaling import compute_feature_scaler
 import torch.nn.functional as F
 
 # ---------------------------------------------------------------------------
@@ -80,7 +78,14 @@ import psycopg2  # noqa: E402
 from pair_count import compute as pair_count_compute  # noqa: E402
 
 from ml.feature_extraction import FeatureExtractor, RawCreatorRecord  # noqa: E402
+from ml.feature_scaling import compute_feature_scaler  # noqa: E402
 from ml.gail_model import GAILModel  # noqa: E402
+from ml.target_clustering import (  # noqa: E402
+    DEFAULT_WINDOW_DAYS,
+    cluster_events,
+    per_creator_targets,
+    summarize,
+)
 from ml.schema import (  # noqa: E402
     BRAND_METADATA_DIM,
     CREATOR_FEATURE_DIM,
@@ -221,12 +226,37 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
                 "mean_lift": None,
             })
 
+    # E2: cluster rows that measure the SAME engagement change before averaging.
+    # Previously `target[creator] = mean(all that creator's lifts)`, which let one
+    # engagement change recorded N times dominate that creator's own target, and
+    # gave a creator backed by one repeated measurement the same training weight
+    # as one backed by several independent events.
+    #
+    # `per_creator_targets` averages within a cluster (one observation measured
+    # repeatedly), then across clusters (genuinely separate observations), and
+    # returns how many clusters back each target. That count becomes the node's
+    # sample weight in the loss.
     target = torch.zeros(num_creators, dtype=torch.float32)
-    for nid, lifts in lifts_by_neighbour.items():
+    sample_weight = torch.zeros(num_creators, dtype=torch.float32)
+    lift_rows = [d for d in detailed if d["mean_lift"] is not None]
+    clustered = per_creator_targets(lift_rows, window_days=DEFAULT_WINDOW_DAYS)
+    for nid, (value, n_clusters) in clustered.items():
         if nid in creator_id_to_index:
-            target[creator_id_to_index[nid]] = statistics.mean(lifts)
+            idx = creator_id_to_index[nid]
+            target[idx] = value
+            sample_weight[idx] = float(n_clusters)
 
-    n_labeled = len(lifts_by_neighbour)
+    cluster_stats = summarize(cluster_events(lift_rows, window_days=DEFAULT_WINDOW_DAYS))
+    print(f"E2 clustering (window {DEFAULT_WINDOW_DAYS}d): {cluster_stats['rows']} rows -> "
+          f"{cluster_stats['clusters']} independent observations across "
+          f"{len(clustered)} creators")
+    if cluster_stats["largest"]:
+        cid, n = cluster_stats["largest"][0]
+        print(f"  largest cluster {n} rows ({cluster_stats['max_cluster_share']:.0%}) -- {cid}")
+        if cluster_stats["max_cluster_share"] > 0.3:
+            print("  !! one engagement change dominates; quote the cluster count, not the row count")
+
+    n_labeled = len(clustered)
     print(f"Same-platform-computable lifts: {same_platform_rows}/{len(good_rows)} "
           f"(cross-platform-only straddle, no lift: {cross_platform_only}/{len(good_rows)})")
     if n_labeled:
@@ -236,7 +266,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
               f"min={vals_sorted[0]:.4f} median={statistics.median(vals_sorted):.4f} "
               f"mean={statistics.mean(vals_sorted):.4f} max={vals_sorted[-1]:.4f}")
 
-    return target, lifts_by_neighbour, summary, detailed
+    return target, lifts_by_neighbour, summary, detailed, sample_weight
 
 
 def build_creator_features(cur, extractor: FeatureExtractor):
@@ -596,7 +626,7 @@ def main() -> int:
     print(f"Treatment: {n_sponsored}/{num_creators} creators have is_sponsored event")
 
     # Targets from canonical pair_count + platform_engagement (both-engagement-cols fix)
-    target, lifts_by_neighbour, pair_summary, detailed = build_targets_from_canonical(cur, id_to_index, num_creators)
+    target, lifts_by_neighbour, pair_summary, detailed, sample_weight = build_targets_from_canonical(cur, id_to_index, num_creators)
     labeled_idx = [id_to_index[cid] for cid in lifts_by_neighbour if cid in id_to_index]
     labeled_ids = [cid for cid in lifts_by_neighbour if cid in id_to_index]
     print(f"Labeled creator-nodes (distinct neighbours with same-platform lift): {len(labeled_idx)}")
@@ -643,6 +673,7 @@ def main() -> int:
         loss, comps = compute_gail_loss(
             prediction, target, propensity, collab_edge_index, collab_edge_weight,
             has_sponsored, loss_weights, prediction_mask=train_mask, treatment=treatment,
+            sample_weight=sample_weight,
         )
         loss.backward()
         optimizer.step()
