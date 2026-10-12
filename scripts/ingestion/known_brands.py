@@ -28,21 +28,21 @@ KNOWN_BRANDS: list[tuple[str, str, str | None, tuple[str, ...], bool]] = [
     ("MuscleBlaze", "supplement", "muscleblaze", ("muscle blaze",), False),
     ("HealthKart", "supplement", None, ("health kart",), False),
     ("HK Vitals", "supplement", None, ("hk vitals", "hkvitals"), False),
-    ("Myprotein", "supplement", "myproteinin", ("my protein",), False),
+    ("Myprotein", "supplement", "myproteinin", (), False),
     ("Wellcore", "supplement", "wellcore.in", (), False),
     ("NaturalTein", "supplement", "naturaltein_india", ("natural tein",), False),
     ("Avvatar", "supplement", "avvatarindia", (), False),
     ("Boldfit", "supplement", "boldfit_official", (), False),
     ("Nutrabay", "supplement", "nutrabay", (), False),
     ("AsItIs Nutrition", "supplement", None, ("asitis", "as it is nutrition"), False),
-    ("FuelOne", "supplement", "fuelone.in", ("fuel one",), False),
+    ("FuelOne", "supplement", "fuelone.in", ("fuel one", "fuleone"), False),
     ("Wellversed", "supplement", "wellversed.in", (), False),
-    ("Black Beast Nutrition", "supplement", "blackbeast.nutrition", ("black beast",), False),
+    ("Black Beast Nutrition", "supplement", "blackbeast.nutrition", ("black beast", "blackbeast"), False),
     ("Dynamite", "supplement", "dynamite.preworkout", ("dynamite preworkout", "dynamite pre workout"), True),
     ("YouWeFit", "supplement", "youwefitofficial", ("you we fit",), False),
     ("QNT", "supplement", "qnt.india", ("qnt india",), False),
     ("2XN", "supplement", None, ("2xn", "2x nutrition"), False),
-    ("Red Skull Nutrition", "supplement", None, ("red skull",), False),
+    ("Red Skull Nutrition", "supplement", None, ("red skull", "redskull"), False),
     ("DrChoice", "supplement", "thedrchoice", ("dr choice", "dr. choice"), False),
     ("GNC", "supplement", None, (), False),
     ("optimumnutri", "supplement", "optimumnutri", ("optimum nutrition",), False),  # existing brands row keeps this name
@@ -63,6 +63,26 @@ KNOWN_BRANDS: list[tuple[str, str, str | None, tuple[str, ...], bool]] = [
     ("Reebok", "footwear", "reebok", (), False),
     ("Campus", "footwear", None, ("campus shoes",), True),
     ("Decathlon", "equipment", None, (), False),
+    # Added 2026-10-12 after reading the saved YouTube descriptions (Desi Gym Reviews, Fit Adess, Harsh Katkade ...).
+    ("Nakpro", "supplement", None, (), False),
+    ("Cult.fit", "equipment", "cultstoreindia", ("cultstore", "cultsport", "cult sport", "cult.fit", "cult fit"), False),
+    ("Slovic", "equipment", None, (), False),
+    ("Aceblend", "supplement", "aceblend", (), False),
+    ("HyugaLife", "supplement", "thehyugalife", ("the hyuga life", "hyuga life"), False),
+    ("Pintola", "food", None, (), False),
+    ("MyFitness", "food", None, ("my fitness peanut butter",), False),
+    ("Kapiva", "wellness", None, (), False),
+    ("Yogabar", "food", None, ("yoga bar",), False),
+    ("MuscleTech", "supplement", None, ("muscle tech",), False),
+    ("Dymatize", "supplement", None, (), False),
+    ("BigMuscles Nutrition", "supplement", None, ("big muscles nutrition", "bigmuscles"), False),
+    ("Under Armour", "apparel", None, ("underarmour",), False),
+    ("Oakley", "apparel", None, (), False),
+    ("Lifelong", "equipment", None, (), True),
+    ("Gayor Essentials", "supplement", None, ("gayor",), False),
+    ("Anecdote", "supplement", None, (), True),
+    ("Alpino", "food", None, (), False),
+    ("Ripped Up Nutrition", "supplement", None, ("ripped up supplements", "ripped up"), False),
 ]
 
 _CODE = re.compile(r"(use\s+code|promo\s*code|coupon|discount|%\s*off|\bcode\b\s*[:\-–—=]?\s*[\"“'‘]?[A-Za-z0-9]{3,})", re.I)
@@ -123,6 +143,13 @@ def match_known_brands(text: str | None) -> list[BrandMatch]:
             continue
         out.append(BrandMatch(name, cat, signals))
     return out
+
+
+def all_strong_brands(text: str | None) -> list[BrandMatch]:
+    """Every brand the text clearly promotes (a description often lists several), best evidence first."""
+    strong = [m for m in match_known_brands(text) if m.strong]
+    strong.sort(key=lambda m: ("mention" not in m.signals, -len(m.signals)))
+    return strong
 
 
 def best_brand_for_text(text: str | None) -> BrandMatch | None:

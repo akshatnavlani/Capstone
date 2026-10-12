@@ -553,6 +553,11 @@ def upsert_brand(cur, name: str) -> str:
     return cur.fetchone()[0]
 
 
+# Everyday words the generic phrase extractor has mistaken for brands (it saved "Call" as a brand on 2026-10-13).
+_NOT_BRAND_WORDS = {"call", "click", "link", "watch", "follow", "subscribe", "shop", "buy", "visit", "check",
+                    "use", "get", "code", "offer", "sale", "order", "join", "download", "book", "tag"}
+
+
 def brand_id_for_text(cur, text: str | None) -> str | None:
     if not text:
         return None
@@ -568,6 +573,8 @@ def brand_id_for_text(cur, text: str | None) -> str | None:
         return None
     # explicit-confidence mentions first; take the first candidate found
     best = next((m for m in mentions if m.confidence == "explicit"), mentions[0])
+    if best.candidate_name.strip().lower() in _NOT_BRAND_WORDS:
+        return None
     brand_id = upsert_brand(cur, best.candidate_name)
     log.info("brand lead: %r -> brand_id=%s (confidence=%s)", best.candidate_name, brand_id, best.confidence)
     return brand_id

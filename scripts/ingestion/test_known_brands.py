@@ -56,3 +56,18 @@ def test_empty_and_unrelated_text():
     assert best_brand_for_text("") is None
     assert best_brand_for_text(None) is None
     assert best_brand_for_text("Chest and triceps day, 5 sets of 10") is None
+
+
+def test_one_description_can_promote_several_brands():
+    from known_brands import all_strong_brands
+    text = 'Avvatar Discount code : "Desigym" Nakpro code : "Raha10" Blackbeast code : "Desigym" Nutrabay Code : "Desigym"'
+    assert {m.name for m in all_strong_brands(text)} == {"Avvatar", "Nakpro", "Black Beast Nutrition", "Nutrabay"}
+
+
+def test_cult_store_mention_is_strong():
+    assert best_brand_for_text("Shop now @cultstoreindia  get 10% off").name == "Cult.fit"
+
+
+def test_common_word_brand_needs_a_mention_or_code():
+    assert best_brand_for_text("my lifelong goal is to lift, thanks to my team") is None
+    assert best_brand_for_text("Lifelong code RAHA10 for 10% off").name == "Lifelong"

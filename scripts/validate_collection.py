@@ -22,6 +22,7 @@ TARGETS = {
     "creators_deep_on_both": 100,      # >= 20 posts on each platform
     "total_posts": 20000,
     "sponsored_with_brand": 150,
+    "sponsored_events_with_brand": 150,
     "posts_with_3_snapshots": 500,
 }
 
@@ -73,6 +74,9 @@ def main() -> None:
         sponsored = scalar("""select count(*) from instagram_posts
                               where brand_id is not null and (is_sponsored or has_paid_partnership_label)""")
         count("Sponsored Instagram posts with a brand (NOT hand-verified)", "sponsored_with_brand", sponsored)
+
+        events = scalar("select count(*) from creator_sponsorship_events where brand_id is not null and platform in ('youtube', 'instagram')")
+        count("Sponsorship events with a brand, YouTube + Instagram (rule-based, NOT hand-verified)", "sponsored_events_with_brand", events)
 
         have_snap = scalar("select to_regclass('public.post_snapshots') is not null")
         if have_snap:

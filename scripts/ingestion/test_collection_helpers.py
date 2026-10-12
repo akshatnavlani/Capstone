@@ -199,3 +199,14 @@ def test_missing_snapshot_table_is_skipped_not_fatal(monkeypatch):
     cur = _Cursor(fail_insert=True)
     record_post_snapshot(cur, "instagram", "abc", None, None, 5, 0)  # must not raise
     assert cur.sql[-1] == "rollback to savepoint snapshot_insert"
+
+
+def test_everyday_word_is_not_saved_as_a_brand(monkeypatch):
+    class _Lead:
+        candidate_name = "Call"
+        confidence = "explicit"
+
+    monkeypatch.setattr(orchestrator, "extract_brand_mentions", lambda text: [_Lead()])
+    cur = _BrandCursor()
+    assert orchestrator.brand_id_for_text(cur, "Call now for a free quote") is None
+    assert cur.names == []
