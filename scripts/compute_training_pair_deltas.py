@@ -37,6 +37,18 @@ sys.path.insert(0, os.path.abspath(TRACK_A_INGESTION))
 import psycopg2  # noqa: E402
 from pair_count import CANDIDATES, ENV, compute  # noqa: E402
 
+from ml.target_clustering import (  # noqa: E402
+    DEFAULT_WINDOW_DAYS,
+    cluster_events,
+    cluster_weights,
+    summarize,
+    windowed_engagement,
+)
+
+# Half-width of the engagement measurement window, in days. Also the gap at
+# which two events on the same neighbour stop being treated as one observation.
+WINDOW_DAYS = DEFAULT_WINDOW_DAYS
+
 PLATFORM_TABLES = {
     "instagram": ("instagram_posts", "posted_at", "like_count", "comment_count"),
     "youtube": ("youtube_videos", "published_at", "view_count", "like_count"),
@@ -78,9 +90,15 @@ def platform_engagement(cur, creator_id: str, platform: str, event_date):
         (creator_id,),
     )
     rows = cur.fetchall()
-    before = [e1v + e2v for d, e1v, e2v in rows if d < event_date]
-    after = [e1v + e2v for d, e1v, e2v in rows if d > event_date]
-    return before, after
+    # E2: bounded windows. These used to be unbounded (`d < event_date` over all
+    # history), so every event on the same neighbour split that neighbour's whole
+    # timeline at a slightly different point and all of them recorded the same
+    # underlying change -- the 16 Kohli rows. Bounding to +/- WINDOW_DAYS means
+    # events far apart measure genuinely different periods; ml/target_clustering.py
+    # then merges the ones that still overlap.
+    return windowed_engagement(
+        [(d, e1v + e2v) for d, e1v, e2v in rows], event_date, WINDOW_DAYS
+    )
 
 
 def main() -> int:
@@ -131,6 +149,30 @@ def main() -> int:
                 "computable_same_platform": bool(platform_lifts),
             }
         )
+
+    # E2: label each row with the cluster of events it shares an engagement
+    # change with, and a weight of 1/cluster_size. The honest sample size is the
+    # number of CLUSTERS, not the number of rows -- a point the training script
+    # and every confidence interval downstream depend on.
+    lift_rows = [r for r in results if r["mean_lift"] is not None]
+    clusters = cluster_events(lift_rows, window_days=WINDOW_DAYS)
+    weights = cluster_weights(clusters)
+    for row, cid, w in zip(lift_rows, clusters, weights):
+        row["cluster_id"] = cid
+        row["cluster_weight"] = w
+
+    stats = summarize(clusters)
+    print(f"\nE2 clustering (window {WINDOW_DAYS}d):")
+    print(f"  lift-computable rows          {stats['rows']}")
+    print(f"  distinct observations         {stats['clusters']}   <- effective N")
+    print(f"  distinct neighbours           {len({r['neighbour_id'] for r in lift_rows})}"
+          f"   (what per-creator averaging gave)")
+    if stats["largest"]:
+        cid, n = stats["largest"][0]
+        print(f"  largest cluster               {n} rows ({stats['max_cluster_share']:.0%}) -- {cid}")
+        if stats["max_cluster_share"] > 0.3:
+            print("  !! one engagement change dominates the dataset; quote the")
+            print("     cluster count, never the row count.")
 
     conn.close()
 
