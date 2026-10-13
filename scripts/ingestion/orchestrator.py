@@ -670,6 +670,12 @@ class PlatformWorker:
             except Exception:
                 log.exception("Failed for %s (%s) on %s — skipping, continuing batch",
                                creator.name, handle, self.platform_name)
+                # A failed statement (for example a statement timeout) leaves the transaction aborted; without a
+                # rollback every later creator fails instantly with InFailedSqlTransaction (44 of 92 did, 2026-10-13).
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
                 # Backstop for the tab-lease leak: process_creator may raise from any
                 # browser call after the session is opened, not just the known
                 # no-post-links path. The session name is deterministic
@@ -822,6 +828,117 @@ class YouTubeWorker(PlatformWorker):
                   handle, kept, self.skipped_stale, self.cutoff.date())
 
 
+# --- Instagram: reading what the page itself shows ---------------------------------------------------------
+# `opencli instagram profile` / `user` stopped working in Sept 2026 (Instagram retired the endpoints they
+# call; upstream issue jackwener/OpenCLI#2456). The profile page and each post page still carry the same facts
+# in their own meta tags and <time> elements, so these helpers read those instead.
+
+_PROFILE_JS = ('JSON.stringify({og: document.querySelector(\'meta[property="og:description"]\')?.content || null, '
+               'desc: document.querySelector(\'meta[name="description"]\')?.content || null})')
+# Image link, the "Paid partnership" label, and the exact time of every comment (each comment's <time> sits
+# inside a link to /p/<post>/c/<comment id>/).
+_POST_JS = ('JSON.stringify({img: document.querySelector(\'meta[property="og:image"]\')?.content || null, '
+            'paid: /Paid partnership with/i.test(document.body.innerText), '
+            'times: [...document.querySelectorAll("time")].map(t => {const a = t.closest("a"); '
+            'const m = a && (a.getAttribute("href") || "").match(/\\/c\\/(\\d+)/); '
+            'return m ? {id: m[1], dt: t.getAttribute("datetime")} : null}).filter(Boolean)})')
+# Set when `instagram profile` / `instagram user` fails, so the rest of the run does not keep calling them.
+_IG_COMMANDS_DOWN = {"profile": False, "user": False}
+_COUNT_TOKEN = r"[\d.,]+\s*[KMB]?"
+_PROFILE_COUNTS_RE = re.compile(rf"({_COUNT_TOKEN})\s+Followers,\s*({_COUNT_TOKEN})\s+Following,\s*({_COUNT_TOKEN})\s+Posts", re.I)
+_PROFILE_BIO_RE = re.compile(r'on Instagram:\s*"(.*)"\s*$', re.S)
+_PROFILE_NAME_RE = re.compile(r"Posts\s*-\s*(.+?)\s*\(@", re.S)
+
+
+def og_approx_int(tok: str | None) -> int | None:
+    """'105K' -> 105000, '1.3M' -> 1300000, '1,234' -> 1234. Instagram rounds large counts to 2-3 digits,
+    so a K/M value is approximate; use it for growth snapshots, never to overwrite an exact stored count."""
+    if not tok:
+        return None
+    tok = tok.replace(",", "").strip().upper()
+    mult = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}.get(tok[-1:], 1)
+    if mult != 1:
+        tok = tok[:-1]
+    try:
+        return int(round(float(tok) * mult))
+    except ValueError:
+        return None
+
+
+def parse_profile_page(raw) -> dict | None:
+    """{'followers','following','posts','bio','name'} from the profile page's meta tags, or None."""
+    data = raw
+    if isinstance(raw, str):
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            return None
+    if not isinstance(data, dict):
+        return None
+    og, desc = data.get("og") or "", (data.get("desc") or "").strip()
+    m = _PROFILE_COUNTS_RE.search(og) or _PROFILE_COUNTS_RE.search(desc)
+    if not m:
+        return None
+    bio = _PROFILE_BIO_RE.search(desc)
+    name = _PROFILE_NAME_RE.search(desc) or _PROFILE_NAME_RE.search(og)
+    return {"followers": og_approx_int(m.group(1)), "following": og_approx_int(m.group(2)),
+            "posts": og_approx_int(m.group(3)), "bio": bio.group(1).strip() if bio else None,
+            "name": name.group(1).strip() if name else None}
+
+
+def parse_post_extras(raw) -> dict:
+    """{'image': url|None, 'paid': bool, 'comment_times': {comment_id: datetime}} from _POST_JS output."""
+    data = raw
+    if isinstance(raw, str):
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            data = {}
+    data = data if isinstance(data, dict) else {}
+    times: dict[str, datetime] = {}
+    for t in data.get("times") or []:
+        try:
+            times[str(t["id"])] = datetime.fromisoformat(str(t["dt"]).replace("Z", "+00:00"))
+        except (KeyError, TypeError, ValueError):
+            continue
+    # paid is None (unknown), not False, when the page script returned nothing
+    return {"image": data.get("img") or None, "paid": bool(data.get("paid")) if data else None,
+            "comment_times": times}
+
+
+def og_approx_counts(desc: str | None) -> tuple[int | None, int | None]:
+    """(likes, comments) from a post's og:description, abbreviated values converted (approximate)."""
+    m = _OG_COUNT_RE.search(desc or "")
+    return (og_approx_int(m.group(1)), og_approx_int(m.group(2))) if m else (None, None)
+
+
+def save_instagram_profile(conn, creator, handle: str, prof: dict) -> None:
+    """Upsert instagram_profiles and append a profile snapshot. `prof` keys: name, bio, followers, following, posts, verified."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            insert into instagram_profiles
+                (username, creator_id, full_name, bio, follower_count, following_count,
+                 post_count, is_verified)
+            values (%s,%s,%s,%s,%s,%s,%s,%s)
+            on conflict (username) do update set
+                -- coalesce(excluded, existing) so a write with a NULL name or bio cannot wipe a good one
+                -- (the empty full_name rows are what blocked the Reddit topic-sub search).
+                full_name=coalesce(excluded.full_name, instagram_profiles.full_name),
+                bio=coalesce(excluded.bio, instagram_profiles.bio),
+                follower_count=coalesce(excluded.follower_count, instagram_profiles.follower_count),
+                following_count=coalesce(excluded.following_count, instagram_profiles.following_count),
+                post_count=coalesce(excluded.post_count, instagram_profiles.post_count),
+                fetched_at=now(), updated_at=now()
+            """,
+            (handle, creator.creator_id, prof.get("name"), prof.get("bio"), prof.get("followers"),
+             prof.get("following"), prof.get("posts"), bool(prof.get("verified"))),
+        )
+        record_profile_snapshot(cur, "instagram", handle, creator.creator_id,
+                                prof.get("followers"), prof.get("posts"))
+    conn.commit()
+
+
 class InstagramWorker(PlatformWorker):
     platform_name = "instagram"
 
@@ -834,41 +951,23 @@ class InstagramWorker(PlatformWorker):
 
     def process_creator(self, creator: Creator, handle: str, conn) -> None:
         self.rate_limiter.wait()
-        profile_resp = run_opencli("instagram", "profile", handle, "-f", "yaml")
-        # `instagram profile` returns a 1-item list of a flat dict (bio/followers/...
-        # keys directly) — NOT field/value rows like `reddit subreddit-info` uses.
-        # Confirmed wrong on the first real run (KeyError: 'field') — different
-        # OpenCLI commands use different YAML shapes, don't assume one fits all.
-        prof = profile_resp[0] if isinstance(profile_resp, list) else profile_resp
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                insert into instagram_profiles
-                    (username, creator_id, full_name, bio, follower_count, following_count,
-                     post_count, is_verified)
-                values (%s,%s,%s,%s,%s,%s,%s,%s)
-                on conflict (username) do update set
-                    -- full_name/bio were NOT in this update clause, which made them
-                    -- unfillable for any creator whose username had already been inserted
-                    -- by the comment-author path below (username only, ON CONFLICT DO
-                    -- NOTHING). Measured 2026-08-17: 130 of 231 handle-named creators had
-                    -- an instagram_profiles row with an EMPTY full_name, and only 15 of
-                    -- 13,746 profile rows carried a name at all. That empty full_name is
-                    -- what blocks the Reddit topic-sub search, which queries by name.
-                    -- coalesce(excluded, existing) so a later listing-sourced write with a
-                    -- NULL name cannot wipe a good one.
-                    full_name=coalesce(excluded.full_name, instagram_profiles.full_name),
-                    bio=coalesce(excluded.bio, instagram_profiles.bio),
-                    follower_count=excluded.follower_count, following_count=excluded.following_count,
-                    post_count=excluded.post_count, fetched_at=now(), updated_at=now()
-                """,
-                (handle, creator.creator_id, prof.get("name"), prof.get("bio"),
-                 prof.get("followers"), prof.get("following"), prof.get("posts"),
-                 str(prof.get("verified")).lower() == "yes"),
-            )
-            record_profile_snapshot(cur, "instagram", handle, creator.creator_id,
-                                    prof.get("followers"), prof.get("posts"))
-        conn.commit()
+        # `instagram profile` returns a 1-item list of a flat dict (bio/followers/... keys directly) -- NOT
+        # field/value rows like `reddit subreddit-info` uses. When the command fails (it has been broken since
+        # Sept 2026, see the helpers above) the profile page is read instead, once it is open below.
+        prof = None
+        try:
+            if _IG_COMMANDS_DOWN["profile"]:
+                raise RuntimeError("skipped: failed earlier in this run")
+            profile_resp = run_opencli("instagram", "profile", handle, "-f", "yaml")
+            api = profile_resp[0] if isinstance(profile_resp, list) else profile_resp
+            prof = {"name": api.get("name"), "bio": api.get("bio"), "followers": api.get("followers"),
+                    "following": api.get("following"), "posts": api.get("posts"),
+                    "verified": str(api.get("verified")).lower() == "yes"}
+            save_instagram_profile(conn, creator, handle, prof)
+        except RuntimeError as e:
+            _IG_COMMANDS_DOWN["profile"] = True
+            log.warning("instagram profile command not used for %s (%s); reading the profile page instead",
+                        handle, str(e)[:120].replace("\n", " "))
 
         # Real bug found+fixed 2026-08-10, after 40 real posts across 8 real creators
         # all came back with ZERO brand hits: instagram_posts was never storing
@@ -881,14 +980,31 @@ class InstagramWorker(PlatformWorker):
         # date directly — use THAT for post metadata and brand extraction, and use
         # `browser extract` only for what it's uniquely good for: comment text.
         self.rate_limiter.wait()
-        listing = run_opencli("instagram", "user", handle, "--limit", str(self.post_cap),
-                               "-f", "yaml", timeout=90)
+        try:
+            if _IG_COMMANDS_DOWN["user"]:
+                raise RuntimeError("skipped: failed earlier in this run")
+            listing = run_opencli("instagram", "user", handle, "--limit", str(self.post_cap),
+                                   "-f", "yaml", timeout=90)
+        except RuntimeError as e:
+            _IG_COMMANDS_DOWN["user"] = True
+            log.warning("instagram user listing failed for %s (%s); each post's own page supplies its facts",
+                        handle, str(e)[:120].replace("\n", " "))
+            listing = None
         posts_meta = listing if isinstance(listing, list) else []
 
         self.rate_limiter.wait()
         session = f"orc_{handle}"
         run_opencli("browser", session, "open", f"https://www.instagram.com/{handle}/")
         run_opencli("browser", session, "wait", "time", "2")
+        if prof is None:
+            try:
+                prof = parse_profile_page(run_opencli("browser", session, "eval", _PROFILE_JS))
+            except RuntimeError:
+                prof = None
+            if prof:
+                save_instagram_profile(conn, creator, handle, prof)
+            else:
+                log.warning("Instagram: %s profile page gave no follower counts", handle)
         # The post grid is lazy-loaded and load timing is genuinely inconsistent —
         # observed anywhere from 0 to 2+ scrolls needed for the same account across
         # different runs (not just cold-vs-warm cache; re-ran kingjames twice in a
@@ -972,6 +1088,11 @@ class InstagramWorker(PlatformWorker):
                 self.skipped_stale += 1
                 continue
 
+            try:
+                extras = parse_post_extras(run_opencli("browser", session, "eval", _POST_JS))
+            except RuntimeError:
+                extras = parse_post_extras(None)
+            approx_likes, approx_comments = og_approx_counts(raw_og if isinstance(raw_og, str) else "")
             extracted = run_opencli("browser", session, "extract")
             markdown = extracted["content"] if isinstance(extracted, dict) else str(extracted)
             caption = parse_caption(markdown, handle)
@@ -1015,9 +1136,12 @@ class InstagramWorker(PlatformWorker):
                     """
                     insert into instagram_posts
                         (post_id, username, creator_id, caption, media_type, like_count,
-                         comment_count, posted_at, brand_id)
-                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                         comment_count, posted_at, brand_id, thumbnail_url, has_paid_partnership_label)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     on conflict (post_id) do update set
+                        thumbnail_url=coalesce(excluded.thumbnail_url, instagram_posts.thumbnail_url),
+                        has_paid_partnership_label=coalesce(excluded.has_paid_partnership_label,
+                                                            instagram_posts.has_paid_partnership_label),
                         caption=case when length(coalesce(excluded.caption,'')) >
                                           length(coalesce(instagram_posts.caption,''))
                                      then excluded.caption else instagram_posts.caption end,
@@ -1034,14 +1158,19 @@ class InstagramWorker(PlatformWorker):
                                  and abs(extract(epoch from (excluded.posted_at - instagram_posts.posted_at))) <= 259200
                             then excluded.posted_at
                             else instagram_posts.posted_at end,
-                        like_count=excluded.like_count, comment_count=excluded.comment_count,
+                        -- an exact count is only replaced by another exact count, never by NULL
+                        like_count=coalesce(excluded.like_count, instagram_posts.like_count),
+                        comment_count=coalesce(excluded.comment_count, instagram_posts.comment_count),
                         fetched_at=now(), brand_id=coalesce(excluded.brand_id, instagram_posts.brand_id)
                     """,
-                    (post_id, handle, creator.creator_id, caption, meta.get("type"),
-                     like_count, comment_count, posted_at, brand_id),
+                    (post_id, handle, creator.creator_id, caption,
+                     meta.get("type") or ("video" if "/reel/" in path else None),
+                     like_count, comment_count, posted_at, brand_id, extras["image"], extras["paid"]),
                 )
-                record_post_snapshot(cur, "instagram", post_id, creator.creator_id,
-                                     None, like_count, comment_count)
+                # A growth snapshot may use Instagram's rounded counts ("12.3K") when no exact one exists.
+                record_post_snapshot(cur, "instagram", post_id, creator.creator_id, None,
+                                     like_count if like_count is not None else approx_likes,
+                                     comment_count if comment_count is not None else approx_comments)
                 comments = parse_comments(markdown)
                 for c in comments:
                     cur.execute(
@@ -1053,11 +1182,13 @@ class InstagramWorker(PlatformWorker):
                     )
                     cur.execute(
                         """
-                        insert into instagram_comments (comment_id, post_id, author_username, text, like_count)
-                        values (%s,%s,%s,%s,%s)
-                        on conflict (comment_id) do update set like_count=excluded.like_count
+                        insert into instagram_comments (comment_id, post_id, author_username, text, like_count, posted_at)
+                        values (%s,%s,%s,%s,%s,%s)
+                        on conflict (comment_id) do update set like_count=excluded.like_count,
+                            posted_at=coalesce(excluded.posted_at, instagram_comments.posted_at)
                         """,
-                        (c.comment_id, post_id, c.author_username, c.text, c.like_count),
+                        (c.comment_id, post_id, c.author_username, c.text, c.like_count,
+                         extras["comment_times"].get(str(c.comment_id))),
                     )
             conn.commit()
             log.info("Instagram: %s post %s -> %d comments", handle, post_id, len(comments))

@@ -210,3 +210,81 @@ def test_everyday_word_is_not_saved_as_a_brand(monkeypatch):
     cur = _BrandCursor()
     assert orchestrator.brand_id_for_text(cur, "Call now for a free quote") is None
     assert cur.names == []
+
+
+# --- Instagram page readers (text taken from a real profile and post page, 2026-10-13) ------------------
+
+_PROFILE_OG = "105K Followers, 546 Following, 456 Posts - See Instagram photos and videos from Adesh Sahu (@fitadesss)"
+_PROFILE_DESC = ('105K Followers, 546 Following, 456 Posts - Adesh Sahu (@fitadesss) on Instagram: '
+                 '"⚡️\n20teen..\nYouTube 250k+\n@wellcore.in “Adesh10”\n@wellversed.in “Adesh10”"')
+
+
+def test_approx_int_handles_k_m_and_plain_numbers():
+    assert orchestrator.og_approx_int("105K") == 105000
+    assert orchestrator.og_approx_int("1.3M") == 1300000
+    assert orchestrator.og_approx_int("1,234") == 1234
+    assert orchestrator.og_approx_int("456") == 456
+    assert orchestrator.og_approx_int(None) is None
+    assert orchestrator.og_approx_int("lots") is None
+
+
+def test_profile_page_gives_counts_name_and_bio():
+    prof = orchestrator.parse_profile_page({"og": _PROFILE_OG, "desc": _PROFILE_DESC})
+    assert (prof["followers"], prof["following"], prof["posts"]) == (105000, 546, 456)
+    assert prof["name"] == "Adesh Sahu"
+    assert "@wellcore.in" in prof["bio"] and "Adesh10" in prof["bio"]
+
+
+def test_profile_page_with_no_counts_is_none():
+    assert orchestrator.parse_profile_page({"og": "Instagram", "desc": None}) is None
+    assert orchestrator.parse_profile_page("not json") is None
+    assert orchestrator.parse_profile_page(None) is None
+
+
+def test_post_extras_pairs_each_comment_id_with_its_exact_time():
+    raw = ('{"img": "https://cdn.example/a.jpg", "paid": false, "times": ['
+           '{"id": "18175595176453225", "dt": "2026-10-11T17:05:28.000Z"},'
+           '{"id": "17933987250147142", "dt": "2026-10-12T04:12:59.000Z"}]}')
+    extras = orchestrator.parse_post_extras(raw)
+    assert extras["image"] == "https://cdn.example/a.jpg" and extras["paid"] is False
+    assert extras["comment_times"]["18175595176453225"].isoformat() == "2026-10-11T17:05:28+00:00"
+    assert len(extras["comment_times"]) == 2
+
+
+def test_post_extras_with_nothing_returned_is_unknown_not_false():
+    extras = orchestrator.parse_post_extras(None)
+    assert extras["paid"] is None and extras["comment_times"] == {} and extras["image"] is None
+
+
+def test_post_extras_skips_a_bad_time_entry():
+    extras = orchestrator.parse_post_extras({"times": [{"id": "1", "dt": "nonsense"}, {"id": "2", "dt": "2026-10-11T17:05:28Z"}]})
+    assert list(extras["comment_times"]) == ["2"]
+
+
+def test_og_approx_counts_reads_rounded_numbers():
+    assert orchestrator.og_approx_counts("12.3K likes, 456 comments - x on October 11, 2026") == (12300, 456)
+    assert orchestrator.og_approx_counts("454 likes, 8 comments - fitadesss on October 11, 2026") == (454, 8)
+    assert orchestrator.og_approx_counts("") == (None, None)
+
+
+def test_a_failed_creator_rolls_the_transaction_back_so_the_next_one_can_run():
+    class _Conn:
+        closed = 0
+        rollbacks = 0
+
+        def rollback(self):
+            self.rollbacks += 1
+
+    class _Boom(orchestrator.PlatformWorker):
+        platform_name = "test"
+
+        def _handle_for(self, creator):
+            return creator.name
+
+        def process_creator(self, creator, handle, conn):
+            raise RuntimeError("statement timeout")
+
+    conn = _Conn()
+    creators = [orchestrator.Creator("1", "a", "c"), orchestrator.Creator("2", "b", "c")]
+    _Boom(None).run_batch(creators, conn)
+    assert conn.rollbacks == 2
