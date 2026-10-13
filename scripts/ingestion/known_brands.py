@@ -42,7 +42,7 @@ KNOWN_BRANDS: list[tuple[str, str, str | None, tuple[str, ...], bool]] = [
     ("YouWeFit", "supplement", "youwefitofficial", ("you we fit",), False),
     ("QNT", "supplement", "qnt.india", ("qnt india",), False),
     ("2XN", "supplement", None, ("2xn", "2x nutrition"), False),
-    ("Red Skull Nutrition", "supplement", None, ("red skull", "redskull"), False),
+    ("Red Skull Nutrition", "supplement", None, ("red skull", "redskull", "redskullnutrition", "redskullnutrition1"), False),
     ("DrChoice", "supplement", "thedrchoice", ("dr choice", "dr. choice"), False),
     ("GNC", "supplement", None, (), False),
     ("optimumnutri", "supplement", "optimumnutri", ("optimum nutrition",), False),  # existing brands row keeps this name
@@ -75,14 +75,16 @@ KNOWN_BRANDS: list[tuple[str, str, str | None, tuple[str, ...], bool]] = [
     ("Yogabar", "food", None, ("yoga bar",), False),
     ("MuscleTech", "supplement", None, ("muscle tech",), False),
     ("Dymatize", "supplement", None, (), False),
-    ("BigMuscles Nutrition", "supplement", None, ("big muscles nutrition", "bigmuscles"), False),
+    ("BigMuscles Nutrition", "supplement", None, ("big muscles nutrition", "bigmuscles", "bigmusclesnutrition"), False),
     ("Under Armour", "apparel", None, ("underarmour",), False),
     ("Oakley", "apparel", None, (), False),
     ("Lifelong", "equipment", None, (), True),
+    ("Mille Supergrain", "food", "millesupergrain", ("mille supergrain", "mille"), True),
+    ("TrueForma", "supplement", "trueforma.nutrition", ("true forma", "trueforma nutrition"), False),
     ("Gayor Essentials", "supplement", None, ("gayor",), False),
     ("Anecdote", "supplement", None, (), True),
     ("Alpino", "food", None, (), False),
-    ("Ripped Up Nutrition", "supplement", None, ("ripped up supplements", "ripped up"), False),
+    ("Ripped Up Nutrition", "supplement", None, ("ripped up supplements", "ripped up", "rippedupnutrition"), False),
 ]
 
 _CODE = re.compile(r"(use\s+code|promo\s*code|coupon|discount|%\s*off|\bcode\b\s*[:\-–—=]?\s*[\"“'‘]?[A-Za-z0-9]{3,})", re.I)
@@ -124,8 +126,11 @@ def match_known_brands(text: str | None) -> list[BrandMatch]:
             signals.append("mention")
         for p in patterns:
             for m in p.finditer(text):
-                # an '@handle' mention is already counted above; a plain name hit must not be part of one
+                # an '@name' of the brand itself is a mention (even when no handle is saved for it); the alias
+                # pattern already stops at a word edge, so '@nikefootball' does not count as '@nike'
                 if text[max(0, m.start() - 1):m.start()] == "@":
+                    if "mention" not in signals:
+                        signals.append("mention")
                     continue
                 window = text[max(0, m.start() - _WINDOW): m.end() + _WINDOW]
                 if "name" not in signals:

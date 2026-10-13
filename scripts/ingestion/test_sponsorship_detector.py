@@ -67,3 +67,19 @@ def test_negated_disclosure_is_not_a_disclosure():
     assert not detect("BEST CREATINE IN INDIAN MARKET || NO PAID PROMOTION").is_sponsored
     assert not detect("This video is not sponsored by anyone").is_sponsored
     assert detect("This video is sponsored by Acme").is_sponsored
+
+
+def test_not_a_paid_promotion_is_a_negation():
+    assert not detect("(Not a paid promotion, just something I personally use) healthy tomato ketchup").is_sponsored
+    assert not detect("this is not an ad and not a paid promotion").is_sponsored
+    assert detect("this is a paid promotion for Acme").is_sponsored
+
+
+def test_brand_written_as_one_word_handle_is_found():
+    assert detect("Why do I trust [@rippedupnutrition](/rippedupnutrition/) ?  Use code : SAGAR10").brand_name == "Ripped Up Nutrition"
+    assert detect("Website https://bigmusclesnutrition.com  Use my code for extra discount BMRAHUL").brand_name == "BigMuscles Nutrition"
+
+
+def test_mille_needs_a_mention_or_a_code():
+    assert detect("@millesupergrain Use code MILLE5 on Amazon").brand_name == "Mille Supergrain"
+    assert not detect("I walked a mille today").is_sponsored

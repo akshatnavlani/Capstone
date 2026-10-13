@@ -71,3 +71,9 @@ def test_cult_store_mention_is_strong():
 def test_common_word_brand_needs_a_mention_or_code():
     assert best_brand_for_text("my lifelong goal is to lift, thanks to my team") is None
     assert best_brand_for_text("Lifelong code RAHA10 for 10% off").name == "Lifelong"
+
+
+def test_soniya_bio_names_three_brands():
+    bio = ("🔸 Managed by @imddxb 🇮🇳 🇦🇪 \n🔸 @rippedupnutrition @redskullnutrition1 : fitgirl\n"
+           "🔸 @trueforma.nutrition : FitGirl10\n✉️ : team@example.com")
+    assert _names(bio) == {"Ripped Up Nutrition", "Red Skull Nutrition", "TrueForma"}

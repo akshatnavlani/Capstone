@@ -30,7 +30,7 @@ _DISCLOSURE = re.compile(
 _PROMO_CODE = re.compile(r"(use\s+code|promo\s*code|coupon\s*code|discount\s*code|code\s*[:\-–—=]\s*[\"“'‘]?[A-Za-z0-9]{3,}|\bcode\s+(?-i:[\"“'‘*]?[A-Z0-9]{4,}\b))", re.I)
 
 
-_NEGATION = re.compile(r"\b(no|not|non|never|without|un)[\s\-]*$", re.I)
+_NEGATION = re.compile(r"\b(no|not|non|never|without|un)(\s+(a|an|any|the|really|actually|even))?[\s\-]*$", re.I)
 
 BOILERPLATE_MIN_REPEATS = 4
 
@@ -68,7 +68,7 @@ def detect(description: str | None, has_paid_partnership_label: bool = False, *,
     kept = "\n".join(x for x in (description or "").splitlines() if normalize_line(x) not in boilerplate)
     text = f"{title}\n{kept}"
     for m in _DISCLOSURE.finditer(text):
-        if _NEGATION.search(text[max(0, m.start() - 8):m.start()]):  # "NO PAID PROMOTION", "not sponsored"
+        if _NEGATION.search(text[max(0, m.start() - 16):m.start()]):  # "NO PAID PROMOTION", "not sponsored"
             continue
         tag = re.sub(r"\s+", " ", m.group(1).lower())
         if f"disclosure:{tag}" not in evidence:

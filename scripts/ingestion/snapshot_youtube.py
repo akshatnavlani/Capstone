@@ -23,7 +23,9 @@ on PATH, as everywhere else in this folder.
 import argparse
 import logging
 
-from orchestrator import (RateLimiter, brand_id_for_text, get_connection, log,
+from psycopg2.extras import execute_values
+
+from orchestrator import (RateLimiter, brand_id_for_text, get_connection, log, parse_iso8601_duration,
                           upsert_youtube_video, youtube_api_get)
 
 BATCH = 50  # videos.list accepts at most 50 ids per call
@@ -38,6 +40,27 @@ def uploads_playlist_id(channel_id: str) -> str | None:
 def chunks(items: list, size: int):
     for i in range(0, len(items), size):
         yield items[i:i + size]
+
+
+def split_items(items: list[dict], known: set[str], targets: dict[str, str], owner: dict[str, str]):
+    """Split a videos.list page into (new_items, count_rows, snapshot_rows).
+
+    A video we already store needs only its latest counts and one snapshot row, so those are returned as plain
+    tuples for two bulk statements (one database round trip each) instead of ~5 round trips per video: from
+    GitHub's servers to a database in Mumbai the per-video route made a run take 11 minutes.
+      count_rows:    (video_id, views, likes, comments, duration_seconds)
+      snapshot_rows: ('youtube', video_id, creator_id, views, likes, comments)
+    """
+    new_items, count_rows, snapshot_rows = [], [], []
+    for v in items:
+        if v["id"] not in known:
+            new_items.append(v)
+            continue
+        st = v.get("statistics", {})
+        counts = (st.get("viewCount"), st.get("likeCount"), st.get("commentCount"))
+        count_rows.append((v["id"], *counts, parse_iso8601_duration(v.get("contentDetails", {}).get("duration"))))
+        snapshot_rows.append(("youtube", v["id"], owner.get(targets[v["id"]]), *counts))
+    return new_items, count_rows, snapshot_rows
 
 
 def main() -> None:
@@ -95,13 +118,23 @@ def main() -> None:
     for batch in chunks(sorted(targets), BATCH):
         limiter.wait()
         items = youtube_api_get("videos", id=",".join(batch), part="snippet,statistics,contentDetails").get("items", [])
+        new_items, count_rows, snapshot_rows = split_items(items, known, targets, owner)
         with conn.cursor() as cur:
-            for v in items:
+            for v in new_items:
                 channel_id = targets[v["id"]]
                 vs = v["snippet"]
                 brand_id = brand_id_for_text(cur, f"{vs.get('title', '')} {vs.get('description', '')}")
                 upsert_youtube_video(cur, v, channel_id, owner.get(channel_id), brand_id)
                 written += 1
+            if count_rows:
+                execute_values(cur, """
+                    update youtube_videos y set view_count=d.v::bigint, like_count=d.l::bigint,
+                        comment_count=d.c::bigint, duration_seconds=coalesce(y.duration_seconds, d.dur::int),
+                        fetched_at=now()
+                    from (values %s) as d(id, v, l, c, dur) where y.video_id = d.id""", count_rows)
+                execute_values(cur, "insert into post_snapshots (platform, post_id, creator_id, view_count, like_count, "
+                                    "comment_count) values %s", snapshot_rows)
+                written += len(count_rows)
         conn.commit()
     log.info("snapshotted %d videos (%d of them new)", written, len(new_ids))
     conn.close()
