@@ -1,6 +1,6 @@
 """Tests for sponsorship_detector.py, using wording from real creator descriptions."""
 
-from sponsorship_detector import detect
+from sponsorship_detector import boilerplate_lines, detect
 
 
 def test_known_brand_with_a_code_is_sponsored():
@@ -83,3 +83,19 @@ def test_brand_written_as_one_word_handle_is_found():
 def test_mille_needs_a_mention_or_a_code():
     assert detect("@millesupergrain Use code MILLE5 on Amazon").brand_name == "Mille Supergrain"
     assert not detect("I walked a mille today").is_sponsored
+
+
+def test_evidence_type_is_the_strongest_kind_present():
+    assert detect("new reel", has_paid_partnership_label=True).evidence_type == "official_label"
+    assert detect("Loved this #Ad").evidence_type == "disclosure_tag"
+    assert detect('Nakpro code : "Raha10"').evidence_type == "brand_and_code"
+    assert detect("Thanks @muscleblaze").evidence_type == "brand_mention"
+    assert detect("Chest day").evidence_type is None
+    assert detect("#ad with Nakpro code RAHA10", has_paid_partnership_label=True).evidence_type == "official_label"
+
+
+def test_a_code_in_a_standing_footer_is_not_even_a_candidate():
+    footer = "Use code *YS30* for extra discount on the shop"
+    bp = boilerplate_lines([footer] * 5)
+    assert not detect(footer, title="Leg day", boilerplate=bp).candidate_only
+    assert detect(footer, title="Leg day").candidate_only                 # the same text, not a footer: a candidate

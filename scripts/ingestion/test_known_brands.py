@@ -77,3 +77,10 @@ def test_soniya_bio_names_three_brands():
     bio = ("🔸 Managed by @imddxb 🇮🇳 🇦🇪 \n🔸 @rippedupnutrition @redskullnutrition1 : fitgirl\n"
            "🔸 @trueforma.nutrition : FitGirl10\n✉️ : team@example.com")
     assert _names(bio) == {"Ripped Up Nutrition", "Red Skull Nutrition", "TrueForma"}
+
+
+def test_brand_written_as_one_word_url_or_product_is_found():
+    assert best_brand_for_text("Buy it now https://asitisnutrition.com/products/pure-creatine use code ABC10").name == "AsItIs Nutrition"
+    assert best_brand_for_text("use code :- ANKITRS  for  CARNIVOX").name == "Red Skull Nutrition"
+    assert best_brand_for_text("get 50% off all Lifespan memberships with code RAJ2026").name == "Lifespan"
+    assert best_brand_for_text("I want a longer lifespan") is None

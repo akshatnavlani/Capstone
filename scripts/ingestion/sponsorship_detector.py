@@ -50,12 +50,34 @@ def boilerplate_lines(descriptions: list[str]) -> set[str]:
     return {line for line, n in counts.items() if n >= BOILERPLATE_MIN_REPEATS}
 
 
+def evidence_type_of(evidence: list[str]) -> str | None:
+    """The strongest kind of evidence in an evidence list (same rule as the SQL function sponsorship_evidence_of):
+    official_label > spoken > creator_comment > disclosure_tag > brand_and_code > brand_mention."""
+    if not evidence:
+        return None
+    if "native:paid_partnership_label" in evidence:
+        return "official_label"
+    if any(e.startswith("spoken:") for e in evidence):
+        return "spoken"
+    if any(e.startswith("comment:") for e in evidence):
+        return "creator_comment"
+    if any(not e.startswith(("brand:", "native:")) for e in evidence):
+        return "disclosure_tag"
+    if any(e.startswith("brand:") and "code" in e for e in evidence):
+        return "brand_and_code"
+    return "brand_mention"
+
+
 @dataclass
 class Detection:
     is_sponsored: bool
     evidence: list[str] = field(default_factory=list)
     brand_name: str | None = None
     candidate_only: bool = False  # promo code seen but not enough to call it sponsored
+
+    @property
+    def evidence_type(self) -> str | None:
+        return evidence_type_of(self.evidence)
 
 
 def detect(description: str | None, has_paid_partnership_label: bool = False, *, title: str = "",
@@ -87,4 +109,5 @@ def detect(description: str | None, has_paid_partnership_label: bool = False, *,
         brand_name = names[0]
     if evidence:
         return Detection(True, evidence, brand_name)
-    return Detection(False, [], None, candidate_only=bool(_PROMO_CODE.search(full)))
+    # a promo code only counts as a candidate outside the standing footer (repeated lines are not about this post)
+    return Detection(False, [], None, candidate_only=bool(_PROMO_CODE.search(text)))
