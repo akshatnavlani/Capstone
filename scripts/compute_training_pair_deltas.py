@@ -29,14 +29,19 @@ import os
 import statistics
 import sys
 
-TRACK_A_INGESTION = os.path.join(
-    os.path.dirname(__file__), "..", "..", "track-a-data-infra", "scripts", "ingestion"
-)
-sys.path.insert(0, os.path.abspath(TRACK_A_INGESTION))
-
 import psycopg2  # noqa: E402
-from pair_count import CANDIDATES, ENV, compute  # noqa: E402
 
+# Track A's canonical pair definition. Imported through _track_a because
+# pair_count's own `from orchestrator import ENV` otherwise drags in the
+# ingestion orchestrator, which refuses to import without the opencli browser
+# tool on PATH. See scripts/_track_a.py.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _track_a import import_pair_count  # noqa: E402
+
+_pair_count = import_pair_count()
+CANDIDATES, ENV, compute = _pair_count.CANDIDATES, _pair_count.ENV, _pair_count.compute
+
+from ml.engagement_lift import platform_lift, row_target  # noqa: E402
 from ml.target_clustering import (  # noqa: E402
     DEFAULT_WINDOW_DAYS,
     cluster_events,
@@ -119,23 +124,18 @@ def main() -> int:
         for platform in PLATFORM_TABLES:
             before, after = platform_engagement(cur, neighbour_id, platform, event_date)
             if before and after:
-                before_avg = statistics.mean(before)
-                after_avg = statistics.mean(after)
-                lift = (after_avg - before_avg) / (before_avg + 1)
-                platform_lifts[platform] = {
-                    "n_before": len(before),
-                    "n_after": len(after),
-                    "avg_before": before_avg,
-                    "avg_after": after_avg,
-                    "lift": lift,
-                }
+                # Shared with train_prod_model.py via ml/engagement_lift.py, so
+                # the number inspected here is the number that trains.
+                platform_lifts[platform] = platform_lift(before, after)
 
         if platform_lifts:
             same_platform_count += 1
-            mean_lift = statistics.mean(v["lift"] for v in platform_lifts.values())
+            mean_lift = row_target(platform_lifts, statistic="mean")
+            robust_lift = row_target(platform_lifts, statistic="median")
         else:
             cross_platform_only_count += 1
             mean_lift = None
+            robust_lift = None
 
         results.append(
             {
@@ -146,6 +146,7 @@ def main() -> int:
                 "neighbour_id": neighbour_id,
                 "platform_lifts": platform_lifts,
                 "mean_lift": mean_lift,
+                "robust_lift": robust_lift,
                 "computable_same_platform": bool(platform_lifts),
             }
         )
@@ -196,10 +197,25 @@ def main() -> int:
         if n > 1:
             print(f"  stdev    = {statistics.stdev(sorted_lifts):.4f}")
 
+        # Mean-based vs median-based target, side by side. If the median-based
+        # column has a much smaller spread for the same rows, the extra variance
+        # in the mean-based one is viral-post noise and not signal to model.
+        robust = [r["robust_lift"] for r in computed]
+        print("\nMean-based vs median-based target (same rows, same windows):")
+        print(f"  {'':<10} {'mean-based':>12} {'median-based':>14}")
+        print(f"  {'median':<10} {statistics.median(lifts):>12.4f} {statistics.median(robust):>14.4f}")
+        print(f"  {'mean':<10} {statistics.mean(lifts):>12.4f} {statistics.mean(robust):>14.4f}")
+        print(f"  {'max |v|':<10} {max(abs(v) for v in lifts):>12.4f} "
+              f"{max(abs(v) for v in robust):>14.4f}")
+        if n > 1:
+            print(f"  {'stdev':<10} {statistics.stdev(lifts):>12.4f} "
+                  f"{statistics.stdev(robust):>14.4f}")
+
         print("\nAll computed pairs, sorted by |lift| descending (outlier check):")
         for r in sorted(computed, key=lambda r: -abs(r["mean_lift"]))[:15]:
             print(
-                f"  lift={r['mean_lift']:+.3f}  event={r['event_item_id'][:16]:<16} "
+                f"  lift={r['mean_lift']:+.3f}  med={r['robust_lift']:+.3f}  "
+                f"event={r['event_item_id'][:16]:<16} "
                 f"({r['event_platform']})  neighbour={r['neighbour_id'][:8]}  "
                 f"platforms={list(r['platform_lifts'].keys())}"
             )

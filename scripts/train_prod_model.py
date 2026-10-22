@@ -70,14 +70,19 @@ def load_env() -> dict:
 ENV = load_env()
 
 # Track-A ingestion dir for fresh pair_count import
-TRACK_A_INGESTION = Path(__file__).resolve().parents[2] / "track-a-data-infra" / "scripts" / "ingestion"
-if TRACK_A_INGESTION.exists():
-    sys.path.insert(0, str(TRACK_A_INGESTION))
-
 import psycopg2  # noqa: E402
-from pair_count import compute as pair_count_compute  # noqa: E402
+
+# Track A's canonical pair definition. Imported through _track_a because
+# pair_count's own `from orchestrator import ENV` otherwise drags in the
+# ingestion orchestrator, which refuses to import without the opencli browser
+# tool on PATH. See scripts/_track_a.py.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _track_a import import_pair_count  # noqa: E402
+
+pair_count_compute = import_pair_count(ENV).compute
 
 from ml.feature_extraction import FeatureExtractor, RawCreatorRecord  # noqa: E402
+from ml.engagement_lift import platform_lift, row_target  # noqa: E402
 from ml.feature_scaling import compute_feature_scaler  # noqa: E402
 from ml.gail_model import GAILModel  # noqa: E402
 from ml.target_clustering import (  # noqa: E402
@@ -191,20 +196,16 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
         for platform in PLATFORM_TABLES:
             before, after = platform_engagement(cur, neighbour_id, platform, event_date)
             if before and after:
-                before_avg = statistics.mean(before)
-                after_avg = statistics.mean(after)
-                lift = (after_avg - before_avg) / (before_avg + 1)
-                platform_lifts[platform] = {
-                    "n_before": len(before),
-                    "n_after": len(after),
-                    "avg_before": before_avg,
-                    "avg_after": after_avg,
-                    "lift": lift,
-                }
+                # Shared with compute_training_pair_deltas.py via
+                # ml/engagement_lift.py. Previously each script carried its own
+                # copy of this formula, so a fix to one left the model training
+                # on the other.
+                platform_lifts[platform] = platform_lift(before, after)
         if platform_lifts:
             same_platform_rows += 1
-            mean_lift = statistics.mean(v["lift"] for v in platform_lifts.values())
-            lifts_by_neighbour.setdefault(neighbour_id, []).append(mean_lift)
+            mean_lift = row_target(platform_lifts, statistic="mean")
+            robust_lift = row_target(platform_lifts, statistic="median")
+            lifts_by_neighbour.setdefault(neighbour_id, []).append(robust_lift)
             detailed.append({
                 "event_creator_id": event_creator_id,
                 "item_id": item_id,
@@ -213,6 +214,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
                 "neighbour_id": neighbour_id,
                 "platform_lifts": platform_lifts,
                 "mean_lift": mean_lift,
+                "robust_lift": robust_lift,
             })
         else:
             cross_platform_only += 1
@@ -224,6 +226,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
                 "neighbour_id": neighbour_id,
                 "platform_lifts": {},
                 "mean_lift": None,
+                "robust_lift": None,
             })
 
     # E2: cluster rows that measure the SAME engagement change before averaging.
@@ -238,8 +241,14 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
     # sample weight in the loss.
     target = torch.zeros(num_creators, dtype=torch.float32)
     sample_weight = torch.zeros(num_creators, dtype=torch.float32)
-    lift_rows = [d for d in detailed if d["mean_lift"] is not None]
-    clustered = per_creator_targets(lift_rows, window_days=DEFAULT_WINDOW_DAYS)
+    # `robust_lift` is the median-based target (ml/engagement_lift.py). The
+    # mean-based one is kept in `detailed` for the checkpoint record, but the
+    # model trains on the median: on the 2026-10-19 data the mean-based target
+    # had stdev 6.893 and a max of +34.724, both produced by single viral posts.
+    lift_rows = [d for d in detailed if d["robust_lift"] is not None]
+    clustered = per_creator_targets(
+        lift_rows, window_days=DEFAULT_WINDOW_DAYS, value_key="robust_lift"
+    )
     for nid, (value, n_clusters) in clustered.items():
         if nid in creator_id_to_index:
             idx = creator_id_to_index[nid]
@@ -632,7 +641,7 @@ def main() -> int:
     print(f"Labeled creator-nodes (distinct neighbours with same-platform lift): {len(labeled_idx)}")
     for cid, lifts in lifts_by_neighbour.items():
         if cid in id_to_index:
-            print(f"  {id_to_name.get(cid, cid)[:30]:30s} N={len(lifts)} mean_lift={statistics.mean(lifts):+.4f}")
+            print(f"  {id_to_name.get(cid, cid)[:30]:30s} N={len(lifts)} median_lift={statistics.mean(lifts):+.4f}")
 
     if not labeled_idx:
         print("ERROR: no labeled nodes — cannot train")
