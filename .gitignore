@@ -7,3 +7,5 @@ __pycache__/
 .env
 
 training_pair_deltas.json
+
+models/feature_cache.pt
