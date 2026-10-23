@@ -32,6 +32,7 @@ Deterministic: seed 0, scaler computed from training data only, 100 epochs.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -82,7 +83,13 @@ from _track_a import import_pair_count  # noqa: E402
 pair_count_compute = import_pair_count(ENV).compute
 
 from ml.feature_extraction import FeatureExtractor, RawCreatorRecord  # noqa: E402
-from ml.engagement_lift import platform_lift, row_target  # noqa: E402
+from ml.bot_detection import load_bot_scores  # noqa: E402
+from ml.engagement_lift import (  # noqa: E402
+    PLATFORM_TABLES,
+    platform_engagement,
+    platform_lift,
+    row_target,
+)
 from ml.feature_scaling import compute_feature_scaler  # noqa: E402
 from ml.gail_model import GAILModel  # noqa: E402
 from ml.target_clustering import (  # noqa: E402
@@ -102,11 +109,6 @@ from ml.schema import (  # noqa: E402
 # Constants
 # ---------------------------------------------------------------------------
 
-PLATFORM_TABLES = {
-    "instagram": ("instagram_posts", "posted_at", "like_count", "comment_count"),
-    "youtube": ("youtube_videos", "published_at", "view_count", "like_count"),
-    "reddit": ("reddit_posts", "posted_at", "score", "num_comments"),
-}
 
 # Must match backend/app/feature_store.py CREATOR_CATEGORIES exactly
 CREATOR_CATEGORIES = (
@@ -118,7 +120,20 @@ CREATOR_CATEGORIES = (
     "other",
 )
 
-HIDDEN_CHANNELS = 16
+# E8. Embedding width, overridable so the capacity ablation is one command:
+#     $env:GAIL_HIDDEN_CHANNELS=128; python scripts/train_prod_model.py
+#
+# The default stays 16 deliberately. E8 was specified as "raise hidden dim to
+# 128" on the assumption the model was under-capacity. The 2026-10-23 run shows
+# the opposite: with 16 labelled nodes it already fits in-sample to MSE 0.0068
+# (99.7% below the always-zero baseline) and the prediction barely moves when
+# exposure is zeroed -- mean |mu(e,X) - mu(0,X)| = 0.027 on targets spanning
+# +/-4. The head is reading each creator's target off a 1,289-dimensional
+# embedding that uniquely identifies them, so it has no need of exposure at all.
+# Eight times the width makes that worse, not better. The knob exists because
+# the ablation belongs in the write-up; the default should not change until
+# cross-fitting shows the model generalising at all.
+HIDDEN_CHANNELS = int(os.environ.get("GAIL_HIDDEN_CHANNELS", "16"))
 HEADS = 2
 EPOCHS = 100
 LR = 1e-2
@@ -142,27 +157,6 @@ def category_one_hot(category: str | None) -> list[int]:
     return vec
 
 
-def platform_engagement(cur, creator_id: str, platform: str, event_date):
-    """Real (fully-measured) engagement only — BOTH cols must be non-null.
-
-    Layer 1 fix: coalesce NULL→0 fabricated million-percent lifts (28% of
-    instagram_posts have like_count, 39% have comment_count, and the missingness
-    is temporally skewed — pre-2026 posts are mostly both-NULL).
-    Layer 2 fix: even after excluding both-NULL, posts with only the smaller
-    metric measured (comment_count present, like_count NULL) still bias the avg.
-    So require BOTH columns non-null, per compute_training_pair_deltas.py.
-    """
-    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
-    cur.execute(
-        f"select {date_col}, {e1}, {e2} "
-        f"from {table} where creator_id::text = %s and {date_col} is not null "
-        f"and {e1} is not null and {e2} is not null order by {date_col}",
-        (creator_id,),
-    )
-    rows = cur.fetchall()
-    before = [e1v + e2v for d, e1v, e2v in rows if d < event_date]
-    after = [e1v + e2v for d, e1v, e2v in rows if d > event_date]
-    return before, after
 
 
 def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_creators: int):
@@ -194,7 +188,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
         event_creator_id, item_id, event_platform, event_date, neighbour_id, _, _ = row
         platform_lifts: dict[str, dict] = {}
         for platform in PLATFORM_TABLES:
-            before, after = platform_engagement(cur, neighbour_id, platform, event_date)
+            before, after = platform_engagement(cur, neighbour_id, platform, event_date, DEFAULT_WINDOW_DAYS)
             if before and after:
                 # Shared with compute_training_pair_deltas.py via
                 # ml/engagement_lift.py. Previously each script carried its own
@@ -278,6 +272,20 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
     return target, lifts_by_neighbour, summary, detailed, sample_weight
 
 
+def _reconnect(conn, database_url: str):
+    """Replace a connection that may have gone stale. Returns (conn, cur).
+
+    Closing the old one is best-effort: if the pooler already dropped it, the
+    close itself raises, and that is exactly the case this exists to survive.
+    """
+    try:
+        conn.close()
+    except Exception:
+        pass
+    fresh = psycopg2.connect(database_url)
+    return fresh, fresh.cursor()
+
+
 def build_creator_features(cur, extractor: FeatureExtractor):
     """Build creator features via DB + CLIP/BERT (mirrors feature_store logic but via psycopg2).
 
@@ -299,8 +307,63 @@ def build_creator_features(cur, extractor: FeatureExtractor):
     cur.execute("select creator_id::text, follower_count, bio, full_name from instagram_profiles")
     ig_by_creator = {r[0]: r for r in cur.fetchall()}
 
+    # E14. Pre-fetch per-creator content BEFORE the extraction loop.
+    #
+    # These two queries used to run inside the loop, once per creator, which
+    # meant the database connection had to survive the whole CLIP/BERT pass --
+    # over half an hour for 390 creators, mostly idle between queries. Supabase's
+    # pooler closes idle connections, and the run died at creator 53/390 with
+    # "server closed the connection unexpectedly", losing eight minutes of
+    # extraction. Fetching up front means the connection is finished with before
+    # the slow work starts.
+    #
+    # ORDER BY is deliberate. The per-creator queries used `limit 20` with no
+    # ordering, so which twenty rows arrived was up to Postgres and could differ
+    # between runs -- the module docstring claims determinism, and for feature
+    # extraction that was not true. Ordering by date takes the twenty most
+    # recent, which is both reproducible and the more defensible definition:
+    # a creator's current content describes them better than whichever rows the
+    # planner happened to return first.
+    def _grouped(sql: str, per_creator: int = 20) -> dict[str, list]:
+        cur.execute(sql)
+        out: dict[str, list] = {}
+        for row in cur.fetchall():
+            bucket = out.setdefault(row[0], [])
+            if len(bucket) < per_creator:
+                bucket.append(row[1:])
+        return out
+
+    yt_videos_by_creator = _grouped(
+        "select creator_id::text, title, description, thumbnail_url, view_count, "
+        "like_count, comment_count from youtube_videos "
+        "order by creator_id, published_at desc nulls last"
+    )
+    ig_posts_by_creator = _grouped(
+        "select creator_id::text, caption, thumbnail_url, like_count, comment_count "
+        "from instagram_posts order by creator_id, posted_at desc nulls last"
+    )
+    print(f"Pre-fetched content for {len(yt_videos_by_creator)} creators with YouTube videos, "
+          f"{len(ig_posts_by_creator)} with Instagram posts (connection no longer needed)")
+
     # Engagement helper needs videos/posts per creator for rate
     # We'll compute engagement_rate lazily per creator inside loop
+
+    # E14. Feature cache, keyed by a hash of the exact inputs CLIP and BERT see.
+    #
+    # Extraction is the slow part of this script -- around half an hour for 390
+    # creators -- and nothing about it changes between runs unless the creator's
+    # content changes. Hashing the record rather than the creator id means the
+    # cache invalidates itself when Track A scrapes new posts for someone: their
+    # text and thumbnails change, so does the hash, and that creator alone is
+    # recomputed. A corrupt or unreadable cache is ignored rather than fatal.
+    cache_path = Path(__file__).resolve().parents[1] / "models" / "feature_cache.pt"
+    try:
+        feature_cache: dict[str, torch.Tensor] = torch.load(cache_path, weights_only=True)
+        print(f"Feature cache: {len(feature_cache)} entries from {cache_path.name}")
+    except Exception:
+        feature_cache = {}
+        print("Feature cache: starting empty")
+    cache_hits = 0
 
     vecs = []
     id_to_index: dict[str, int] = {}
@@ -320,10 +383,8 @@ def build_creator_features(cur, extractor: FeatureExtractor):
 
     for idx, (cid, name, category, yt_handle, ig_handle, reddit_handles) in enumerate(creator_rows):
         # limit per-creator content fetch to 20 each (matches feature_store)
-        cur.execute("select title, description, thumbnail_url, view_count, like_count, comment_count from youtube_videos where creator_id::text=%s limit 20", (cid,))
-        yt_videos = cur.fetchall()
-        cur.execute("select caption, thumbnail_url, like_count, comment_count from instagram_posts where creator_id::text=%s limit 20", (cid,))
-        ig_posts = cur.fetchall()
+        yt_videos = yt_videos_by_creator.get(cid, [])
+        ig_posts = ig_posts_by_creator.get(cid, [])
 
         yt_row = yt_by_creator.get(cid)
         ig_row = ig_by_creator.get(cid)
@@ -400,14 +461,41 @@ def build_creator_features(cur, extractor: FeatureExtractor):
             raw_text=raw_text,
             thumbnail_urls=thumbs[:20],
         )
-        print(f"  [{idx+1}/{len(creator_rows)}] extracting features for {name!r} (yt_subs={yt_subs} ig_followers={ig_followers} thumbs={len(thumbs)})...")
-        vec = extractor.extract(record)
+        cache_key = hashlib.sha256(
+            repr((
+                record.category_one_hot,
+                record.log_subscriber_count,
+                record.engagement_rate,
+                record.reputation_score,
+                record.raw_text,
+                record.thumbnail_urls,
+            )).encode("utf-8")
+        ).hexdigest()
+
+        cached = feature_cache.get(cache_key)
+        if cached is not None and cached.shape[0] == CREATOR_FEATURE_DIM:
+            cache_hits += 1
+            vec = cached
+        else:
+            print(f"  [{idx+1}/{len(creator_rows)}] extracting features for {name!r} "
+                  f"(yt_subs={yt_subs} ig_followers={ig_followers} thumbs={len(thumbs)})...")
+            vec = extractor.extract(record)
+            feature_cache[cache_key] = vec
         assert vec.shape[0] == CREATOR_FEATURE_DIM, f"dim mismatch {vec.shape[0]} != {CREATOR_FEATURE_DIM}"
         vecs.append(vec)
         id_to_index[cid] = idx
         order.append(cid)
         id_to_name[cid] = name
         id_to_category[cid] = category or "other"
+
+    print(f"Features: {cache_hits}/{len(creator_rows)} from cache, "
+          f"{len(creator_rows) - cache_hits} extracted")
+    if cache_hits < len(creator_rows):
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(feature_cache, cache_path)
+        except Exception as exc:  # a cache that cannot be written is not fatal
+            print(f"  (could not write feature cache: {exc})")
 
     x = torch.stack(vecs)
     return x, id_to_index, order, id_to_name, id_to_category
@@ -592,6 +680,9 @@ def main() -> int:
             return torch.tensor([s,d], dtype=torch.long), torch.tensor(w, dtype=torch.float32).unsqueeze(-1)
         collab_index, collab_attr = _edges_from_rows(collab_rows)
         cooccur_index, cooccur_attr = _edges_from_rows(cooccur_rows)
+        # Same stale-connection exposure as the DB path below: this branch also
+        # runs CLIP/BERT over every creator before querying again.
+        conn, cur = _reconnect(conn, database_url)
         brand_x, brand_id_to_index = load_brands(cur)
         # sponsorship edges not needed for training except maybe reporting — build empty
         sponsors_index = torch.empty((2,0), dtype=torch.long)
@@ -600,6 +691,18 @@ def main() -> int:
         creator_x, id_to_index, order, id_to_name, _ = build_creator_features(cur, extractor)
         num_creators = creator_x.size(0)
         print(f"Creator features: {num_creators} creators, dim {creator_x.shape[1]}")
+
+        # E14b. Reconnect before the remaining queries.
+        #
+        # Feature extraction can take half an hour on a cold cache, during which
+        # this connection is idle. Supabase's pooler closes idle connections, so
+        # the next query fails with "server closed the connection unexpectedly"
+        # -- which is how two runs died, once at creator 53/390 and once at
+        # load_collab_edges with all 390 already extracted. Everything from here
+        # on is fast, so a single reconnect is enough; nothing needs to span the
+        # slow part.
+        conn, cur = _reconnect(conn, database_url)
+
         collab_index, collab_attr = load_collab_edges(cur, id_to_index)
         cooccur_index, cooccur_attr = load_cooccurrence_edges(cur, id_to_index)
         brand_x, brand_id_to_index = load_brands(cur)
@@ -657,7 +760,7 @@ def main() -> int:
           f"(propensity head will receive normalized features — fixes saturation)")
 
     # Training — single model on ALL pairs
-    from ml.causal_regularization import has_sponsored_neighbor
+    from ml.causal_regularization import doubly_robust_effect, has_sponsored_neighbor
     from ml.gail_loss import GAILLossWeights, compute_gail_loss
 
     torch.manual_seed(SEED)
@@ -670,7 +773,43 @@ def main() -> int:
 
     collab_edge_index = data["creator", "collaborates_with", "creator"].edge_index
     collab_edge_weight = data["creator", "collaborates_with", "creator"].edge_attr
-    has_sponsored = has_sponsored_neighbor(collab_edge_index, treatment)
+
+    # E12a. The consistency penalty must see every relation exposure travels
+    # through. It used to be built from `collaborates_with` alone, but since E6
+    # exposure also propagates over `co_occurs_with` -- so a creator exposed
+    # ONLY through co-occurrence was given real exposure by the exposure module
+    # and then penalised toward zero prediction by L_consistency. The loss was
+    # fighting the model, on most of the exposed nodes: there are ~1,400
+    # co-occurrence edges against ~100 resolved collaboration edges.
+    interference_edge_index = torch.cat(
+        [collab_edge_index, data["creator", "co_occurs_with", "creator"].edge_index],
+        dim=1,
+    )
+    has_sponsored = has_sponsored_neighbor(interference_edge_index, treatment)
+
+    # E12b. `treatment` (own sponsorship) is what PROPAGATES: the model's
+    # exposure module sums it over neighbours, so the forward pass keeps it.
+    # The LOSS needs something different -- the interference indicator, "does
+    # this creator have a sponsored neighbour" -- because that is the exposure
+    # whose selection the propensity model corrects for. Passing own-sponsorship
+    # there trained the propensity head to predict P(this creator is sponsored)
+    # and made the DR weights T/pi divide by the wrong probability.
+    # E10. Bot scores, reported not enforced (see load_bot_scores).
+    bot_scores = load_bot_scores(cur, id_to_index)
+    flagged = {cid for cid, v in bot_scores.items() if v["is_bot_flagged"]}
+    print(f"Bot detection: {len(flagged)}/{len(bot_scores)} creators flagged "
+          f"(threshold 0.6, heuristic, nothing excluded)")
+    flagged_labeled = [id_to_name.get(c, c) for c in labeled_ids if c in flagged]
+    if flagged_labeled:
+        print(f"  !! flagged creators among the {len(labeled_ids)} LABELLED nodes: "
+              f"{', '.join(flagged_labeled)}")
+        print("     their measured lift carries the same weight as everyone else's; "
+              "decide deliberately whether to keep them")
+
+    interference = has_sponsored.to(torch.float32)
+    print(f"Interference: {int(interference.sum().item())}/{num_creators_t} creators have "
+          f"a sponsored neighbour (own-sponsorship: {n_sponsored})")
+
     loss_weights = GAILLossWeights()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
@@ -679,9 +818,16 @@ def main() -> int:
         model.train()
         optimizer.zero_grad()
         prediction, exposure, propensity = model(data, treatment)
+        # E12c. dr_mode="aipw" regresses onto the doubly robust pseudo-outcome
+        # instead of weighting the squared error by 1/pi. "ipw" is unbiased only
+        # when the propensity model is right; AIPW is unbiased when EITHER the
+        # propensity or the outcome model is right, which is the property the
+        # name "doubly robust" refers to and the one the thesis claims. The
+        # implementation has been there since E3; nothing was switching it on.
         loss, comps = compute_gail_loss(
             prediction, target, propensity, collab_edge_index, collab_edge_weight,
-            has_sponsored, loss_weights, prediction_mask=train_mask, treatment=treatment,
+            has_sponsored, loss_weights, prediction_mask=train_mask,
+            treatment=interference, dr_mode="aipw",
             sample_weight=sample_weight,
         )
         loss.backward()
@@ -720,6 +866,68 @@ def main() -> int:
         print(f"Propensity stats: mean={final_prop.mean().item():.3f} min={final_prop.min().item():.3f} max={final_prop.max().item():.3f} "
               f"(saturation to 1.000 fixed if max < 0.999)")
 
+        # E12d. The causal estimate. Everything above is an OUTCOME prediction
+        # -- "what engagement will this creator have". The thesis claims an
+        # EFFECT -- "what engagement did a sponsored neighbour cause" -- and
+        # nothing in this script computed one. `doubly_robust_effect` and
+        # `predict_unexposed` existed and were tested, but were reachable only
+        # from the synthetic harness.
+        #
+        # The counterfactual needs no separate model: "what if this creator had
+        # no sponsored neighbours" is the prediction head with exposure zeroed
+        # and the embedding -- who they are, where they sit -- left alone.
+        mu_unexposed = model.predict_unexposed(data)
+        tau = doubly_robust_effect(
+            final_pred, mu_unexposed, target, interference, final_prop
+        )
+
+        # Average over LABELLED nodes only: tau for an unlabelled node is built
+        # from target=0, which is a placeholder, not a measured outcome.
+        tau_labeled = tau[labeled_idx]
+        w = sample_weight[labeled_idx]
+        # Weight by cluster count, consistently with the training loss (E2): a
+        # creator backed by three separate events should count for more than one
+        # backed by a single event measured sixteen times.
+        ate = float((tau_labeled * w).sum() / w.sum().clamp(min=1e-12))
+        n_clusters = int(w.sum().item())
+
+        # Naive SE: the spread of per-node effects over the number of
+        # INDEPENDENT observations, not the number of rows. It assumes the
+        # clusters are independent and ignores the uncertainty in the two
+        # nuisance models, so it is a floor on the true uncertainty, not an
+        # interval to quote without that caveat.
+        if n_clusters > 1:
+            centred = tau_labeled - ate
+            var = float((w * centred.pow(2)).sum() / w.sum().clamp(min=1e-12))
+            naive_se = (var / n_clusters) ** 0.5
+        else:
+            naive_se = float("nan")
+
+        print("\n=== Causal estimate (AIPW spillover effect) ===")
+        print(f"ATE (cluster-weighted): {ate:+.4f}")
+        print(f"Naive SE:               {naive_se:.4f}   over N={n_clusters} independent observations")
+        print(f"Rough 95% interval:     [{ate - 1.96 * naive_se:+.4f}, {ate + 1.96 * naive_se:+.4f}]")
+        print("  SE ignores nuisance-model uncertainty and assumes independent")
+        print("  clusters, so it understates the true width. Do not quote it bare.")
+        tau_sorted = sorted(
+            ({"creator_id": cid, "name": id_to_name.get(cid, cid),
+              "tau": float(tau[idx].item()), "clusters": float(sample_weight[idx].item())}
+             for idx, cid in zip(labeled_idx, labeled_ids)),
+            key=lambda r: -abs(r["tau"]),
+        )
+        print("Per-creator effect (|tau| descending):")
+        for r in tau_sorted:
+            print(f"  {r['name'][:28]:28s} tau={r['tau']:+.3f}  (n_obs={r['clusters']:.0f})")
+
+        # E12e. The learned transmission shares: which relation carries
+        # spillover. This is an explainability claim in the write-up and no
+        # artifact recorded it -- `transmission_shares()` was defined and never
+        # called anywhere in the codebase.
+        beta = model.transmission_shares()
+        print("\nLearned transmission shares (beta):")
+        for rel, share in sorted(beta.items(), key=lambda kv: -kv[1]):
+            print(f"  {rel:24s} {share:.3f}")
+
     # Save checkpoint
     models_dir = Path(__file__).resolve().parents[1] / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
@@ -756,7 +964,30 @@ def main() -> int:
             "same_platform_computable": len([d for d in detailed if d["mean_lift"] is not None]),
             "cross_platform_only": len([d for d in detailed if d["mean_lift"] is None]),
             "effective_N_labeled_nodes": len(labeled_idx),
+            # E12f. The number to quote. `effective_N_labeled_nodes` above counts
+            # creators; E2 established that several of a creator's rows can be one
+            # engagement change measured repeatedly, so the honest sample size is
+            # the count of independent CLUSTERS. Both are recorded because they
+            # differ and the difference is a finding.
+            "effective_N_clusters": n_clusters,
         },
+        # E12. The causal estimate and the learned transmission shares -- the two
+        # outputs the thesis actually argues from. Neither was previously saved.
+        "causal_estimate": {
+            "ate_cluster_weighted": ate,
+            "naive_se": naive_se,
+            "n_independent_observations": n_clusters,
+            "dr_mode": "aipw",
+            "treatment_definition": "has_sponsored_neighbour (interference indicator)",
+            "per_creator_tau": tau_sorted,
+            "se_caveat": (
+                "Assumes independent clusters and ignores uncertainty in the "
+                "propensity and outcome models. A floor on the true width."
+            ),
+        },
+        "transmission_shares": beta,
+        # E10. Heuristic, reported for inspection -- no pair was excluded on it.
+        "bot_scores": bot_scores,
         "graph": {
             "num_creators": num_creators,
             "num_brands": brand_x.size(0),

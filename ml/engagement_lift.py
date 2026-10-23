@@ -40,6 +40,17 @@ from __future__ import annotations
 import statistics
 from typing import Sequence
 
+from ml.target_clustering import DEFAULT_WINDOW_DAYS, windowed_engagement
+
+# Which table, date column and two engagement columns each platform uses.
+# Shared for the same reason as the formula below: this lived in both scripts,
+# and a change to one did not reach the other.
+PLATFORM_TABLES = {
+    "instagram": ("instagram_posts", "posted_at", "like_count", "comment_count"),
+    "youtube": ("youtube_videos", "published_at", "view_count", "like_count"),
+    "reddit": ("reddit_posts", "posted_at", "score", "num_comments"),
+}
+
 # Which statistic produces the training target. "median" per the evidence above;
 # "mean" reproduces the pre-2026-10-19 behaviour exactly, for comparison runs.
 TARGET_STATISTIC = "median"
@@ -48,6 +59,56 @@ TARGET_STATISTIC = "median"
 # no filtering, which is the default: it keeps this module's introduction to a single
 # change (mean -> median) so the effect of that change is attributable.
 DEFAULT_MIN_POSTS = 1
+
+
+def platform_engagement(
+    cur,
+    creator_id: str,
+    platform: str,
+    event_date,
+    window_days: int = DEFAULT_WINDOW_DAYS,
+) -> tuple[list[float], list[float]]:
+    """Fully-measured engagement either side of an event, in a BOUNDED window.
+
+    WHY SHARED. This query existed in `compute_training_pair_deltas.py` and
+    `train_prod_model.py` with identical SQL and DIFFERENT windowing: the deltas
+    script bounded to +/- 30 days (E2), the training script did not. The model
+    therefore trained on unbounded windows -- the exact bug E2 removed -- while
+    the script used to inspect the data showed the fixed version. Measured
+    2026-10-22: 26 lift-computable rows bounded, 51 unbounded, with one creator
+    contributing 17 of them at a lift of +14.86.
+
+    BOTH ENGAGEMENT COLUMNS MUST BE NON-NULL. Two layers of missingness, both
+    found live. Coalescing NULL to 0 treats "never measured" as "measured zero"
+    and fabricates million-percent lifts; 28% of instagram_posts have
+    like_count and 39% have comment_count, and the missingness is skewed in
+    time. Excluding only both-NULL rows is not enough either: posts carrying
+    just the smaller metric (comment_count present, like_count NULL) still bias
+    whichever side holds more of them. So a post counts only when fully
+    measured.
+
+    Args:
+        cur: an open database cursor.
+        creator_id: the NEIGHBOUR whose engagement is being measured.
+        platform: a key of `PLATFORM_TABLES`.
+        event_date: when the sponsorship event happened.
+        window_days: half-width of the window. The event day itself falls in
+            neither side -- a post made that day may be the sponsored post.
+
+    Returns:
+        (before, after), each a list of summed engagement values.
+    """
+    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
+    cur.execute(
+        f"select {date_col}, {e1}, {e2} "
+        f"from {table} where creator_id::text = %s and {date_col} is not null "
+        f"and {e1} is not null and {e2} is not null order by {date_col}",
+        (creator_id,),
+    )
+    rows = cur.fetchall()
+    return windowed_engagement(
+        [(d, e1v + e2v) for d, e1v, e2v in rows], event_date, window_days
+    )
 
 
 def platform_lift(before: Sequence[float], after: Sequence[float]) -> dict:

@@ -41,69 +41,25 @@ from _track_a import import_pair_count  # noqa: E402
 _pair_count = import_pair_count()
 CANDIDATES, ENV, compute = _pair_count.CANDIDATES, _pair_count.ENV, _pair_count.compute
 
-from ml.engagement_lift import platform_lift, row_target  # noqa: E402
+from ml.engagement_lift import (  # noqa: E402
+    PLATFORM_TABLES,
+    platform_engagement,
+    platform_lift,
+    row_target,
+)
 from ml.target_clustering import (  # noqa: E402
     DEFAULT_WINDOW_DAYS,
     cluster_events,
     cluster_weights,
     summarize,
-    windowed_engagement,
 )
 
 # Half-width of the engagement measurement window, in days. Also the gap at
 # which two events on the same neighbour stop being treated as one observation.
 WINDOW_DAYS = DEFAULT_WINDOW_DAYS
 
-PLATFORM_TABLES = {
-    "instagram": ("instagram_posts", "posted_at", "like_count", "comment_count"),
-    "youtube": ("youtube_videos", "published_at", "view_count", "like_count"),
-    "reddit": ("reddit_posts", "posted_at", "score", "num_comments"),
-}
 
 
-def platform_engagement(cur, creator_id: str, platform: str, event_date):
-    """Real (measured) engagement only.
-
-    DATA-QUALITY FINDING (this round, two layers -- the first fix was insufficient
-    on its own):
-
-    Layer 1 -- fully-unmeasured posts: Instagram engagement columns are sparse --
-    live check found only 507/1811 (28%) posts have like_count, 715/1811 (39.5%)
-    have comment_count. Coalescing NULL to 0 (the naive approach) silently treats
-    "never measured" as "measured zero engagement", producing multi-million-percent
-    fake "lifts" on Virat Kohli / Anushka Sharma pairs, where most pre-2026 posts
-    are entirely unmeasured (both columns NULL) and only late-2026 posts carry real
-    6-8 digit values. First fix: exclude posts where BOTH columns are NULL.
-
-    Layer 2 -- partial measurement, found AFTER applying layer 1 (LeBron James's
-    top-lift pair still looked implausible): of Instagram's 507+208 partially/fully
-    measured posts, 208 have comment_count but NULL like_count and ZERO have the
-    reverse (like_count present, comment_count null) -- i.e. `like_count` (the
-    larger-magnitude metric) is missing on a real, non-random subset of otherwise-
-    measured posts. Same pattern on Reddit: 436 have both `score`+`num_comments`,
-    2,312 have `num_comments` only (score always the one missing). A post counted
-    "measured" under layer 1 alone can still be a comment-count-only stand-in for a
-    like/score-dominated total, biasing whichever side (before/after) happens to
-    hold more partially-measured posts. Fix: require BOTH engagement columns
-    non-null (fully measured) to include a post at all.
-    """
-    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
-    cur.execute(
-        f"select {date_col}, {e1}, {e2} "
-        f"from {table} where creator_id::text = %s and {date_col} is not null "
-        f"and {e1} is not null and {e2} is not null order by {date_col}",
-        (creator_id,),
-    )
-    rows = cur.fetchall()
-    # E2: bounded windows. These used to be unbounded (`d < event_date` over all
-    # history), so every event on the same neighbour split that neighbour's whole
-    # timeline at a slightly different point and all of them recorded the same
-    # underlying change -- the 16 Kohli rows. Bounding to +/- WINDOW_DAYS means
-    # events far apart measure genuinely different periods; ml/target_clustering.py
-    # then merges the ones that still overlap.
-    return windowed_engagement(
-        [(d, e1v + e2v) for d, e1v, e2v in rows], event_date, WINDOW_DAYS
-    )
 
 
 def main() -> int:
@@ -122,7 +78,7 @@ def main() -> int:
         event_creator_id, item_id, event_platform, event_date, neighbour_id, _, _ = row
         platform_lifts = {}
         for platform in PLATFORM_TABLES:
-            before, after = platform_engagement(cur, neighbour_id, platform, event_date)
+            before, after = platform_engagement(cur, neighbour_id, platform, event_date, WINDOW_DAYS)
             if before and after:
                 # Shared with train_prod_model.py via ml/engagement_lift.py, so
                 # the number inspected here is the number that trains.
