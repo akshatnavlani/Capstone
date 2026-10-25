@@ -28,6 +28,7 @@ per-creator target could not represent.
 
 from __future__ import annotations
 
+import statistics
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -246,6 +247,7 @@ def matched_did(observations: Iterable[Observation]) -> dict:
     observations -- a floor on the true uncertainty, like the AIPW SE.
 
     Windows with no control are left out and counted, never filled with zero.
+    `median_estimate` repeats the calculation with within-window medians.
     """
     by_span: dict[tuple[date, date], list[Observation]] = defaultdict(list)
     for o in observations:
@@ -273,17 +275,22 @@ def matched_did(observations: Iterable[Observation]) -> dict:
             continue
         var_c = _var(c)
         parts.append((len(t), sum(t) / len(t) - sum(c) / len(c), len(c),
-                      var_c if var_c is not None else var_c_pooled))
+                      var_c if var_c is not None else var_c_pooled,
+                      statistics.median(t) - statistics.median(c)))
 
     n_t = sum(p[0] for p in parts)
     if not n_t:
-        return {"estimate": float("nan"), "se": float("nan"), "n_treated": 0,
+        return {"estimate": float("nan"), "se": float("nan"),
+                "median_estimate": float("nan"), "n_treated": 0,
                 "n_control": 0, "windows": 0, "treated_without_control": skipped}
     est = sum(p[0] * p[1] for p in parts) / n_t
     var = sum((p[0] / n_t) ** 2 * (var_t / p[0] + p[3] / p[2]) for p in parts)
     return {
         "estimate": est,
         "se": var ** 0.5,
+        # P3b. Same weighting, medians within each window: one extreme creator
+        # cannot move it. No SE; read it as a robustness check on `estimate`.
+        "median_estimate": sum(p[0] * p[4] for p in parts) / n_t,
         "n_treated": n_t,
         "n_control": sum(p[2] for p in parts),
         "windows": len(parts),

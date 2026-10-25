@@ -37,6 +37,7 @@ sample size, so the threshold is a stated choice rather than a silent one.
 
 from __future__ import annotations
 
+import math
 import statistics
 from typing import Sequence
 
@@ -145,6 +146,15 @@ def platform_lift(before: Sequence[float], after: Sequence[float]) -> dict:
         "med_before": med_before,
         "med_after": med_after,
         "robust_lift": (med_after - med_before) / (med_before + 1),
+        # P3b. Log-ratio of the medians. `robust_lift` is a RATIO minus one, so
+        # it is bounded below by -1 and unbounded above: a creator going from a
+        # median of 0 to 118 scores +118, while the worst possible fall scores
+        # -1. On the 2026-10-25 run one control at +118.9 carried most of the
+        # squared error over 459 observations. On the log scale halving and
+        # doubling are equal and opposite (-0.69 / +0.69). Engagement is clamped
+        # at 0 first because Reddit scores can be negative, which would put the
+        # denominator at or below zero.
+        "log_lift": math.log((max(med_after, 0) + 1) / (max(med_before, 0) + 1)),
     }
 
 
@@ -153,7 +163,9 @@ def _key(statistic: str) -> str:
         return "robust_lift"
     if statistic == "mean":
         return "lift"
-    raise ValueError(f"statistic must be 'median' or 'mean', got {statistic!r}")
+    if statistic == "log":
+        return "log_lift"
+    raise ValueError(f"statistic must be 'median', 'mean' or 'log', got {statistic!r}")
 
 
 def row_target(platform_lifts: dict[str, dict], statistic: str = TARGET_STATISTIC) -> float:

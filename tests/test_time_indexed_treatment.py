@@ -229,3 +229,41 @@ def test_matched_did_reports_windows_without_controls():
     did = matched_did(obs)
     assert did["treated_without_control"] == 1 and did["n_treated"] == 1
     assert abs(did["estimate"] - 1.0) < 1e-9
+
+
+# --- P3b: log-ratio lift and the median DiD ---------------------------------------
+
+import math  # noqa: E402
+
+
+def test_log_lift_is_symmetric_and_tames_huge_rises():
+    up = platform_lift([1.0], [3.0])        # median 1 -> 3: (3+1)/(1+1) = 2x
+    down = platform_lift([3.0], [1.0])      # and back
+    assert math.isclose(up["log_lift"], math.log(2)) and math.isclose(down["log_lift"], -math.log(2))
+    huge = platform_lift([0.0], [118.0])
+    assert huge["robust_lift"] == 118.0 and math.isclose(huge["log_lift"], math.log(119))
+
+
+def test_log_lift_survives_negative_reddit_scores():
+    """score + num_comments can be negative; the ratio form then divides by ~0."""
+    lift = platform_lift([-3.0], [5.0])
+    assert math.isfinite(lift["log_lift"]) and math.isclose(lift["log_lift"], math.log(6))
+
+
+def test_control_log_lift_matches_treated_log_lift():
+    rows = [(date(2026, 5, d), 10 * d, d) for d in (1, 10, 20)] + \
+           [(date(2026, 6, d), 30 * d, 2 * d) for d in (5, 15, 25)]
+    event = date(2026, 6, 1)
+    before, after = platform_engagement(_OneCreatorCursor(rows), "x", "instagram", event, 30)
+    treated = row_target({"instagram": platform_lift(before, after)}, statistic="log")
+    posts = {"instagram": {"x": [(d, a + b) for d, a, b in rows]}}
+    assert lift_from_posts(posts, "x", event, 30, statistic="log") == treated
+
+
+def test_median_did_ignores_one_extreme_control():
+    """The 2026-10-25 run: one control at +118.9 dragged the mean DiD to -1.0."""
+    obs = [_obs("t1", SPAN_A, 0.2, True)] + \
+          [_obs(f"c{i}", SPAN_A, 0.0, False) for i in range(8)] + [_obs("cx", SPAN_A, 118.9, False)]
+    did = matched_did(obs)
+    assert did["estimate"] < -10          # the mean is dragged
+    assert math.isclose(did["median_estimate"], 0.2)  # the median is not

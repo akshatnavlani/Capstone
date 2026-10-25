@@ -150,6 +150,11 @@ EPOCHS = 100
 # P3. Control observations on by default; GAIL_CONTROLS=0 is the treated-only
 # ablation (the P2 run: 15 exposed observations, no T = 0 data).
 USE_CONTROLS = os.environ.get("GAIL_CONTROLS", "1") != "0"
+# P3b. Which lift is the target. "log" = log((median_after+1)/(median_before+1)),
+# chosen for scale, before seeing any estimate on it. GAIL_LIFT=median restores
+# the ratio-minus-one lift of every earlier run.
+LIFT_STATISTIC = os.environ.get("GAIL_LIFT", "log")
+LIFT_KEY = {"log": "log_lift", "median": "robust_lift"}[LIFT_STATISTIC]
 LR = 1e-2
 SEED = 0
 
@@ -213,6 +218,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
             same_platform_rows += 1
             mean_lift = row_target(platform_lifts, statistic="mean")
             robust_lift = row_target(platform_lifts, statistic="median")
+            log_lift = row_target(platform_lifts, statistic="log")
             lifts_by_neighbour.setdefault(neighbour_id, []).append(robust_lift)
             detailed.append({
                 "event_creator_id": event_creator_id,
@@ -223,6 +229,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
                 "platform_lifts": platform_lifts,
                 "mean_lift": mean_lift,
                 "robust_lift": robust_lift,
+                "log_lift": log_lift,
             })
         else:
             cross_platform_only += 1
@@ -235,6 +242,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
                 "platform_lifts": {},
                 "mean_lift": None,
                 "robust_lift": None,
+                "log_lift": None,
             })
 
     # E2: cluster rows that measure the SAME engagement change before averaging.
@@ -791,7 +799,7 @@ def main() -> int:
     # P2. One observation per cluster (same clustering rule as E2), each
     # carrying the span of dates it measures.
     observations = [
-        o for o in build_observations(kept_rows, DEFAULT_WINDOW_DAYS, "robust_lift")
+        o for o in build_observations(kept_rows, DEFAULT_WINDOW_DAYS, LIFT_KEY)
         if o.neighbour_id in id_to_index
     ]
     n_obs = len(observations)
@@ -901,7 +909,9 @@ def main() -> int:
             windows.append((p["span"], dates, eligible))
         controls = build_control_observations(
             windows,
-            lambda cid, d: lift_from_posts(posts_by_platform, cid, d, DEFAULT_WINDOW_DAYS),
+            lambda cid, d: lift_from_posts(
+                posts_by_platform, cid, d, DEFAULT_WINDOW_DAYS, statistic=LIFT_STATISTIC
+            ),
             reserved_spans=reserved,
         )
         pass_by_span = {p["span"]: p for p in passes}
@@ -915,7 +925,8 @@ def main() -> int:
     observations = treated_obs + controls
     n_obs = len(observations)
 
-    print(f"\nP3: {len(treated_obs)} exposed + {len(controls)} control observations "
+    print(f"\nTarget: {LIFT_KEY} (GAIL_LIFT={LIFT_STATISTIC})")
+    print(f"P3: {len(treated_obs)} exposed + {len(controls)} control observations "
           f"(controls {'ON' if USE_CONTROLS else 'OFF -- GAIL_CONTROLS=0'})")
     for p in passes:
         n_t = sum(o.exposed for o in p["obs"])
@@ -933,6 +944,7 @@ def main() -> int:
     print(f"\nMatched DiD (no model): {did['estimate']:+.4f}  SE {did['se']:.4f}  "
           f"[{did['estimate'] - 1.96 * did['se']:+.4f}, {did['estimate'] + 1.96 * did['se']:+.4f}]  "
           f"over {did['n_treated']} exposed vs {did['n_control']} controls in {did['windows']} windows")
+    print(f"  median version (robust to single extreme creators): {did['median_estimate']:+.4f}")
     if did["treated_without_control"]:
         print(f"  {did['treated_without_control']} exposed observations had no control in their window "
               f"and are left out of this estimate")
@@ -994,13 +1006,13 @@ def main() -> int:
     # Final evaluation, per observation, each against its own window's treatment.
     model.eval()
     with torch.no_grad():
-        preds, _, final_prop = model.forward_multi(data, treatments)
+        preds, exposures, final_prop = model.forward_multi(data, treatments)
         # E12d. The counterfactual: exposure zeroed, embedding unchanged. Since P1
         # the embedding carries no treatment, so this is a real "no sponsored
         # neighbours" prediction.
         mu_unexposed = model.predict_unexposed(data)
         per_obs = []
-        for p, pred in zip(passes, preds):
+        for p, pred, expo in zip(passes, preds, exposures):
             tau_p = doubly_robust_effect(
                 pred, mu_unexposed, p["target"], p["interference"], final_prop
             )
@@ -1017,6 +1029,7 @@ def main() -> int:
                     "sq_err": float((pred[idx].item() - o.value) ** 2),
                     "propensity": float(final_prop[idx].item()),
                     "exposed": bool(p["has_sponsored"][idx]),
+                    "exposure": float(expo[idx].item()),
                     "mu_e_minus_mu_0": float((pred[idx] - mu_unexposed[idx]).item()),
                     "tau": float(tau_p[idx].item()),
                 })
@@ -1037,7 +1050,8 @@ def main() -> int:
         print("Exposed observations (sorted by sq_err descending):")
         for r in sorted(exposed_rows, key=lambda r: r["sq_err"], reverse=True):
             print(f"  {r['name'][:28]:28s} {r['span']} target={r['target']:+.3f} "
-                  f"pred={r['pred']:+.3f} sq_err={r['sq_err']:.3f} prop={r['propensity']:.3f}")
+                  f"pred={r['pred']:+.3f} exposure={r['exposure']:.3f} "
+                  f"sq_err={r['sq_err']:.3f} prop={r['propensity']:.3f}")
         print(f"Propensity stats: mean={final_prop.mean().item():.3f} min={final_prop.min().item():.3f} "
               f"max={final_prop.max().item():.3f}")
         if control_rows:
@@ -1064,7 +1078,8 @@ def main() -> int:
         print(f"Naive SE:                      {naive_se:.4f}")
         print(f"Rough 95% interval:            [{ate - 1.96 * naive_se:+.4f}, {ate + 1.96 * naive_se:+.4f}]")
         print(f"Mean tau on the {len(exposed_rows)} exposed:    {mean_tau_exposed:+.4f}")
-        print(f"Matched DiD (no model), for comparison: {did['estimate']:+.4f}  SE {did['se']:.4f}")
+        print(f"Matched DiD (no model), for comparison: {did['estimate']:+.4f}  SE {did['se']:.4f}"
+              f"  (median version {did['median_estimate']:+.4f})")
         print("  SEs ignore nuisance-model uncertainty and assume independent")
         print("  observations, so they understate the true width. Do not quote them bare.")
         tau_sorted = sorted(per_obs, key=lambda r: -abs(r["tau"]))
@@ -1133,6 +1148,7 @@ def main() -> int:
             "n_independent_observations": n_clusters,
             "dr_mode": "aipw",
             "in_sample": True,
+            "target": LIFT_KEY,
             "treatment_definition": (
                 "has_sponsored_neighbour within the observation's own measurement "
                 "window (P2); sponsorship = is_sponsored OR Instagram paid-partnership label"
