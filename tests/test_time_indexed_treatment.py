@@ -267,3 +267,26 @@ def test_median_did_ignores_one_extreme_control():
     did = matched_did(obs)
     assert did["estimate"] < -10          # the mean is dragged
     assert math.isclose(did["median_estimate"], 0.2)  # the median is not
+
+
+# --- P6: category-matched DiD ------------------------------------------------------
+
+
+def test_category_matching_compares_like_with_like():
+    """Athletes' engagement rose 1.0 this window regardless of exposure; fitness
+    creators' was flat. Pooled, the exposed athlete looks like +0.9 spillover;
+    matched within category, it is 0.0."""
+    cat = {"t_ath": "athlete", "c_ath": "athlete", "c_fit1": "fitness", "c_fit2": "fitness"}
+    obs = [_obs("t_ath", SPAN_A, 1.0, True), _obs("c_ath", SPAN_A, 1.0, False),
+           _obs("c_fit1", SPAN_A, 0.0, False), _obs("c_fit2", SPAN_A, 0.0, False)]
+    pooled = matched_did(obs)
+    matched = matched_did(obs, stratum_of=lambda o: cat[o.neighbour_id])
+    assert pooled["estimate"] > 0.6
+    assert abs(matched["estimate"]) < 1e-9 and matched["n_control"] == 1
+
+
+def test_category_matching_reports_exposed_without_same_category_control():
+    cat = {"t_team": "team", "c_fit": "fitness"}
+    obs = [_obs("t_team", SPAN_A, 1.0, True), _obs("c_fit", SPAN_A, 0.0, False)]
+    did = matched_did(obs, stratum_of=lambda o: cat[o.neighbour_id])
+    assert did["treated_without_control"] == 1 and did["n_treated"] == 0

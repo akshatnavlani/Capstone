@@ -155,6 +155,13 @@ USE_CONTROLS = os.environ.get("GAIL_CONTROLS", "1") != "0"
 # the ratio-minus-one lift of every earlier run.
 LIFT_STATISTIC = os.environ.get("GAIL_LIFT", "log")
 LIFT_KEY = {"log": "log_lift", "median": "robust_lift"}[LIFT_STATISTIC]
+# Event rule (team decision 2026-10-25): treated observations come only from
+# sponsorships by fitness / athleisure brands, because the product ranks creators
+# for those brands. Labels live in data/event_brand_labels.csv (yes / no /
+# unsure); "unsure" and unlabelled events are EXCLUDED and listed, never guessed.
+# GAIL_EVENTS=all reproduces the all-brands run (c8c94de), reported alongside.
+EVENT_RULE = os.environ.get("GAIL_EVENTS", "fitness")
+EVENT_LABELS_PATH = Path(__file__).resolve().parents[1] / "data" / "event_brand_labels.csv"
 LR = 1e-2
 SEED = 0
 
@@ -621,6 +628,25 @@ def load_brands(cur):
     return torch.stack(vecs), id_to_index
 
 
+def load_event_labels(path: Path) -> dict[str, dict]:
+    """content_id -> {brand, fitness, note} from the hand-labelled event file."""
+    import csv
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} not found; it is required for GAIL_EVENTS=fitness "
+            f"(set GAIL_EVENTS=all to run without it)"
+        )
+    with open(path, encoding="utf-8") as f:
+        return {
+            r["content_id"]: {
+                "brand": r["brand"],
+                "fitness": r["fitness"].strip().lower(),
+                "note": r.get("note", ""),
+            }
+            for r in csv.DictReader(f)
+        }
+
+
 def load_sponsorship_dates(cur) -> dict:
     """Dated sponsorship events per creator, for time-indexed treatment (P2).
 
@@ -698,6 +724,7 @@ def main() -> int:
             id_to_name[r["creator_id"]] = r["name"]
         creator_x = torch.stack(vecs)
         num_creators = creator_x.size(0)
+        id_to_category = {r["creator_id"]: r.get("category") or "other" for r in records}
         # edges from JSON
         with open(collab_path, encoding="utf-8") as f:
             collab_rows = _json.load(f)
@@ -726,7 +753,7 @@ def main() -> int:
         sponsors_index = torch.empty((2,0), dtype=torch.long)
         sponsored_by_index = torch.empty((2,0), dtype=torch.long)
     else:
-        creator_x, id_to_index, order, id_to_name, _ = build_creator_features(cur, extractor)
+        creator_x, id_to_index, order, id_to_name, id_to_category = build_creator_features(cur, extractor)
         num_creators = creator_x.size(0)
         print(f"Creator features: {num_creators} creators, dim {creator_x.shape[1]}")
 
@@ -786,6 +813,33 @@ def main() -> int:
     # P2b. Drop rows where the NEIGHBOUR ran their own sponsorship inside the
     # window: their lift mixes their own direct effect into the "spillover".
     lift_rows = [d for d in detailed if d["robust_lift"] is not None]
+
+    # Event rule: which sponsorships define a treated observation.
+    if EVENT_RULE == "fitness":
+        labels = load_event_labels(EVENT_LABELS_PATH)
+        kept_by_rule, off_rule, unlabelled = [], [], []
+        for d in lift_rows:
+            lab = labels.get(str(d["item_id"]))
+            if lab is None:
+                unlabelled.append(d)
+            elif lab["fitness"] == "yes":
+                kept_by_rule.append(d)
+            else:
+                d["excluded"] = f"event_rule:{lab['fitness']}:{lab['brand']}"
+                off_rule.append((d, lab))
+        print(f"\nEvent rule (fitness/athleisure brands only): kept {len(kept_by_rule)}/{len(lift_rows)} lift rows")
+        for d, lab in off_rule:
+            print(f"  excluded [{lab['fitness']:6s}] {lab['brand'][:22]:22s} event {str(d['event_date'])[:10]} "
+                  f"by {id_to_name.get(d['event_creator_id'], d['event_creator_id'])[:24]}")
+        for d in unlabelled:
+            d["excluded"] = "event_rule:unlabelled"
+            print(f"  !! UNLABELLED event {d['item_id']} ({d['event_platform']}) by "
+                  f"{id_to_name.get(d['event_creator_id'], d['event_creator_id'])[:24]} -- "
+                  f"add it to data/event_brand_labels.csv")
+        lift_rows = kept_by_rule
+    else:
+        print(f"\nEvent rule: ALL brands (GAIL_EVENTS={EVENT_RULE})")
+
     kept_rows, self_sponsored = drop_self_sponsored(lift_rows, spons_dates, DEFAULT_WINDOW_DAYS)
     for d in self_sponsored:
         d["excluded"] = "neighbour_own_sponsorship_in_window"
@@ -945,6 +999,18 @@ def main() -> int:
           f"[{did['estimate'] - 1.96 * did['se']:+.4f}, {did['estimate'] + 1.96 * did['se']:+.4f}]  "
           f"over {did['n_treated']} exposed vs {did['n_control']} controls in {did['windows']} windows")
     print(f"  median version (robust to single extreme creators): {did['median_estimate']:+.4f}")
+    # P6a. Compare like with like: exposed vs controls of the SAME creator
+    # category in the same window (athletes with athletes, teams with teams).
+    did_cat = matched_did(observations, stratum_of=lambda o: id_to_category.get(o.neighbour_id, "other"))
+    print(f"Category-matched DiD:   {did_cat['estimate']:+.4f}  SE {did_cat['se']:.4f}  "
+          f"(median {did_cat['median_estimate']:+.4f})  over {did_cat['n_treated']} exposed vs "
+          f"{did_cat['n_control']} controls; {did_cat['treated_without_control']} exposed had no "
+          f"same-category control")
+    cats = {}
+    for o in treated_obs:
+        cats.setdefault(id_to_category.get(o.neighbour_id, "other"), 0)
+        cats[id_to_category.get(o.neighbour_id, "other")] += 1
+    print(f"  exposed by category: {cats}")
     if did["treated_without_control"]:
         print(f"  {did['treated_without_control']} exposed observations had no control in their window "
               f"and are left out of this estimate")
@@ -1080,6 +1146,25 @@ def main() -> int:
         print(f"Mean tau on the {len(exposed_rows)} exposed:    {mean_tau_exposed:+.4f}")
         print(f"Matched DiD (no model), for comparison: {did['estimate']:+.4f}  SE {did['se']:.4f}"
               f"  (median version {did['median_estimate']:+.4f})")
+
+        # P6b. Overlap-trimmed DiD: keep only controls whose propensity falls
+        # inside the exposed observations' propensity range, i.e. creators the
+        # model finds about as likely to be exposed. Controls the model is sure
+        # are unexposed are a different kind of creator and drop out.
+        lo = min(r["propensity"] for r in exposed_rows)
+        hi = max(r["propensity"] for r in exposed_rows)
+        prop_of = {(r["creator_id"], r["span"]): r["propensity"] for r in per_obs}
+        trimmed = [
+            o for o in observations
+            if o.exposed or lo <= prop_of[(o.neighbour_id, f"{o.start}..{o.end}")] <= hi
+        ]
+        did_trim = matched_did(trimmed)
+        n_ctrl_kept = sum(not o.exposed for o in trimmed)
+        print(f"Overlap-trimmed DiD:    {did_trim['estimate']:+.4f}  SE {did_trim['se']:.4f}  "
+              f"(median {did_trim['median_estimate']:+.4f})  controls kept {n_ctrl_kept}/{len(controls)} "
+              f"with propensity in [{lo:.3f}, {hi:.3f}]; {did_trim['treated_without_control']} "
+              f"exposed left without a control")
+        print(f"Category-matched DiD:   {did_cat['estimate']:+.4f}  SE {did_cat['se']:.4f}")
         print("  SEs ignore nuisance-model uncertainty and assume independent")
         print("  observations, so they understate the true width. Do not quote them bare.")
         tau_sorted = sorted(per_obs, key=lambda r: -abs(r["tau"]))
@@ -1158,6 +1243,9 @@ def main() -> int:
             "n_control": len(controls),
             "mean_tau_exposed": mean_tau_exposed,
             "matched_did": did,
+            "matched_did_category": did_cat,
+            "matched_did_overlap_trimmed": did_trim,
+            "event_rule": EVENT_RULE,
             "per_observation_tau": tau_sorted,
             "se_caveat": (
                 "Assumes independent observations and ignores uncertainty in the "

@@ -233,7 +233,10 @@ def build_control_observations(
     return out
 
 
-def matched_did(observations: Iterable[Observation]) -> dict:
+def matched_did(
+    observations: Iterable[Observation],
+    stratum_of: Callable[[Observation], str] | None = None,
+) -> dict:
     """Calendar-matched difference-in-differences, no model involved.
 
     Each lift is already a before/after change. Within each window, the effect
@@ -248,10 +251,16 @@ def matched_did(observations: Iterable[Observation]) -> dict:
 
     Windows with no control are left out and counted, never filled with zero.
     `median_estimate` repeats the calculation with within-window medians.
+
+    P6. `stratum_of`, if given, matches within (window, stratum) cells instead
+    of windows -- e.g. creator category, so athletes are compared with athletes.
+    An exposed observation whose cell holds no control is reported in
+    `treated_without_control`, not compared with a different kind of creator.
     """
-    by_span: dict[tuple[date, date], list[Observation]] = defaultdict(list)
+    by_span: dict[tuple, list[Observation]] = defaultdict(list)
     for o in observations:
-        by_span[o.span].append(o)
+        key = (o.span, stratum_of(o)) if stratum_of else (o.span,)
+        by_span[key].append(o)
 
     def _var(xs: list[float]) -> float | None:
         if len(xs) < 2:
