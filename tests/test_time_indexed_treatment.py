@@ -129,3 +129,103 @@ def test_forward_multi_refuses_leaky_backbone():
     except RuntimeError:
         return
     raise AssertionError("forward_multi must refuse a backbone that sees treatment")
+
+
+# --- P3: control observations --------------------------------------------------
+
+from ml.engagement_lift import lift_from_posts, platform_engagement, platform_lift, row_target  # noqa: E402
+from ml.time_indexed_treatment import Observation, build_control_observations, matched_did  # noqa: E402
+
+
+class _OneCreatorCursor:
+    def __init__(self, rows):
+        self.rows = rows
+
+    def execute(self, *a, **k):
+        pass
+
+    def fetchall(self):
+        return self.rows
+
+
+def test_control_lift_is_measured_exactly_like_treated_lift():
+    """Treated rows go through platform_engagement (one query each); controls go
+    through lift_from_posts (bulk). Any difference would show up as 'spillover'."""
+    rows = [(date(2026, 5, d), 10 * d, d) for d in (1, 10, 20)] + \
+           [(date(2026, 6, d), 30 * d, 2 * d) for d in (5, 15, 25)]
+    event = date(2026, 6, 1)
+    before, after = platform_engagement(_OneCreatorCursor(rows), "x", "instagram", event, 30)
+    treated = row_target({"instagram": platform_lift(before, after)})
+    posts = {"instagram": {"x": [(d, a + b) for d, a, b in rows]}}
+    assert lift_from_posts(posts, "x", event, 30) == treated
+
+
+def test_lift_from_posts_returns_none_without_both_sides():
+    posts = {"instagram": {"x": [(date(2026, 5, 20), 5)]}}
+    assert lift_from_posts(posts, "x", date(2026, 6, 1), 30) is None
+    assert lift_from_posts(posts, "missing", date(2026, 6, 1), 30) is None
+
+
+SPAN_A = (date(2026, 5, 2), date(2026, 7, 1))
+SPAN_B = (date(2026, 6, 1), date(2026, 7, 31))  # overlaps A
+SPAN_C = (date(2026, 9, 1), date(2026, 10, 31))
+
+
+def test_controls_are_measured_at_the_treated_dates():
+    seen = []
+
+    def lift(cid, d):
+        seen.append((cid, d))
+        return 1.0
+
+    out = build_control_observations([(SPAN_A, [date(2026, 6, 1)], ["c1"])], lift)
+    assert seen == [("c1", date(2026, 6, 1))]
+    assert len(out) == 1 and not out[0].exposed and out[0].span == SPAN_A
+
+
+def test_a_control_creator_never_reuses_overlapping_windows():
+    """Same independence rule as E2: overlapping windows are one observation."""
+    out = build_control_observations(
+        [(SPAN_B, [date(2026, 7, 1)], ["c1"]), (SPAN_A, [date(2026, 6, 1)], ["c1"]),
+         (SPAN_C, [date(2026, 10, 1)], ["c1"])],
+        lambda cid, d: 1.0,
+    )
+    assert [o.span for o in out] == [SPAN_A, SPAN_C]  # earliest wins, B skipped
+
+
+def test_controls_avoid_the_creators_own_treated_windows():
+    out = build_control_observations(
+        [(SPAN_B, [date(2026, 7, 1)], ["c1", "c2"])], lambda cid, d: 1.0,
+        reserved_spans={"c1": [SPAN_A]},
+    )
+    assert [o.neighbour_id for o in out] == ["c2"]
+
+
+def test_controls_without_a_measurable_lift_are_skipped_not_zeroed():
+    out = build_control_observations([(SPAN_A, [date(2026, 6, 1)], ["c1"])], lambda c, d: None)
+    assert out == []
+
+
+def _obs(cid, span, value, exposed):
+    return Observation(cid, value, span[0], span[1], 1, f"{cid}#x", (), exposed)
+
+
+def test_matched_did_compares_within_window():
+    """Window A: everyone rose by ~1 (season), exposed by 1.5 -> effect 0.5.
+    Window C: flat season, exposed +0.5 -> effect 0.5. An UNMATCHED comparison
+    would mix the seasons; the matched one recovers 0.5."""
+    obs = [
+        _obs("t1", SPAN_A, 1.5, True), _obs("c1", SPAN_A, 0.9, False), _obs("c2", SPAN_A, 1.1, False),
+        _obs("t2", SPAN_C, 0.5, True), _obs("c3", SPAN_C, -0.1, False), _obs("c4", SPAN_C, 0.1, False),
+    ]
+    did = matched_did(obs)
+    assert abs(did["estimate"] - 0.5) < 1e-9
+    assert did["n_treated"] == 2 and did["n_control"] == 4 and did["windows"] == 2
+    assert did["se"] > 0
+
+
+def test_matched_did_reports_windows_without_controls():
+    obs = [_obs("t1", SPAN_A, 1.0, True), _obs("t2", SPAN_C, 2.0, True), _obs("c1", SPAN_C, 1.0, False)]
+    did = matched_did(obs)
+    assert did["treated_without_control"] == 1 and did["n_treated"] == 1
+    assert abs(did["estimate"] - 1.0) < 1e-9

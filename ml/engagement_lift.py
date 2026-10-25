@@ -187,3 +187,52 @@ def well_measured(platform_lifts: dict[str, dict], min_posts: int = DEFAULT_MIN_
         v["n_before"] >= min_posts and v["n_after"] >= min_posts
         for v in platform_lifts.values()
     )
+
+# --- P3: bulk access for control observations --------------------------------
+#
+# Control observations need a lift for hundreds of creators at each treated
+# window's event dates. `platform_engagement` issues one query per (creator,
+# platform, date), which over the Supabase pooler would be tens of thousands of
+# round trips. These two functions fetch every platform's posts once and compute
+# the SAME lift from memory: same "both columns non-null" filter, same summed
+# engagement, same bounded window, same per-platform median lift averaged across
+# platforms. Treated and control lifts must be measured identically or their
+# difference measures the method, not the spillover.
+
+
+def load_platform_posts(cur, platform: str) -> dict[str, list[tuple]]:
+    """All fully-measured posts on one platform: creator_id -> [(date, engagement)]."""
+    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
+    cur.execute(
+        f"select creator_id::text, {date_col}, {e1}, {e2} "
+        f"from {table} where creator_id is not null and {date_col} is not null "
+        f"and {e1} is not null and {e2} is not null order by {date_col}"
+    )
+    out: dict[str, list[tuple]] = {}
+    for creator_id, d, e1v, e2v in cur.fetchall():
+        out.setdefault(creator_id, []).append((d, e1v + e2v))
+    return out
+
+
+def lift_from_posts(
+    posts_by_platform: dict[str, dict[str, list[tuple]]],
+    creator_id: str,
+    event_date,
+    window_days: int = DEFAULT_WINDOW_DAYS,
+    statistic: str = TARGET_STATISTIC,
+) -> float | None:
+    """`row_target` for one (creator, event date) from prefetched posts.
+
+    Returns None when no platform has posts on both sides -- the same rows the
+    treated path skips -- rather than a fabricated zero.
+    """
+    platform_lifts = {}
+    for platform, by_creator in posts_by_platform.items():
+        before, after = windowed_engagement(
+            by_creator.get(creator_id, ()), event_date, window_days
+        )
+        if before and after:
+            platform_lifts[platform] = platform_lift(before, after)
+    if not platform_lifts:
+        return None
+    return row_target(platform_lifts, statistic=statistic)

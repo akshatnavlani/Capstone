@@ -43,7 +43,6 @@ import sys
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 
 # ---------------------------------------------------------------------------
 # Env handling — load .env like Track A's orchestrator (per-worktree .env)
@@ -90,6 +89,8 @@ from ml.engagement_lift import (  # noqa: E402
     platform_engagement,
     platform_lift,
     row_target,
+    lift_from_posts,
+    load_platform_posts,
 )
 from ml.feature_scaling import compute_feature_scaler  # noqa: E402
 from ml.gail_model import GAILModel  # noqa: E402
@@ -100,6 +101,8 @@ from ml.target_clustering import (  # noqa: E402
     summarize,
 )
 from ml.time_indexed_treatment import (  # noqa: E402
+    build_control_observations,
+    matched_did,
     build_observations,
     drop_self_sponsored,
     group_by_span,
@@ -144,6 +147,9 @@ CREATOR_CATEGORIES = (
 HIDDEN_CHANNELS = int(os.environ.get("GAIL_HIDDEN_CHANNELS", "16"))
 HEADS = 2
 EPOCHS = 100
+# P3. Control observations on by default; GAIL_CONTROLS=0 is the treated-only
+# ablation (the P2 run: 15 exposed observations, no T = 0 data).
+USE_CONTROLS = os.environ.get("GAIL_CONTROLS", "1") != "0"
 LR = 1e-2
 SEED = 0
 
@@ -872,6 +878,65 @@ def main() -> int:
             print(f"     {id_to_name.get(o.neighbour_id, o.neighbour_id)[:28]:28s} {o.start}..{o.end}")
         print("     pair_count's edge (handle match) is missing from the graph's edges")
 
+    # P3. Control observations: creators with NO sponsored neighbour and NO own
+    # sponsorship in a window, measured around the SAME event dates with the
+    # same lift. They join that window's pass, so they share its treatment
+    # vector and enter the loss with interference = 0 -- the first T = 0 data
+    # the model has seen. GAIL_CONTROLS=0 recovers the P2 (treated-only) run.
+    treated_obs = list(observations)
+    controls = []
+    if USE_CONTROLS:
+        posts_by_platform = {pl: load_platform_posts(cur, pl) for pl in PLATFORM_TABLES}
+        index_to_id = {v: k for k, v in id_to_index.items()}
+        reserved: dict[str, list] = {}
+        for o in treated_obs:
+            reserved.setdefault(o.neighbour_id, []).append(o.span)
+        windows = []
+        for p in passes:
+            eligible = [
+                index_to_id[j] for j in range(num_creators_t)
+                if j in index_to_id and not bool(p["has_sponsored"][j]) and not bool(p["treatment"][j])
+            ]
+            dates = sorted({d for o in p["obs"] for d in o.event_dates})
+            windows.append((p["span"], dates, eligible))
+        controls = build_control_observations(
+            windows,
+            lambda cid, d: lift_from_posts(posts_by_platform, cid, d, DEFAULT_WINDOW_DAYS),
+            reserved_spans=reserved,
+        )
+        pass_by_span = {p["span"]: p for p in passes}
+        for c in controls:
+            p = pass_by_span[c.span]
+            idx = id_to_index[c.neighbour_id]
+            assert not p["mask"][idx], "a creator appears twice in one window"
+            p["mask"][idx] = True
+            p["target"][idx] = c.value
+            p["obs"].append(c)
+    observations = treated_obs + controls
+    n_obs = len(observations)
+
+    print(f"\nP3: {len(treated_obs)} exposed + {len(controls)} control observations "
+          f"(controls {'ON' if USE_CONTROLS else 'OFF -- GAIL_CONTROLS=0'})")
+    for p in passes:
+        n_t = sum(o.exposed for o in p["obs"])
+        print(f"  {p['span'][0]}..{p['span'][1]}  exposed={n_t:<2} control={len(p['obs']) - n_t}")
+    if controls:
+        cv = sorted(c.value for c in controls)
+        print(f"  control lift: min={cv[0]:+.3f} median={statistics.median(cv):+.3f} "
+              f"max={cv[-1]:+.3f}  (exposed median "
+              f"{statistics.median(o.value for o in treated_obs):+.3f})")
+
+    # Model-free check, computed before any training: within each window,
+    # exposed lift minus control lift. If the GNN's estimate and this disagree
+    # wildly, believe this one first.
+    did = matched_did(observations)
+    print(f"\nMatched DiD (no model): {did['estimate']:+.4f}  SE {did['se']:.4f}  "
+          f"[{did['estimate'] - 1.96 * did['se']:+.4f}, {did['estimate'] + 1.96 * did['se']:+.4f}]  "
+          f"over {did['n_treated']} exposed vs {did['n_control']} controls in {did['windows']} windows")
+    if did["treated_without_control"]:
+        print(f"  {did['treated_without_control']} exposed observations had no control in their window "
+              f"and are left out of this estimate")
+
     # E10. Bot scores, reported not enforced (see load_bot_scores).
     bot_scores = load_bot_scores(cur, id_to_index)
     flagged = {cid for cid, v in bot_scores.items() if v["is_bot_flagged"]}
@@ -943,6 +1008,7 @@ def main() -> int:
                 idx = id_to_index[o.neighbour_id]
                 per_obs.append({
                     "creator_id": o.neighbour_id,
+                    "kind": "exposed" if o.exposed else "control",
                     "name": id_to_name.get(o.neighbour_id, o.neighbour_id),
                     "span": f"{o.start}..{o.end}",
                     "rows": o.n_rows,
@@ -963,33 +1029,48 @@ def main() -> int:
         print(f"\n=== Prod training result (N={n_obs} observations, {EPOCHS} epochs) ===")
         print(f"MSE trained: {mse:.4f}  baseline (always 0): {baseline_mse:.4f}  "
               f"improvement: {(baseline_mse - mse) / max(baseline_mse, 1e-12) * 100:.1f}%")
-        print("Per-observation (sorted by sq_err descending):")
-        for r in per_node_sorted:
+        exposed_rows = [r for r in per_obs if r["kind"] == "exposed"]
+        control_rows = [r for r in per_obs if r["kind"] == "control"]
+        if control_rows:
+            c_mse = statistics.mean(r["sq_err"] for r in control_rows)
+            print(f"Control observations: {len(control_rows)}, MSE {c_mse:.4f}")
+        print("Exposed observations (sorted by sq_err descending):")
+        for r in sorted(exposed_rows, key=lambda r: r["sq_err"], reverse=True):
             print(f"  {r['name'][:28]:28s} {r['span']} target={r['target']:+.3f} "
                   f"pred={r['pred']:+.3f} sq_err={r['sq_err']:.3f} prop={r['propensity']:.3f}")
         print(f"Propensity stats: mean={final_prop.mean().item():.3f} min={final_prop.min().item():.3f} "
               f"max={final_prop.max().item():.3f}")
-        gap = statistics.mean(abs(r["mu_e_minus_mu_0"]) for r in per_obs)
-        print(f"Mean |mu(e,X) - mu(0,X)| over observations: {gap:.4f}  "
-              f"(was 0.027 before P1; near zero means the head ignores exposure)")
+        if control_rows:
+            print(f"  propensity on exposed obs: mean "
+                  f"{statistics.mean(r['propensity'] for r in exposed_rows):.3f}; on controls: mean "
+                  f"{statistics.mean(r['propensity'] for r in control_rows):.3f}")
+        gap = statistics.mean(abs(r["mu_e_minus_mu_0"]) for r in exposed_rows)
+        print(f"Mean |mu(e,X) - mu(0,X)| on exposed observations: {gap:.4f}  "
+              f"(0.017 without controls; near zero means the head ignores exposure)")
 
-        # In-sample AIPW effect, equal weight per observation. Still an
-        # in-sample number: cross-fitting (P5) is what makes it quotable.
+        # In-sample AIPW. Two summaries: over every observation (the AIPW ATE,
+        # which the controls dominate numerically) and over the exposed ones,
+        # which is the population the spillover question is about. Still
+        # in-sample: cross-fitting (P5) is what makes either quotable.
         taus = torch.tensor([r["tau"] for r in per_obs])
         ate = float(taus.mean().item())
         n_clusters = n_obs
         naive_se = float(taus.std(unbiased=True).item() / n_obs ** 0.5) if n_obs > 1 else float("nan")
+        tau_exp = torch.tensor([r["tau"] for r in exposed_rows])
+        mean_tau_exposed = float(tau_exp.mean().item())
 
         print("\n=== Causal estimate (AIPW spillover effect, in-sample) ===")
-        print(f"ATE (per observation):  {ate:+.4f}")
-        print(f"Naive SE:               {naive_se:.4f}   over N={n_obs} independent observations")
-        print(f"Rough 95% interval:     [{ate - 1.96 * naive_se:+.4f}, {ate + 1.96 * naive_se:+.4f}]")
-        print("  SE ignores nuisance-model uncertainty and assumes independent")
-        print("  observations, so it understates the true width. Do not quote it bare.")
+        print(f"ATE (all {n_obs} observations): {ate:+.4f}")
+        print(f"Naive SE:                      {naive_se:.4f}")
+        print(f"Rough 95% interval:            [{ate - 1.96 * naive_se:+.4f}, {ate + 1.96 * naive_se:+.4f}]")
+        print(f"Mean tau on the {len(exposed_rows)} exposed:    {mean_tau_exposed:+.4f}")
+        print(f"Matched DiD (no model), for comparison: {did['estimate']:+.4f}  SE {did['se']:.4f}")
+        print("  SEs ignore nuisance-model uncertainty and assume independent")
+        print("  observations, so they understate the true width. Do not quote them bare.")
         tau_sorted = sorted(per_obs, key=lambda r: -abs(r["tau"]))
-        print("Per-observation effect (|tau| descending):")
-        for r in tau_sorted:
-            print(f"  {r['name'][:28]:28s} {r['span']} tau={r['tau']:+.3f}")
+        print("Largest per-observation effects (|tau| descending, top 15):")
+        for r in tau_sorted[:15]:
+            print(f"  {r['kind']:7s} {r['name'][:28]:28s} {r['span']} tau={r['tau']:+.3f}")
 
         # E12e. The learned transmission shares: which relation carries
         # spillover. This is an explainability claim in the write-up and no
@@ -1057,6 +1138,10 @@ def main() -> int:
                 "window (P2); sponsorship = is_sponsored OR Instagram paid-partnership label"
             ),
             "excluded_self_sponsored_rows": len(self_sponsored),
+            "n_exposed": len(treated_obs),
+            "n_control": len(controls),
+            "mean_tau_exposed": mean_tau_exposed,
+            "matched_did": did,
             "per_observation_tau": tau_sorted,
             "se_caveat": (
                 "Assumes independent observations and ignores uncertainty in the "
@@ -1065,7 +1150,8 @@ def main() -> int:
         },
         "observations": [
             {"creator_id": o.neighbour_id, "start": str(o.start), "end": str(o.end),
-             "rows": o.n_rows, "value": o.value, "cluster_id": o.cluster_id}
+             "rows": o.n_rows, "value": o.value, "cluster_id": o.cluster_id,
+             "exposed": o.exposed}
             for o in observations
         ],
         "transmission_shares": beta,
