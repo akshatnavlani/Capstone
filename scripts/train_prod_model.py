@@ -37,6 +37,7 @@ import json
 import math
 import os
 import statistics
+from datetime import timedelta
 import subprocess
 import sys
 from pathlib import Path
@@ -97,6 +98,13 @@ from ml.target_clustering import (  # noqa: E402
     cluster_events,
     per_creator_targets,
     summarize,
+)
+from ml.time_indexed_treatment import (  # noqa: E402
+    build_observations,
+    drop_self_sponsored,
+    group_by_span,
+    sponsorship_dates,
+    treatment_in_span,
 )
 from ml.schema import (  # noqa: E402
     BRAND_METADATA_DIM,
@@ -599,14 +607,30 @@ def load_brands(cur):
     return torch.stack(vecs), id_to_index
 
 
-def load_treatment(cur, id_to_index: dict[str, int], num_creators: int):
-    cur.execute("select distinct creator_id::text from creator_sponsorship_events")
-    sponsored = {r[0] for r in cur.fetchall()}
-    t = torch.zeros(num_creators, dtype=torch.float32)
-    for cid in sponsored:
-        if cid in id_to_index:
-            t[id_to_index[cid]] = 1.0
-    return t
+def load_sponsorship_dates(cur) -> dict:
+    """Dated sponsorship events per creator, for time-indexed treatment (P2).
+
+    Uses the SAME event definition as Track A's pair_count (Clause 1): on
+    Instagram, `is_sponsored OR has_paid_partnership_label`. The previous
+    `load_treatment` read `creator_sponsorship_events`, which uses
+    `is_sponsored` only, so a creator sponsored only via Instagram's native
+    label could generate training pairs while having T = 0. One definition now
+    drives both. P0 found the label-carrying events 33/33 genuine.
+    """
+    cur.execute(
+        """
+        select creator_id::text, posted_at from instagram_posts
+         where (is_sponsored or has_paid_partnership_label)
+           and posted_at is not null and creator_id is not null
+        union all
+        select creator_id::text, published_at from youtube_videos
+         where is_sponsored and published_at is not null and creator_id is not null
+        union all
+        select creator_id::text, posted_at from reddit_posts
+         where is_sponsored and posted_at is not null and creator_id is not null
+        """
+    )
+    return sponsorship_dates(cur.fetchall())
 
 
 def main() -> int:
@@ -733,23 +757,56 @@ def main() -> int:
     except Exception as e:
         print(f"Warning: sponsorship edges build failed: {e}")
 
-    treatment = load_treatment(cur, id_to_index, num_creators)
-    n_sponsored = int(treatment.sum().item())
-    print(f"Treatment: {n_sponsored}/{num_creators} creators have is_sponsored event")
+    # P2. Dated sponsorship events, one definition shared with pair_count.
+    spons_dates = load_sponsorship_dates(cur)
+    ever = [c for c in spons_dates if c in id_to_index]
+    print(f"Sponsorship events: {sum(len(v) for v in spons_dates.values())} dated; "
+          f"{len(ever)}/{num_creators} creators sponsored at some point")
 
-    # Targets from canonical pair_count + platform_engagement (both-engagement-cols fix)
-    target, lifts_by_neighbour, pair_summary, detailed, sample_weight = build_targets_from_canonical(cur, id_to_index, num_creators)
-    labeled_idx = [id_to_index[cid] for cid in lifts_by_neighbour if cid in id_to_index]
-    labeled_ids = [cid for cid in lifts_by_neighbour if cid in id_to_index]
-    print(f"Labeled creator-nodes (distinct neighbours with same-platform lift): {len(labeled_idx)}")
-    for cid, lifts in lifts_by_neighbour.items():
-        if cid in id_to_index:
-            print(f"  {id_to_name.get(cid, cid)[:30]:30s} N={len(lifts)} median_lift={statistics.mean(lifts):+.4f}")
+    # Targets from canonical pair_count + platform_engagement (both-engagement-cols fix).
+    # The per-creator target it returns is superseded by observations below.
+    _, lifts_by_neighbour, pair_summary, detailed, _ = build_targets_from_canonical(
+        cur, id_to_index, num_creators
+    )
 
-    if not labeled_idx:
-        print("ERROR: no labeled nodes — cannot train")
+    # P2b. Drop rows where the NEIGHBOUR ran their own sponsorship inside the
+    # window: their lift mixes their own direct effect into the "spillover".
+    lift_rows = [d for d in detailed if d["robust_lift"] is not None]
+    kept_rows, self_sponsored = drop_self_sponsored(lift_rows, spons_dates, DEFAULT_WINDOW_DAYS)
+    for d in self_sponsored:
+        d["excluded"] = "neighbour_own_sponsorship_in_window"
+    print(f"\nP2b: dropped {len(self_sponsored)}/{len(lift_rows)} lift rows -- the neighbour "
+          f"ran their own sponsorship within +/-{DEFAULT_WINDOW_DAYS}d of the event")
+    for d in self_sponsored:
+        print(f"  dropped  {id_to_name.get(d['neighbour_id'], d['neighbour_id'])[:28]:28s} "
+              f"event {str(d['event_date'])[:10]} by "
+              f"{id_to_name.get(d['event_creator_id'], d['event_creator_id'])[:28]}")
+
+    # P2. One observation per cluster (same clustering rule as E2), each
+    # carrying the span of dates it measures.
+    observations = [
+        o for o in build_observations(kept_rows, DEFAULT_WINDOW_DAYS, "robust_lift")
+        if o.neighbour_id in id_to_index
+    ]
+    n_obs = len(observations)
+    labeled_ids = sorted({o.neighbour_id for o in observations})
+    labeled_idx = [id_to_index[c] for c in labeled_ids]
+    print(f"\nObservations: {n_obs} independent, across {len(labeled_ids)} creators")
+    for o in observations:
+        print(f"  {id_to_name.get(o.neighbour_id, o.neighbour_id)[:28]:28s} "
+              f"{o.start}..{o.end}  rows={o.n_rows:<2} lift={o.value:+.4f}")
+
+    if not observations:
+        print("ERROR: no observations left -- cannot train")
         conn.close()
         return 1
+
+    # Per-creator target, kept only for the checkpoint record and inference
+    # display. Training no longer uses it: it supervises observations.
+    target = torch.zeros(num_creators, dtype=torch.float32)
+    for cid in labeled_ids:
+        vals = [o.value for o in observations if o.neighbour_id == cid]
+        target[id_to_index[cid]] = sum(vals) / len(vals)
 
     # Feature normalization — per-dim z-score, saved for inference
     mean, std = compute_feature_scaler(creator_x)
@@ -759,41 +816,62 @@ def main() -> int:
     print(f"Feature scaler: mean abs {mean.abs().mean():.4f}, std mean {std.mean():.4f} "
           f"(propensity head will receive normalized features — fixes saturation)")
 
-    # Training — single model on ALL pairs
     from ml.causal_regularization import doubly_robust_effect, has_sponsored_neighbor
     from ml.gail_loss import GAILLossWeights, compute_gail_loss
 
     torch.manual_seed(SEED)
     model = GAILModel(creator_feature_dim=CREATOR_FEATURE_DIM, hidden_channels=HIDDEN_CHANNELS, heads=HEADS)
 
-    # Use full mask for supervised term (all labeled nodes)
     num_creators_t = data["creator"].x.size(0)
-    train_mask = torch.zeros(num_creators_t, dtype=torch.bool)
-    train_mask[labeled_idx] = True
-
     collab_edge_index = data["creator", "collaborates_with", "creator"].edge_index
     collab_edge_weight = data["creator", "collaborates_with", "creator"].edge_attr
 
     # E12a. The consistency penalty must see every relation exposure travels
-    # through. It used to be built from `collaborates_with` alone, but since E6
-    # exposure also propagates over `co_occurs_with` -- so a creator exposed
-    # ONLY through co-occurrence was given real exposure by the exposure module
-    # and then penalised toward zero prediction by L_consistency. The loss was
-    # fighting the model, on most of the exposed nodes: there are ~1,400
-    # co-occurrence edges against ~100 resolved collaboration edges.
+    # through (collaborates_with AND co_occurs_with), or the loss penalises
+    # exposure the model was built to give.
     interference_edge_index = torch.cat(
         [collab_edge_index, data["creator", "co_occurs_with", "creator"].edge_index],
         dim=1,
     )
-    has_sponsored = has_sponsored_neighbor(interference_edge_index, treatment)
 
-    # E12b. `treatment` (own sponsorship) is what PROPAGATES: the model's
-    # exposure module sums it over neighbours, so the forward pass keeps it.
-    # The LOSS needs something different -- the interference indicator, "does
-    # this creator have a sponsored neighbour" -- because that is the exposure
-    # whose selection the propensity model corrects for. Passing own-sponsorship
-    # there trained the propensity head to predict P(this creator is sponsored)
-    # and made the DR weights T/pi divide by the wrong probability.
+    # P2. One treatment vector per distinct observation span. E12b still holds
+    # within each: own sponsorship PROPAGATES through the exposure module, and
+    # the loss uses the interference indicator ("has a sponsored neighbour")
+    # derived from it -- now for that window only.
+    passes = []
+    for (start, end), group in sorted(group_by_span(observations).items()):
+        t_p = treatment_in_span(spons_dates, id_to_index, num_creators_t, start, end)
+        has_p = has_sponsored_neighbor(interference_edge_index, t_p)
+        mask_p = torch.zeros(num_creators_t, dtype=torch.bool)
+        target_p = torch.zeros(num_creators_t, dtype=torch.float32)
+        for o in group:
+            idx = id_to_index[o.neighbour_id]
+            mask_p[idx] = True
+            target_p[idx] = o.value
+        passes.append({
+            "span": (start, end), "obs": group, "treatment": t_p,
+            "has_sponsored": has_p, "interference": has_p.to(torch.float32),
+            "mask": mask_p, "target": target_p,
+        })
+    n_spons = [int(p["treatment"].sum().item()) for p in passes]
+    print(f"\nP2: {len(passes)} treatment windows; sponsored creators per window "
+          f"min={min(n_spons)} median={statistics.median(n_spons)} max={max(n_spons)} "
+          f"(all-time: {len(ever)})")
+
+    # Each observation exists because a collaborator was sponsored inside its
+    # window, so it should be exposed. If not, the graph lacks the edge
+    # pair_count used, and the lift is being read as an UNEXPOSED outcome.
+    not_exposed = [
+        o for p in passes for o in p["obs"]
+        if not bool(p["has_sponsored"][id_to_index[o.neighbour_id]])
+    ]
+    if not_exposed:
+        print(f"  !! {len(not_exposed)}/{n_obs} observations have NO sponsored neighbour "
+              f"in their own window in the graph:")
+        for o in not_exposed:
+            print(f"     {id_to_name.get(o.neighbour_id, o.neighbour_id)[:28]:28s} {o.start}..{o.end}")
+        print("     pair_count's edge (handle match) is missing from the graph's edges")
+
     # E10. Bot scores, reported not enforced (see load_bot_scores).
     bot_scores = load_bot_scores(cur, id_to_index)
     flagged = {cid for cid, v in bot_scores.items() if v["is_bot_flagged"]}
@@ -806,30 +884,40 @@ def main() -> int:
         print("     their measured lift carries the same weight as everyone else's; "
               "decide deliberately whether to keep them")
 
-    interference = has_sponsored.to(torch.float32)
-    print(f"Interference: {int(interference.sum().item())}/{num_creators_t} creators have "
-          f"a sponsored neighbour (own-sponsorship: {n_sponsored})")
+    # Treatment for inference/ranking: who is sponsored NOW, i.e. in the last
+    # window up to the latest event in the data -- the same kind of quantity
+    # the model was trained on, rather than an all-time flag.
+    latest = max(d for v in spons_dates.values() for d in v)
+    treatment = treatment_in_span(
+        spons_dates, id_to_index, num_creators_t,
+        latest - timedelta(days=DEFAULT_WINDOW_DAYS), latest,
+    )
+    print(f"Inference treatment: {int(treatment.sum().item())} creators sponsored in the "
+          f"{DEFAULT_WINDOW_DAYS}d up to {latest}")
 
     loss_weights = GAILLossWeights()
-
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    treatments = [p["treatment"] for p in passes]
     history = []
     for epoch in range(EPOCHS):
         model.train()
         optimizer.zero_grad()
-        prediction, exposure, propensity = model(data, treatment)
-        # E12c. dr_mode="aipw" regresses onto the doubly robust pseudo-outcome
-        # instead of weighting the squared error by 1/pi. "ipw" is unbiased only
-        # when the propensity model is right; AIPW is unbiased when EITHER the
-        # propensity or the outcome model is right, which is the property the
-        # name "doubly robust" refers to and the one the thesis claims. The
-        # implementation has been there since E3; nothing was switching it on.
-        loss, comps = compute_gail_loss(
-            prediction, target, propensity, collab_edge_index, collab_edge_weight,
-            has_sponsored, loss_weights, prediction_mask=train_mask,
-            treatment=interference, dr_mode="aipw",
-            sample_weight=sample_weight,
-        )
+        preds, _, propensity = model.forward_multi(data, treatments)
+        # E12c: AIPW pseudo-outcome. P2: one loss per window, weighted by its
+        # share of observations, so every observation counts equally and the
+        # graph-wide regularisers keep their single-pass scale.
+        loss = torch.zeros(())
+        comps: dict[str, float] = {}
+        for p, pred in zip(passes, preds):
+            share = len(p["obs"]) / n_obs
+            loss_p, comps_p = compute_gail_loss(
+                pred, p["target"], propensity, collab_edge_index, collab_edge_weight,
+                p["has_sponsored"], loss_weights, prediction_mask=p["mask"],
+                treatment=p["interference"], dr_mode="aipw",
+            )
+            loss = loss + share * loss_p
+            for k, v in comps_p.items():
+                comps[k] = comps.get(k, 0.0) + share * v
         loss.backward()
         optimizer.step()
         history.append(comps)
@@ -838,86 +926,70 @@ def main() -> int:
                   f"overlap={comps['overlap']:.4f} prop_mean={propensity.mean().item():.3f} "
                   f"prop_min={propensity.min().item():.3f} max={propensity.max().item():.3f}")
 
-    # Final evaluation on trained nodes
+    # Final evaluation, per observation, each against its own window's treatment.
     model.eval()
     with torch.no_grad():
-        final_pred, _, final_prop = model(data, treatment)
-        labeled_pred = final_pred[labeled_idx]
-        labeled_target = target[labeled_idx]
-        mse = F.mse_loss(labeled_pred, labeled_target).item()
-        baseline_mse = (labeled_target ** 2).mean().item()
-        per_node = []
-        for idx, cid in zip(labeled_idx, labeled_ids):
-            per_node.append({
-                "creator_id": cid,
-                "name": id_to_name.get(cid, cid),
-                "target": float(target[idx].item()),
-                "pred": float(final_pred[idx].item()),
-                "sq_err": float((final_pred[idx] - target[idx]) ** 2),
-                "propensity": float(final_prop[idx].item()),
-            })
-        per_node_sorted = sorted(per_node, key=lambda r: r["sq_err"], reverse=True)
-        print(f"\n=== Prod training result (N={len(labeled_idx)} labeled nodes, {EPOCHS} epochs) ===")
-        print(f"MSE trained: {mse:.4f}  baseline (always 0): {baseline_mse:.4f}  "
-              f"improvement: {(baseline_mse - mse) / baseline_mse * 100:.1f}%")
-        print("Per-node (sorted by sq_err descending — Kohli outlier expected):")
-        for r in per_node_sorted:
-            print(f"  {r['name'][:28]:28s} target={r['target']:+.3f} pred={r['pred']:+.3f} sq_err={r['sq_err']:.3f} prop={r['propensity']:.3f}")
-        print(f"Propensity stats: mean={final_prop.mean().item():.3f} min={final_prop.min().item():.3f} max={final_prop.max().item():.3f} "
-              f"(saturation to 1.000 fixed if max < 0.999)")
-
-        # E12d. The causal estimate. Everything above is an OUTCOME prediction
-        # -- "what engagement will this creator have". The thesis claims an
-        # EFFECT -- "what engagement did a sponsored neighbour cause" -- and
-        # nothing in this script computed one. `doubly_robust_effect` and
-        # `predict_unexposed` existed and were tested, but were reachable only
-        # from the synthetic harness.
-        #
-        # The counterfactual needs no separate model: "what if this creator had
-        # no sponsored neighbours" is the prediction head with exposure zeroed
-        # and the embedding -- who they are, where they sit -- left alone.
+        preds, _, final_prop = model.forward_multi(data, treatments)
+        # E12d. The counterfactual: exposure zeroed, embedding unchanged. Since P1
+        # the embedding carries no treatment, so this is a real "no sponsored
+        # neighbours" prediction.
         mu_unexposed = model.predict_unexposed(data)
-        tau = doubly_robust_effect(
-            final_pred, mu_unexposed, target, interference, final_prop
-        )
+        per_obs = []
+        for p, pred in zip(passes, preds):
+            tau_p = doubly_robust_effect(
+                pred, mu_unexposed, p["target"], p["interference"], final_prop
+            )
+            for o in p["obs"]:
+                idx = id_to_index[o.neighbour_id]
+                per_obs.append({
+                    "creator_id": o.neighbour_id,
+                    "name": id_to_name.get(o.neighbour_id, o.neighbour_id),
+                    "span": f"{o.start}..{o.end}",
+                    "rows": o.n_rows,
+                    "target": o.value,
+                    "pred": float(pred[idx].item()),
+                    "sq_err": float((pred[idx].item() - o.value) ** 2),
+                    "propensity": float(final_prop[idx].item()),
+                    "exposed": bool(p["has_sponsored"][idx]),
+                    "mu_e_minus_mu_0": float((pred[idx] - mu_unexposed[idx]).item()),
+                    "tau": float(tau_p[idx].item()),
+                })
 
-        # Average over LABELLED nodes only: tau for an unlabelled node is built
-        # from target=0, which is a placeholder, not a measured outcome.
-        tau_labeled = tau[labeled_idx]
-        w = sample_weight[labeled_idx]
-        # Weight by cluster count, consistently with the training loss (E2): a
-        # creator backed by three separate events should count for more than one
-        # backed by a single event measured sixteen times.
-        ate = float((tau_labeled * w).sum() / w.sum().clamp(min=1e-12))
-        n_clusters = int(w.sum().item())
+        targets_t = torch.tensor([r["target"] for r in per_obs])
+        preds_t = torch.tensor([r["pred"] for r in per_obs])
+        mse = float(((preds_t - targets_t) ** 2).mean().item())
+        baseline_mse = float((targets_t ** 2).mean().item())
+        per_node_sorted = sorted(per_obs, key=lambda r: r["sq_err"], reverse=True)
+        print(f"\n=== Prod training result (N={n_obs} observations, {EPOCHS} epochs) ===")
+        print(f"MSE trained: {mse:.4f}  baseline (always 0): {baseline_mse:.4f}  "
+              f"improvement: {(baseline_mse - mse) / max(baseline_mse, 1e-12) * 100:.1f}%")
+        print("Per-observation (sorted by sq_err descending):")
+        for r in per_node_sorted:
+            print(f"  {r['name'][:28]:28s} {r['span']} target={r['target']:+.3f} "
+                  f"pred={r['pred']:+.3f} sq_err={r['sq_err']:.3f} prop={r['propensity']:.3f}")
+        print(f"Propensity stats: mean={final_prop.mean().item():.3f} min={final_prop.min().item():.3f} "
+              f"max={final_prop.max().item():.3f}")
+        gap = statistics.mean(abs(r["mu_e_minus_mu_0"]) for r in per_obs)
+        print(f"Mean |mu(e,X) - mu(0,X)| over observations: {gap:.4f}  "
+              f"(was 0.027 before P1; near zero means the head ignores exposure)")
 
-        # Naive SE: the spread of per-node effects over the number of
-        # INDEPENDENT observations, not the number of rows. It assumes the
-        # clusters are independent and ignores the uncertainty in the two
-        # nuisance models, so it is a floor on the true uncertainty, not an
-        # interval to quote without that caveat.
-        if n_clusters > 1:
-            centred = tau_labeled - ate
-            var = float((w * centred.pow(2)).sum() / w.sum().clamp(min=1e-12))
-            naive_se = (var / n_clusters) ** 0.5
-        else:
-            naive_se = float("nan")
+        # In-sample AIPW effect, equal weight per observation. Still an
+        # in-sample number: cross-fitting (P5) is what makes it quotable.
+        taus = torch.tensor([r["tau"] for r in per_obs])
+        ate = float(taus.mean().item())
+        n_clusters = n_obs
+        naive_se = float(taus.std(unbiased=True).item() / n_obs ** 0.5) if n_obs > 1 else float("nan")
 
-        print("\n=== Causal estimate (AIPW spillover effect) ===")
-        print(f"ATE (cluster-weighted): {ate:+.4f}")
-        print(f"Naive SE:               {naive_se:.4f}   over N={n_clusters} independent observations")
+        print("\n=== Causal estimate (AIPW spillover effect, in-sample) ===")
+        print(f"ATE (per observation):  {ate:+.4f}")
+        print(f"Naive SE:               {naive_se:.4f}   over N={n_obs} independent observations")
         print(f"Rough 95% interval:     [{ate - 1.96 * naive_se:+.4f}, {ate + 1.96 * naive_se:+.4f}]")
         print("  SE ignores nuisance-model uncertainty and assumes independent")
-        print("  clusters, so it understates the true width. Do not quote it bare.")
-        tau_sorted = sorted(
-            ({"creator_id": cid, "name": id_to_name.get(cid, cid),
-              "tau": float(tau[idx].item()), "clusters": float(sample_weight[idx].item())}
-             for idx, cid in zip(labeled_idx, labeled_ids)),
-            key=lambda r: -abs(r["tau"]),
-        )
-        print("Per-creator effect (|tau| descending):")
+        print("  observations, so it understates the true width. Do not quote it bare.")
+        tau_sorted = sorted(per_obs, key=lambda r: -abs(r["tau"]))
+        print("Per-observation effect (|tau| descending):")
         for r in tau_sorted:
-            print(f"  {r['name'][:28]:28s} tau={r['tau']:+.3f}  (n_obs={r['clusters']:.0f})")
+            print(f"  {r['name'][:28]:28s} {r['span']} tau={r['tau']:+.3f}")
 
         # E12e. The learned transmission shares: which relation carries
         # spillover. This is an explainability claim in the write-up and no
@@ -975,17 +1047,27 @@ def main() -> int:
         # E12. The causal estimate and the learned transmission shares -- the two
         # outputs the thesis actually argues from. Neither was previously saved.
         "causal_estimate": {
-            "ate_cluster_weighted": ate,
+            "ate_per_observation": ate,
             "naive_se": naive_se,
             "n_independent_observations": n_clusters,
             "dr_mode": "aipw",
-            "treatment_definition": "has_sponsored_neighbour (interference indicator)",
-            "per_creator_tau": tau_sorted,
+            "in_sample": True,
+            "treatment_definition": (
+                "has_sponsored_neighbour within the observation's own measurement "
+                "window (P2); sponsorship = is_sponsored OR Instagram paid-partnership label"
+            ),
+            "excluded_self_sponsored_rows": len(self_sponsored),
+            "per_observation_tau": tau_sorted,
             "se_caveat": (
-                "Assumes independent clusters and ignores uncertainty in the "
+                "Assumes independent observations and ignores uncertainty in the "
                 "propensity and outcome models. A floor on the true width."
             ),
         },
+        "observations": [
+            {"creator_id": o.neighbour_id, "start": str(o.start), "end": str(o.end),
+             "rows": o.n_rows, "value": o.value, "cluster_id": o.cluster_id}
+            for o in observations
+        ],
         "transmission_shares": beta,
         # E10. Heuristic, reported for inspection -- no pair was excluded on it.
         "bot_scores": bot_scores,
@@ -1006,9 +1088,11 @@ def main() -> int:
             "collab_edge_attr": collab_attr,
             "coocc_edge_index": cooccur_index,
             "coocc_edge_attr": cooccur_attr,
+            # P2: sponsored in the window up to `treatment_as_of`, not all-time.
             "treatment": treatment,
             "target": target,
         },
+        "treatment_as_of": str(latest),
         "training_stats": {
             "mse_trained": mse,
             "baseline_mse": baseline_mse,

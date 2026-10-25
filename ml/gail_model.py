@@ -93,6 +93,34 @@ class GAILModel(nn.Module):
         prediction = self.prediction_head(embeddings, exposure)
         return prediction, exposure, propensity
 
+    def forward_multi(
+        self, data: HeteroData, treatments: list[torch.Tensor]
+    ) -> tuple[list[torch.Tensor], list[torch.Tensor], torch.Tensor]:
+        """One prediction per treatment vector, sharing a single backbone pass.
+
+        P2 supervises each observation against the treatment active during its
+        own window, so a training step needs several treatment vectors. Since
+        P1 the embeddings do not depend on treatment, so the backbone runs once
+        and only exposure and the head are repeated.
+
+        Returns (predictions, exposures, propensity); propensity does not
+        depend on treatment either, so it is returned once.
+        """
+        if self.backbone_sees_treatment:
+            raise RuntimeError(
+                "forward_multi shares one backbone pass across treatments, which is "
+                "only valid when the backbone does not see treatment edges"
+            )
+        embeddings = self.backbone(data)["creator"]
+        edge_index_dict = self._edge_index_dict(data)
+        propensity = self.propensity_model(data["creator"].x)
+        predictions, exposures = [], []
+        for treatment in treatments:
+            exposure = self.exposure_module(embeddings, edge_index_dict, treatment)
+            exposures.append(exposure)
+            predictions.append(self.prediction_head(embeddings, exposure))
+        return predictions, exposures, propensity
+
     def predict_unexposed(self, data: HeteroData) -> torch.Tensor:
         """mu(0, X): predicted spillover with exposure forced to zero.
 
