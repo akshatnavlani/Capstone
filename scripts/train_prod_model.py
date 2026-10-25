@@ -940,6 +940,7 @@ def main() -> int:
             "creator_feature_dim": CREATOR_FEATURE_DIM,
             "hidden_channels": HIDDEN_CHANNELS,
             "heads": HEADS,
+            "backbone_sees_treatment": model.backbone_sees_treatment,
             "epochs": EPOCHS,
             "lr": LR,
             "seed": SEED,

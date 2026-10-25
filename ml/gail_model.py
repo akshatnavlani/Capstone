@@ -25,6 +25,7 @@ from torch_geometric.data import HeteroData
 
 from ml.causal_regularization import PropensityScoreModel
 from ml.model import DEFAULT_NUM_LAYERS, HeteroGATBackbone
+from ml.schema import CAUSAL_BACKBONE_EDGE_TYPES, EDGE_TYPES
 from ml.multi_relation_exposure import (
     DEFAULT_EXPOSURE_RELATIONS,
     MultiRelationExposureModule,
@@ -40,13 +41,24 @@ class GAILModel(nn.Module):
         heads: int = 2,
         exposure_relations: tuple[str, ...] = DEFAULT_EXPOSURE_RELATIONS,
         num_layers: int = DEFAULT_NUM_LAYERS,
+        backbone_sees_treatment: bool = False,
     ):
+        """`backbone_sees_treatment=False` (P1) keeps the sponsorship edges out
+        of the backbone, so treatment reaches the prediction ONLY through the
+        exposure input and `predict_unexposed` is a real counterfactual. True
+        restores the pre-P1 leaky behaviour, kept only so checkpoints trained
+        before the fix still load (see ml/inference.py).
+        """
         super().__init__()
         self.exposure_relations = tuple(exposure_relations)
+        self.backbone_sees_treatment = backbone_sees_treatment
         # num_layers controls hops of receptive field; 2 lets spillover reach a
         # creator through an intermediary, which a one-hop backbone cannot see.
         self.backbone = HeteroGATBackbone(
-            hidden_channels=hidden_channels, heads=heads, num_layers=num_layers
+            hidden_channels=hidden_channels,
+            heads=heads,
+            num_layers=num_layers,
+            edge_types=EDGE_TYPES if backbone_sees_treatment else CAUSAL_BACKBONE_EDGE_TYPES,
         )
         self.exposure_module = MultiRelationExposureModule(
             in_channels=hidden_channels,

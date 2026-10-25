@@ -122,6 +122,9 @@ def _ensure_loaded(ckpt_path: str | Path | None = None) -> dict:
         creator_feature_dim=cfg["creator_feature_dim"],
         hidden_channels=cfg.get("hidden_channels", 16),
         heads=cfg.get("heads", 2),
+        # Checkpoints saved before P1 carry no key and were trained with the
+        # sponsorship edges in the backbone, so they need True to load.
+        backbone_sees_treatment=cfg.get("backbone_sees_treatment", True),
     )
     model.load_state_dict(ckpt["state_dict"])
     model.eval()

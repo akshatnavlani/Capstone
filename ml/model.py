@@ -52,6 +52,9 @@ class HeteroGATBackbone(nn.Module):
         heads: attention heads per relation (averaged, `concat=False`, so the
             output stays `hidden_channels` wide regardless of head count).
         num_layers: message-passing rounds, i.e. hops of receptive field.
+        edge_types: relations to pass messages over. Defaults to every schema
+            relation; `GAILModel` passes `CAUSAL_BACKBONE_EDGE_TYPES` so the
+            treatment-defining sponsorship edges are excluded (see schema.py).
     """
 
     def __init__(
@@ -59,16 +62,20 @@ class HeteroGATBackbone(nn.Module):
         hidden_channels: int = 32,
         heads: int = 2,
         num_layers: int = DEFAULT_NUM_LAYERS,
+        edge_types: tuple = EDGE_TYPES,
     ):
         super().__init__()
         if num_layers < 1:
             raise ValueError(f"num_layers must be >= 1, got {num_layers}")
+        if not edge_types:
+            raise ValueError("need at least one edge type to pass messages over")
         self.num_layers = num_layers
+        self.edge_types = tuple(edge_types)
 
         self.convs = nn.ModuleList()
         for _ in range(num_layers):
             convs = {}
-            for edge_type in EDGE_TYPES:
+            for edge_type in self.edge_types:
                 edge_dim = 1 if edge_type in WEIGHTED_EDGE_TYPES else None
                 # (-1, -1) keeps input dims lazy, which matters beyond
                 # convenience here: creator nodes carry 1289-dim multimodal
@@ -88,11 +95,15 @@ class HeteroGATBackbone(nn.Module):
 
     def forward(self, data: HeteroData) -> dict[str, torch.Tensor]:
         x_dict = data.x_dict
-        edge_index_dict = data.edge_index_dict
+        # Filter explicitly rather than relying on HeteroConv skipping relations
+        # it has no conv for: the exclusion is the point, so it should be visible.
+        edge_index_dict = {
+            k: v for k, v in data.edge_index_dict.items() if k in self.edge_types
+        }
         edge_attr_dict = {
             edge_type: data[edge_type].edge_attr
             for edge_type in WEIGHTED_EDGE_TYPES
-            if "edge_attr" in data[edge_type]
+            if edge_type in self.edge_types and "edge_attr" in data[edge_type]
         }
 
         for conv in self.convs:
