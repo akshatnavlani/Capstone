@@ -880,11 +880,25 @@ def main() -> int:
         for d, lab in off_rule:
             print(f"  excluded [{lab['fitness']:6s}] {lab['brand'][:22]:22s} event {str(d['event_date'])[:10]} "
                   f"by {id_to_name.get(d['event_creator_id'], d['event_creator_id'])[:24]}")
+        caption_sql = {
+            "youtube": "select coalesce(title,'') || ' | ' || coalesce(description,'') "
+                       "from youtube_videos where video_id = %s",
+            "instagram": "select coalesce(caption,'') from instagram_posts where post_id = %s",
+            "reddit": "select coalesce(title,'') || ' | ' || coalesce(body,'') "
+                      "from reddit_posts where post_id = %s",
+        }
         for d in unlabelled:
             d["excluded"] = "event_rule:unlabelled"
             print(f"  !! UNLABELLED event {d['item_id']} ({d['event_platform']}) by "
                   f"{id_to_name.get(d['event_creator_id'], d['event_creator_id'])[:24]} -- "
                   f"add it to data/event_brand_labels.csv")
+            # The caption usually names the sponsor, so label straight from the log.
+            sql = caption_sql.get(d["event_platform"])
+            if sql:
+                cur.execute(sql, (str(d["item_id"]),))
+                hit = cur.fetchone()
+                text = " ".join((hit[0] if hit else "").split())
+                print(f"       caption: {text[:220] or '(empty)'}")
         lift_rows = kept_by_rule
     else:
         print(f"\nEvent rule: ALL brands (GAIL_EVENTS={EVENT_RULE})")
