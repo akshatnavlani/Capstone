@@ -125,6 +125,8 @@ def _ensure_loaded(ckpt_path: str | Path | None = None) -> dict:
         # Checkpoints saved before P1 carry no key and were trained with the
         # sponsorship edges in the backbone, so they need True to load.
         backbone_sees_treatment=cfg.get("backbone_sees_treatment", True),
+        # Checkpoints saved before this flag used the full-feature MLP head.
+        propensity_metadata_only=cfg.get("propensity_metadata_only", False),
     )
     model.load_state_dict(ckpt["state_dict"])
     model.eval()

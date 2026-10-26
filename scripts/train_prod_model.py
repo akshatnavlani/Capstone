@@ -944,7 +944,10 @@ def main() -> int:
     from ml.gail_loss import GAILLossWeights, compute_gail_loss
 
     torch.manual_seed(SEED)
-    model = GAILModel(creator_feature_dim=CREATOR_FEATURE_DIM, hidden_channels=HIDDEN_CHANNELS, heads=HEADS)
+    # Metadata-only logistic propensity: the 1289-d MLP head saturated to 0/1
+    # on the 2026-10-26 run (prop_min 0.000, max 1.000 by epoch 60).
+    model = GAILModel(creator_feature_dim=CREATOR_FEATURE_DIM, hidden_channels=HIDDEN_CHANNELS, heads=HEADS,
+                      propensity_metadata_only=True)
 
     num_creators_t = data["creator"].x.size(0)
     collab_edge_index = data["creator", "collaborates_with", "creator"].edge_index
@@ -1177,7 +1180,7 @@ def main() -> int:
         print("Exposed observations (sorted by sq_err descending):")
         for r in sorted(exposed_rows, key=lambda r: r["sq_err"], reverse=True):
             print(f"  {r['name'][:28]:28s} {r['span']} target={r['target']:+.3f} "
-                  f"pred={r['pred']:+.3f} exposure={r['exposure']:.3f} "
+                  f"pred={r['pred']:+.3f} exposure={r['exposure']:.4g} "
                   f"sq_err={r['sq_err']:.3f} prop={r['propensity']:.3f}")
         print(f"Propensity stats: mean={final_prop.mean().item():.3f} min={final_prop.min().item():.3f} "
               f"max={final_prop.max().item():.3f}")
@@ -1255,6 +1258,7 @@ def main() -> int:
             "hidden_channels": HIDDEN_CHANNELS,
             "heads": HEADS,
             "backbone_sees_treatment": model.backbone_sees_treatment,
+            "propensity_metadata_only": model.propensity_metadata_only,
             "epochs": EPOCHS,
             "lr": LR,
             "seed": SEED,

@@ -25,7 +25,7 @@ from torch_geometric.data import HeteroData
 
 from ml.causal_regularization import PropensityScoreModel
 from ml.model import DEFAULT_NUM_LAYERS, HeteroGATBackbone
-from ml.schema import CAUSAL_BACKBONE_EDGE_TYPES, EDGE_TYPES
+from ml.schema import CAUSAL_BACKBONE_EDGE_TYPES, CREATOR_METADATA_DIM, EDGE_TYPES
 from ml.multi_relation_exposure import (
     DEFAULT_EXPOSURE_RELATIONS,
     MultiRelationExposureModule,
@@ -42,12 +42,23 @@ class GAILModel(nn.Module):
         exposure_relations: tuple[str, ...] = DEFAULT_EXPOSURE_RELATIONS,
         num_layers: int = DEFAULT_NUM_LAYERS,
         backbone_sees_treatment: bool = False,
+        propensity_metadata_only: bool = False,
     ):
         """`backbone_sees_treatment=False` (P1) keeps the sponsorship edges out
         of the backbone, so treatment reaches the prediction ONLY through the
         exposure input and `predict_unexposed` is a real counterfactual. True
         restores the pre-P1 leaky behaviour, kept only so checkpoints trained
         before the fix still load (see ml/inference.py).
+
+        `propensity_metadata_only=True` fits the propensity as a logistic
+        regression on the creator metadata tail only (reach, engagement,
+        reputation, category one-hot -- the last CREATOR_METADATA_DIM columns).
+        With the full 1289-d input and a hidden layer, the head can separate
+        ~400 creators perfectly and saturates to 0/1 (seen in the 2026-10-26
+        run; reproduced on synthetic data: 100% of nodes saturated vs 0% with
+        the metadata-only logistic head). The metadata columns are also the
+        plausible confounders of who brands sponsor. False keeps the old head
+        so earlier checkpoints still load.
         """
         super().__init__()
         self.exposure_relations = tuple(exposure_relations)
@@ -65,8 +76,18 @@ class GAILModel(nn.Module):
             hidden_channels=hidden_channels,
             relations=self.exposure_relations,
         )
-        self.propensity_model = PropensityScoreModel(in_dim=creator_feature_dim, hidden_dim=hidden_channels)
+        self.propensity_metadata_only = propensity_metadata_only
+        if propensity_metadata_only:
+            self.propensity_model = PropensityScoreModel(in_dim=CREATOR_METADATA_DIM)
+        else:
+            self.propensity_model = PropensityScoreModel(in_dim=creator_feature_dim, hidden_dim=hidden_channels)
         self.prediction_head = SpilloverPredictionHead(embedding_dim=hidden_channels)
+
+    def _propensity(self, data: HeteroData) -> torch.Tensor:
+        x = data["creator"].x
+        if self.propensity_metadata_only:
+            x = x[:, -CREATOR_METADATA_DIM:]
+        return self.propensity_model(x)
 
     def _edge_index_dict(self, data: HeteroData) -> dict[str, torch.Tensor]:
         """Pull the creator->creator edge index for each exposure relation.
@@ -89,7 +110,7 @@ class GAILModel(nn.Module):
         exposure = self.exposure_module(
             embeddings, self._edge_index_dict(data), treatment
         )
-        propensity = self.propensity_model(data["creator"].x)
+        propensity = self._propensity(data)
         prediction = self.prediction_head(embeddings, exposure)
         return prediction, exposure, propensity
 
@@ -113,7 +134,7 @@ class GAILModel(nn.Module):
             )
         embeddings = self.backbone(data)["creator"]
         edge_index_dict = self._edge_index_dict(data)
-        propensity = self.propensity_model(data["creator"].x)
+        propensity = self._propensity(data)
         predictions, exposures = [], []
         for treatment in treatments:
             exposure = self.exposure_module(embeddings, edge_index_dict, treatment)
