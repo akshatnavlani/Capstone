@@ -162,6 +162,21 @@ LIFT_KEY = {"log": "log_lift", "median": "robust_lift"}[LIFT_STATISTIC]
 # GAIL_EVENTS=all reproduces the all-brands run (c8c94de), reported alongside.
 EVENT_RULE = os.environ.get("GAIL_EVENTS", "fitness")
 EVENT_LABELS_PATH = Path(__file__).resolve().parents[1] / "data" / "event_brand_labels.csv"
+# Creator rule (user decision 2026-10-26): the creators whose engagement is
+# MEASURED -- exposed observations and controls -- must be fitness / health
+# creators, the project's niche. The sponsored creator can be anyone (a film
+# star's Puma deal is a fitness-brand event); the graph keeps every node, since
+# dropping nodes would change everyone else's exposure. Scope is by creator
+# category, with data/creator_scope_overrides.csv (name,include) to correct
+# individuals. GAIL_CREATORS=all disables the rule.
+CREATOR_RULE = os.environ.get("GAIL_CREATORS", "fitness")
+# Pre-declared 2026-10-26, before any run under these rules: with fewer exposed
+# observations than this, the estimates are printed for completeness but are
+# NOT a result -- the finding is "too few fitness-scoped observations to
+# estimate spillover", with the all-brands / all-creators run as context.
+MIN_EXPOSED_FOR_ESTIMATE = 8
+FITNESS_CREATOR_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}
+CREATOR_OVERRIDES_PATH = Path(__file__).resolve().parents[1] / "data" / "creator_scope_overrides.csv"
 LR = 1e-2
 SEED = 0
 
@@ -628,6 +643,18 @@ def load_brands(cur):
     return torch.stack(vecs), id_to_index
 
 
+def load_creator_overrides(path: Path) -> dict[str, bool]:
+    """creator name (lower-cased) -> include, from the optional override file."""
+    import csv
+    if not path.exists():
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return {
+            r["name"].strip().lower(): r["include"].strip().lower() in ("yes", "true", "1")
+            for r in csv.DictReader(f) if r.get("name", "").strip()
+        }
+
+
 def load_event_labels(path: Path) -> dict[str, dict]:
     """content_id -> {brand, fitness, note} from the hand-labelled event file."""
     import csv
@@ -840,6 +867,32 @@ def main() -> int:
     else:
         print(f"\nEvent rule: ALL brands (GAIL_EVENTS={EVENT_RULE})")
 
+    # Creator rule: who may be MEASURED (exposed observation or control).
+    overrides = load_creator_overrides(CREATOR_OVERRIDES_PATH)
+
+    def in_scope(cid: str) -> bool:
+        if CREATOR_RULE != "fitness":
+            return True
+        name = id_to_name.get(cid, "").strip().lower()
+        if name in overrides:
+            return overrides[name]
+        return id_to_category.get(cid, "other") in FITNESS_CREATOR_CATEGORIES
+
+    if CREATOR_RULE == "fitness":
+        out_of_scope = [d for d in lift_rows if not in_scope(d["neighbour_id"])]
+        for d in out_of_scope:
+            d["excluded"] = "creator_rule"
+        lift_rows = [d for d in lift_rows if in_scope(d["neighbour_id"])]
+        print(f"Creator rule (fitness/health creators only): kept {len(lift_rows)} lift rows, "
+              f"excluded {len(out_of_scope)}")
+        for cid in sorted({d["neighbour_id"] for d in out_of_scope}, key=lambda c: id_to_name.get(c, c)):
+            print(f"  excluded creator: {id_to_name.get(cid, cid)[:30]:30s} "
+                  f"category={id_to_category.get(cid, 'other')}")
+        if out_of_scope:
+            print("  (to include someone, add 'name,yes' to data/creator_scope_overrides.csv)")
+    else:
+        print(f"Creator rule: ALL creators (GAIL_CREATORS={CREATOR_RULE})")
+
     kept_rows, self_sponsored = drop_self_sponsored(lift_rows, spons_dates, DEFAULT_WINDOW_DAYS)
     for d in self_sponsored:
         d["excluded"] = "neighbour_own_sponsorship_in_window"
@@ -862,10 +915,13 @@ def main() -> int:
     print(f"\nObservations: {n_obs} independent, across {len(labeled_ids)} creators")
     for o in observations:
         print(f"  {id_to_name.get(o.neighbour_id, o.neighbour_id)[:28]:28s} "
-              f"{o.start}..{o.end}  rows={o.n_rows:<2} lift={o.value:+.4f}")
+              f"{o.start}..{o.end}  rows={o.n_rows:<2} lift={o.value:+.4f}  "
+              f"[{id_to_category.get(o.neighbour_id, 'other')}]")
 
     if not observations:
-        print("ERROR: no observations left -- cannot train")
+        print("ERROR: no observations left under the event/creator rules -- cannot train.")
+        print("  Finding: no fitness-scoped observations. For context run with")
+        print("  GAIL_EVENTS=all and GAIL_CREATORS=all.")
         conn.close()
         return 1
 
@@ -958,6 +1014,7 @@ def main() -> int:
             eligible = [
                 index_to_id[j] for j in range(num_creators_t)
                 if j in index_to_id and not bool(p["has_sponsored"][j]) and not bool(p["treatment"][j])
+                and in_scope(index_to_id[j])
             ]
             dates = sorted({d for o in p["obs"] for d in o.event_dates})
             windows.append((p["span"], dates, eligible))
@@ -999,6 +1056,10 @@ def main() -> int:
           f"[{did['estimate'] - 1.96 * did['se']:+.4f}, {did['estimate'] + 1.96 * did['se']:+.4f}]  "
           f"over {did['n_treated']} exposed vs {did['n_control']} controls in {did['windows']} windows")
     print(f"  median version (robust to single extreme creators): {did['median_estimate']:+.4f}")
+    if len(treated_obs) < MIN_EXPOSED_FOR_ESTIMATE:
+        print(f"\n  !! {len(treated_obs)} exposed observations, below the pre-declared minimum of "
+              f"{MIN_EXPOSED_FOR_ESTIMATE}.")
+        print("     Every estimate in this run is reported for completeness only, NOT as a result.")
     # P6a. Compare like with like: exposed vs controls of the SAME creator
     # category in the same window (athletes with athletes, teams with teams).
     did_cat = matched_did(observations, stratum_of=lambda o: id_to_category.get(o.neighbour_id, "other"))
@@ -1246,6 +1307,8 @@ def main() -> int:
             "matched_did_category": did_cat,
             "matched_did_overlap_trimmed": did_trim,
             "event_rule": EVENT_RULE,
+            "creator_rule": CREATOR_RULE,
+            "below_min_exposed": len(treated_obs) < MIN_EXPOSED_FOR_ESTIMATE,
             "per_observation_tau": tau_sorted,
             "se_caveat": (
                 "Assumes independent observations and ignores uncertainty in the "
