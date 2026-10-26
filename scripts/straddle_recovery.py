@@ -47,6 +47,27 @@ from pathlib import Path
 
 import psycopg2
 
+
+
+def _load_dotenv() -> None:
+    """Read the repo-root .env into os.environ (train_prod_model.py does the same).
+
+    Without this the script only saw DATABASE_URL if it was already exported in
+    the shell, so it failed where training succeeded.
+    """
+    path = Path(__file__).resolve().parents[1] / ".env"
+    if not path.exists():
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k, v)
+
+
+_load_dotenv()
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _track_a import import_pair_count  # noqa: E402
 
