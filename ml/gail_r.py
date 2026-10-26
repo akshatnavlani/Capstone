@@ -183,8 +183,11 @@ def fit_gail_r(data, treatments: list[torch.Tensor], obs: Observations, placebo_
         tau = (E * model.slopes).sum(1)
         pen = (placebo_penalty(tau[has_pre], obs.pre[has_pre]) if int(has_pre.sum()) >= 2
                else torch.zeros(()))
+    exposed = U[:, 0] > 0  # has a sponsored collaborator in the observation's window
     return {
         "ate": float(tau.mean()),
+        "att": float(tau[exposed].mean()) if exposed.any() else float("nan"),
+        "n_exposed": int(exposed.sum()),
         "tau": tau,
         "slopes": dict(zip(model.relations, model.slopes.detach().tolist())),
         "placebo": float(pen),
@@ -199,11 +202,21 @@ def cluster_bootstrap(data, treatments, obs: Observations, B: int = 200, seed: i
     g = torch.Generator().manual_seed(seed)
     creators = obs.node.unique()
     rows_of = {int(c): (obs.node == c).nonzero().squeeze(1) for c in creators}
-    ates = []
+    fits = []
     for b in range(B):
         pick = creators[torch.randint(0, len(creators), (len(creators),), generator=g)]
         idx = torch.cat([rows_of[int(c)] for c in pick])
-        ates.append(fit_gail_r(data, treatments, obs.subset(idx), seed=seed + b + 1,
-                               uniform=True, **fit_kw)["ate"])
-    t = torch.tensor(ates)
-    return {"lo": float(t.quantile(0.025)), "hi": float(t.quantile(0.975)), "se": float(t.std()), "B": B}
+        fits.append(fit_gail_r(data, treatments, obs.subset(idx), seed=seed + b + 1,
+                               uniform=True, **fit_kw))
+
+    def interval(vals):
+        t = torch.tensor([v for v in vals if not math.isnan(v)])
+        if t.numel() < 2:
+            return {"lo": float("nan"), "hi": float("nan"), "se": float("nan")}
+        return {"lo": float(t.quantile(0.025)), "hi": float(t.quantile(0.975)), "se": float(t.std())}
+
+    out = interval([f["ate"] for f in fits])
+    out["B"] = B
+    out["att"] = interval([f["att"] for f in fits])
+    out["slopes"] = {r: interval([f["slopes"][r] for f in fits]) for r in RELATIONS}
+    return out

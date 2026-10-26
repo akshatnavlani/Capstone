@@ -1367,11 +1367,18 @@ def main() -> int:
     for label, w_pl in (("with placebo penalty", R_PLACEBO), ("without placebo penalty", 0.0)):
         fit = fit_gail_r(data, treatments, r_obs, placebo_weight=w_pl, seed=SEED)
         ci = cluster_bootstrap(data, treatments, r_obs, B=R_BOOT, seed=SEED, placebo_weight=w_pl)
-        slopes = "  ".join(f"{k} {v:+.3f}" for k, v in fit["slopes"].items())
-        print(f"  {label:24s} effect {fit['ate']:+.4f}  95% CI [{ci['lo']:+.4f}, {ci['hi']:+.4f}]  "
-              f"placebo penalty {fit['placebo']:.5f}")
-        print(f"  {'':24s} effect of 0%->100% sponsored neighbours, per relation: {slopes}")
-        gail_r_report[label] = {"ate": fit["ate"], "ci": ci, "slopes": fit["slopes"],
+        a = ci["att"]
+        print(f"  {label}:")
+        print(f"    effect on the {fit['n_exposed']} observations with a sponsored collaborator: "
+              f"{fit['att']:+.4f}  95% CI [{a['lo']:+.4f}, {a['hi']:+.4f}]")
+        for rel, v in fit["slopes"].items():
+            c = ci["slopes"][rel]
+            print(f"    {rel:18s} effect of 0%->100% neighbours sponsored: {v:+.3f}  "
+                  f"95% CI [{c['lo']:+.3f}, {c['hi']:+.3f}]")
+        print(f"    placebo penalty {fit['placebo']:.5f}; mean over all {len(r_rows)} observations "
+              f"{fit['ate']:+.4f} (diluted by unexposed rows, whose effect is 0 by definition)")
+        gail_r_report[label] = {"ate": fit["ate"], "att": fit["att"], "n_exposed": fit["n_exposed"],
+                                "ci": ci, "slopes": fit["slopes"],
                                 "placebo_penalty": fit["placebo"], "placebo_weight": w_pl}
     print(f"  {len(r_rows)} observations from {len(set(r[1] for r in r_rows))} creators; "
           "the interval resamples creators, so repeat observations do not narrow it.")
