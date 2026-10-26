@@ -32,3 +32,13 @@ def get_sponsorship_edges(session: Session = Depends(get_session)) -> list[Spons
 @router.get("/edges/co-occurrence", response_model=list[CollaborationEdge])
 def get_co_occurrence_edges(session: Session = Depends(get_session)) -> list[CollaborationEdge]:
     return feature_store.build_co_occurrence_edges(session)
+
+
+@router.get("/edges/shared-brand", response_model=list[CollaborationEdge])
+def get_shared_brand_edges(session: Session = Depends(get_session)) -> list[CollaborationEdge]:
+    return feature_store.build_shared_brand_edges(session)
+
+
+@router.get("/edges/mentions", response_model=list[CollaborationEdge])
+def get_mention_edges(session: Session = Depends(get_session)) -> list[CollaborationEdge]:
+    return feature_store.build_mention_edges(session)

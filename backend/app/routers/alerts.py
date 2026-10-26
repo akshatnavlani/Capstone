@@ -13,7 +13,7 @@ from sqlmodel import Session, select
 
 from app.auth import require_api_key
 from app.database import get_session
-from app.models import RiskAlert
+from app.models import Creator, RiskAlert
 from app.schemas import AlertCreate, AlertResponse
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -41,4 +41,9 @@ def list_alerts(
         query = query.where(RiskAlert.resolved == False)  # noqa: E712
 
     records = session.exec(query.order_by(RiskAlert.created_at.desc())).all()
-    return [AlertResponse(**r.model_dump()) for r in records]
+    wanted = {r.creator_id for r in records} | {r.propagated_from_creator_id for r in records if r.propagated_from_creator_id}
+    names = {c.creator_id: c.name for c in session.exec(select(Creator).where(Creator.creator_id.in_(wanted))).all()} if wanted else {}
+    return [
+        AlertResponse(**r.model_dump(), creator_name=names.get(r.creator_id), propagated_from_name=names.get(r.propagated_from_creator_id))
+        for r in records
+    ]

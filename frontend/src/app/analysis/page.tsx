@@ -7,6 +7,7 @@ import type { TabId } from "@/components/analysis/Overview";
 import S1Temporal from "@/components/analysis/S1Temporal";
 import { S2Feature, S3Fusion } from "@/components/analysis/S2S3";
 import { S7Filters, S8Linking } from "@/components/analysis/S7S8";
+import S9Results from "@/components/analysis/S9Results";
 import type { AnalysisData } from "@/types/analysis";
 
 const TABS: { id: TabId; label: string }[] = [
@@ -17,6 +18,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "s6", label: "S6 Graph" },
   { id: "s7", label: "S7 Filters & cost" },
   { id: "s8", label: "S8 Linking" },
+  { id: "s9", label: "S9 Live results" },
 ];
 
 export default function AnalysisPage() {
@@ -80,6 +82,7 @@ export default function AnalysisPage() {
           {tab === "s6" && <S6Graph />}
           {tab === "s7" && <S7Filters data={data} />}
           {tab === "s8" && <S8Linking data={data} />}
+          {tab === "s9" && <S9Results data={data} />}
         </div>
       )}
     </main>

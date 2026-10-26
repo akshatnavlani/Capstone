@@ -111,8 +111,89 @@ export interface ProductRow {
   fixed: number;
 }
 
+export interface S9Estimate {
+  difference_in_means: number;
+  difference_in_means_ci: [number, number];
+  difference_in_means_excludes_zero: boolean;
+  n_exposed: number;
+  n_unexposed: number;
+}
+
+export interface SemiSynthCell {
+  mean_estimate: number;
+  error_vs_truth: number;
+  detects_effect_share: number;
+}
+
+/** Live results added 2026-10-26: lag on the growth readings, spillover on the real network, a simulated detection curve, and the data inventory. */
+export interface S9Data {
+  as_of: string;
+  inventory: Record<string, number>;
+  spillover_basis_counts: Record<string, number>;
+  graph_links: { of: number; today: number; shared_brand_alone: number; with_shared_brand: number; mentions_alone?: number; with_shared_brand_and_mentions?: number };
+  placebo: {
+    scopes: Record<
+      "in_the_150" | "everyone",
+      Record<
+        "all" | "mature",
+        {
+          event_rows: number;
+          with_placebo: number;
+          median_paired_difference?: number;
+          share_event_higher_than_placebo?: number;
+          per_neighbour?: { n: number; median_of_means: number; ci: [number, number]; events_beat_placebo: number };
+          per_sponsoring_creator?: { n: number; median: number; ci: [number, number] };
+        }
+      >
+    >;
+  };
+  lag: {
+    days_of_readings: number;
+    method_check: string;
+    limits: string;
+    results: {
+      name: string;
+      n_units: number;
+      n_creators: number;
+      smallest_p_after_event: number;
+      window_of_smallest_p: string;
+      detected_after_correction: boolean;
+      note?: string | null;
+    }[];
+  };
+  /** SIMULATED validation on the real network (scripts/sim_semisynthetic_benchmark.py). */
+  semisynthetic?: {
+    simulated: boolean;
+    real_rows: number;
+    real_neighbours: number;
+    assumptions: Record<string, string | number>;
+    table: Record<string, { naive: SemiSynthCell; placebo: SemiSynthCell }>;
+    table_effect_reaches_20_percent_of_neighbours: Record<string, { naive: SemiSynthCell; placebo: SemiSynthCell }>;
+  };
+  /** SIMULATED: extra attention planted after real Instagram posts (scripts/sim_lag_power.py). */
+  sim_lag_power?: { simulated: boolean; how: string; sets: Record<string, { units: number; creators: number; by_size: Record<string, { detected_share: number; median_smallest_p: number | null }> }> };
+  label_quality?: {
+    labelled_rows: number;
+    claude_text_only_readings?: { decided_flagged_events: number; look_sponsored: number; share: number; wilson95: [number, number] };
+    human_checked_precision_by_tier: Record<string, { real_ads: number; checked: number; precision: number }>;
+    pooled_precision_checked_flagged_events: { real_ads: number; checked: number; precision: number; wilson95: [number, number] };
+    grouped_cv_flagged_events_only?: Record<"text_and_tier" | "tier_only", { auc: number }>;
+    unchecked_weak_tier_events_in_spillover_pairs: number;
+  };
+  spillover_restricted_150: Record<"shared_brand" | "collaboration", Record<string, S9Estimate>>;
+  power_curve: {
+    exposed: number;
+    "effect_0.25": number;
+    "effect_0.50": number;
+    "effect_0.75": number;
+    "effect_1.00": number;
+    false_alarm: number;
+  }[];
+}
+
 export interface AnalysisData {
   generated_at: string;
+  s9?: S9Data;
   s1: {
     sentiment: SentimentSummary;
     alerts: Alert[];

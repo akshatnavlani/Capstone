@@ -4,6 +4,7 @@ import type {
   BrandRecommendationResponse,
   CreatorSummary,
   GraphEdge,
+  PlatformProfile,
 } from "@/types";
 import type { AnalysisData } from "@/types/analysis";
 
@@ -20,7 +21,8 @@ export async function postRecommendations(
   const res = await fetch(`${API_BASE_URL}/recommendations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    // A full list by default; a caller can still pass include_broader_matches: false.
+    body: JSON.stringify({ include_broader_matches: true, ...body }),
   });
   if (!res.ok) {
     throw new Error(`POST /recommendations failed: ${res.status}`);
@@ -64,6 +66,14 @@ export async function getCreators(): Promise<CreatorSummary[]> {
   const res = await fetch(`${API_BASE_URL}/feature-store/creators`);
   if (!res.ok) {
     throw new Error(`GET /feature-store/creators failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getPlatformProfile(creatorId: string): Promise<PlatformProfile> {
+  const res = await fetch(`${API_BASE_URL}/platform-profiles/${creatorId}`);
+  if (!res.ok) {
+    throw new Error(`GET /platform-profiles/${creatorId} failed: ${res.status}`);
   }
   return res.json();
 }

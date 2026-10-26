@@ -1,0 +1,60 @@
+--- a/scripts/train_prod_model.py
++++ b/scripts/train_prod_model.py
+@@ -223,6 +223,24 @@
+                 "robust_lift": None,
+             })
+ 
++    # PATCH (26 Oct 2026, opt-in): add shared-brand (event, neighbour) rows built by scripts/make_shared_brand_targets.py. Collaboration pairs alone give about 20
++    # independent examples (only 7 of 880 listed collaborators are inside the 150); the shared-brand rows give about 118. Off unless SHARED_BRAND_TARGETS is set,
++    # and exploratory: the relation means "promoted the same brand", so niche overlap can contribute.
++    extra_path = os.environ.get("SHARED_BRAND_TARGETS")
++    if extra_path:
++        with open(extra_path, encoding="utf-8") as fh:
++            extra = [r for r in json.load(fh) if r.get("relation") == "shared_brand" and r.get("robust_lift") is not None]
++        for r in extra:
++            # clipped at +-5 like the effect analysis: single viral posts otherwise dominate the squared error (largest target 12.4 without it)
++            clipped = max(-5.0, min(5.0, r["robust_lift"]))
++            detailed.append({
++                "event_creator_id": r["event_creator_id"], "item_id": r["event_item_id"], "event_platform": r["event_platform"],
++                "event_date": r["event_date"], "neighbour_id": r["neighbour_id"], "platform_lifts": r["platform_lifts"],
++                "mean_lift": r["mean_lift"], "robust_lift": clipped,
++            })
++            lifts_by_neighbour.setdefault(r["neighbour_id"], []).append(clipped)
++        print(f"PATCH: added {len(extra)} shared-brand rows from {extra_path}")
++
+     # E2: cluster rows that measure the SAME engagement change before averaging.
+     # Previously `target[creator] = mean(all that creator's lifts)`, which let one
+     # engagement change recorded N times dominate that creator's own target, and
+@@ -538,6 +556,15 @@
+             pair = tuple(sorted((str(cid), str(target))))
+             pair_weights[pair] += 1
+ 
++    mention_path = os.environ.get("MENTION_EDGES")
++    if mention_path:
++        # 26 Oct 2026, opt-in: @mention links between our creators (backend feature_store.build_mention_edges, written by scripts/export_feature_store.py as
++        # mention_edges.json; weight = posts that carry the mention). Both directions are in the file, so count each pair once.
++        with open(mention_path, encoding="utf-8") as fh:
++            for e in json.load(fh):
++                a, b = str(e["source_creator_id"]), str(e["target_creator_id"])
++                if a < b:
++                    pair_weights[(a, b)] += float(e["weight"])
+     src, dst, w = [], [], []
+     for (a, b), weight in pair_weights.items():
+         if a in id_to_index and b in id_to_index:
+@@ -565,6 +592,16 @@
+             continue
+         for a, b in itertools.combinations(sorted(cids), 2):
+             pair_weights[(a, b)] += 1
++    if os.environ.get("SHARED_BRAND") == "1":
++        # Opt-in (26 Oct 2026): creators who both have a sponsored post for the same brand are linked, weight = shared brands
++        # (same rule as backend/app/feature_store.build_shared_brand_edges); added to the co_occurs_with graph, next to the Reddit pairs.
++        cur.execute("select brand_id::text, creator_id::text from creator_sponsorship_events where brand_id is not null and creator_id is not null group by 1, 2")
++        by_brand: dict[str, set[str]] = defaultdict(set)
++        for b_id, c_id in cur.fetchall():
++            by_brand[b_id].add(c_id)
++        for cids in by_brand.values():
++            for a, b in itertools.combinations(sorted(cids), 2):
++                pair_weights[(a, b)] += 1
+     src, dst, w = [], [], []
+     for (a, b), weight in pair_weights.items():
+         if a in id_to_index and b in id_to_index:

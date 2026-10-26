@@ -1,0 +1,150 @@
+{
+ "as_of": "2026-10-26T15:47:11+00:00",
+ "method": "log engagement of a sponsored post minus the median of the creator's 10 nearest non-sponsored posts (+-180 days, mature posts only)",
+ "results": {
+  "youtube/views/all_events": {
+   "sponsored_posts": {
+    "creators": 80,
+    "events": 1397,
+    "median_of_creator_means": -0.01687949450525128,
+    "ci95": [
+     -0.18156770624167895,
+     0.1911341030187348
+    ],
+    "creators_positive": 40,
+    "median_ratio_vs_own_typical_post": 0.9832621659897194
+   },
+   "placebo_non_sponsored_posts": {
+    "creators": 173,
+    "events": 50304,
+    "median_of_creator_means": 0.10064692970088342,
+    "ci95": [
+     0.06733687766217744,
+     0.11696658419873304
+    ],
+    "creators_positive": 139,
+    "median_ratio_vs_own_typical_post": 1.1058861172839647
+   }
+  },
+  "youtube/views/strong_evidence_only": {
+   "sponsored_posts": {
+    "creators": 48,
+    "events": 193,
+    "median_of_creator_means": 0.020186694960968882,
+    "ci95": [
+     -0.46317935699920837,
+     0.4491629692532362
+    ],
+    "creators_positive": 25,
+    "median_ratio_vs_own_typical_post": 1.0203918242567822
+   },
+   "placebo_non_sponsored_posts": {
+    "creators": 173,
+    "events": 50304,
+    "median_of_creator_means": 0.10064692970088342,
+    "ci95": [
+     0.06733687766217744,
+     0.11696658419873304
+    ],
+    "creators_positive": 139,
+    "median_ratio_vs_own_typical_post": 1.1058861172839647
+   }
+  },
+  "youtube/rate/all_events": {
+   "sponsored_posts": {
+    "creators": 80,
+    "events": 1397,
+    "median_of_creator_means": -0.044673464480855456,
+    "ci95": [
+     -0.13630796463628103,
+     -0.012782903922805419
+    ],
+    "creators_positive": 28,
+    "median_ratio_vs_own_typical_post": 0.9563096999395077
+   },
+   "placebo_non_sponsored_posts": {
+    "creators": 173,
+    "events": 50304,
+    "median_of_creator_means": -0.025147303716510406,
+    "ci95": [
+     -0.03056362856690139,
+     -0.020031687632650088
+    ],
+    "creators_positive": 40,
+    "median_ratio_vs_own_typical_post": 0.9751662558343469
+   }
+  },
+  "youtube/rate/strong_evidence_only": {
+   "sponsored_posts": {
+    "creators": 48,
+    "events": 193,
+    "median_of_creator_means": -0.17559387169704238,
+    "ci95": [
+     -0.3452897222584561,
+     -0.06368826043045628
+    ],
+    "creators_positive": 13,
+    "median_ratio_vs_own_typical_post": 0.8389586390057484
+   },
+   "placebo_non_sponsored_posts": {
+    "creators": 173,
+    "events": 50304,
+    "median_of_creator_means": -0.025147303716510406,
+    "ci95": [
+     -0.03056362856690139,
+     -0.020031687632650088
+    ],
+    "creators_positive": 40,
+    "median_ratio_vs_own_typical_post": 0.9751662558343469
+   }
+  },
+  "instagram/eng/all_events": {
+   "sponsored_posts": {
+    "creators": 13,
+    "events": 15,
+    "median_of_creator_means": -1.0312362916116005,
+    "ci95": [
+     -1.7295743361335312,
+     -0.35667494393873267
+    ],
+    "creators_positive": 3,
+    "median_ratio_vs_own_typical_post": 0.35656586857386063
+   },
+   "placebo_non_sponsored_posts": {
+    "creators": 45,
+    "events": 563,
+    "median_of_creator_means": 0.13225217186174967,
+    "ci95": [
+     0.04981354160881291,
+     0.21506253999655112
+    ],
+    "creators_positive": 33,
+    "median_ratio_vs_own_typical_post": 1.1413961109615214
+   }
+  },
+  "instagram/eng/strong_evidence_only": {
+   "sponsored_posts": {
+    "creators": 9,
+    "events": 10,
+    "median_of_creator_means": -1.0194568474525862,
+    "ci95": [
+     -2.424335118481996,
+     0.13579198347383326
+    ],
+    "creators_positive": 2,
+    "median_ratio_vs_own_typical_post": 0.3607908514334515
+   },
+   "placebo_non_sponsored_posts": {
+    "creators": 45,
+    "events": 563,
+    "median_of_creator_means": 0.13225217186174967,
+    "ci95": [
+     0.03761387062109719,
+     0.21506253999655112
+    ],
+    "creators_positive": 33,
+    "median_ratio_vs_own_typical_post": 1.1413961109615214
+   }
+  }
+ }
+}

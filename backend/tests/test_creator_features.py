@@ -118,3 +118,44 @@ def test_recommendations_keep_neutral_when_feature_scores_unavailable(monkeypatc
         monkeypatch.setattr(influencers, "get_feature_scores", lambda q: None)
         res = influencers.get_recommendations(BrandRecommendationRequest(product_category="fitness", budget=10_000_000), s).results
     assert res[0].score_breakdown.creator_feature_score == pytest.approx(0.5)
+
+
+def test_warm_up_starts_loading_once_and_never_when_disabled(monkeypatch, tmp_path):
+    started = []
+
+    class _Thread:
+        def __init__(self, target, daemon):
+            self.target = target
+        def start(self):
+            started.append(self.target)
+
+    artifact = tmp_path / "creator_embeddings.npz"
+    artifact.write_bytes(b"x")
+    monkeypatch.setattr(creator_features, "ARTIFACT_PATH", artifact)
+    monkeypatch.setattr(creator_features.threading, "Thread", _Thread)
+    creator_features.warm_up()                       # disabled by conftest: nothing starts
+    assert started == []
+    monkeypatch.delenv("CREATOR_FEATURES_DISABLED")
+    creator_features.warm_up()
+    creator_features.warm_up()                       # already loading: not started twice
+    assert started == [creator_features._load_in_background]
+
+
+def test_a_request_during_loading_waits_for_the_models_and_a_missing_artifact_does_not_wait(monkeypatch, tmp_path):
+    import threading
+    import time
+
+    monkeypatch.delenv("CREATOR_FEATURES_DISABLED")
+    monkeypatch.setattr(creator_features, "ARTIFACT_PATH", tmp_path / "missing.npz")       # no artifact: never loads, so never waits
+    t0 = time.monotonic()
+    assert creator_features.get_feature_scores("fitness", wait_seconds=5) is None
+    assert time.monotonic() - t0 < 1.0
+
+    def _finish_loading():
+        time.sleep(0.4)
+        with creator_features._lock:
+            creator_features._artifact, creator_features._embedder = _artifact(["a", "b", "c"]), _FakeEmbedder()
+    creator_features._loading = True                                                        # the models are "still loading"
+    threading.Thread(target=_finish_loading).start()
+    res = creator_features.get_feature_scores("fitness", wait_seconds=5)
+    assert res is not None and set(res) == {"a", "b", "c"}

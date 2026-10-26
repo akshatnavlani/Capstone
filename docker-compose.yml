@@ -1,0 +1,24 @@
+# Backend + frontend together. NOT TESTED on the laptop it was written on (no Docker installed there, 26 Oct 2026): build it once with
+#     docker compose up --build
+# and open http://localhost:3000. The database password is read from your shell or from a .env file next to this file (DATABASE_URL), never from the image.
+#
+# The backend image is the existing "smoke" image (backend/Dockerfile): it does NOT include ml/ or models/, so inside Docker the GAIL spillover score and the
+# CLIP/BERT creator-feature score fall back to the neutral 0.5 by design (see the comments in backend/Dockerfile). The full models run when the backend is started
+# outside Docker (python -m uvicorn app.main:app --app-dir backend) from the repository root.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

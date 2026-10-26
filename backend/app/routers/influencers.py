@@ -40,7 +40,7 @@ from app.config import settings
 from app.creator_features import get_feature_scores
 from app.database import get_session
 from app.fusion import compute_fusion_score, feature_uncertainty, sentiment_uncertainty
-from app.models import Creator, FusionScore, InstagramProfile, YouTubeChannel
+from app.models import Creator, FusionScore, InstagramPost, InstagramProfile, YouTubeChannel, YouTubeVideo
 from app.schemas import (
     BrandRecommendationRequest,
     BrandRecommendationResponse,
@@ -176,6 +176,7 @@ def _to_recommendation(
     spillover_info: dict | None = None,
     temporal_info: dict | None = None,
     feature_info: dict | None = None,
+    product_match: str = "exact",
 ) -> InfluencerRecommendation:
     # Resolve spillover: live GAIL if available, else stored or placeholder.
     # spillover_info comes from get_spillover_batch (has spillover_score, basis, confidence_*).
@@ -236,6 +237,7 @@ def _to_recommendation(
         spillover_basis=spillover_basis,  # type: ignore[arg-type]
         estimated_reach=reach or None,
         estimated_cost=(reach * COST_PER_FOLLOWER_INR) if reach else None,
+        product_match=product_match,  # type: ignore[arg-type]
         score_breakdown=breakdown,
     )
 
@@ -261,6 +263,14 @@ def get_recommendations(
         for ip in session.exec(select(InstagramProfile).where(InstagramProfile.creator_id.in_(creator_ids))).all()
     } if not using_mock_creators and creator_ids else {}
 
+    # Which creators have any collected posts. Empty profiles stay in the list but rank below creators with data.
+    youtube_with_posts = set(session.exec(select(YouTubeVideo.creator_id).where(YouTubeVideo.creator_id.is_not(None)).distinct()).all()) if not using_mock_creators else set()
+    instagram_with_posts = set(session.exec(select(InstagramPost.creator_id).where(InstagramPost.creator_id.is_not(None)).distinct()).all()) if not using_mock_creators else set()
+
+    def coverage_of(creator_id) -> str:
+        yt, ig = creator_id in youtube_with_posts, creator_id in instagram_with_posts
+        return "youtube+instagram" if yt and ig else "youtube" if yt else "instagram" if ig else "none"
+
     region_keywords = _extract_keywords(request.target_region)
     demographic_keywords = _extract_keywords(request.target_demographic)
     category_keywords = _extract_keywords(request.product_category)
@@ -278,7 +288,25 @@ def get_recommendations(
     # Creator feature score for this brief; None until the models have loaded.
     feature_map = get_feature_scores(request.product_category) if not using_mock_creators else None
 
+    def _build(creator, youtube_channel, instagram_profile, product_match: str = "exact") -> InfluencerRecommendation:
+        score = None
+        if not using_mock_creators:
+            score = session.exec(
+                select(FusionScore)
+                .where(FusionScore.creator_id == creator.creator_id)
+                .order_by(FusionScore.computed_at.desc())
+            ).first()
+        spillover_info = spillover_map.get(str(creator.creator_id)) if not using_mock_creators else None
+        temporal_info = temporal_map.get(str(creator.creator_id)) if not using_mock_creators else None
+        feature_info = feature_map.get(str(creator.creator_id)) if feature_map else None
+        rec = _to_recommendation(
+            creator, score, youtube_channel, instagram_profile, spillover_info, temporal_info, feature_info, product_match
+        )
+        rec.data_coverage = coverage_of(creator.creator_id)  # type: ignore[assignment]
+        return rec
+
     eligible: list[InfluencerRecommendation] = []
+    broader_candidates: list[tuple] = []   # pass every filter except the product words; only used when include_broader_matches
     for creator in creators:
         youtube_channel = youtube_channels.get(creator.creator_id)
         instagram_profile = instagram_profiles.get(creator.creator_id)
@@ -325,24 +353,26 @@ def get_recommendations(
         if category_keywords and has_category_signal and not _keyword_overlap(
             category_keywords, category_signals
         ):
+            if request.include_broader_matches:
+                broader_candidates.append((creator, youtube_channel, instagram_profile))
             continue
 
-        score = None
-        if not using_mock_creators:
-            score = session.exec(
-                select(FusionScore)
-                .where(FusionScore.creator_id == creator.creator_id)
-                .order_by(FusionScore.computed_at.desc())
-            ).first()
+        eligible.append(_build(creator, youtube_channel, instagram_profile))
 
-        spillover_info = spillover_map.get(str(creator.creator_id)) if not using_mock_creators else None
-        temporal_info = temporal_map.get(str(creator.creator_id)) if not using_mock_creators else None
-        feature_info = feature_map.get(str(creator.creator_id)) if feature_map else None
-        eligible.append(
-            _to_recommendation(creator, score, youtube_channel, instagram_profile, spillover_info, temporal_info, feature_info)
-        )
+    eligible.sort(key=lambda r: (r.data_coverage != "none", r.final_score), reverse=True)
 
-    eligible.sort(key=lambda r: r.final_score, reverse=True)
+    # Too few exact matches: top the list up from the creators that failed ONLY the product words, ranked first by
+    # the brief's creator-feature relevance (already in memory), and score just the few that are needed.
+    shortfall = request.max_results - len(eligible)
+    if shortfall > 0 and broader_candidates:
+        def _relevance(item) -> float:
+            info = feature_map.get(str(item[0].creator_id)) if feature_map else None
+            return info["score"] if info else 0.0
+        broader_candidates.sort(key=_relevance, reverse=True)
+        extra = [_build(c, yc, ip, "broader") for c, yc, ip in broader_candidates[: shortfall * 2]]
+        extra.sort(key=lambda r: (r.data_coverage != "none", r.final_score), reverse=True)
+        eligible = eligible + extra[:shortfall]
+
     results = eligible[: request.max_results]
 
     # Scores are computed live from the three branches, so a missing stored row no

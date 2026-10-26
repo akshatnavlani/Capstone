@@ -1,0 +1,5711 @@
+{
+ "checked": 623,
+ "quota_units": 623,
+ "candidates": [
+  {
+   "instagram_handle": "netflix_in",
+   "listed_by_creators": 6,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "imranmirza58",
+   "listed_by_creators": 4,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "primevideoin",
+   "listed_by_creators": 4,
+   "listed_by_core_150": false,
+   "channel_id": "UC4zWG9LccdWGUlF77LZ8toA",
+   "title": "Prime Video India",
+   "country": "US",
+   "subscribers": 39100000,
+   "videos": 14770,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "gourabganguli",
+   "listed_by_creators": 3,
+   "listed_by_core_150": false,
+   "channel_id": "UCShXZD6MhrqOnN9UNGCDUEA",
+   "title": "Gourab Ganguli",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "mansukhmandviya",
+   "listed_by_creators": 3,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "myntra",
+   "listed_by_creators": 3,
+   "listed_by_core_150": false,
+   "channel_id": "UCMlJjMRSKaUQhXQ_9XjCGpg",
+   "title": "Myntra",
+   "country": "IN",
+   "subscribers": 3450000,
+   "videos": 8307,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "starsportsindia",
+   "listed_by_creators": 3,
+   "listed_by_core_150": false,
+   "channel_id": "UC2iihojySb58j_Q4zL7VI5w",
+   "title": "StarSportsIndia",
+   "country": null,
+   "subscribers": 186000,
+   "videos": 40,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "afiindia_official",
+   "listed_by_creators": 2,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "baghpatdm",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "battlegroundsmobilein_official",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UCnaDeWSOoCEUPvyk1Wy2HGA",
+   "title": "IntellectZone",
+   "country": null,
+   "subscribers": 1,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "centraldelhikings.dpl",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "cosmoindia",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UC53oYMmjjhcR4n1UpnfntCA",
+   "title": "#indiaview",
+   "country": null,
+   "subscribers": 4,
+   "videos": 24,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "dharmamovies",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UCKQKIY2YlI4L5QVg7hhfjrQ",
+   "title": "Dharma Productions",
+   "country": "IN",
+   "subscribers": 12100000,
+   "videos": 2627,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "districtupdates",
+   "listed_by_creators": 2,
+   "listed_by_core_150": true,
+   "channel_id": "UCYoBHA4f4bzi8DL5aD1puow",
+   "title": "District 9920 Updates",
+   "country": "NZ",
+   "subscribers": 4,
+   "videos": 13,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "djdevofficial",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UCDEmk8WH9xDwYZY29qwUX6g",
+   "title": "DjDev",
+   "country": null,
+   "subscribers": 0,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "duamirzaasad",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "eastdelhiriders",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "farahkhankunder",
+   "listed_by_creators": 2,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "globalboxingseries",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "iba_official",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UCtYtB1tdNOSqIHGGfDQhegQ",
+   "title": "Plievv",
+   "country": null,
+   "subscribers": 1,
+   "videos": 8,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "indianfootball",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UCjiPxzIyNtfQ2HZZ1eVjZlg",
+   "title": "Indian Football",
+   "country": "IN",
+   "subscribers": 1220000,
+   "videos": 4423,
+   "fitness_words": 0,
+   "india_words": 3,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ivmpodcasts",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UCmZ8CtXFfMJjyfbOkiB0bpA",
+   "title": "IVM Podcasts",
+   "country": "IN",
+   "subscribers": 43100,
+   "videos": 13234,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "jayantireddylabel",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jiohotstar",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UC0PTktRYpZXb6On0_zFKWIg",
+   "title": "JioHotstar",
+   "country": "IN",
+   "subscribers": 11700000,
+   "videos": 8292,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "media.iccsai",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nexus_seawoods",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "northdelhistrikers",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UC1x3_Y3PxNaOjKqvGnTzhYg",
+   "title": "North Delhi Strikers",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "pumaindia",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rohanjaitley",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rohitsaraf",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sabakhanmakeup",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shantanunikhil",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "southdelhisuperstarz",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UCjq6gZMkrxEy3i83BvoqMgQ",
+   "title": "South Delhi Superstarz",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "spotifyindia",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": "UCLpc9ooZwVuTu0gpHwBatQA",
+   "title": "Abey Abraham",
+   "country": null,
+   "subscribers": 4,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "westdelhilions_",
+   "listed_by_creators": 2,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "__julianweber__",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "_anuj1817",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "_daisclassof2026",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "100rep.official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "a.chhetri16",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "a2z_adityaj",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "abhhaygulabani",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCUMRVwvKgF-X5gwBbqvFGhA",
+   "title": "Abhhay Gulabani",
+   "country": null,
+   "subscribers": 1,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "abhishekganguly",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UChOP-JGyl6D7Tj3XQCcKnLg",
+   "title": "Abhishek Ganguly",
+   "country": null,
+   "subscribers": 12,
+   "videos": 15,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ace.blend",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "acepadel.in",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "achkins9",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "adhaarnotacard",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "adityamusicindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "advhirday",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "afshan7493",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "agastyaorg",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCwWhhTHGPdfAduUWUDyORqA",
+   "title": "Agastya International Foundation",
+   "country": "IN",
+   "subscribers": 94600,
+   "videos": 1421,
+   "fitness_words": 0,
+   "india_words": 3,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ahsaassy_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "airtelindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "aishwaryamahawar",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC0DKIq2VHk06fTtnF-LKoWg",
+   "title": "Aishwarya Mahawar",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "akasasing",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCQh8b8FnK_IjL5gP0QTLxZg",
+   "title": "Akasa Sing",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "akshay.ahuja.02",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "alexhartley93",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCkK6FVWSMXkYZ_62Cmi26WQ",
+   "title": "Alex Hartley",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "aliteskincare",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCTIC3sdzVDRrvsBRV2sBKLw",
+   "title": "Alite Skincare | Acne Care Backed by Science",
+   "country": "IN",
+   "subscribers": 104,
+   "videos": 101,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "allensollyindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCHOnIHbzkdk8F4_kh8fw-GQ",
+   "title": "Allen Solly",
+   "country": null,
+   "subscribers": 82700,
+   "videos": 100,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "alnassr",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCIWtTSvcUXsnFGT-dcaQDxA",
+   "title": "alnassr",
+   "country": null,
+   "subscribers": 29,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "also.ishita",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "alt.vaibhav",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "altazaindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC_h7Qt7dsh10J8yLomvCa2g",
+   "title": "Al taza India",
+   "country": null,
+   "subscribers": 2,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "amannagoshe",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCbdNSzeZHfyVoCES5v1lZdw",
+   "title": "AMAN NAGOSHE",
+   "country": null,
+   "subscribers": 20,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "amazonmgmstudiosin",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "amitshahofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "amityashwant_hair",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "amybundhel",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "anammirzaaa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCyeZgf3shWWXEfUfprV58aA",
+   "title": "Anam Mirza",
+   "country": "IN",
+   "subscribers": 147000,
+   "videos": 327,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "anantika_singh_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ananyapanday",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "anubhavdubey1",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCSpD6E-gWHaACnYWW-93vQw",
+   "title": "Anubhav dubey",
+   "country": null,
+   "subscribers": 2,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "anubhuti_k",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "anujrawat_1755",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "anupampkher",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCuWhmqGbTvXNdIKN0beYJhQ",
+   "title": "Anupam Kher",
+   "country": "IN",
+   "subscribers": 241000,
+   "videos": 405,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "ar.mukulgoyal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "arbazshaikh6210",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCKjrQdR6KRln0h-epQ4BUvQ",
+   "title": "Arbaz Shaikh",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "aryanzanegoveas",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "aryhemdev",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "asad_ab18",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ashray_chhabra",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "astermedcity",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "asthadobhal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC76Wt3nIqWwzWH2jShPp65g",
+   "title": "Astha dobhal",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "attirebyajaygandhi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "audiin",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCXxQs7GFw65OgkvtSj5FvNA",
+   "title": "audiin",
+   "country": null,
+   "subscribers": 0,
+   "videos": 5,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "avinash_theactor",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "avinasharundhaware",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ayeshanayeem05",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ayush_badoni1",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ayush_doseja",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "babucjwhitegold",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bachchan",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCIZvVEbtzEjSMMVGwmJba3A",
+   "title": "bachchan",
+   "country": null,
+   "subscribers": 6,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "badmintonphoto_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bai_media",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCtuYw7Urv-8u2TenQBkfk7Q",
+   "title": "Badminton Association of India Official",
+   "country": "IN",
+   "subscribers": 36100,
+   "videos": 263,
+   "fitness_words": 0,
+   "india_words": 4,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "baketitude",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "balajiathmanathan",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "baricci",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "baselineventures",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCy0kg1ZDkJMz1_zn3DOdKnw",
+   "title": "Baseline Ventures",
+   "country": "IN",
+   "subscribers": 73500,
+   "videos": 124,
+   "fitness_words": 0,
+   "india_words": 3,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "baumaconexpoindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UC5IOyHCbm-dr0xpmLOMTeLQ",
+   "title": "bauma CONEXPO INDIA",
+   "country": "IN",
+   "subscribers": 1160,
+   "videos": 251,
+   "fitness_words": 0,
+   "india_words": 4,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "bbccricket",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bbcnewsindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCF4QKhPMP1JybbkIJzIayww",
+   "title": "BBC News India",
+   "country": "IN",
+   "subscribers": 428000,
+   "videos": 1357,
+   "fitness_words": 0,
+   "india_words": 3,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "be_a_bassi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCjWrDlf-8pMX0nOCFz77FOQ",
+   "title": "Be A Bassi",
+   "country": null,
+   "subscribers": 6,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "berlinsydneytails",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "betteraltindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "betternutritionforall",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC3HofdEvDnsmOfQd8aME8dg",
+   "title": "Better Nutrition",
+   "country": "IN",
+   "subscribers": 560,
+   "videos": 230,
+   "fitness_words": 2,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "bfchudugaru",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bhanu_singh_0812",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bhutia.25",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bigfmindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCMApuFts2zNMp4QU8Ng-oyw",
+   "title": "BIG FM India",
+   "country": "IN",
+   "subscribers": 440000,
+   "videos": 14857,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "bipinkumarss",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCF14I8jXQjH3B4LIF40wGbw",
+   "title": "Sangeeta tappo channel",
+   "country": null,
+   "subscribers": 6,
+   "videos": 4,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "bkttwing",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bluetribeofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bnigurgaon",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bnw.developments",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC7q1pi_iksXKALt63nwt4fA",
+   "title": "BNW Developments",
+   "country": "AE",
+   "subscribers": 5340,
+   "videos": 187,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "boring.founder",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCkl52OjEamWgxq6ZP65qTIw",
+   "title": "Boring Founder",
+   "country": null,
+   "subscribers": 9,
+   "videos": 24,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "brahmakumaris",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCUDKhNE_Y_DVkFx1nFNZTWQ",
+   "title": "Brahma Kumaris",
+   "country": "IN",
+   "subscribers": 764000,
+   "videos": 6533,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "briajewelsindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bridgestoneindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "brisonfernandes17_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "british_airways",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "brycemiranda_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "buckets.restaurant",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bumblecricket",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bunty_beast__",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "bycharlottewang",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "cadbury_bournvillein",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "cadburycelebrations_in",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "calvinklein",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCuf6cvFcYdpHZ_EjSIcBZlg",
+   "title": "Calvin Klein",
+   "country": "US",
+   "subscribers": 867000,
+   "videos": 1298,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "canyon",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCdzosDmAxO6fVDypgBEkLOQ",
+   "title": "Canyon",
+   "country": null,
+   "subscribers": 56,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "capsinetwork",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "captureone",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCJgJWICGMzzvXk2wIgqxVEQ",
+   "title": "Capture One",
+   "country": "DK",
+   "subscribers": 113000,
+   "videos": 398,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "centraldelhiqueens.dpl",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "centrum_india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "chakaravarthyvarun",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCBHBKVE9eE8chtxQ36_gr9g",
+   "title": "Chakaravarthy Varun",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "chakdebharatofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCl5d7UmapY8ffptuXtIQQPw",
+   "title": "ChakDeBharat",
+   "country": "IN",
+   "subscribers": 462,
+   "videos": 250,
+   "fitness_words": 1,
+   "india_words": 4,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "charliechauhan",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "chennaiyinfcyouth",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "chrisjohnsonhoops",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCSWVIwg0PgMx5xTNHKVvUsQ",
+   "title": "ChrisJohnsonHoops",
+   "country": "US",
+   "subscribers": 349000,
+   "videos": 5283,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "cliffordrmirandaofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "closeupindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCOQVmqvADjSwiUTGhmncZ8A",
+   "title": "Closeup India",
+   "country": "IN",
+   "subscribers": 109000,
+   "videos": 323,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "cnnnews18",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCef1-8eOpJgud7szVPlZQAQ",
+   "title": "CNN-News18",
+   "country": "IN",
+   "subscribers": 10900000,
+   "videos": 309536,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "coachellavalleylakers",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCokGWavZDHduqryrct8kiNw",
+   "title": "G-League Lakers",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "commonwealthsport",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "composer_vishal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "creamag_india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "crompton_india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCeywFNDQrMfQ5XrcjBQIU2g",
+   "title": "Crompton Greaves Consumer Electricals",
+   "country": "IN",
+   "subscribers": 21700,
+   "videos": 835,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "curapod",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCgOCEqYrP7hOcw18OPTIiSw",
+   "title": "Curapod",
+   "country": "IN",
+   "subscribers": 1280,
+   "videos": 172,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "dabasdevansh",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "daismumbai",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCE90WYLX-uFS9gEbNdKLqWQ",
+   "title": "DAIS Mumbai",
+   "country": "IN",
+   "subscribers": 42000,
+   "videos": 505,
+   "fitness_words": 0,
+   "india_words": 4,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "darcy_littlechild",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "dattavenkat",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC2qplLFL6AhEaxG-0ZKOxYw",
+   "title": "datta Venkat",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "decoding.visionaries",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "deepa.verma.makeup",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "deepakchar7",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCAsqUUQO1gKed1UUMRyiJhg",
+   "title": "caar express game",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "deepaksonkar1980",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCfflL6ZAHI2DObcwlVuiQLw",
+   "title": "Deepak Sonkar",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "deerajvaidy",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCmD_lPyOJ1zr5HsNGd2Dkeg",
+   "title": "Deeraj Vaidy",
+   "country": null,
+   "subscribers": 2320,
+   "videos": 7,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "devpadikkal19",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "dharma.distribution",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "dharmaticent",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCs6pYnJm3MrRJ-SrxKnAAiA",
+   "title": "Dharmaticent",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "diamirzaofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "dieticiansilversethi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "digitek_india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "digitekofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC-smryUreewac23ZHeVOdwQ",
+   "title": "Digitek ",
+   "country": "IN",
+   "subscribers": 21900,
+   "videos": 1008,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "dinpuia_pachuau",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "dippendubiswas",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UChMzGj4yH64hGJc40k9cN3A",
+   "title": "Dippendu Biswas",
+   "country": null,
+   "subscribers": 0,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "divyanshuvermaaa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC94NOVgmkXtjEZRZczZq-xg",
+   "title": "Divyanshu Verma",
+   "country": null,
+   "subscribers": 56,
+   "videos": 23,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "doccuccino",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "dptofsportsgoi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "dpworld",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCjOvjVQKG6C4_BOfqu-APXA",
+   "title": "dpworld",
+   "country": null,
+   "subscribers": 4,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "duroflexworld",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ederbez",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCvMK7xsnb8UhiMVza9UWXVw",
+   "title": "Pau",
+   "country": null,
+   "subscribers": 15,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "egoistalobo",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCCjlfUzS0_TaRErdUcB-l3A",
+   "title": "EgoistaLOBO",
+   "country": "IN",
+   "subscribers": 29100,
+   "videos": 111,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "elanoblumer",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "eliore_essentials",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "elrubiuswtf",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCnZK_nm5t3u6obG7YQLyxrg",
+   "title": "ElRubiuswtf",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "emmayentertainment",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCFRyw-A_73cerFCqRwNjM-Q",
+   "title": "Emmay Entertainment",
+   "country": null,
+   "subscribers": 1450,
+   "videos": 24,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ericrweinstein",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "eshviv",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "espn",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCiWLfSweyRNmLpgEHekhoAg",
+   "title": "ESPN",
+   "country": "US",
+   "subscribers": 14600000,
+   "videos": 115641,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "etakientertainment",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UClCfSbTQkhECW6di3qtqq4A",
+   "title": "ETAKI ENTERTAINMENT",
+   "country": null,
+   "subscribers": 236,
+   "videos": 8,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ethan.cxv",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "evangeline09",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCSbVcn7W7UlK4T-QxsSrsUw",
+   "title": "jaz \u270c\ufe0f",
+   "country": null,
+   "subscribers": 1,
+   "videos": 42,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "evayog__",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "everydayfitness_greaternoida_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ewc_en",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCZ-M4JPG5rdPJjvDUSWUf8g",
+   "title": "Ravi",
+   "country": null,
+   "subscribers": 4,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "exhibitmagazine",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCXY6WdOpOQjbuGi285p5fkg",
+   "title": "Exhibit Magazine",
+   "country": "IN",
+   "subscribers": 1210000,
+   "videos": 1254,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "experiencealula",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCjaAw4zvuDjq4mRhjFeiIvg",
+   "title": "Experience AlUla",
+   "country": "SA",
+   "subscribers": 57900,
+   "videos": 315,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "fallou_ndiaye04",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "fanaticsfest",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCq3iYGzgPZRlsG6gE6_6RZQ",
+   "title": "Fanatics Fest",
+   "country": "US",
+   "subscribers": 981,
+   "videos": 148,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "farah.qadri.522",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "farukhchoudhary17",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCxWjxS0IdRg2Gx8pNwYJpNQ",
+   "title": "Farukh Choudhary",
+   "country": null,
+   "subscribers": 344,
+   "videos": 7,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "fatima.adaa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "favreleuba",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCnB_hi8y1W0cps3XvwdxSAA",
+   "title": "Favre Leuba",
+   "country": "CH",
+   "subscribers": 2340,
+   "videos": 24,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "fdciofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCIOqqQV8fbeKkKalAlICG0g",
+   "title": "Fashion Design Council of India (FDCI)",
+   "country": null,
+   "subscribers": 14600,
+   "videos": 1395,
+   "fitness_words": 0,
+   "india_words": 10,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "feastables",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "feminaindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCbOe5GzWdxrbZYiHa-wF98w",
+   "title": "Femina India",
+   "country": "IN",
+   "subscribers": 449000,
+   "videos": 5011,
+   "fitness_words": 2,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "fitbodbymehak",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "fitindiaoff",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "flomattress",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCrOs5TJ3BtnsQBUNuLvmYOA",
+   "title": "Flo Mattress",
+   "country": null,
+   "subscribers": 6710,
+   "videos": 330,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "fossil.in",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ft.apurv",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gajrajrao",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gamechangers_withmj",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gamix.o7",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gareeboooo",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCXbY76ORIINT_g1TI7m6K6w",
+   "title": "Gareeb",
+   "country": "IN",
+   "subscribers": 1330000,
+   "videos": 94,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "gatoradeindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCG4bBTSqyMY702uTiXxbrNA",
+   "title": "Gatorade India",
+   "country": null,
+   "subscribers": 30200,
+   "videos": 36,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "gaurangofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCxEBUFuURZ5Fe9gl9fukQoQ",
+   "title": "GAURANG GAMING",
+   "country": null,
+   "subscribers": 1,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "gauravguptaofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCHsf54shX-bPA9iFyd2dVRQ",
+   "title": "Gaurav Gupta Official",
+   "country": "IN",
+   "subscribers": 285,
+   "videos": 27,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "georginagio",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCgd0ynNARXrWPn32S9uKdqg",
+   "title": "Georgina Gio",
+   "country": "ES",
+   "subscribers": 409000,
+   "videos": 38,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "getfitwithsid_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ghaziabadfootballassociation",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC79cVZhKcqC7u7HqSL77cpA",
+   "title": "Ghaziabad Football Association",
+   "country": null,
+   "subscribers": 85,
+   "videos": 12,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "giva.co",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "glasgow_2026",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "glennphillips236",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC928knNHHwY_Tjxus1Hq07w",
+   "title": "Glenn Phillips",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "gmnutritionusa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UC6PqblB1Z62SfbyzujeDbnQ",
+   "title": "GM Nutrition",
+   "country": "US",
+   "subscribers": 46200,
+   "videos": 37,
+   "fitness_words": 5,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "gmogtalk",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gocolors",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gogoroy",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCNNOVX4M6vpqhmdppVvr2Jw",
+   "title": "sumit_roy",
+   "country": null,
+   "subscribers": 0,
+   "videos": 5,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "graziaindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCjCo6RuOtTQx5VOXnDYtVwg",
+   "title": "Grazia India",
+   "country": "IN",
+   "subscribers": 50100,
+   "videos": 1640,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "greenmyna",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UChYcIzdPPFMWXFI_1_THr5Q",
+   "title": "Greenmyna",
+   "country": null,
+   "subscribers": 10,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "grooversstudio",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gtvhoops",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gucci",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCo6fjlKg6GuCmEMeqYbGJng",
+   "title": "GUCCI",
+   "country": "IT",
+   "subscribers": 1480000,
+   "videos": 1497,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "gulnarvirk",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCMLHqU56b53WWIsakB9RSEg",
+   "title": "Gulnar Virk",
+   "country": "IN",
+   "subscribers": 8170,
+   "videos": 58,
+   "fitness_words": 1,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "guneet_singh_23",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "gurjarartandculturetrust",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCs9RUqJHBn7eIcIjNHWsbxg",
+   "title": "gurjar art and culture trust",
+   "country": null,
+   "subscribers": 52,
+   "videos": 9,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "gurjarmahotsav",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC_emwqzOHOWWV3rTujYE8cw",
+   "title": "Gurjar Mahotsav \u0917\u0941\u0930\u094d\u091c\u0930 \u092e\u0939\u094b\u0924\u094d\u0938\u0935 ",
+   "country": null,
+   "subscribers": 19,
+   "videos": 101,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "gurublesssingh",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UC7V2tawjtStNEy4go6oucCg",
+   "title": "Guru Bless Singh",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "hariprasad4091",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCa4YGY4F1euEMq1vc0BcKmg",
+   "title": "Hari Prasad",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "harmanmann",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "harshtyagi509",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCS59MMoYg3Oi33fLT_-ELfg",
+   "title": "Harsh Tyagi",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "harvirnehwal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "hashtagmarketing.india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "hauterrfly",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCSXST7C6VuW-lDEHpwb1UIw",
+   "title": "Hauterrfly",
+   "country": "IN",
+   "subscribers": 695000,
+   "videos": 9093,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "heerabhai_jewellers",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "heerbygiva",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCfD8R0C5uiKuURRF_Wkduew",
+   "title": "Heer by GIVA",
+   "country": null,
+   "subscribers": 3380,
+   "videos": 306,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "heifernepal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCENYwms0VmxQq_4VSe9FLdw",
+   "title": "Heifer International Nepal",
+   "country": "NP",
+   "subscribers": 683,
+   "videos": 108,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "herbalife",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC5fkkiImyfs93wwOLbC0FGA",
+   "title": "Herbalife",
+   "country": "US",
+   "subscribers": 792000,
+   "videos": 4034,
+   "fitness_words": 2,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "himanimorofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "himmatsingh89",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCl0eEZ0M8X0ApTDjPnFHbJA",
+   "title": "Himmat Singh",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "hitanshu4",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "hitechworldschool_suncity",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "hollywoodreporterindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCNIGzoK1vgYYqLSF1MvI-3A",
+   "title": "The Hollywood Reporter India",
+   "country": null,
+   "subscribers": 216000,
+   "videos": 1297,
+   "fitness_words": 0,
+   "india_words": 3,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "homeofcricket",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC9gMP3Wb-MVKTwX9HX__54Q",
+   "title": "Home Of Cricket",
+   "country": "BD",
+   "subscribers": 16,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "houseofglenfiddich",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCNtErhOOFTA-VuGSRqe1tFQ",
+   "title": "House of Glenfiddich",
+   "country": "IN",
+   "subscribers": 55200,
+   "videos": 17,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "houseofkbfc",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC8iIgnEHGxP8a0D7TvZ0GRQ",
+   "title": "House Of KBFC",
+   "country": "IN",
+   "subscribers": 7250,
+   "videos": 158,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "houseofsarkar",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC7zTbHlkGvNOXWGbtbI02_g",
+   "title": "Sarkar",
+   "country": "IN",
+   "subscribers": 353,
+   "videos": 19,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "houseofsubtle",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "housethreethirty",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCytcARvZfDvZeFEjJN0MrWQ",
+   "title": "House Three Thirty",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "hrishikay",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC8YTYorjLbnZRZTow87uswA",
+   "title": "Hrishika Y",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "hsajeetselal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "hudleplay",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC3zaLcb7J_UetpQM-ohFomA",
+   "title": "Hudle India",
+   "country": "IN",
+   "subscribers": 312,
+   "videos": 160,
+   "fitness_words": 0,
+   "india_words": 4,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "hyundaiindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCRbP2fAbCBOMiaci7tz_sAA",
+   "title": "HyundaiIndia",
+   "country": "IN",
+   "subscribers": 1300000,
+   "videos": 3172,
+   "fitness_words": 0,
+   "india_words": 5,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "iamrohitdesai",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ibhupender_dhawan",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCrq23_7IhvLc5TBYOfS9wpA",
+   "title": "Training tips by Dronacharya Bhupender Dhawan and Mr India Mukesh Singh.",
+   "country": "IN",
+   "subscribers": 1070000,
+   "videos": 797,
+   "fitness_words": 8,
+   "india_words": 4,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "iharshsanghavi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "iimun_rajkot",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "iimunofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC3ITKWVRSWixmVZILFbxi7Q",
+   "title": "IIMUN",
+   "country": "IN",
+   "subscribers": 379000,
+   "videos": 1597,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "iitsaymen_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "imanishimwe_emmanuel24ever",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "imdb_in",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "imjagmeetkaurofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "indiantennisdaily",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCgxt86C9vlVwARZMu34la_w",
+   "title": "Indian Tennis Daily",
+   "country": "IN",
+   "subscribers": 8360,
+   "videos": 2657,
+   "fitness_words": 0,
+   "india_words": 5,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "inspirationbyiimun",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "instagram",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCHQU99yKRd_BQVSci2MZ08w",
+   "title": "Instagram",
+   "country": "US",
+   "subscribers": 6230000,
+   "videos": 194,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "iplt20",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCjeOhGnPjAzvhm-WP6TeHCA",
+   "title": "IPLT20",
+   "country": null,
+   "subscribers": 1960,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "iprashantrao",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ipshita.raj",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "isaguha",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCCkK9XYDDESH7qt5mWcOZFw",
+   "title": "Isa Guha",
+   "country": null,
+   "subscribers": 2,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ispl_t10",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "itarajewelry",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC_K2Ip0ULLFyj8yBlgt6MbA",
+   "title": "Itara Jewelry",
+   "country": null,
+   "subscribers": 5,
+   "videos": 6,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "itsambersandhu_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jahangirahmad04",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jaideepahlawat",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jasonshah",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCV-w5BrYHo3YwYpBqA6HedQ",
+   "title": "Jason Shah",
+   "country": null,
+   "subscribers": 323,
+   "videos": 30,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "javitomas",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCGRJ3hx6hqWV8vmxHNTZinQ",
+   "title": "javi tomas",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "jayswatchstore",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC6GSb9nAi-QFJ7krheyF-BA",
+   "title": "Jay's Watch Store",
+   "country": null,
+   "subscribers": 6,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "jblindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCCUu4mhAsSNpuAT91SOlkrw",
+   "title": "Harman India",
+   "country": null,
+   "subscribers": 21,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "jhandupowerlifter",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jimbeamsoda",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UClY6KBmC0gnPYUz7Hg7b3SQ",
+   "title": "Jim Beam Soda",
+   "country": null,
+   "subscribers": 38,
+   "videos": 3,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "jiteshworyumkhaibam",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jiyaasomaiyaa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jjjashok",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jnaneshsalian",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCtThcgDxdzUnYbUzDwHaK2Q",
+   "title": "Jnanesh Salian",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "jontysidhu_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "jus.hoop",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kabeerlal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kapilsharma",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kapiva_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "karishmasamat",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC5qvKVMXFXhfBD0-VHn3cLw",
+   "title": "Karishma Samat",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "kashika__grover",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kashishsinhaaa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCmU_2VKEkoDznoKP4KrKHRw",
+   "title": "kashish",
+   "country": null,
+   "subscribers": 3,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "kbfc_academy",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "keicables",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kesavansminerva",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kevin.yoke",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kevinhart4real",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCldUDp1ZdJPh1r2NxTIMOEA",
+   "title": "leeisateam",
+   "country": null,
+   "subscribers": 7,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "kisse.baazi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kkrfanarmyofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kkridersbangla",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "klusner.pereira11",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kohler_india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kohliumang33",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "konkona",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "kreshabajajofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "krishas_vanity",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "krishnakami",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCeC2I5jEU-fNTtO15ENq08w",
+   "title": "Krishna Kami",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "kritikabharadwaj95",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ksi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCGmnsW623G1r-Chmo5RB4Yw",
+   "title": "KSI",
+   "country": "GB",
+   "subscribers": 19200000,
+   "videos": 1557,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "kumudkhera",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCG_nZ1kVpAK4Z4fkhMBaFNw",
+   "title": "Kumud Khera",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "lakshya",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCzCH51otOzgF8zrr_UYGBng",
+   "title": "lakshya",
+   "country": null,
+   "subscribers": 14,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "lalit.prabhakar",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "lavieworld",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "lbjhistory",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCWybGZ5UKjQ8_-uHtJScMjw",
+   "title": "lbjhistory",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "legionhoops",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "lenskart",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCa2vV58xOQA84if7HjBatTQ",
+   "title": "Lenskart",
+   "country": null,
+   "subscribers": 344000,
+   "videos": 2931,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "letseatbakers",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCaRNF-yDaLaL2NS91L-Qz8w",
+   "title": "let\u2019s EAT Bakers",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "lining.sunlight.india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ljfamfoundation",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCPwkHlYTtaN4KqHRA1pWK8g",
+   "title": "LeBron James Family Foundation",
+   "country": null,
+   "subscribers": 25400,
+   "videos": 105,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "lokesh.kanagaraj",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC1ZF6I6nKuz_DShuBMIXklg",
+   "title": "Live relay konjam delay",
+   "country": null,
+   "subscribers": 543,
+   "videos": 116,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "lottosportindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "lovechildbymasaba",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCQt6I444KGmCKUYbm_rpwGQ",
+   "title": "LoveChild By Masaba",
+   "country": "IN",
+   "subscribers": 20000,
+   "videos": 536,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "loveofanti",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "luciaclinic",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCikBMROMbWNi_lERUDww8nA",
+   "title": "\u30eb\u30b7\u30a2\u30af\u30ea\u30cb\u30c3\u30af\u3010LUCIA CLINIC\u3011",
+   "country": "JP",
+   "subscribers": 2130,
+   "videos": 593,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "maddockfilms",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC-LOdiPoxninevJ0DkleCLg",
+   "title": "Maddock Films",
+   "country": "IN",
+   "subscribers": 1990000,
+   "videos": 1778,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "madhubhojwani",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC1ULJLPwxtYWeeopZ6uc2Rg",
+   "title": "Madhu Bhojwani",
+   "country": null,
+   "subscribers": 10,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "madhvaniram",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "maheson_tongbram10",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mahi7781",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UChAX-awWBrxEm4icSuRiz2w",
+   "title": "Mahi7781",
+   "country": null,
+   "subscribers": 19,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "maisamayhoon",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCZjdtpvvojmdN1POMQF1RZQ",
+   "title": "World Circle",
+   "country": null,
+   "subscribers": 10,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "makeupbyaliyabaig",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "malaysiaairlines",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCOSyqgcCTXyuRqEz-2ofo1w",
+   "title": "Malaysia Airlines",
+   "country": "MY",
+   "subscribers": 202000,
+   "videos": 1118,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "maliha5729",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mandarraodessai",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "manemaniac_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mangopost.production",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mansimao",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCkCmk4UN1-Ar42LJro7cLzA",
+   "title": "Prajakta koli",
+   "country": null,
+   "subscribers": 7,
+   "videos": 3,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "marineandlawn",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCwjyyjr8sA7-yI5VFV3Fj4Q",
+   "title": "Marine & Lawn Golf Hotels",
+   "country": "GB",
+   "subscribers": 32,
+   "videos": 49,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "martinsglan",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCh2kE5erKqBw88I196mfGxQ",
+   "title": "Martins Glan",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "marykomfoundation",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "masabagupta",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCc2X09xYdZJdPlyxCFf-sRQ",
+   "title": "Masaba Gupta",
+   "country": "IN",
+   "subscribers": 5650,
+   "videos": 54,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "mashable.india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mayankrawat03",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCb_Cq0uUiVWamKIpINaxNEQ",
+   "title": "TP:MAYANK!! ",
+   "country": null,
+   "subscribers": 25,
+   "videos": 7,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "mehak_sembhy",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mehreenpirzadaa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mercedesbenz",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UClj0L8WZrVydk5xKOscI6-A",
+   "title": "Mercedes-Benz",
+   "country": "DE",
+   "subscribers": 2450000,
+   "videos": 947,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "mercedesmaybach",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCljf0cLd1LVzfZmtqe2RqTQ",
+   "title": "Mercedes Maybach",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "mgselect",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCt1eJlmrHdPjXMl4jiC59MQ",
+   "title": "MG Select",
+   "country": "IN",
+   "subscribers": 17800,
+   "videos": 203,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "miabytanishq",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCv1beJq2fP2A7xAHqiI2Muw",
+   "title": "Mia by Tanishq",
+   "country": null,
+   "subscribers": 43700,
+   "videos": 659,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "miakee.official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCFcF4JB3BIFwDq4V0aHfuwQ",
+   "title": "Miakee",
+   "country": null,
+   "subscribers": 10,
+   "videos": 84,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "michaelkors",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCWZTQLvNSm92fZPnjVGFRIA",
+   "title": "Michael Kors",
+   "country": "US",
+   "subscribers": 219000,
+   "videos": 360,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "michaelvaughan",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "milind_rau",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "milton_homewares",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mindandmusclesmentor",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UC7ZZdeXqvuqB6ynuBkdAonw",
+   "title": "@Mind_Muscles_Mentor",
+   "country": null,
+   "subscribers": 33,
+   "videos": 44,
+   "fitness_words": 3,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "mindthegamepod",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCSPFtrIa27Hu7Af7IDbLT0g",
+   "title": "Daniele Spagnoli",
+   "country": null,
+   "subscribers": 6,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "missionsportsedu",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "miteshrajani",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCwi067OdO4w6sbfZavg4Jcg",
+   "title": "Mitesh Rajani",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "mohan.ramkris",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mohar_bypriyankaandnakul",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mohunbagansg",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC4pghAhB_3a9Cyjj3P5DAOw",
+   "title": "Mohun Bagan SG",
+   "country": "IN",
+   "subscribers": 0,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "moodandco.official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mumbaicricassoc",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC9tzJSq9PGlxELVrVs3Nzbw",
+   "title": "Mumbai Cricket Association (MCA)",
+   "country": "IN",
+   "subscribers": 16200,
+   "videos": 960,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "mxbyprimevideo",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UC1NtcHxG3wiyhtbbPmIaMnA",
+   "title": "MX Player by Prime Video",
+   "country": "IN",
+   "subscribers": 6000000,
+   "videos": 30125,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "myntrabeauty",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "mynykaa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nacjewellers",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCwAtAJkH3zpZXR8UHRovAag",
+   "title": "NAC Jewellers",
+   "country": "IN",
+   "subscribers": 94400,
+   "videos": 550,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "nagar_club_dujana",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "naheedee",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "namrata.deepak_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "naralokesh",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC1tTb8x7oXDkfVOXzJRUeOA",
+   "title": "naralokesh",
+   "country": null,
+   "subscribers": 4,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "nasty.sekho",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nba",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCWJ2lWNubArHWmf3FIHbfcQ",
+   "title": "NBA",
+   "country": "US",
+   "subscribers": 24600000,
+   "videos": 80708,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "nbagleague",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCpGimyrbwRtrcJ-CIiRDXbA",
+   "title": "NBA G League",
+   "country": "US",
+   "subscribers": 411000,
+   "videos": 48506,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "nbaonprime",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCelJn8OI283lFpgqRHoj7sg",
+   "title": "NBA on Prime",
+   "country": null,
+   "subscribers": 1,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ncpamumbai",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "network18run",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCQ5rr8IKZYaPofiR8TuCJkg",
+   "title": "Network18Run",
+   "country": null,
+   "subscribers": 4,
+   "videos": 6,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "newdelhitigers",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nexxusnewyork",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC2Ps4TfqZ47ZIOr5hWRoICg",
+   "title": "Nexxus New York - India",
+   "country": null,
+   "subscribers": 57,
+   "videos": 181,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "nike",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCUFgkRb0ZHc4Rpq15VRCICA",
+   "title": "Nike",
+   "country": null,
+   "subscribers": 2280000,
+   "videos": 649,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "nikebasketball",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCQrJnH38bokL5BKcqBAvGnA",
+   "title": "Nike Basketball",
+   "country": null,
+   "subscribers": 413000,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "nikefootball",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCNhxq7He5p-_FdBh0OaxcQg",
+   "title": "Nike Football",
+   "country": null,
+   "subscribers": 3000000,
+   "videos": 228,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "nikitajaisinghani",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nikola8s_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nitishrana_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCDVBVpckuO8_r8OcUoKxC_Q",
+   "title": "Nitish Rana \ud83e\udd85",
+   "country": "IN",
+   "subscribers": 5,
+   "videos": 6,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "nmacc.india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nmmconline",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nogueraalberto",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCMNCvsonSHxhAvtmYXvBWog",
+   "title": "Noguera Alberto",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "nolanhansen",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCv1u20pr8U-U85PGLpKxNKw",
+   "title": "Nolan",
+   "country": "US",
+   "subscribers": 3510000,
+   "videos": 279,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "northendbluesofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "notout.boys",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "nuno91reis",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "oakleymeta",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UC_SggUNME1hp78RzaSNiwmA",
+   "title": "Oakley | Meta",
+   "country": null,
+   "subscribers": 35600,
+   "videos": 169,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "officialbankofbaroda",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "officialkheloindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCLDZdhSE5JQt_Tt3NnnmZ4A",
+   "title": "official khelo india",
+   "country": null,
+   "subscribers": 12,
+   "videos": 5,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ojingtasing_bjp",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "olympickhel",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCEVxr9A7Bt5AlUQ-Oso-bJg",
+   "title": "karan chauhan",
+   "country": "IN",
+   "subscribers": 6,
+   "videos": 7,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "omshantiretreatcenter",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCMKiDq2Q7egO3TOY6WojCYg",
+   "title": "Sun star",
+   "country": null,
+   "subscribers": 63,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "one8.commune",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "one8world",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCxf9UnxKcwusdA0-0NOV7kA",
+   "title": "\u26a1 \ud835\udde2\ud835\udde1\ud835\uddd8\ud835\udff4 \ud835\uddea\ud835\udde2\ud835\udde5\ud835\udddf\ud835\uddd7 \u26a1",
+   "country": null,
+   "subscribers": 14,
+   "videos": 4,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "onlyemmay",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "oppokerala",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCfoPd4jCPZxf-_U7h8oq2GQ",
+   "title": "OPPO KERALA",
+   "country": "IN",
+   "subscribers": 18800,
+   "videos": 280,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "optimumnutri_in",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "outerdelhiwarriors",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC2wh1k9dpEoJrmceWa86GHw",
+   "title": "Outer Delhi Warriors",
+   "country": null,
+   "subscribers": 5,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 4,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "p.v.ramana918",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "paralympicsindia_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "parmeetsinghchadhadr",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "parthiv9",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCeWVPbwgKBBX9MrwAL3guuQ",
+   "title": "Parthiv Patel",
+   "country": null,
+   "subscribers": 6,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "pehelvaggarwal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "phil.tufnell",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "pibraipur",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCYhmxywfDrIIbjUg1MkPwtQ",
+   "title": "PIB- RAIPUR",
+   "country": "IN",
+   "subscribers": 31,
+   "videos": 132,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "pickyourtrail",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCTD3Eml5BkKBeMEgIATk4ag",
+   "title": "Pickyourtrail",
+   "country": "IN",
+   "subscribers": 39900,
+   "videos": 1710,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "piyush307",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCX9P7XVWZGltniYnqtRQiKA",
+   "title": "Piyush Tandon",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "playstationin",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UClcQ90LedRcM_HFR-mZsENg",
+   "title": "PlayStation India ",
+   "country": "IN",
+   "subscribers": 50800,
+   "videos": 1909,
+   "fitness_words": 0,
+   "india_words": 3,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "popclubofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UC2L9TEB3Zl4wtOanyRCi2FQ",
+   "title": "Pop Club",
+   "country": "OM",
+   "subscribers": 16300,
+   "videos": 175,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "poulomiestates",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "poweradeindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UC8fBeuMpheBIYrTgEGDZDkg",
+   "title": "Powerade India",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "pragadees___",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "prateek_baid",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "pravk.90",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "princejabakaran",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "priskhiangte",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "pritamkotal20",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "prity_bhadouria",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "priyankarkapadia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCFYr8wne_UCPg-B5XwvskxA",
+   "title": "Priyanka Kapadia Badani",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "prknack",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "proquest_nutrition",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "psin.in",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "pumatraining",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCfY9HstMjd5vsoB1DYcly9A",
+   "title": "Puma Training",
+   "country": null,
+   "subscribers": 5,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "purani.dilli6",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "pvijan",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC4hmOtF7a39ancQupcbjrrQ",
+   "title": "Pooja Vijan",
+   "country": null,
+   "subscribers": 2,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "r.i.n.l",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "radhika_dhopavkar",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "radhikaagrawalstudio",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "radiocityindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "radiocitymumbai",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCTZ_TYDOQ9hN2AdJHA7oqKA",
+   "title": "RadioCitymumbai",
+   "country": null,
+   "subscribers": 10,
+   "videos": 4,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ragi_bubakiya",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rahul_motwani18",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rainforestalliance",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCazkF76kH3FtxT0eLuVpdzA",
+   "title": "Rainforest Alliance",
+   "country": "US",
+   "subscribers": 23500,
+   "videos": 479,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "rajkummar_rao",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "raksha.khadse",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ramanbhanotlive",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCDv4qyfvOJ7FYeTYo_22Z0Q",
+   "title": "Raman Bhanot",
+   "country": "IN",
+   "subscribers": 2930,
+   "videos": 34,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ranirampal4",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "ranjeet_tiwari1",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rashwin99",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC3sbTqODQQyx9-2b0MMjmPQ",
+   "title": "R Ashwin 99",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "raybanmeta",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCr6KJz_DHUXSwN3sP0gOoOw",
+   "title": "Ray-Ban | Meta",
+   "country": "US",
+   "subscribers": 283000,
+   "videos": 460,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "reejmann",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "reliancebrandsltd",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "reliancejewels",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rhuaofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "richardajefferson",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCwLt4WFUunqoqW6YvaZ6QSw",
+   "title": "JDC Productions",
+   "country": null,
+   "subscribers": 137,
+   "videos": 20,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ricky.26",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCwR9LGGwMz1Db3QT8gZTh9A",
+   "title": "\u30ea\u30c3\u30ad\u30fc",
+   "country": "JP",
+   "subscribers": 12,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "rippedupnutrition",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC2lohEGvpdBrdWGIug-3KyA",
+   "title": "Ripped Up Nutrition",
+   "country": "IN",
+   "subscribers": 1630,
+   "videos": 463,
+   "fitness_words": 3,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "rishabhshah2012",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCseQcrlX4yhabe8UWa1o23A",
+   "title": "Rishabh Shah",
+   "country": null,
+   "subscribers": 165,
+   "videos": 46,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "rithiksinhaa",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rivabeachresort",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC6wTDaIcQVqtNTZ7OatH-hQ",
+   "title": "Riva Beach Resort",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "rohan_kalakanti",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rohitbalofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "romanatwood",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCnOVVuoLJ_1YY8A0V802wHA",
+   "title": "RomanAtwood",
+   "country": null,
+   "subscribers": 9980000,
+   "videos": 117,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "rrituuagarwaal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "rsuneja",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCSnGyiGeR9O1a-0ZxtQZb0Q",
+   "title": "rsuneja",
+   "country": null,
+   "subscribers": 0,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sachintendulkar",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCnzTvgqX77zZBJ5mji5bi7w",
+   "title": "Sachin Tendulkar",
+   "country": "IN",
+   "subscribers": 1770000,
+   "videos": 308,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sachintendulkarfoundation",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "saheef_05",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "saina_addictzz",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "saini.akki",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "samarmalhotrap",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "samsungindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC3O8-tKnz9VUn3sxZKyKN3w",
+   "title": "Samsung India",
+   "country": "IN",
+   "subscribers": 5640000,
+   "videos": 3729,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sananth__",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sandeepchaupal_hair",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC776fg6bbxEa50LL2CXNm7w",
+   "title": "sandeepchaupal_hair",
+   "country": "IN",
+   "subscribers": 31,
+   "videos": 43,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "saniamirzatennisacademydubai",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sanjeevjaiswalias",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCiHfV05F4KlQiuajyRCurag",
+   "title": "Sanjeev Jaiswal (I.A.S.)",
+   "country": null,
+   "subscribers": 124,
+   "videos": 152,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "santoshishetty",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCCctaxehofTFn4cgY9d8jZg",
+   "title": "Santoshi P",
+   "country": null,
+   "subscribers": 1,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sarvejanafoundation",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "satish.ramesh_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "scdelhi.official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCdV8JaOBfwzqNgDI7tyMk8Q",
+   "title": "Sporting Club Delhi",
+   "country": "IN",
+   "subscribers": 4200,
+   "videos": 459,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "servotechrenewable",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCWyApDWnXEEmxAVakPWRHsQ",
+   "title": "Servotech Renewable Power System Limited",
+   "country": "IN",
+   "subscribers": 7480,
+   "videos": 532,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "settlesubtle",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC2LWVqb-e5wgo62J6cYidNA",
+   "title": "Varun Agrawal",
+   "country": "IN",
+   "subscribers": 1360,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "shams_mulani",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UClK7DYRPtMp5N_ct5sgeriw",
+   "title": "Shams Mulani",
+   "country": null,
+   "subscribers": 501,
+   "videos": 35,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sharadakarki",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCRNONVai75VeQR6Mz8Rmz9g",
+   "title": "Sharada Karki",
+   "country": null,
+   "subscribers": 1,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sharanssharma",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCJnGCeNwoXowubPmJsVqNhA",
+   "title": "Sharans Sharma",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "shareendeosthale",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sharkandink",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shashitharoor",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shekhartonite",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCgjCrHmS-IC9yFJsRpyv3Fg",
+   "title": "Shekhar Tonite",
+   "country": null,
+   "subscribers": 45,
+   "videos": 6,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "sheldon.santos",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC4otc6J4SLJvxTPj_6ZrEFw",
+   "title": "Sheldon Santos",
+   "country": null,
+   "subscribers": 1,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "shiva_siddharth_mua",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shivamguptax15",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCokxVyy9_V7FuqGlZGT_Dtw",
+   "title": "SHIVAM GUPTA",
+   "country": "IN",
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "shivaya_mukteshwar",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shootguru",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCw3zf0K_npYEsiGL61F1ppg",
+   "title": "Shoot Guru",
+   "country": "IN",
+   "subscribers": 30700,
+   "videos": 400,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "shreemahajan__",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shreyaas_krishna",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shrushti_birje_23",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shubhamrawat.9",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "shweta_sehrawat_11",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sidartahuja",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCsMLNIOjpZDcIahxrJjjt1g",
+   "title": "Siddharth Ahuja",
+   "country": "IN",
+   "subscribers": 65,
+   "videos": 4,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "siddharth_joon11",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sikandarkher",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "simpleenergy.in",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "simpleskincareindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCzJfJLTsmRFcAwy7bk4o6pw",
+   "title": "Simple Skincare India",
+   "country": "IN",
+   "subscribers": 13100,
+   "videos": 427,
+   "fitness_words": 1,
+   "india_words": 3,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sivavaidooran",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "slimji.official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "slurrpfarm",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC6iehKTgTWnOZbvwS34BGnA",
+   "title": "Slurrp Farm",
+   "country": "IN",
+   "subscribers": 46200,
+   "videos": 249,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "soham_varshneya14",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "solaraindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "solitariodiamonds",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCj6VrwfeWaJGqpjjC0ahZQQ",
+   "title": "Solitario Diamonds - Best Lab Grown Diamonds ",
+   "country": "IN",
+   "subscribers": 466,
+   "videos": 304,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "soniyadavcricketer",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sportsyw.cg",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "srivenkateswaracreations",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCPuJ4OTdu0fJcNSY1hE0iag",
+   "title": "Sri Venkateswara creations ",
+   "country": null,
+   "subscribers": 527,
+   "videos": 158,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "starvingartistfilms",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCCRiRY8uu5QCybnuvskxt3w",
+   "title": "Starving Artist Films",
+   "country": null,
+   "subscribers": 0,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "stayfreeindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCpmHm6dBddRepWYJ2ehFRfA",
+   "title": "Stayfree India",
+   "country": null,
+   "subscribers": 135000,
+   "videos": 164,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "steelobrim",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC7ocOHqm5Gbd-2VLf9vZzQQ",
+   "title": "Steelo Brim",
+   "country": null,
+   "subscribers": 144,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "steishabuddhala_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "stevemccurryofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "stevenmendozaoficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "steveo",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCt54Hzhj7RpCWOYpoFJLKAQ",
+   "title": "steveo",
+   "country": "US",
+   "subscribers": 7010000,
+   "videos": 489,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sticktocricket",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC5nWjS24faqQfeLf6qAtAQw",
+   "title": "Stick To Cricket",
+   "country": null,
+   "subscribers": 40,
+   "videos": 91,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "stoga.fit",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "stride.box",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "su2c",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCHZWvU3z2EJDvt_hsL_7oug",
+   "title": "Stand Up To Cancer",
+   "country": "US",
+   "subscribers": 20600,
+   "videos": 765,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "suchitraacademy",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "suhanakhan2",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCjpEtxB27esJSvjol-BqUzg",
+   "title": "Suhana Khan (Sue)",
+   "country": "US",
+   "subscribers": 7760,
+   "videos": 111,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "suharth_foundation",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sunpictures",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCo2r1S9iXJshkeV9v_ZDicw",
+   "title": "Sun pictures",
+   "country": "IN",
+   "subscribers": 15,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "sur_jeet_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCWKaE4QMQQm1r-GMMEjiF_Q",
+   "title": "Surjeet Singh",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "surajsamat",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCV6bjnhDy9__HePH9eyGnQw",
+   "title": "joyti samat",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "suresh__ravi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "sureshraina3",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCpSWUTUbKIElHBWmCqxgn1Q",
+   "title": "sureshraina3",
+   "country": null,
+   "subscribers": 1,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "suryadev_tmt",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "swapnilkun28",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "swatantrajain",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCIE7YLFvbgFz2qwmn6mOz6A",
+   "title": "swatantrajain",
+   "country": null,
+   "subscribers": 2,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "swiggy_dineout",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCCVuixdwWwk5SSkFyF-Zidw",
+   "title": "Swiggy Dineout",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "switzerlandin",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCB7evM9rdwVYpzQxoyBpyog",
+   "title": "\u30ed\u30fc\u30ba\u3068Zoller",
+   "country": null,
+   "subscribers": 19,
+   "videos": 40,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "t20worldcup",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "tanishasingh046",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "tanush_kotian",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "tanveerdaswani",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCglPzzwCy_2VP439Akhbs1A",
+   "title": "Tanveer Daswani",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "tarafinejewellery",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCfWC2XIulFShgqg4y7vrBZQ",
+   "title": "Tara fine jewellery.",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "taransodhi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCaQvTmwE4lvvARVtWnQ4Emw",
+   "title": "Taran Sodhi",
+   "country": null,
+   "subscribers": 0,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "tareqq",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCW37DQm-jUAvYhYEqp0JHYQ",
+   "title": "\u0637\u0627\u0631\u0642 \u0627\u0644\u0631\u0634\u062f\u0627\u0646",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "taruka_s",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "tataaialifeofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "team.kapilsharma",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCeSSY9YbsAAAr89d67NSNng",
+   "title": "Hit_Talks",
+   "country": null,
+   "subscribers": 2,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "teamalulae1",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCJ4inEcOcEI44R8W0DPOJVQ",
+   "title": "Team AlUla Championed by LeBron James",
+   "country": null,
+   "subscribers": 138,
+   "videos": 107,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "teamharendranagarbjp",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "teamlebron",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCDT1J5XesQ2mql_guDpc11A",
+   "title": "TeamLeBron",
+   "country": null,
+   "subscribers": 4,
+   "videos": 8,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "teamswish",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCF0iewK3lkjwK3SUBzcyUsg",
+   "title": "Scott Swisher",
+   "country": null,
+   "subscribers": 5,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "terina__hnamte",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "thatindianpadelguy",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "thea",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCzgItCAh-3IRo3xUOZy0H7w",
+   "title": "thea",
+   "country": null,
+   "subscribers": 70,
+   "videos": 6,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "theblasterscollective",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "theclubinternationalcity",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "thecocacolaco_in",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "thedermacoindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCak8KQ1SJXPx7bHIINsWFEA",
+   "title": "The Derma Co",
+   "country": null,
+   "subscribers": 18300,
+   "videos": 180,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "thegreatindiankapilshow",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCDsORsQ8a-AzwsXG-k0pJqg",
+   "title": "The Great Indian Kapil Show",
+   "country": "IN",
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "thegymatthebeach",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "thehyugalife",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "theleagueindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "thelegendsaina",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "thenextset.smta",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "theranjeettalks",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCV4CEt08mIVed8bg8PwATuA",
+   "title": "THE RANJEET TALKS",
+   "country": "IN",
+   "subscribers": 36100,
+   "videos": 504,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "therealprithvi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC1VvuQQVkuXAxJUqzpciX1w",
+   "title": "Ajeef Chowalloor",
+   "country": null,
+   "subscribers": 7,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "thesharannair",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCQmhVIp3ueiHr6CXs0-b-CA",
+   "title": "Sharan Nair",
+   "country": null,
+   "subscribers": 183000,
+   "videos": 977,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "theshop",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCCxLQbg5sZ35QS_nL6NJimQ",
+   "title": "The Shop",
+   "country": "US",
+   "subscribers": 181000,
+   "videos": 551,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "thevamshikurapati",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCsyey6skwVt85IIEmZ1RasQ",
+   "title": "thevamshikurapati reality",
+   "country": null,
+   "subscribers": 224,
+   "videos": 10,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "thinkmusicofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCLbdVvreihwZRL6kwuEUYsA",
+   "title": "Think Music India",
+   "country": "IN",
+   "subscribers": 23000000,
+   "videos": 7256,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "thirtysixtoyota",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCEuEw3HHWoLTWkn2WEyNwAw",
+   "title": "Thirty Six Toyota",
+   "country": "IN",
+   "subscribers": 857,
+   "videos": 236,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "thisisdsp",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC_RQqX-WypFqAcxxN7uy8_A",
+   "title": "Devi Sri Prasad",
+   "country": null,
+   "subscribers": 351,
+   "videos": 9,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "topps",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCZdQbk53JUjzMbPyFb5-PeA",
+   "title": "Topps",
+   "country": "US",
+   "subscribers": 235000,
+   "videos": 1034,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "toshitabalochi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "transform_tsk",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "transformwithdhiraj",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCq-x6-uuLBJOkPl4l3F2w5g",
+   "title": "Dhiraj Dhadwal",
+   "country": null,
+   "subscribers": 62,
+   "videos": 39,
+   "fitness_words": 3,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "tserieshealthandfitness",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UClzDIMsdz5O5hHNz4iRgGTw",
+   "title": "T-Series Health And Fitness",
+   "country": "IN",
+   "subscribers": 2150000,
+   "videos": 866,
+   "fitness_words": 2,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "tulsimehta",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCZiE1YThn3lmAzZ9KeuRxSg",
+   "title": "Tulsi Mehta",
+   "country": null,
+   "subscribers": 6,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "tymalmills",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC7YUlWtn8SLiBJHvnfcL6nA",
+   "title": "tymalmills",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "ubsathleticskidscup",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCZScxH7xRBTaksQ_VuENDUw",
+   "title": "UBS Athletics Kids Cup",
+   "country": null,
+   "subscribers": 460,
+   "videos": 54,
+   "fitness_words": 1,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "umumba",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "umumbattofficial",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "uninterrupted",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCh0_oEIReJmE7g3ZYVxxthA",
+   "title": "UNINTERRUPTED",
+   "country": "US",
+   "subscribers": 797000,
+   "videos": 1918,
+   "fitness_words": 2,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "universalpicturesindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCobkbYYx90aDf_oMxwni0bQ",
+   "title": "Universal Pictures India",
+   "country": "IN",
+   "subscribers": 672000,
+   "videos": 2902,
+   "fitness_words": 0,
+   "india_words": 2,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "urbancompany",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC52fWCtZ_zDjDnjJ-iPNHAA",
+   "title": "UrbanCompany",
+   "country": null,
+   "subscribers": 1,
+   "videos": 3,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "usainbolt",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "utsavsarang",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "uttarpradesh_footballsangh",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "valentino_suren",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "valskis21",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vanyapesuna",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCGvEy80o0GSfMp2r5Hffwbg",
+   "title": "Vanya Pesuna",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "vasandaninidhi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vbmusiclabel",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vedangraina",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vee.deshmukh",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "velsportsmanagement",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": "UCyC6PYfbTbUsJT8uO2DlHSQ",
+   "title": "Vel Sports Management",
+   "country": null,
+   "subscribers": 93,
+   "videos": 24,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "verma.abhay_",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vi_v_ek__j7",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vibhagusain",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC2ByLm1K4BID_l5GkCmhBTw",
+   "title": "Vibha Gusain",
+   "country": null,
+   "subscribers": 0,
+   "videos": 2,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "victorbertomeu",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCD8-ZL-MXysZXIr1Q26ek5g",
+   "title": "Victor Bertomeu",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "vijayapusarla",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vijaysharma1541",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCNzaqOKNok7HN5uPnR4hvpg",
+   "title": "vijay sharma",
+   "country": null,
+   "subscribers": 0,
+   "videos": 0,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "vikram_phogat_indian_hulk",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "visit.dubai",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "visualsbyave",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCay8AJue9j-AlJgGjKFjP9Q",
+   "title": "visualsbyave",
+   "country": "US",
+   "subscribers": 280,
+   "videos": 14,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "vitadani7",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vivekkarunakaran_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vivo_india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCqcUkBtzeqIAjUnaakLC1KA",
+   "title": "Vivo ",
+   "country": null,
+   "subscribers": 1,
+   "videos": 1,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "vmj_bollywood",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UC3W78gWmmVAFtpNI9TkZSjQ",
+   "title": "Vishal Mohan Jaiswal",
+   "country": "IN",
+   "subscribers": 64,
+   "videos": 217,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "voguemagazine",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "volkswagen_india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCDvDT8C67GdV8HX4mEvBpOQ",
+   "title": "Volkswagen India",
+   "country": "IN",
+   "subscribers": 236000,
+   "videos": 796,
+   "fitness_words": 0,
+   "india_words": 1,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "vrishankkhanal",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "vujjinisrilakshmi",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "wander.on",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "westblockblues",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "whitegold.kerala",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "whoop",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCcdxzpFrj3uRPh96GrUIoOQ",
+   "title": "WHOOP",
+   "country": "US",
+   "subscribers": 165000,
+   "videos": 1153,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "wilyfrenzy",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "wimbledon",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCNa8NxMgSm7m4Ii9d4QGk1Q",
+   "title": "Wimbledon",
+   "country": "GB",
+   "subscribers": 2660000,
+   "videos": 7557,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "workafella",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCo3Rw65Rk8Dw3m_oq0COZfQ",
+   "title": "Workafella",
+   "country": "IN",
+   "subscribers": 597,
+   "videos": 227,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "yashdhull22",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "yasministryindia",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "yonex_sunrise_india",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "youtube",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCBR8-60-B28hp2BmDPdntcQ",
+   "title": "YouTube",
+   "country": "US",
+   "subscribers": 46600000,
+   "videos": 1669,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": true
+  },
+  {
+   "instagram_handle": "yungtaco",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": "UCp3dFDx3lhWZBoHjy0glZGg",
+   "title": "Yung Taco",
+   "country": null,
+   "subscribers": 39,
+   "videos": 31,
+   "fitness_words": 0,
+   "india_words": 0,
+   "same_person": false
+  },
+  {
+   "instagram_handle": "zeeldesai_official",
+   "listed_by_creators": 1,
+   "listed_by_core_150": false,
+   "channel_id": null
+  },
+  {
+   "instagram_handle": "zia.mann",
+   "listed_by_creators": 1,
+   "listed_by_core_150": true,
+   "channel_id": null
+  }
+ ]
+}

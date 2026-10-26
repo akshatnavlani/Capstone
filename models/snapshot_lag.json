@@ -1,0 +1,222 @@
+{
+  "run_at": "2026-10-26T16:25:25+00:00",
+  "days_of_readings": 14.8,
+  "windows": [
+    "-48..-36h",
+    "-36..-24h",
+    "-24..-12h",
+    "-12..0h",
+    "0..12h",
+    "12..24h",
+    "24..36h",
+    "36..48h"
+  ],
+  "method_check": "METHOD CHECK PASSED: the positive control is detected",
+  "results": [
+    {
+      "name": "control: YouTube upload -> YouTube views gained",
+      "status": "ok",
+      "n_units": 969,
+      "n_creators": 127,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.1687,
+        -0.1759,
+        0.2067,
+        -0.1995,
+        0.7761,
+        0.0631,
+        0.3655,
+        -0.0882
+      ],
+      "placebo_mean": [
+        0.2292,
+        -0.1848,
+        0.1606,
+        -0.2051,
+        0.14,
+        -0.2252,
+        0.1176,
+        -0.2427
+      ],
+      "p_one_sided": [
+        0.996,
+        0.2478,
+        0.001,
+        0.3616,
+        0.001,
+        0.001,
+        0.001,
+        0.001
+      ],
+      "smallest_p_after_event": 0.001,
+      "window_of_smallest_p": "0..12h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": true,
+      "note": "must be detected, or the method is broken"
+    },
+    {
+      "name": "ig_to_yt: Instagram post -> views gained on YouTube videos older than 72 h",
+      "status": "ok",
+      "n_units": 292,
+      "n_creators": 55,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.071,
+        -0.0992,
+        0.1355,
+        -0.1073,
+        0.1657,
+        -0.0357,
+        0.1175,
+        -0.0841
+      ],
+      "placebo_mean": [
+        0.1118,
+        -0.1269,
+        0.1169,
+        -0.1017,
+        0.1375,
+        -0.1022,
+        0.1231,
+        -0.1015
+      ],
+      "p_one_sided": [
+        0.8022,
+        0.1938,
+        0.3187,
+        0.5604,
+        0.3397,
+        0.1568,
+        0.5105,
+        0.4016
+      ],
+      "smallest_p_after_event": 0.1568,
+      "window_of_smallest_p": "12..24h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": ""
+    },
+    {
+      "name": "ig_to_yt_pure: same, only Instagram posts with no YouTube upload within 24 h",
+      "status": "ok",
+      "n_units": 65,
+      "n_creators": 29,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.1751,
+        0.1452,
+        -0.0945,
+        -0.2258,
+        -0.0425,
+        0.0656,
+        0.1758,
+        0.1832
+      ],
+      "placebo_mean": [
+        0.1389,
+        0.0061,
+        -0.0267,
+        -0.1184,
+        -0.0304,
+        -0.1288,
+        -0.0828,
+        -0.1469
+      ],
+      "p_one_sided": [
+        0.3796,
+        0.0609,
+        0.7433,
+        0.8362,
+        0.5105,
+        0.1119,
+        0.0979,
+        0.043
+      ],
+      "smallest_p_after_event": 0.043,
+      "window_of_smallest_p": "36..48h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "removes cross-promotion of a new upload"
+    },
+    {
+      "name": "yt_to_ig: YouTube upload -> Instagram posts",
+      "status": "ok",
+      "n_units": 6336,
+      "n_creators": 73,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        -0.0804,
+        -0.1563,
+        0.0187,
+        0.2181,
+        -0.0522,
+        -0.1572,
+        -0.105,
+        -0.2368
+      ],
+      "placebo_mean": [
+        0.0234,
+        -0.0499,
+        0.0516,
+        -0.0252,
+        0.071,
+        -0.0078,
+        0.0836,
+        -0.0041
+      ],
+      "p_one_sided": [
+        0.9491,
+        0.954,
+        0.6783,
+        0.001,
+        0.9251,
+        0.972,
+        0.989,
+        0.999
+      ],
+      "smallest_p_after_event": 0.9251,
+      "window_of_smallest_p": "0..12h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "posting behaviour, not audience attention"
+    }
+  ],
+  "limits": "units from the same creator are not independent (p-values optimistic); the observed period is short; Instagram times come from the post code (exact), Instagram engagement is not used here"
+}

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import init_db
-from app.routers import alerts, analysis, feature_store, health, influencers, ingestion, labeling, scores
+from app.routers import alerts, analysis, feature_store, health, influencers, ingestion, labeling, platform_profiles, scores
 
 app = FastAPI(title=settings.api_title, version=settings.api_version)
 
@@ -53,6 +53,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    # Load the CLIP/BERT models in the background now, so the first brief after a restart gets real creator-feature scores, not the neutral 0.5.
+    from app import creator_features, platform_profile
+
+    creator_features.warm_up()
+    platform_profile.warm_up()
 
 
 app.include_router(health.router)
@@ -63,3 +68,4 @@ app.include_router(alerts.router)
 app.include_router(feature_store.router)
 app.include_router(labeling.router)
 app.include_router(analysis.router)
+app.include_router(platform_profiles.router)

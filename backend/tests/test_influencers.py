@@ -64,3 +64,30 @@ def test_genuine_mismatch_still_filters():
     # Guards against "fixing" the canary by disabling filtering entirely.
     engine = _seeded_engine()
     assert _results(engine, "zxywq") == []
+
+
+def test_creators_with_collected_posts_rank_above_empty_profiles():
+    """An empty profile can score high on category and graph alone; it stays in the list but below creators that have data (26 Oct 2026)."""
+    import uuid as _uuid
+    from datetime import datetime, timezone
+
+    from sqlalchemy.pool import StaticPool
+    from sqlmodel import Session, SQLModel, create_engine
+
+    from app.models import Creator, YouTubeChannel, YouTubeVideo
+    from app.routers.influencers import get_recommendations
+    from app.schemas import BrandRecommendationRequest
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as s:
+        empty, full = Creator(name="Empty", category="fitness_influencer"), Creator(name="Has Data", category="fitness_influencer")
+        s.add_all([empty, full])
+        s.commit()
+        s.add(YouTubeChannel(channel_id="ch", creator_id=full.creator_id, subscriber_count=1000))
+        s.add(YouTubeVideo(video_id="v", channel_id="ch", creator_id=full.creator_id, published_at=datetime.now(timezone.utc), view_count=10))
+        s.commit()
+        res = get_recommendations(BrandRecommendationRequest(product_category="fitness", budget=10_000_000), s).results
+    by_name = {r.name: r for r in res}
+    assert by_name["Has Data"].data_coverage == "youtube" and by_name["Empty"].data_coverage == "none"
+    assert [r.name for r in res].index("Has Data") < [r.name for r in res].index("Empty")

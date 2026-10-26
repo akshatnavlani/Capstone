@@ -150,8 +150,70 @@ def main() -> None:
                        "with_neither": int((~art["has_text"] & ~art["has_img"]).sum()),
                        "with_engagement": int(np.isfinite(art["engagement"]).sum()), "with_reach": int(np.isfinite(art["log_reach"]).sum())}}
 
+    # ---- S9: live results (lag on the growth readings, spillover on the real network, detection curve, data inventory) ------------------
+    ver_ids = {r[0] for r in create_engine(url).connect().execute(text(
+        "select creator_id::text from creator_verification where creator_id is not null and link_level in ('confirmed','probable')")).all()}
+    V = "(select creator_id from creator_verification where creator_id is not null and link_level in ('confirmed','probable'))"
+    STRONG = "('official_label','spoken','creator_comment','disclosure_tag')"
+    with create_engine(url).connect() as conn:
+        def one(q: str) -> int:
+            return int(conn.execute(text(q)).scalar() or 0)
+        inventory = {
+            "verified_creators": len(ver_ids),
+            "youtube_videos": one(f"select count(*) from youtube_videos where creator_id in {V}"),
+            "youtube_comments": one(f"select count(*) from youtube_comments where video_id in (select video_id from youtube_videos where creator_id in {V})"),
+            "growth_readings": one("select count(*) from post_snapshots"),
+            "days_of_readings": one("select count(distinct fetched_at::date) from post_snapshots"),
+            "instagram_creators": one(f"select count(distinct creator_id) from instagram_posts where creator_id in {V}"),
+            "instagram_posts": one(f"select count(*) from instagram_posts where creator_id in {V}"),
+            "sponsorship_events": one("select count(*) from creator_sponsorship_events where creator_id is not null"),
+            "strong_evidence_events": one(f"select count(*) from creator_sponsorship_events where creator_id is not null and sponsorship_evidence in {STRONG}"),
+            "sponsoring_creators": one("select count(distinct creator_id) from creator_sponsorship_events where creator_id is not null"),
+        }
+    basis_counts: dict[str, int] = {}
+    for c in ids:
+        if c in ver_ids:
+            basis_counts[sp[c]["basis"]] = basis_counts.get(sp[c]["basis"], 0) + 1
+    # creators of the 150 with at least one graph link: what the saved model reads (collaboration + co-occurrence), then plus the shared-brand relation
+    from app.feature_store import build_co_occurrence_edges, build_collaboration_edges, build_mention_edges, build_shared_brand_edges
+
+    with Session(engine) as graph_session:
+        base_edges = build_collaboration_edges(graph_session) + build_co_occurrence_edges(graph_session)
+        brand_edges = build_shared_brand_edges(graph_session)
+        mention_edges = build_mention_edges(graph_session)
+
+    def linked(edges) -> set[str]:
+        return {str(x) for e in edges for x in (e.source_creator_id, e.target_creator_id)} & ver_ids
+
+    graph_links = {"of": len(ver_ids), "today": len(linked(base_edges)), "shared_brand_alone": len(linked(brand_edges)), "with_shared_brand": len(linked(base_edges + brand_edges)),
+                   "mentions_alone": len(linked(mention_edges)), "with_shared_brand_and_mentions": len(linked(base_edges + brand_edges + mention_edges))}
+    lag_live = load("snapshot_lag.json")
+    s9 = {
+        "as_of": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "inventory": inventory,
+        "spillover_basis_counts": basis_counts,
+        "graph_links": graph_links,
+        "placebo": load("spillover_placebo_test.json"),
+        "lag": {"days_of_readings": lag_live["days_of_readings"], "method_check": lag_live["method_check"], "limits": lag_live["limits"],
+                "results": [{k: r.get(k) for k in ("name", "n_units", "n_creators", "smallest_p_after_event", "window_of_smallest_p", "detected_after_correction", "note")} for r in lag_live["results"]]},
+        "spillover_restricted_150": load("spillover_effect_restricted150.json"),
+        "semisynthetic": load("sim_semisynthetic_benchmark.json"),
+        "sim_lag_power": load("sim_lag_power.json"),
+        "label_quality": {k: v for k, v in load("sponsorship_quality.json").items() if k not in ("suggested_to_label",)},
+        # SIMULATED detection curve: scripts/sim_power_curve.py (300 studies per cell, heavy-tailed lifts, unexposed group = 5 x exposed)
+        "power_curve": [
+            {"exposed": 16, "effect_0.25": 17, "effect_0.50": 34, "effect_0.75": 61, "effect_1.00": 79, "false_alarm": 9},
+            {"exposed": 19, "effect_0.25": 16, "effect_0.50": 39, "effect_0.75": 69, "effect_1.00": 86, "false_alarm": 8},
+            {"exposed": 40, "effect_0.25": 25, "effect_0.50": 61, "effect_0.75": 91, "effect_1.00": 100, "false_alarm": 7},
+            {"exposed": 81, "effect_0.25": 36, "effect_0.50": 90, "effect_0.75": 99, "effect_1.00": 100, "false_alarm": 5},
+            {"exposed": 160, "effect_0.25": 61, "effect_0.50": 99, "effect_0.75": 100, "effect_1.00": 100, "false_alarm": 7},
+            {"exposed": 320, "effect_0.25": 90, "effect_0.50": 100, "effect_0.75": 100, "effect_1.00": 100, "false_alarm": 5},
+        ],
+    }
+
     out = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "s9": s9,
         "s1": {"sentiment": sentiment, "alerts": alert_rows, "lag_posting": load("temporal_lag.json"), "lag_event": load("event_lag.json"),
                "lag_same_creator": load("same_creator_lag.json"), "curves": curves},
         "s2": s2,

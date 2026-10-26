@@ -33,6 +33,7 @@ NEW_CREATOR_POSTS = 8       # older posts do not help the lag analysis; fewer po
 DEFAULT_DAILY_CAP = 130     # page loads per UTC day; 100-135 a day was measured safe (no block in about 700 loads over 6 days)
 REFRESH_SHARE = 0.6
 PAUSE_BETWEEN_NEW_CREATORS = 45
+BACKFILL_LOADS_PER_DAY = 25  # page loads kept each day for filling in the counts of old posts (and checking who really owns them); see instagram_backfill_counts.py
 LOCK_HOURS = 3
 LOG_DIR = Path(os.environ.get("LOCALAPPDATA", ".")) / "CapstoneInstagram"
 log = logging.getLogger("instagram_daily")
@@ -45,6 +46,11 @@ def split_budget(budget: int) -> tuple[int, int]:
     refresh = int(budget * REFRESH_SHARE // LOADS_PER_REFRESH)
     new = int((budget - refresh * LOADS_PER_REFRESH) // LOADS_PER_NEW_CREATOR)
     return refresh, max(new, 0)
+
+
+def backfill_reserve(pending: int, budget: int) -> int:
+    """Page loads to keep for the old-post count filler: at most BACKFILL_LOADS_PER_DAY, never more than there are posts waiting, never the whole budget."""
+    return max(0, min(BACKFILL_LOADS_PER_DAY, pending, budget // 3))
 
 
 def chrome_connected() -> bool:
@@ -60,9 +66,19 @@ def chrome_connected() -> bool:
 
 
 def done_today(cur) -> int:
+    """Page loads made today (UTC day): one per snapshot row, plus loads that left no snapshot row (audits) logged in instagram_extra_loads."""
     cur.execute("""select count(*) from post_snapshots where platform='instagram'
                    and fetched_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'""")
-    return cur.fetchone()[0]
+    snapshots = cur.fetchone()[0]
+    cur.execute("""select coalesce(sum(loads), 0) from instagram_extra_loads
+                   where logged_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'""")
+    return snapshots + int(cur.fetchone()[0])
+
+
+def log_extra_loads(cur, loads: int, reason: str) -> None:
+    """Record page loads that wrote no snapshot row, so the daily budget stays honest."""
+    if loads > 0:
+        cur.execute("insert into instagram_extra_loads (loads, reason) values (%s, %s)", (loads, reason[:200]))
 
 
 def refresh_handles(cur, n: int) -> list[str]:
@@ -85,14 +101,40 @@ def refresh_handles(cur, n: int) -> list[str]:
     return [r[0] for r in cur.fetchall()]
 
 
+BLOCK_MARKERS = ("429", "rate limit", "too many requests", "chromewebdata", "try again later", "challenge", "checkpoint", "accounts/login",
+                 "suspicious")
+MAX_CREATOR_FAILURES = 3   # this many creators failing in a row (not blocks) also ends the run: something broader is wrong
+
+
+def is_block(message: str) -> bool:
+    """True when an error looks like Instagram pushing back (as opposed to one creator's page having no posts)."""
+    low = (message or "").lower()
+    return any(m in low for m in BLOCK_MARKERS)
+
+
+def record_failure(conn, creator_id, handle: str, reason: str) -> None:
+    with conn.cursor() as cur:
+        cur.execute("insert into instagram_collect_failures (creator_id, handle, reason) values (%s, %s, %s)", (creator_id, handle, (reason or "")[:500]))
+    conn.commit()
+
+
 def new_creators(cur, n: int) -> list[tuple]:
-    """(creator_id, handle) of verified creators with no new-style Instagram data, most sponsored events first."""
+    """(creator_id, handle) of verified creators with no new-style Instagram data. Fitness creators come first (the project's scope),
+    then those whose bio shows brand codes (sponsor group A), then confirmed links, then most sponsored events.
+    A creator whose profile page was read within the last 30 days is not tried again: an account with no recent posts (for example
+    only posts older than a year) would otherwise come up again every day and use up page loads for nothing."""
     cur.execute("""select cv.creator_id, cv.ig_handle,
                      (select count(*) from creator_sponsorship_events e where e.creator_id = cv.creator_id) sponsored
                    from creator_verification cv
                    where cv.link_level in ('confirmed', 'probable') and cv.creator_id is not null and cv.ig_handle is not null
                      and not exists (select 1 from instagram_posts p where p.creator_id = cv.creator_id and p.thumbnail_url is not null)
-                   order by (cv.link_level = 'confirmed') desc, sponsored desc limit %s""", (n,))
+                     and cv.content_type <> 'famous_general'
+                     and not exists (select 1 from instagram_collect_failures f where f.creator_id = cv.creator_id
+                                     and f.failed_at > now() - interval '14 days')
+                     and not exists (select 1 from instagram_profiles ip where lower(ip.username) = lower(cv.ig_handle)
+                                     and ip.fetched_at > now() - interval '30 days')
+                   order by (cv.content_type = 'fitness') desc, (cv.sponsor_group = 'A') desc, (cv.link_level = 'confirmed') desc,
+                            sponsored desc limit %s""", (n,))
     return [(r[0], r[1]) for r in cur.fetchall()]
 
 
@@ -155,9 +197,17 @@ def run(args, conn) -> tuple[str, str]:
     from orchestrator import Creator, InstagramWorker, RateLimiter
     with conn.cursor() as cur:
         budget = args.daily_cap - done_today(cur)
-        n_refresh, n_new = split_budget(budget)
+        try:
+            from instagram_backfill_counts import posts_to_fill
+            waiting = len(posts_to_fill(cur, BACKFILL_LOADS_PER_DAY * 4))
+        except Exception:  # the count filler must never stop the day's collection
+            log.exception("could not look up old posts that need counts")
+            waiting = 0
+        reserve = backfill_reserve(waiting, budget)
+        n_refresh, n_new = split_budget(budget - reserve)
         handles, fresh = refresh_handles(cur, n_refresh), new_creators(cur, n_new)
-    log.info("page loads left today about %d -> refresh %d creators, collect %d new creators", budget, len(handles), len(fresh))
+    log.info("page loads left today about %d -> refresh %d creators, collect %d new creators, keep %d for old-post counts (%d waiting)",
+             budget, len(handles), len(fresh), reserve, waiting)
     log.info("refresh: %s", ", ".join(handles) or "none")
     log.info("new: %s", ", ".join(h for _, h in fresh) or "none")
     if args.dry_run:
@@ -185,6 +235,7 @@ def run(args, conn) -> tuple[str, str]:
             budget = args.daily_cap - done_today(cur)
         fresh = fresh[:max(int(budget // LOADS_PER_NEW_CREATOR), 0)]
         worker = InstagramWorker(RateLimiter(8.0), post_cap=NEW_CREATOR_POSTS, recency_days=365)
+        skipped, creator_failures = [], 0
         for n, (cid, handle) in enumerate(fresh):
             with conn.cursor() as cur:
                 cur.execute("""select creator_id, name, category, youtube_handle, instagram_handle, coalesce(reddit_handles,'{}'),
@@ -195,14 +246,40 @@ def run(args, conn) -> tuple[str, str]:
             worker.meta_match = {}
             try:
                 worker.process_creator(creator, creator.instagram_handle, conn)
-            except Exception as e:  # stop at the first failure
-                log.error("STOPPING after a failure on %s: %s", handle, str(e)[:300].replace("\n", " "))
+                creator_failures = 0
+            except Exception as e:
+                msg = str(e)[:500].replace("\n", " ")
                 worker._release_on_failure(creator.instagram_handle)
-                return "failed", f"stopped after a failure on {handle}: {str(e)[:500]}"
+                if is_block(msg):      # Instagram is pushing back: stop at once and never retry
+                    log.error("STOPPING: a block is suspected on %s: %s", handle, msg[:300])
+                    return "failed", f"stopped, block suspected on {handle}: {msg}"
+                # a problem with ONE creator (no posts, private page, wrong handle): write it down, skip it, go on
+                conn.rollback()
+                record_failure(conn, cid, handle, msg)
+                skipped.append(handle)
+                creator_failures += 1
+                log.warning("skipping %s (%s); recorded in instagram_collect_failures", handle, msg[:200])
+                if creator_failures >= MAX_CREATOR_FAILURES:
+                    return "failed", f"stopped after {creator_failures} creators in a row failed ({', '.join(skipped[-3:])}): {msg}"
             if n < len(fresh) - 1:
                 time.sleep(PAUSE_BETWEEN_NEW_CREATORS)
+        filled_note = ""
+        if reserve > 0:
+            try:  # a problem here is logged and never fails the run
+                from instagram_backfill_counts import posts_to_fill, read_and_fill
+                with conn.cursor() as cur:
+                    left = args.daily_cap - done_today(cur)
+                    todo = posts_to_fill(cur, reserve)
+                if todo and left > 2:
+                    loads, filled, foreign = read_and_fill(conn, todo, min(reserve, left - 2))
+                    filled_note = f", old-post counts: {filled} filled, {foreign} foreign detached (loads: {loads}, counted by the snapshot rows)"
+            except Exception as e:
+                conn.rollback()
+                log.exception("old-post count phase failed (the rest of the run is unaffected)")
+                filled_note = f", old-post count phase failed: {str(e)[:120]}"
         log.info("daily Instagram run finished")
-        return "ok", f"refreshed {len(handles)} creators, collected {len(fresh)} new"
+        return "ok", (f"refreshed {len(handles)} creators, collected {len(fresh) - len(skipped)} new"
+                      + (f", skipped {len(skipped)} that failed ({', '.join(skipped)})" if skipped else "") + filled_note)
     finally:
         release_lock()
 

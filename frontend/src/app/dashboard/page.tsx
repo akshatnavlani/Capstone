@@ -6,6 +6,7 @@ import SpilloverBadge from "@/components/SpilloverBadge";
 import { getAlerts } from "@/lib/api";
 import { useStoredRecommendationResult } from "@/lib/useStoredRecommendationResult";
 import type { AlertResponse, SpilloverBasis } from "@/types";
+import PlatformProfileCard from "@/components/PlatformProfileCard";
 
 // Reads the /recommendations response left in sessionStorage by the
 // brand-input form. Risk-flag badges are NOT part of InfluencerRecommendation
@@ -85,8 +86,18 @@ export default function DashboardPage() {
                       est. cost ₹{influencer.estimated_cost.toLocaleString()} (placeholder rate)
                     </p>
                   )}
-                  <div className="mt-2">
+                  <div className="mt-2 flex items-center gap-2">
                     <SpilloverBadge basis={basis} />
+                    {influencer.data_coverage === "none" && (
+                      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                        no data collected yet — score rests on category and graph only
+                      </span>
+                    )}
+                    {influencer.product_match === "broader" && (
+                      <span className="rounded-full border border-zinc-300 px-2 py-0.5 text-[11px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+                        broader match — product words not in profile
+                      </span>
+                    )}
                   </div>
                   {basis === "isolated" && (
                     <p className="mt-1 text-xs text-zinc-500">
@@ -126,6 +137,8 @@ export default function DashboardPage() {
                   sublabel="brief relevance + reach · 0.5 if unknown"
                 />
               </div>
+
+              <PlatformProfileCard creatorId={influencer.creator_id} />
 
               <div className="mt-4 flex gap-2">
                 {alerts.length === 0 ? (

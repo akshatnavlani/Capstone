@@ -26,7 +26,7 @@ import psycopg2
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ml.temporal.sentiment import SentimentScorer, score_with_checkpoint, shrunk_mean  # noqa: E402
+from ml.temporal.sentiment import MULTILINGUAL_MODEL, SentimentScorer, multilingual_scorer, score_with_checkpoint, shrunk_mean  # noqa: E402
 
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 
@@ -73,6 +73,8 @@ def main() -> None:
     ap.add_argument("--max-per-creator", type=int, default=100, help="newest comments per creator per platform")
     ap.add_argument("--limit-creators", type=int, default=20, help="0 = all creators; else the N with most comments")
     ap.add_argument("--out", default="temporal_sentiment.json")
+    ap.add_argument("--devanagari-model", nargs="?", const=MULTILINGUAL_MODEL, default=None,
+                    help="score comments written mostly in Devanagari with this multilingual model (default model if given without a value; must be in the local Hugging Face cache)")
     args = ap.parse_args()
 
     conn = psycopg2.connect(database_url(), connect_timeout=15)
@@ -104,6 +106,16 @@ def main() -> None:
         scorer.score, keys, [r[3] for r in rows], checkpoint,
         on_progress=lambda done, total: print(f"  scored {done}/{total} (checkpoint saved)", flush=True),
     )
+
+    if args.devanagari_model:
+        def mostly_devanagari(t: str) -> bool:
+            letters = [c for c in t if c.isalpha()]
+            return len(letters) >= 12 and sum(1 for c in letters if DEVANAGARI.match(c)) / len(letters) > 0.3
+
+        idx = [i for i, r in enumerate(rows) if mostly_devanagari(r[3])]
+        print(f"re-scoring {len(idx)} Devanagari comments with {args.devanagari_model}", flush=True)
+        if idx:
+            scores[idx] = multilingual_scorer(args.devanagari_model).score([rows[i][3] for i in idx], progress=True)
 
     by_creator: dict[str, dict] = {}
     for (cid, name, platform, text), s in zip(rows, scores):

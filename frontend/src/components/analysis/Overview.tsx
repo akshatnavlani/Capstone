@@ -5,7 +5,7 @@ import type { AnalysisData } from "@/types/analysis";
 import { Card, Note, Verdict } from "./ui";
 import type { Tone } from "./ui";
 
-export type TabId = "overview" | "s1" | "s2" | "s3" | "s6" | "s7" | "s8";
+export type TabId = "overview" | "s1" | "s2" | "s3" | "s6" | "s7" | "s8" | "s9";
 
 const CHIP: Record<Tone, string> = {
   good: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -21,10 +21,19 @@ export function Overview({ data, onSelect }: { data: AnalysisData; onSelect: (t:
       id: "s1",
       tag: "S1",
       title: "Temporal analysis",
-      status: "Built · lag not proven",
+      status: "Built · first live lag result",
       tone: "warn",
       big: `${data.s1.sentiment.scored} mood scores · ${data.s1.alerts.length} live alerts`,
-      line: "Audience mood is scored and risk spreads along real links. The 24-hour cross-platform lag could not be confirmed: only 13 creators have enough data.",
+      line: "Audience mood is scored and risk spreads along real links. The cross-platform lag is now tested on live growth readings (see S9): the method passes its check and one delayed signal is emerging, not yet confirmed.",
+    },
+    {
+      id: "s9",
+      tag: "S9",
+      title: "Live results",
+      status: "Updated from real data",
+      tone: "info",
+      big: data.s9 ? `${data.s9.inventory.growth_readings.toLocaleString()} growth readings` : "run the export",
+      line: "Lag on the growth readings, spillover tested two ways on the real network (no effect once each creator is compared with itself), the detection curve, and the data inventory.",
     },
     {
       id: "s2",

@@ -1,0 +1,83 @@
+{
+ "as_of": "2026-10-26T19:51:32+00:00",
+ "simulated": true,
+ "how": "extra attention of s x the creator's own mean rate x 24 h, spread over 12-36 h after each real Instagram post; detection = smallest after-event p < 0.0125 (4 windows, Bonferroni)",
+ "sets": {
+  "ig_to_yt (all posts)": {
+   "units": 294,
+   "creators": 55,
+   "by_size": {
+    "0.0": {
+     "detected_share": 0.0,
+     "median_smallest_p": 0.13787375415282394
+    },
+    "0.03": {
+     "detected_share": 0.0,
+     "median_smallest_p": 0.06312292358803986
+    },
+    "0.06": {
+     "detected_share": 0.0,
+     "median_smallest_p": 0.02159468438538206
+    },
+    "0.1": {
+     "detected_share": 0.875,
+     "median_smallest_p": 0.006644518272425249
+    },
+    "0.15": {
+     "detected_share": 1.0,
+     "median_smallest_p": 0.0033222591362126247
+    },
+    "0.25": {
+     "detected_share": 1.0,
+     "median_smallest_p": 0.0033222591362126247
+    },
+    "0.5": {
+     "detected_share": 1.0,
+     "median_smallest_p": 0.0033222591362126247
+    },
+    "1.0": {
+     "detected_share": 1.0,
+     "median_smallest_p": 0.0033222591362126247
+    }
+   }
+  },
+  "ig_to_yt_pure (no YouTube upload within 24 h)": {
+   "units": 65,
+   "creators": 29,
+   "by_size": {
+    "0.0": {
+     "detected_share": 0.0,
+     "median_smallest_p": 0.03820598006644518
+    },
+    "0.03": {
+     "detected_share": 0.0,
+     "median_smallest_p": 0.03820598006644518
+    },
+    "0.06": {
+     "detected_share": 0.0,
+     "median_smallest_p": 0.03156146179401993
+    },
+    "0.1": {
+     "detected_share": 0.0,
+     "median_smallest_p": 0.02159468438538206
+    },
+    "0.15": {
+     "detected_share": 0.5,
+     "median_smallest_p": 0.011627906976744186
+    },
+    "0.25": {
+     "detected_share": 1.0,
+     "median_smallest_p": 0.0033222591362126247
+    },
+    "0.5": {
+     "detected_share": 1.0,
+     "median_smallest_p": 0.0033222591362126247
+    },
+    "1.0": {
+     "detected_share": 1.0,
+     "median_smallest_p": 0.0033222591362126247
+    }
+   }
+  }
+ }
+}

@@ -21,3 +21,4 @@ scripts/ingestion/google-service-account.json
 scripts/ingestion/logs/
 *.log
 scripts/ingestion/coauthor_checkpoint.json
+exports/

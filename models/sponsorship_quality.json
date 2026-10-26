@@ -1,0 +1,613 @@
+{
+ "as_of": "2026-10-26T19:38:13+00:00",
+ "model_version": "tier-precision-human-only-2026-10-27",
+ "labelled_rows": 94,
+ "real_ads": 77,
+ "not_ads": 17,
+ "creators": 49,
+ "detected_events_among_labelled": 75,
+ "human_checked_precision_by_tier": {
+  "brand_and_code": {
+   "real_ads": 28,
+   "checked": 29,
+   "precision": 0.966
+  },
+  "brand_mention": {
+   "real_ads": 5,
+   "checked": 5,
+   "precision": 1.0
+  },
+  "disclosure_tag": {
+   "real_ads": 3,
+   "checked": 3,
+   "precision": 1.0
+  },
+  "official_label": {
+   "real_ads": 14,
+   "checked": 14,
+   "precision": 1.0
+  },
+  "spoken": {
+   "real_ads": 23,
+   "checked": 24,
+   "precision": 0.958
+  }
+ },
+ "claude_text_only_readings": {
+  "decided_flagged_events": 113,
+  "look_sponsored": 69,
+  "share": 0.611,
+  "wilson95": [
+   0.518,
+   0.695
+  ],
+  "note": "Two Claude passes (15 Oct draft, 26 Oct pre-labels) reading only the description or caption, NOT human checks. Text alone cannot hear a spoken sponsorship or see the video, so this is a lower bound on how many are real ads; the one-by-one human checks above are the reference."
+ },
+ "rows_marked_assumed_or_not_checked_one_by_one": 37,
+ "grouped_cv_all_checked_rows": {
+  "text_and_tier": {
+   "auc": 0.7173414820473644,
+   "auc_sd": 0.07465632139963561,
+   "precision": 0.8226721574010524,
+   "recall": 1.0,
+   "accuracy": 0.823404255319149,
+   "n": 94
+  },
+  "tier_only": {
+   "auc": 0.8650878533231475,
+   "auc_sd": 0.009318526086743556,
+   "precision": 0.8265690420292382,
+   "recall": 0.9831168831168832,
+   "accuracy": 0.8170212765957446,
+   "n": 94
+  }
+ },
+ "detector_as_is": {
+  "precision": 0.973,
+  "recall": 0.948,
+  "accuracy": 0.936,
+  "tp": 73,
+  "fp": 2,
+  "fn": 4,
+  "tn": 15
+ },
+ "grouped_cv_flagged_events_only": {
+  "text_and_tier": {
+   "auc": 0.3690068493150685,
+   "auc_sd": 0.09880819520120344,
+   "precision": 0.9786666666666666,
+   "recall": 1.0,
+   "accuracy": 0.9786666666666666,
+   "n": 75
+  },
+  "tier_only": {
+   "auc": 0.09803082191780822,
+   "auc_sd": 0.023159998278636955,
+   "precision": 0.9786666666666666,
+   "recall": 1.0,
+   "accuracy": 0.9786666666666666,
+   "n": 75
+  }
+ },
+ "scoring_rule": "tier precision from human checks, shrunk toward pooled 0.973 with 5 pseudo-checks",
+ "pooled_precision_checked_flagged_events": {
+  "real_ads": 73,
+  "checked": 75,
+  "precision": 0.973,
+  "wilson95": [
+   0.908,
+   0.993
+  ]
+ },
+ "tier_scores": {
+  "brand_and_code": 0.967,
+  "brand_mention": 0.987,
+  "disclosure_tag": 0.983,
+  "official_label": 0.993,
+  "spoken": 0.961
+ },
+ "scored_events": 1876,
+ "suggested_to_label": [
+  {
+   "platform": "youtube",
+   "content_id": "E1ORhJ7r_Zo",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "eGKGtsorg6k",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "b54Fs9zT7JM",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "kb97MKiuIFY",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "GmWjSxJZhmE",
+   "tier": "creator_comment"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "cnLRT-XASl8",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "instagram",
+   "content_id": "DeLxTq5TA76",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "fULRwVykJSQ",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "jRDo5HRdCqA",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "DYQxEYD708Q",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "g7wVwXLqres",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "IHRzEwNMVEE",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ClL2RVJ7IPw",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ULf3DA3THqI",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "bJfbnTpkmyk",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "HcMFDVxTteo",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "instagram",
+   "content_id": "DepC8ETOGJD",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "GFFmYOyJnZs",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "2rrVAEStGMA",
+   "tier": "brand_mention"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "qfIWqnqx7SU",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "k6RX5gqaaYY",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "lWuasEVm7JU",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "mpGTz5fXOFw",
+   "tier": "creator_comment"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "TFJXnVIDlJA",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "-quFpr5FMoI",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ZChhL2PXQxQ",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "DmfqS9UBVlI",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "06Kak-tOWF0",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "scRFxlLbkYQ",
+   "tier": "creator_comment"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "IvTBx4Fupyg",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "fhVpdT9r0tQ",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "mUZ-iUGEUIk",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "bD64Tv4gQKk",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "Jvl7ro705ME",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "pGkkHsBBplc",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "4WEoiW0Zqxk",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "5b3Pgyh4k0s",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "2vHsSTJSxsk",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "gm7aKwM44PA",
+   "tier": "brand_mention"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "L2AUQ872qX0",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "taEYNjV6cGY",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ivraU0oMVK0",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "_r6AxJNKMXw",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "vc6OL1Wxvzk",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ocCl2Lh80C4",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "0OnHt_092ss",
+   "tier": "brand_mention"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "9qprMwcjPwo",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "QAZt9H8W7WE",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "FjJprUYHZV4",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "irJMmOe7RGc",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "UOmPnRlQ-6A",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "75MM4sy-_oQ",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "cHXL8HkoU7s",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "pRF5fn8_fQk",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "CrNOmOgAuKg",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "p6zXB9jprak",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "m-knkfLyT1A",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "Qo86K6I3Kpo",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "hzyzQxM1z6c",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "kGk_9vnfNGQ",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "9eQ437l6Y6A",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "WDicUJrABiY",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "NuFqlpe_hFs",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "Hyyry3gToSE",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "VLlweclU8Ac",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "QuwgeJ1R5_o",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "rTKfulCD538",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "Jmg4SztgteI",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ucgwKISU5Qw",
+   "tier": "creator_comment"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "TAwUW0WByoU",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "HBPyVZmJDuI",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "UCOtgb5wlgE",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "cSw2dsqAXJE",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "AawC79lpU84",
+   "tier": "brand_mention"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "XOiFM-CsOpE",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "CS2-Th5tfOs",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "kzttIRfevnk",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "DjeLMjMOiNg",
+   "tier": "creator_comment"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "5oJAklO9BZ4",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "lU9tNi1qfV0",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "MWYeUFhGmGA",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "vejZh8Obwy4",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "Mf3Pc-6QZ0w",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "t-atrSsLck0",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ZlItL_nkBVA",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "SYqPpXRqYNI",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "zslzc9E3OuM",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ljWlqjXMck8",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "NbXhVa1h7UI",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "JFeFcNwBQsU",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "NiJNNZHAEDY",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "fbvwUU26LSc",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "n1hnyPxcs3c",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "Fo-Lw8w-Inc",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "iEq554npfuc",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "ooRnJC1dhWg",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "sEbXwLY933c",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "jnJ24Yu7TYs",
+   "tier": "creator_comment"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "Dz8vP62CDEI",
+   "tier": "brand_and_code"
+  },
+  {
+   "platform": "youtube",
+   "content_id": "uhaojBs5YE0",
+   "tier": "brand_and_code"
+  }
+ ],
+ "unchecked_weak_tier_events_in_spillover_pairs": 1458
+}

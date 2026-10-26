@@ -99,3 +99,29 @@ def test_router_region_filter_keeps_india_code_and_no_text_creators_and_drops_fo
 def test_router_product_filter_finds_athletes_for_athletic_products():
     engine = _engine_with(("Sprint Star", "athlete", None), ("Chef Anna", "other", None))
     assert _names(engine, product_category="athletic water bottle") == {"Sprint Star"}
+
+
+def _results(engine, **query):
+    with Session(engine) as s:
+        req = BrandRecommendationRequest(budget=10_000_000, **query)
+        return get_recommendations(req, s).results
+
+
+def test_router_broader_matches_fill_a_short_list_and_are_marked():
+    engine = _engine_with(("Sprint Star", "athlete", None), ("Chef Anna", "other", None), ("Yogi Raj", "lifestyle_influencer", None))
+    results = _results(engine, product_category="athletic water bottle", include_broader_matches=True)
+    assert [(r.name, r.product_match) for r in results][0] == ("Sprint Star", "exact")      # exact matches always come first
+    assert {r.name: r.product_match for r in results} == {"Sprint Star": "exact", "Chef Anna": "broader", "Yogi Raj": "broader"}
+
+
+def test_router_broader_matches_are_off_by_default_and_not_added_when_the_list_is_full():
+    engine = _engine_with(("Sprint Star", "athlete", None), ("Chef Anna", "other", None))
+    assert {r.name for r in _results(engine, product_category="athletic water bottle")} == {"Sprint Star"}
+    full = _results(engine, product_category="athletic water bottle", include_broader_matches=True, max_results=1)
+    assert [(r.name, r.product_match) for r in full] == [("Sprint Star", "exact")]
+
+
+def test_router_broader_matches_still_obey_the_hard_filters():
+    engine = _engine_with(("Sprint Star", "athlete", "IN"), ("Texas Chef", "other", "US"))
+    names = {r.name for r in _results(engine, product_category="athletic water bottle", target_region="India", include_broader_matches=True)}
+    assert names == {"Sprint Star"}          # the US creator fails the region filter, so it is not a "broader" candidate either

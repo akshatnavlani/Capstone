@@ -1,5 +1,6 @@
 """Tests for the pure parts of reddit_collect.py (no Reddit, no database)."""
 import shutil
+from datetime import datetime
 
 _real_which = shutil.which
 shutil.which = lambda name, *a, **k: "stub" if name == "opencli" else _real_which(name, *a, **k)
@@ -69,6 +70,52 @@ def test_search_words_never_carry_command_line_special_characters():
     assert rc.safe_query("Fast&Up") == "Fast Up"
     assert rc.safe_query('He said "hi" | ok > x') == "He said hi ok x"
     assert all(rc.safe_query(b) == b for b in rc.BRAND_QUERIES)      # the brand list itself is already clean
+
+
+class _FakeCursor:
+    """Stands in for a database cursor: `old_rows` is the set of (comment_id) that exist untimed; `text_rows` the (post, author, body) ones."""
+    def __init__(self, old_ids, text_rows):
+        self.old_ids, self.text_rows, self.updated, self.rowcount = set(old_ids), set(text_rows), [], 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def execute(self, sql, params):
+        self.rowcount = 0
+        if "where comment_id=" in sql and params[1] in self.old_ids:
+            self.old_ids.discard(params[1]); self.rowcount = 1; self.updated.append(("by_id", params[1]))
+        elif "where post_id=" in sql and (params[1], params[2], params[3]) in self.text_rows:
+            self.text_rows.discard((params[1], params[2], params[3])); self.rowcount = 1; self.updated.append(("by_text", params[3]))
+
+
+class _FakeConn:
+    def __init__(self, cur):
+        self.cur = cur
+
+    def cursor(self):
+        return self.cur
+
+    def commit(self):
+        pass
+
+
+def test_old_comment_ids_follow_the_formula_of_the_first_collector():
+    import hashlib
+    assert rc.old_comment_id("abc", "bob", "hello") == hashlib.sha1(b"abc:bob:hello").hexdigest()[:24]
+
+
+def test_retime_fills_only_matching_old_comments_and_never_adds_a_new_one():
+    at = datetime.fromisoformat("2025-11-04T10:07:09")
+    cur = _FakeCursor({rc.old_comment_id("p1", "ann", "first")}, {("p1", "bob", "second")})
+    comments = [{"id": "r1", "author": "ann", "body": "first", "at": at},          # matched by the old hash id
+                {"id": "r2", "author": "bob", "body": "second", "at": at},         # matched by post+author+text
+                {"id": "r3", "author": "cat", "body": "unknown", "at": at}]        # nothing to match: left alone
+    got, missed = rc.retime_thread(_FakeConn(cur), "p1", comments)
+    assert (got, missed) == (2, 1)
+    assert [u[0] for u in cur.updated] == ["by_id", "by_text"]
 
 
 def test_every_brand_search_word_maps_to_a_brand_in_the_database_list():

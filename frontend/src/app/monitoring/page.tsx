@@ -67,12 +67,12 @@ export default function MonitoringPage() {
                   {new Date(alert.created_at).toLocaleString()}
                 </span>
               </div>
-              <h2 className="mt-2 text-sm font-medium">creator: {resolveName(alert.creator_id, namesById)}</h2>
+              <h2 className="mt-2 text-sm font-medium">creator: {alert.creator_name ?? resolveName(alert.creator_id, namesById)}</h2>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{alert.reason}</p>
               <p className="mt-1 text-xs text-zinc-500">source: {alert.source}</p>
               {alert.propagated_from_creator_id && (
                 <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                  propagated from collaborator: {resolveName(alert.propagated_from_creator_id, namesById)}
+                  propagated from collaborator: {alert.propagated_from_name ?? resolveName(alert.propagated_from_creator_id, namesById)}
                 </p>
               )}
             </li>

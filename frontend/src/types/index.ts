@@ -20,6 +20,9 @@ export interface BrandRecommendationRequest {
   target_demographic?: string;
   platform_preference?: ("youtube" | "instagram" | "reddit")[];
   max_results?: number;
+  // When fewer than max_results creators match the product words, fill the list with the best-scoring others,
+  // each marked product_match "broader" (backend/app/schemas.py).
+  include_broader_matches?: boolean;
 }
 
 export interface InfluencerRecommendation {
@@ -37,6 +40,9 @@ export interface InfluencerRecommendation {
   spillover_basis?: SpilloverBasis;
   estimated_reach: number | null;
   estimated_cost: number | null; // placeholder cost heuristic used for budget filtering
+  // "exact": the brief's product words appear in the creator's profile text; "broader": added to fill a short list.
+  product_match?: "exact" | "broader";
+  data_coverage?: "youtube+instagram" | "youtube" | "instagram" | "none";
   score_breakdown: ScoreBreakdown;
 }
 
@@ -78,4 +84,43 @@ export interface AlertResponse {
   propagated_from_creator_id: string | null;
   created_at: string;
   resolved: boolean;
+  // Names come with the alert (GET /alerts); optional so older cached responses still type-check.
+  creator_name?: string | null;
+  propagated_from_name?: string | null;
+}
+
+/** GET /platform-profiles/{creator_id}: YouTube and Instagram status side by side (backend/app/platform_profile.py). */
+export type PlatformStatus = "strong" | "typical" | "weak" | "unknown";
+
+export interface FirstDayGrowth {
+  items_with_a_first_day_reading: number;
+  median_value_at_24h: number | null;
+  median_share_of_current_total: number | null;
+}
+
+export interface PlatformSide {
+  platform: "youtube" | "instagram";
+  available: boolean;
+  audience: number | null;
+  items_total: number;
+  items_with_counts: number;
+  items_last_90_days: number;
+  latest_item_at: string | null;
+  typical_views: number | null;
+  typical_likes: number | null;
+  typical_comments: number | null;
+  engagement_rate: number | null;
+  views_per_subscriber: number | null;
+  sponsored_vs_usual: number | null;
+  status: PlatformStatus;
+  percentile: number | null;
+  first_day: FirstDayGrowth | null;
+  notes: string[];
+}
+
+export interface PlatformProfile {
+  creator_id: string;
+  summary: string;
+  youtube: PlatformSide;
+  instagram: PlatformSide;
 }

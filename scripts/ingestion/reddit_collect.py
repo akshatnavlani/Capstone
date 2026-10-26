@@ -19,6 +19,7 @@ reads: no votes, comments or follows.
 """
 
 import argparse
+import hashlib
 import json
 import re
 import time
@@ -164,6 +165,34 @@ def save_thread(conn, p: dict, comments: list) -> None:
     conn.commit()
 
 
+def old_comment_id(post_id: str, author: str, text: str) -> str:
+    """The made-up id the first Reddit collector gave a comment (it had no real id): a hash of post, author and text."""
+    return hashlib.sha1(f"{post_id}:{author}:{text}".encode("utf-8")).hexdigest()[:24]
+
+
+def retime_thread(conn, post_id: str, comments: list) -> tuple[int, int]:
+    """Give the comments saved BEFORE 2026-10-14 their exact time, without adding any comment twice.
+
+    The old collector stored a comment under a hash id; the page now gives the real id and the time. A comment is matched to its old
+    row by that hash, else by (post, author, exact text); only the empty `posted_at` of a matched row is filled. A comment that
+    matches nothing is NOT inserted (inserting would duplicate it next to its old, untimed twin). Returns (matched, unmatched)."""
+    matched = unmatched = 0
+    with conn.cursor() as cur:
+        for c in comments:
+            if not c.get("at"):
+                continue
+            cur.execute("update reddit_comments set posted_at=%s where comment_id=%s and posted_at is null", (c["at"], old_comment_id(post_id, c["author"], c["body"])))
+            ok = cur.rowcount
+            if not ok:
+                cur.execute("update reddit_comments set posted_at=%s where post_id=%s and author_username=%s and body=%s and posted_at is null",
+                            (c["at"], post_id, c["author"], c["body"]))
+                ok = cur.rowcount
+            matched += 1 if ok else 0
+            unmatched += 0 if ok else 1
+    conn.commit()
+    return matched, unmatched
+
+
 def safe_query(label: str) -> str:
     """Windows runs `opencli` through cmd.exe, where & | < > ^ % and quotes split or change the command: use spaces instead."""
     return re.sub(r"\s+", " ", re.sub(r"[&|<>^%\"]", " ", label)).strip()
@@ -192,6 +221,8 @@ def main() -> None:
     ap.add_argument("--per-query", type=int, default=25, help="newest results per search")
     ap.add_argument("--max-threads", type=int, default=60, help="threads to read in full per run")
     ap.add_argument("--skip-searches", action="store_true", help="only read threads of posts already saved")
+    ap.add_argument("--retime", action="store_true",
+                    help="re-read OLD threads (comments saved without a time) and fill in each matching comment's exact time; adds nothing new")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -249,12 +280,18 @@ def main() -> None:
         conn.commit()
 
         with conn.cursor() as cur:
-            cur.execute("""select p.post_id, p.num_comments from reddit_posts p
-                           where p.subreddit = any(%s) and coalesce(p.num_comments, 0) > 0 and (p.brand_id is not null or exists (select 1 from reddit_post_creators rc where rc.post_id = p.post_id))
-                             and not exists (select 1 from reddit_comments c where c.post_id = p.post_id)
-                           order by p.num_comments desc limit %s""", (args.subs, args.max_threads))
+            if args.retime:      # threads whose saved comments all lack a time, the biggest threads first
+                cur.execute("""select p.post_id, p.num_comments from reddit_posts p
+                               where exists (select 1 from reddit_comments c where c.post_id = p.post_id and c.posted_at is null)
+                                 and not exists (select 1 from reddit_comments c where c.post_id = p.post_id and c.posted_at is not null)
+                               order by (select count(*) from reddit_comments c where c.post_id = p.post_id) desc limit %s""", (args.max_threads,))
+            else:
+                cur.execute("""select p.post_id, p.num_comments from reddit_posts p
+                               where p.subreddit = any(%s) and coalesce(p.num_comments, 0) > 0 and (p.brand_id is not null or exists (select 1 from reddit_post_creators rc where rc.post_id = p.post_id))
+                                 and not exists (select 1 from reddit_comments c where c.post_id = p.post_id)
+                               order by p.num_comments desc limit %s""", (args.subs, args.max_threads))
             todo = cur.fetchall()
-        log.info("%d saved posts have no comments yet; reading up to %d", len(todo), args.max_threads)
+        log.info("%d saved posts %s; reading up to %d", len(todo), "have only untimed comments (retime mode)" if args.retime else "have no comments yet", args.max_threads)
         for pid, _n in todo:
             session = f"rd_{pid}"
             limiter.wait()
@@ -275,6 +312,10 @@ def main() -> None:
             if not thread:
                 continue
             try:
+                if args.retime:
+                    got, missed = retime_thread(conn, pid, thread["comments"])
+                    log.info("thread %s: %d old comments timed, %d not matched (left as they were)", pid, got, missed)
+                    continue
                 save_thread(conn, thread["post"], thread["comments"])
             except psycopg2.Error as e:
                 conn.rollback()

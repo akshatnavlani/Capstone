@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
+import time
 from collections import OrderedDict
 from pathlib import Path
 
@@ -87,9 +88,28 @@ def _load_in_background() -> None:
         _loading = False
 
 
-def get_feature_scores(query: str | None) -> dict[str, dict] | None:
-    """Scores for the brand's product category, or None if not available yet."""
+def warm_up() -> None:
+    """Start loading the CLIP/BERT models now (called once when the server starts), so the first brief already gets real scores.
+    Found 2026-10-26: the first request after a restart came back with the neutral 0.5 for almost every creator, because loading only began on that request."""
     global _loading
+    if os.environ.get("CREATOR_FEATURES_DISABLED"):
+        return
+    with _lock:
+        if _embedder is None and not _loading and ARTIFACT_PATH.exists():
+            _loading = True
+            threading.Thread(target=_load_in_background, daemon=True).start()
+
+
+# A request that arrives while the models are still loading waits up to this long instead of silently getting 0.5 (cold start only).
+LOAD_WAIT_SECONDS = 60.0
+
+
+def get_feature_scores(query: str | None, wait_seconds: float | None = None) -> dict[str, dict] | None:
+    """Scores for the brand's product category, or None if not available. A request that finds the models still loading waits up to
+    `wait_seconds` (default LOAD_WAIT_SECONDS) for them; it never waits when the models are missing or loading has failed."""
+    global _loading
+    if wait_seconds is None:
+        wait_seconds = LOAD_WAIT_SECONDS
     if os.environ.get("CREATOR_FEATURES_DISABLED") or not query or not query.strip():
         return None
     key = query.strip().lower()
@@ -101,6 +121,11 @@ def get_feature_scores(query: str | None) -> dict[str, dict] | None:
         if embedder is None and not _loading and ARTIFACT_PATH.exists():
             _loading = True
             threading.Thread(target=_load_in_background, daemon=True).start()
+    deadline = time.monotonic() + wait_seconds
+    while (artifact is None or embedder is None) and _loading and time.monotonic() < deadline:
+        time.sleep(0.25)
+        with _lock:
+            artifact, embedder = _artifact, _embedder
     if artifact is None or embedder is None:
         return None
     try:

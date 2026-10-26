@@ -1,0 +1,41 @@
+{
+ "as_of": "2026-10-26T19:45:40+00:00",
+ "rows": 10641,
+ "bins": {
+  "1 shared brand": {
+   "rows": 5413,
+   "neighbours": 65,
+   "median_of_neighbour_means": -0.052546464258504406,
+   "ci95": [
+    -0.1100162235085209,
+    0.020924559343252953
+   ]
+  },
+  "2 shared brands": {
+   "rows": 2069,
+   "neighbours": 29,
+   "median_of_neighbour_means": -0.05473621058777417,
+   "ci95": [
+    -0.3011574109388548,
+    0.1603430920212184
+   ]
+  },
+  "3 or more": {
+   "rows": 3159,
+   "neighbours": 19,
+   "median_of_neighbour_means": -0.10770910272353777,
+   "ci95": [
+    -0.2313766668246865,
+    -0.05800966003782386
+   ]
+  }
+ },
+ "trend": {
+  "neighbours": 63,
+  "spearman_tie_strength_vs_paired_difference": -0.04747560148363539,
+  "ci95": [
+   -0.2827740612645438,
+   0.1936253076218391
+  ]
+ }
+}

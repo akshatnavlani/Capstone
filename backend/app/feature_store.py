@@ -43,6 +43,7 @@ from collections import defaultdict
 from sqlmodel import Session, select
 
 from app.models import (
+    Brand,
     Creator,
     CreatorRelatedAccount,
     InstagramPost,
@@ -270,6 +271,86 @@ def build_co_occurrence_edges(session: Session) -> list[CollaborationEdge]:
     for (a, b), weight in pair_weights.items():
         edges.append(CollaborationEdge(source_creator_id=uuid.UUID(a), target_creator_id=uuid.UUID(b), weight=float(weight)))
         edges.append(CollaborationEdge(source_creator_id=uuid.UUID(b), target_creator_id=uuid.UUID(a), weight=float(weight)))
+    return edges
+
+
+def build_shared_brand_edges(session: Session) -> list[CollaborationEdge]:
+    """Two creators are linked when BOTH have a sponsored post for the same brand. Both directions;
+    weight = the number of distinct brands the pair shares.
+
+    Why this exists (2026-10-26): under collaboration + co-occurrence only 17 of the 150 verified creators
+    have any graph link, so 145 of them get the neutral spillover score. The same sponsorship rows link 67
+    of them, with no new scraping. It is an EXPOSURE relation ("a creator in my niche was sponsored by the
+    same brand"), not proof that one creator caused the other's engagement; the analysis labels it exploratory.
+
+    A separate function, not a change to `build_co_occurrence_edges`: the saved GAIL checkpoint was trained on
+    that graph, so a new relation is opt-in for whoever retrains.
+    """
+    # Only classified brands link creators. A brand with no category yet, or marked 'not_a_brand' (a stray word such as "gmail" or "Delhi"
+    # that the text matcher once took for a brand), would otherwise connect creators who merely wrote the same word.
+    usable_brands = {
+        b.brand_id for b in session.exec(select(Brand).where(Brand.category.is_not(None), Brand.category != "not_a_brand")).all()
+    }
+    creators_by_brand: dict[uuid.UUID, set[uuid.UUID]] = defaultdict(set)
+    for e in build_sponsorship_edges(session):
+        if e.brand_id in usable_brands:
+            creators_by_brand[e.brand_id].add(e.creator_id)
+
+    shared: dict[tuple[str, str], int] = defaultdict(int)
+    for creator_ids in creators_by_brand.values():
+        for a, b in itertools.combinations(sorted(creator_ids, key=str), 2):
+            shared[(str(a), str(b))] += 1
+
+    edges = []
+    for (a, b), weight in shared.items():
+        edges.append(CollaborationEdge(source_creator_id=uuid.UUID(a), target_creator_id=uuid.UUID(b), weight=float(weight)))
+        edges.append(CollaborationEdge(source_creator_id=uuid.UUID(b), target_creator_id=uuid.UUID(a), weight=float(weight)))
+    return edges
+
+
+_MENTION = re.compile(r"@([a-z0-9_.]{4,30})", re.I)
+
+
+def build_mention_edges(session: Session) -> list[CollaborationEdge]:
+    """Two creators are linked when one of them @-mentions the other's Instagram or YouTube handle in a video title / description or an Instagram caption.
+    Both directions; weight = the number of distinct posts that carry the mention (either way).
+
+    Why (26 Oct 2026): collaboration links came only from the listed frequent collaborators (7 of 880 inside the verified 150) and Instagram co-author posts.
+    A tag or @mention of another creator we track is a direct, visible tie ("training with @x", "ft. @x"), found in text we already hold. Among the 150 it
+    gives 34 pairs and links 8 creators that had no link. It is a mention, not proof of a joint post: standing footer lines that tag a friend count too, which
+    is why the weight is the number of posts and the relation is opt-in for whoever retrains.
+    """
+    owner: dict[str, uuid.UUID] = {}
+    ambiguous: set[str] = set()
+    for c in session.exec(select(Creator)).all():
+        for raw in (c.instagram_handle, c.youtube_handle):
+            h = _normalize_handle(raw).rstrip(".") if raw else ""
+            if len(h) < 5:
+                continue
+            if h in owner and owner[h] != c.creator_id:
+                ambiguous.add(h)
+            owner[h] = c.creator_id
+    for h in ambiguous:
+        owner.pop(h, None)
+
+    posts: dict[tuple[str, str], set[str]] = defaultdict(set)
+
+    def scan(creator_id, content_id, text):
+        for m in _MENTION.findall(text or ""):
+            target = owner.get(m.lower().rstrip("."))
+            if target and creator_id and target != creator_id:
+                pair = tuple(sorted((str(creator_id), str(target))))
+                posts[pair].add(content_id)
+
+    for cid, vid, title, desc in session.exec(select(YouTubeVideo.creator_id, YouTubeVideo.video_id, YouTubeVideo.title, YouTubeVideo.description)).all():
+        scan(cid, vid, f"{title or ''} {desc or ''}")
+    for cid, pid, caption in session.exec(select(InstagramPost.creator_id, InstagramPost.post_id, InstagramPost.caption)).all():
+        scan(cid, pid, caption)
+
+    edges = []
+    for (a, b), ids in posts.items():
+        edges.append(CollaborationEdge(source_creator_id=uuid.UUID(a), target_creator_id=uuid.UUID(b), weight=float(len(ids))))
+        edges.append(CollaborationEdge(source_creator_id=uuid.UUID(b), target_creator_id=uuid.UUID(a), weight=float(len(ids))))
     return edges
 
 

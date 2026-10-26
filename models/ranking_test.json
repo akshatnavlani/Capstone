@@ -1,0 +1,67 @@
+{
+ "cutoff": "2026-01-01",
+ "creators": 37,
+ "outcome": "mean log-views effect of sponsored videos after the cutoff vs the creator's own typical video",
+ "methods": {
+  "popularity (median log views)": {
+   "creators": 37,
+   "spearman": 0.08226647700331911,
+   "spearman_ci95": [
+    -0.27216543855478964,
+    0.44252941875668605
+   ],
+   "precision_at_10": 0.3,
+   "precision_at_10_random": 0.32432432432432434,
+   "ndcg_at_10": 0.7396470504609455,
+   "ndcg_at_10_random": 0.7754886109790545
+  },
+  "engagement rate": {
+   "creators": 37,
+   "spearman": 0.13039355144618303,
+   "spearman_ci95": [
+    -0.1877303531090239,
+    0.41254752851711024
+   ],
+   "precision_at_10": 0.4,
+   "precision_at_10_random": 0.32432432432432434,
+   "ndcg_at_10": 0.8135823991365093,
+   "ndcg_at_10_random": 0.7753221878917486
+  },
+  "activity (videos before cutoff)": {
+   "creators": 37,
+   "spearman": -0.25783889559845197,
+   "spearman_ci95": [
+    -0.5791193864670484,
+    0.08832807586623745
+   ],
+   "precision_at_10": 0.1,
+   "precision_at_10_random": 0.32432432432432434,
+   "ndcg_at_10": 0.6927212887789905,
+   "ndcg_at_10_random": 0.7744235919456941
+  },
+  "sponsorship share": {
+   "creators": 37,
+   "spearman": -0.026584400397846368,
+   "spearman_ci95": [
+    -0.35181575883171906,
+    0.3280582557064569
+   ],
+   "precision_at_10": 0.2,
+   "precision_at_10_random": 0.32432432432432434,
+   "ndcg_at_10": 0.7572728509462084,
+   "ndcg_at_10_random": 0.7734207018049213
+  },
+  "past direct effect": {
+   "creators": 32,
+   "spearman": 0.30388563049853373,
+   "spearman_ci95": [
+    -0.05129151291512915,
+    0.6208356340879808
+   ],
+   "precision_at_10": 0.5,
+   "precision_at_10_random": 0.28125,
+   "ndcg_at_10": 0.8783395024946533,
+   "ndcg_at_10_random": 0.77858790109403
+  }
+ }
+}

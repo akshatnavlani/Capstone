@@ -1,0 +1,58 @@
+{
+ "english": {
+  "n": 40,
+  "positive": 18,
+  "negative": 7,
+  "neutral": 15,
+  "auc_positive_vs_rest": 0.9065656565656566,
+  "auc_negative_vs_rest_low_score": 0.9523809523809523,
+  "spearman_with_label_value": 0.7739214084560148,
+  "mean_score_by_label": {
+   "positive": 0.905,
+   "neutral": 0.553,
+   "negative": 0.231
+  }
+ },
+ "hinglish": {
+  "n": 40,
+  "positive": 13,
+  "negative": 4,
+  "neutral": 23,
+  "auc_positive_vs_rest": 0.7264957264957265,
+  "auc_negative_vs_rest_low_score": 0.9097222222222222,
+  "spearman_with_label_value": 0.47470795627199114,
+  "mean_score_by_label": {
+   "positive": 0.738,
+   "neutral": 0.579,
+   "negative": 0.35
+  }
+ },
+ "devanagari": {
+  "n": 40,
+  "positive": 18,
+  "negative": 8,
+  "neutral": 14,
+  "auc_positive_vs_rest": 0.6287878787878788,
+  "auc_negative_vs_rest_low_score": 0.79296875,
+  "spearman_with_label_value": 0.33227829141784,
+  "mean_score_by_label": {
+   "positive": 0.519,
+   "neutral": 0.462,
+   "negative": 0.426
+  }
+ },
+ "all": {
+  "n": 120,
+  "positive": 49,
+  "negative": 19,
+  "neutral": 52,
+  "auc_positive_vs_rest": 0.7300948548433458,
+  "auc_negative_vs_rest_low_score": 0.883793642522147,
+  "spearman_with_label_value": 0.5024635853916496,
+  "mean_score_by_label": {
+   "positive": 0.719,
+   "neutral": 0.54,
+   "negative": 0.338
+  }
+ }
+}

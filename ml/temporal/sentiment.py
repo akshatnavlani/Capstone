@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 
 MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+MULTILINGUAL_MODEL = "cardiffnlp/twitter-xlm-roberta-base-sentiment"   # used for Devanagari comments only (26 Oct 2026 check: Spearman with labels +0.76 vs +0.33)
 MAX_TOKENS = 256
 NEUTRAL_SAFETY = 0.5
 
@@ -110,3 +111,23 @@ class SentimentScorer:
             if progress:
                 print(f"  scored {min(start + step, len(idx))}/{len(idx)}", flush=True)
         return out
+
+
+def multilingual_scorer(model_name: str = MULTILINGUAL_MODEL) -> SentimentScorer:
+    """Scorer for the XLM-RoBERTa model from the LOCAL Hugging Face cache. The repo ships only the sentencepiece file, which needs the `sentencepiece` package;
+    a `tokenizer.json` (same vocabulary, copied from the sibling repo `...-sentiment-multilingual`) sits next to the weights and is read with the `tokenizers` library.
+    """
+    import glob
+    from pathlib import Path
+
+    from huggingface_hub.constants import HF_HUB_CACHE
+    from tokenizers import Tokenizer
+    from transformers import AutoModelForSequenceClassification, PreTrainedTokenizerFast, pipeline
+
+    repo = Path(HF_HUB_CACHE) / ("models--" + model_name.replace("/", "--")) / "snapshots"
+    snap = next(Path(d) for d in glob.glob(str(repo / "*")) if (Path(d) / "config.json").exists() and (Path(d) / "tokenizer.json").exists())
+    tok = PreTrainedTokenizerFast(tokenizer_object=Tokenizer.from_file(str(snap / "tokenizer.json")), bos_token="<s>", eos_token="</s>", unk_token="<unk>",
+                                  pad_token="<pad>", cls_token="<s>", sep_token="</s>", mask_token="<mask>")
+    scorer = SentimentScorer(model_name)
+    scorer._pipe = pipeline("text-classification", model=AutoModelForSequenceClassification.from_pretrained(snap), tokenizer=tok, top_k=None, truncation=True, max_length=MAX_TOKENS)
+    return scorer

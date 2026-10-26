@@ -10,6 +10,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app import feature_store
 from app.models import (
+    Brand,
     Creator,
     CreatorRelatedAccount,
     InstagramPost,
@@ -288,3 +289,105 @@ def test_sponsorship_edge_populated_when_labeled_and_linked(session):
     assert edge.brand_id == brand_id
     assert edge.content_id == "v1"
     assert edge.platform == "youtube"
+
+
+def _sponsored_video(session, video_id, creator, brand_id):
+    session.add(YouTubeChannel(channel_id=f"UC{video_id}", creator_id=creator.creator_id))
+    session.add(YouTubeVideo(video_id=video_id, channel_id=f"UC{video_id}", creator_id=creator.creator_id, is_sponsored=True, brand_id=brand_id))
+    session.commit()
+
+
+def _brand(session, category="supplement", name=None):
+    b = Brand(name=name or f"brand-{uuid.uuid4().hex[:6]}", category=category)
+    session.add(b)
+    session.commit()
+    session.refresh(b)
+    return b.brand_id
+
+
+def _creator(session, name):
+    c = Creator(name=name)
+    session.add(c)
+    session.commit()
+    session.refresh(c)
+    return c
+
+
+def test_shared_brand_edges_link_creators_who_promote_the_same_brand(session):
+    a, b, c = _creator(session, "A"), _creator(session, "B"), _creator(session, "C")
+    brand1, brand2 = _brand(session), _brand(session, "footwear")
+    _sponsored_video(session, "a1", a, brand1)
+    _sponsored_video(session, "b1", b, brand1)
+    _sponsored_video(session, "a2", a, brand2)
+    _sponsored_video(session, "b2", b, brand2)
+    _sponsored_video(session, "c1", c, _brand(session))       # a brand nobody else promotes
+
+    edges = feature_store.build_shared_brand_edges(session)
+    pairs = {(e.source_creator_id, e.target_creator_id): e.weight for e in edges}
+    assert pairs[(a.creator_id, b.creator_id)] == 2.0 and pairs[(b.creator_id, a.creator_id)] == 2.0   # two shared brands, both directions
+    assert len(edges) == 2 and c.creator_id not in {x for p in pairs for x in p}
+
+
+def test_shared_brand_edges_count_a_brand_once_per_creator_and_ignore_unlabelled_posts(session):
+    a, b = _creator(session, "A"), _creator(session, "B")
+    brand = _brand(session)
+    _sponsored_video(session, "a1", a, brand)
+    _sponsored_video(session, "a2", a, brand)                 # same brand twice: still one shared brand
+    _sponsored_video(session, "b1", b, brand)
+    session.add(YouTubeVideo(video_id="b2", channel_id="UCb1", creator_id=b.creator_id, is_sponsored=None, brand_id=uuid.uuid4()))
+    session.commit()
+
+    [first, second] = feature_store.build_shared_brand_edges(session)
+    assert first.weight == second.weight == 1.0
+    assert feature_store.build_shared_brand_edges(session) != []
+
+
+def test_shared_brand_edges_empty_when_nobody_shares_a_brand(session):
+    a = _creator(session, "A")
+    _sponsored_video(session, "a1", a, _brand(session))
+    assert feature_store.build_shared_brand_edges(session) == []
+
+
+def test_shared_brand_edges_ignore_unclassified_and_not_a_brand_brands(session):
+    a, b = _creator(session, "A"), _creator(session, "B")
+    for i, category in enumerate((None, "not_a_brand")):     # two creators who both wrote the same stray word, or a brand nobody has classified
+        brand = _brand(session, category)
+        _sponsored_video(session, f"a{i}", a, brand)
+        _sponsored_video(session, f"b{i}", b, brand)
+    assert feature_store.build_shared_brand_edges(session) == []
+    real = _brand(session, "supplement")
+    _sponsored_video(session, "a9", a, real)
+    _sponsored_video(session, "b9", b, real)
+    assert len(feature_store.build_shared_brand_edges(session)) == 2
+
+
+def _post_by(session, post_id, creator, caption):
+    session.add(InstagramProfile(username=f"u-{creator.creator_id}", creator_id=creator.creator_id))
+    session.commit()
+    session.add(InstagramPost(post_id=post_id, username=f"u-{creator.creator_id}", creator_id=creator.creator_id, caption=caption))
+    session.commit()
+
+
+def test_mention_edges_link_a_creator_who_tags_another_creators_handle(session):
+    a = Creator(name="A", instagram_handle="alpha_fit")
+    b = Creator(name="B", instagram_handle="bravo.gym", youtube_handle="@bravogym")
+    session.add_all([a, b])
+    session.commit()
+    _post_by(session, "p1", a, "Training legs with @Bravo.gym today")
+    session.add(YouTubeChannel(channel_id="chB", creator_id=b.creator_id))
+    session.add(YouTubeVideo(video_id="v1", channel_id="chB", creator_id=b.creator_id, title="Collab", description="ft. @alpha_fit and friends, also @bravogym"))
+    session.commit()
+    edges = feature_store.build_mention_edges(session)
+    pairs = {(str(e.source_creator_id), str(e.target_creator_id)): e.weight for e in edges}
+    assert pairs[(str(a.creator_id), str(b.creator_id))] == 2.0 and pairs[(str(b.creator_id), str(a.creator_id))] == 2.0   # two distinct posts, own handle ignored
+    assert len(edges) == 2
+
+
+def test_mentions_of_unknown_short_or_shared_handles_make_no_edge(session):
+    a = Creator(name="A", instagram_handle="alpha_fit")
+    b = Creator(name="B", instagram_handle="shared_handle")
+    c = Creator(name="C", instagram_handle="shared_handle")   # two creators claim it: ambiguous, never linked
+    session.add_all([a, b, c])
+    session.commit()
+    _post_by(session, "p1", a, "thanks @shared_handle @nobody_here @ab")
+    assert feature_store.build_mention_edges(session) == []

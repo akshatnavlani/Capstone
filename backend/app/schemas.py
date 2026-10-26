@@ -36,9 +36,15 @@ class BrandRecommendationRequest(BaseModel):
     target_demographic: Optional[str] = Field(default=None, description="Demographic proxy, e.g. '18-24 fitness enthusiasts'")
     platform_preference: Optional[list[str]] = Field(default=None, description="Subset of ['youtube','instagram','reddit']")
     max_results: int = Field(default=10, ge=1, le=50)
+    include_broader_matches: bool = Field(
+        default=False,
+        description="When fewer than max_results creators match product_category, fill the list with the best-scoring creators that pass every other filter, each marked product_match='broader'",
+    )
 
 
 SpilloverBasis = Literal["trained", "inferred", "placeholder", "isolated"]
+ProductMatch = Literal["exact", "broader"]
+DataCoverage = Literal["youtube+instagram", "youtube", "instagram", "none"]
 
 
 class InfluencerRecommendation(BaseModel):
@@ -54,6 +60,8 @@ class InfluencerRecommendation(BaseModel):
     spillover_basis: SpilloverBasis = Field(description="trained=in labeled GAIL pair, inferred=graph-connected unlabeled (GAT inductive), placeholder=checkpoint missing/fallback, isolated=degree 0")
     estimated_reach: Optional[int] = Field(default=None, description="Engagement-per-rupee proxy, not sales/conversion")
     estimated_cost: Optional[float] = Field(default=None, description="Placeholder cost heuristic used for budget filtering, see API_CONTRACTS.md")
+    data_coverage: DataCoverage = Field(default="none", description="Which platforms have collected posts for this creator; creators with none are ranked below creators with data (the score for them rests on category and graph only)")
+    product_match: ProductMatch = Field(default="exact", description="exact=the brief's product words appear in the creator's category/description/bio; broader=filled in because too few creators matched exactly (only when include_broader_matches is set)")
     score_breakdown: ScoreBreakdown
 
 
@@ -228,6 +236,9 @@ class AlertResponse(BaseModel):
     propagated_from_creator_id: Optional[uuid.UUID] = None
     created_at: datetime
     resolved: bool
+    # Filled in by GET /alerts so a viewer sees names at once, without waiting for the slow /feature-store/creators request (about 11 s).
+    creator_name: Optional[str] = None
+    propagated_from_name: Optional[str] = None
 
 
 # ---- Labeling pipeline (is_sponsored, PROJECT_PLAN.md Section 2) -----------
@@ -282,3 +293,39 @@ class HealthResponse(BaseModel):
     status: str
     db_connected: bool
     version: str
+
+
+# ---- Per-platform profile (26 Oct 2026) ---------------------------------------
+
+
+class FirstDayGrowth(BaseModel):
+    items_with_a_first_day_reading: int
+    median_value_at_24h: Optional[float] = Field(default=None, description="YouTube: views, Instagram: likes, about 24 h after posting")
+    median_share_of_current_total: Optional[float] = Field(default=None, description="Median of (value at 24 h) / (value now) across those items")
+
+
+class PlatformSide(BaseModel):
+    platform: Literal["youtube", "instagram"]
+    available: bool = Field(description="False when nothing was collected for this creator on this platform")
+    audience: Optional[int] = Field(default=None, description="Subscribers (YouTube) or followers (Instagram)")
+    items_total: int = 0
+    items_with_counts: int = 0
+    items_last_90_days: int = 0
+    latest_item_at: Optional[datetime] = None
+    typical_views: Optional[float] = Field(default=None, description="Median views of the latest mature videos (YouTube only)")
+    typical_likes: Optional[float] = None
+    typical_comments: Optional[float] = None
+    engagement_rate: Optional[float] = Field(default=None, description="YouTube: (likes + comments) / views. Instagram: (likes + comments) / followers")
+    views_per_subscriber: Optional[float] = None
+    sponsored_vs_usual: Optional[float] = Field(default=None, description="Median engagement of sponsored posts divided by that of other posts; needs 3 sponsored and 5 other posts")
+    status: Literal["strong", "typical", "weak", "unknown"] = "unknown"
+    percentile: Optional[float] = Field(default=None, description="Engagement-rate percentile among creators tracked on this platform")
+    first_day: Optional[FirstDayGrowth] = None
+    notes: list[str] = Field(default_factory=list)
+
+
+class PlatformProfile(BaseModel):
+    creator_id: uuid.UUID
+    summary: str
+    youtube: PlatformSide
+    instagram: PlatformSide

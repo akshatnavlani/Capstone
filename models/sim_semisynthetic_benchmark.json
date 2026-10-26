@@ -1,0 +1,136 @@
+{
+ "as_of": "2026-10-26T19:47:56+00:00",
+ "simulated": true,
+ "real_rows": 10641,
+ "real_neighbours": 65,
+ "assumptions": {
+  "planted_trend": "normal, mean 0.15, sd 0.15 per neighbour, added to the lift after the event and at placebo dates",
+  "planted_effect": "same for every row, added to the lift after the event only",
+  "replications": 400,
+  "interval": "2.5th percentile of a neighbour bootstrap above zero"
+ },
+ "table": {
+  "0.0": {
+   "naive": {
+    "mean_estimate": 0.38376334235893167,
+    "error_vs_truth": 0.38376334235893167,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": -0.04593085490191652,
+    "error_vs_truth": -0.04593085490191652,
+    "detects_effect_share": 0.0
+   }
+  },
+  "0.1": {
+   "naive": {
+    "mean_estimate": 0.48486136928765655,
+    "error_vs_truth": 0.3848613692876566,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": 0.05483830855369549,
+    "error_vs_truth": -0.04516169144630452,
+    "detects_effect_share": 0.505
+   }
+  },
+  "0.25": {
+   "naive": {
+    "mean_estimate": 0.6327071443687885,
+    "error_vs_truth": 0.3827071443687885,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": 0.20430713131580397,
+    "error_vs_truth": -0.04569286868419603,
+    "detects_effect_share": 1.0
+   }
+  },
+  "0.5": {
+   "naive": {
+    "mean_estimate": 0.8744246026654916,
+    "error_vs_truth": 0.3744246026654916,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": 0.4503190889794222,
+    "error_vs_truth": -0.04968091102057781,
+    "detects_effect_share": 1.0
+   }
+  },
+  "1.0": {
+   "naive": {
+    "mean_estimate": 1.377855894101408,
+    "error_vs_truth": 0.3778558941014081,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": 0.9539301861789986,
+    "error_vs_truth": -0.04606981382100139,
+    "detects_effect_share": 1.0
+   }
+  }
+ },
+ "table_effect_reaches_20_percent_of_neighbours": {
+  "0.0": {
+   "naive": {
+    "mean_estimate": 0.383314816715854,
+    "error_vs_truth": 0.383314816715854,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": -0.046324873845937906,
+    "error_vs_truth": -0.046324873845937906,
+    "detects_effect_share": 0.0025
+   }
+  },
+  "0.1": {
+   "naive": {
+    "mean_estimate": 0.40303317607381756,
+    "error_vs_truth": 0.38303317607381754,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": -0.026040575861579505,
+    "error_vs_truth": -0.04604057586157951,
+    "detects_effect_share": 0.005
+   }
+  },
+  "0.25": {
+   "naive": {
+    "mean_estimate": 0.44139904110796363,
+    "error_vs_truth": 0.39139904110796364,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": -0.004114855116315687,
+    "error_vs_truth": -0.05411485511631569,
+    "detects_effect_share": 0.015
+   }
+  },
+  "0.5": {
+   "naive": {
+    "mean_estimate": 0.5116122062423318,
+    "error_vs_truth": 0.41161220624233186,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": 0.01409481504512718,
+    "error_vs_truth": -0.08590518495487283,
+    "detects_effect_share": 0.0525
+   }
+  },
+  "1.0": {
+   "naive": {
+    "mean_estimate": 0.574723570555333,
+    "error_vs_truth": 0.37472357055533295,
+    "detects_effect_share": 1.0
+   },
+   "placebo": {
+    "mean_estimate": 0.02790698984141537,
+    "error_vs_truth": -0.17209301015858464,
+    "detects_effect_share": 0.06
+   }
+  }
+ }
+}

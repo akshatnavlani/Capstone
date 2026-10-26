@@ -1,0 +1,129 @@
+{
+ "as_of": "2026-10-26T11:37:46+00:00",
+ "strong_evidence_only": true,
+ "shifts_days": {
+  "all": [
+   -150,
+   -120,
+   -90,
+   90,
+   120,
+   150
+  ],
+  "mature": [
+   -150,
+   -120,
+   -90
+  ]
+ },
+ "scopes": {
+  "in_the_150": {
+   "all": {
+    "event_rows": 1228,
+    "with_placebo": 1226,
+    "median_event_lift": -0.17211621859897924,
+    "median_placebo_lift": 0.017747397610488082,
+    "median_paired_difference": -0.188712519922634,
+    "mean_paired_difference": -0.21515372726351645,
+    "share_event_higher_than_placebo": 0.34828711256117456,
+    "per_neighbour": {
+     "n": 54,
+     "median_of_means": -0.1124859205649826,
+     "ci": [
+      -0.16780671236481268,
+      0.001497636605173101
+     ],
+     "events_beat_placebo": 20
+    },
+    "per_sponsoring_creator": {
+     "n": 29,
+     "median": -0.04683469561750671,
+     "ci": [
+      -0.2581573405519881,
+      0.04532872166234827
+     ]
+    }
+   },
+   "mature": {
+    "event_rows": 471,
+    "with_placebo": 447,
+    "median_event_lift": -0.06469896519285043,
+    "median_placebo_lift": 0.06207836117893548,
+    "median_paired_difference": -0.11371267595522476,
+    "mean_paired_difference": -0.03909319266066,
+    "share_event_higher_than_placebo": 0.40939597315436244,
+    "per_neighbour": {
+     "n": 51,
+     "median_of_means": -0.010961661128808753,
+     "ci": [
+      -0.22655717933506955,
+      0.06869064707733291
+     ],
+     "events_beat_placebo": 25
+    },
+    "per_sponsoring_creator": {
+     "n": 19,
+     "median": -0.05582279673104712,
+     "ci": [
+      -0.2534973877757115,
+      0.06874968474321054
+     ]
+    }
+   }
+  },
+  "everyone": {
+   "all": {
+    "event_rows": 1230,
+    "with_placebo": 1227,
+    "median_event_lift": -0.17118191773288322,
+    "median_placebo_lift": 0.017542098735997602,
+    "median_paired_difference": -0.18865261248389442,
+    "mean_paired_difference": -0.21349567449659962,
+    "share_event_higher_than_placebo": 0.34881825590872045,
+    "per_neighbour": {
+     "n": 55,
+     "median_of_means": -0.11035218005989436,
+     "ci": [
+      -0.15795809103405886,
+      0.012327617990060036
+     ],
+     "events_beat_placebo": 21
+    },
+    "per_sponsoring_creator": {
+     "n": 29,
+     "median": -0.030548671303240987,
+     "ci": [
+      -0.2397723594537735,
+      0.0627732817425019
+     ]
+    }
+   },
+   "mature": {
+    "event_rows": 473,
+    "with_placebo": 447,
+    "median_event_lift": -0.06469896519285043,
+    "median_placebo_lift": 0.06207836117893548,
+    "median_paired_difference": -0.11371267595522476,
+    "mean_paired_difference": -0.03909319266066,
+    "share_event_higher_than_placebo": 0.40939597315436244,
+    "per_neighbour": {
+     "n": 51,
+     "median_of_means": -0.010961661128808753,
+     "ci": [
+      -0.22655717933506955,
+      0.06869064707733291
+     ],
+     "events_beat_placebo": 25
+    },
+    "per_sponsoring_creator": {
+     "n": 19,
+     "median": -0.05582279673104712,
+     "ci": [
+      -0.2534973877757115,
+      0.06874968474321054
+     ]
+    }
+   }
+  }
+ }
+}
