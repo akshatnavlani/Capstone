@@ -177,6 +177,23 @@ CREATOR_RULE = os.environ.get("GAIL_CREATORS", "fitness")
 MIN_EXPOSED_FOR_ESTIMATE = 8
 FITNESS_CREATOR_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}
 CREATOR_OVERRIDES_PATH = Path(__file__).resolve().parents[1] / "data" / "creator_scope_overrides.csv"
+# Baseline (before-side) window width in days. The after side -- the causal
+# window -- stays DEFAULT_WINDOW_DAYS. Widening only the baseline recovers pairs
+# whose neighbour posted after the event but not in the 30 days before it (35/75
+# "cross-platform-only" rows on 2026-10-26). Cost: an older baseline admits more
+# secular trend, so choose the width from scripts/straddle_recovery.py and keep
+# it at 60-90 days, never unbounded. Default = symmetric, as every earlier run.
+BASELINE_DAYS = int(os.environ.get("GAIL_BASELINE_DAYS", str(DEFAULT_WINDOW_DAYS)))
+# E4 ablation. "aipw" (default): attention is supervised by the doubly robust
+# pseudo-outcome, whose gradient reaches it through exposure. "mse": plain
+# prediction loss on the raw lift, no selection correction -- the arm E4 is
+# compared against. ("mse" also switches off the propensity term, since
+# compute_gail_loss only fits propensity when a treatment vector is passed.)
+DR_MODE = os.environ.get("GAIL_DR", "aipw")
+if DR_MODE not in ("aipw", "mse"):
+    raise SystemExit(f"GAIL_DR must be 'aipw' or 'mse', got {DR_MODE!r}")
+# Placebo (pre-trend) penalty weight; 0 = off. See ml/placebo.py.
+PLACEBO_WEIGHT = float(os.environ.get("GAIL_PLACEBO", "0"))
 LR = 1e-2
 SEED = 0
 
@@ -229,7 +246,9 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
         event_creator_id, item_id, event_platform, event_date, neighbour_id, _, _ = row
         platform_lifts: dict[str, dict] = {}
         for platform in PLATFORM_TABLES:
-            before, after = platform_engagement(cur, neighbour_id, platform, event_date, DEFAULT_WINDOW_DAYS)
+            before, after = platform_engagement(
+                cur, neighbour_id, platform, event_date, DEFAULT_WINDOW_DAYS, before_days=BASELINE_DAYS
+            )
             if before and after:
                 # Shared with compute_training_pair_deltas.py via
                 # ml/engagement_lift.py. Previously each script carried its own
@@ -709,6 +728,9 @@ def main() -> int:
     except Exception:
         pass
     print("=== Track B prod training (ALL pairs, normalized propensity) ===")
+    print(f"Windows: baseline {BASELINE_DAYS}d, outcome {DEFAULT_WINDOW_DAYS}d "
+          f"(GAIL_BASELINE_DAYS); placebo penalty weight {PLACEBO_WEIGHT} (GAIL_PLACEBO); "
+          f"loss {DR_MODE} (GAIL_DR)")
     database_url = ENV.get("DATABASE_URL")
     if not database_url:
         print("DATABASE_URL not set (check .env)")
@@ -1024,7 +1046,8 @@ def main() -> int:
         controls = build_control_observations(
             windows,
             lambda cid, d: lift_from_posts(
-                posts_by_platform, cid, d, DEFAULT_WINDOW_DAYS, statistic=LIFT_STATISTIC
+                posts_by_platform, cid, d, DEFAULT_WINDOW_DAYS, statistic=LIFT_STATISTIC,
+                before_days=BASELINE_DAYS,
             ),
             reserved_spans=reserved,
         )
@@ -1079,6 +1102,41 @@ def main() -> int:
         print(f"  {did['treated_without_control']} exposed observations had no control in their window "
               f"and are left out of this estimate")
 
+    # Placebo (pre-trend) lifts: the same lift, measured one window BEFORE the
+    # event, for every observation. Model-free check first: matched DiD on them.
+    # A clearly non-zero placebo DiD means exposed and control creators were
+    # already diverging before the sponsorship.
+    from dataclasses import replace as _replace
+    from ml.placebo import placebo_lift, placebo_penalty
+    if not USE_CONTROLS:
+        posts_by_platform = {pl: load_platform_posts(cur, pl) for pl in PLATFORM_TABLES}
+    pre_of: dict[tuple[str, str], float] = {}
+    for o in observations:
+        v = placebo_lift(
+            o.event_dates,
+            lambda a, cid=o.neighbour_id: lift_from_posts(
+                posts_by_platform, cid, a, DEFAULT_WINDOW_DAYS,
+                statistic=LIFT_STATISTIC, before_days=BASELINE_DAYS,
+            ),
+            DEFAULT_WINDOW_DAYS,
+        )
+        if v is not None:
+            pre_of[(o.neighbour_id, f"{o.start}..{o.end}")] = v
+    placebo_obs = [
+        _replace(o, value=pre_of[(o.neighbour_id, f"{o.start}..{o.end}")])
+        for o in observations if (o.neighbour_id, f"{o.start}..{o.end}") in pre_of
+    ]
+    n_pre_t = sum(o.exposed for o in placebo_obs)
+    print(f"\nPlacebo lifts: {len(placebo_obs)}/{n_obs} observations "
+          f"({n_pre_t} exposed) have pre-period data")
+    did_pre = matched_did(placebo_obs) if n_pre_t else None
+    if did_pre and did_pre["n_treated"]:
+        print(f"Placebo (pre-trend) DiD: {did_pre['estimate']:+.4f}  SE {did_pre['se']:.4f}  "
+              f"(median {did_pre['median_estimate']:+.4f})  -- should be ~0; a clear "
+              f"non-zero value means the real DiD is confounded by pre-existing trends")
+    else:
+        print("Placebo (pre-trend) DiD: not computable (no exposed observation has pre-period data)")
+
     # E10. Bot scores, reported not enforced (see load_bot_scores).
     bot_scores = load_bot_scores(cur, id_to_index)
     flagged = {cid for cid, v in bot_scores.items() if v["is_bot_flagged"]}
@@ -1106,6 +1164,15 @@ def main() -> int:
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     treatments = [p["treatment"] for p in passes]
     history = []
+    for p in passes:
+        idx, pre = [], []
+        for o in p["obs"]:
+            v = pre_of.get((o.neighbour_id, f"{o.start}..{o.end}"))
+            if v is not None:
+                idx.append(id_to_index[o.neighbour_id])
+                pre.append(v)
+        p["pre_idx"] = torch.tensor(idx, dtype=torch.long)
+        p["pre_lift"] = torch.tensor(pre, dtype=torch.float32)
     for epoch in range(EPOCHS):
         model.train()
         optimizer.zero_grad()
@@ -1120,11 +1187,19 @@ def main() -> int:
             loss_p, comps_p = compute_gail_loss(
                 pred, p["target"], propensity, collab_edge_index, collab_edge_weight,
                 p["has_sponsored"], loss_weights, prediction_mask=p["mask"],
-                treatment=p["interference"], dr_mode="aipw",
+                treatment=p["interference"] if DR_MODE == "aipw" else None, dr_mode="aipw",
             )
             loss = loss + share * loss_p
             for k, v in comps_p.items():
                 comps[k] = comps.get(k, 0.0) + share * v
+        if PLACEBO_WEIGHT > 0:
+            # Exposure-driven part of each prediction vs the pre-period lift.
+            mu0 = model.predict_unexposed(data)
+            gaps = torch.cat([(pred - mu0)[p["pre_idx"]] for p, pred in zip(passes, preds)])
+            pres = torch.cat([p["pre_lift"] for p in passes])
+            l_pre = placebo_penalty(gaps, pres)
+            loss = loss + PLACEBO_WEIGHT * l_pre
+            comps["placebo"] = float(l_pre.item())
         loss.backward()
         optimizer.step()
         history.append(comps)
@@ -1236,6 +1311,13 @@ def main() -> int:
         for r in tau_sorted[:15]:
             print(f"  {r['kind']:7s} {r['name'][:28]:28s} {r['span']} tau={r['tau']:+.3f}")
 
+        # Placebo diagnostic on the trained model: does the exposure-driven part
+        # of the prediction track pre-period change? Should be ~0.
+        gaps_f = torch.cat([(pred - mu_unexposed)[p["pre_idx"]] for p, pred in zip(passes, preds)])
+        pres_f = torch.cat([p["pre_lift"] for p in passes])
+        placebo_final = float(placebo_penalty(gaps_f, pres_f).item())
+        print(f"Placebo penalty on trained model (cov^2 / var, ~0 is good): {placebo_final:.6f}")
+
         # E12e. The learned transmission shares: which relation carries
         # spillover. This is an explainability claim in the write-up and no
         # artifact recorded it -- `transmission_shares()` was defined and never
@@ -1262,6 +1344,9 @@ def main() -> int:
             "epochs": EPOCHS,
             "lr": LR,
             "seed": SEED,
+            "baseline_days": BASELINE_DAYS,
+            "dr_mode": DR_MODE,
+            "placebo_weight": PLACEBO_WEIGHT,
             "loss_weights": {"prediction": loss_weights.prediction, "overlap": loss_weights.overlap,
                              "smoothness": loss_weights.smoothness, "consistency": loss_weights.consistency},
         },
@@ -1296,7 +1381,7 @@ def main() -> int:
             "ate_per_observation": ate,
             "naive_se": naive_se,
             "n_independent_observations": n_clusters,
-            "dr_mode": "aipw",
+            "dr_mode": DR_MODE,
             "in_sample": True,
             "target": LIFT_KEY,
             "treatment_definition": (
@@ -1313,6 +1398,8 @@ def main() -> int:
             "event_rule": EVENT_RULE,
             "creator_rule": CREATOR_RULE,
             "below_min_exposed": len(treated_obs) < MIN_EXPOSED_FOR_ESTIMATE,
+            "placebo_did": did_pre,
+            "placebo_penalty_final": placebo_final,
             "per_observation_tau": tau_sorted,
             "se_caveat": (
                 "Assumes independent observations and ignores uncertainty in the "

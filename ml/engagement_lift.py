@@ -68,6 +68,7 @@ def platform_engagement(
     platform: str,
     event_date,
     window_days: int = DEFAULT_WINDOW_DAYS,
+    before_days: int | None = None,
 ) -> tuple[list[float], list[float]]:
     """Fully-measured engagement either side of an event, in a BOUNDED window.
 
@@ -95,6 +96,8 @@ def platform_engagement(
         event_date: when the sponsorship event happened.
         window_days: half-width of the window. The event day itself falls in
             neither side -- a post made that day may be the sponsored post.
+        before_days: baseline width, if wider than the after side (see
+            `windowed_engagement`). None keeps the symmetric window.
 
     Returns:
         (before, after), each a list of summed engagement values.
@@ -108,7 +111,7 @@ def platform_engagement(
     )
     rows = cur.fetchall()
     return windowed_engagement(
-        [(d, e1v + e2v) for d, e1v, e2v in rows], event_date, window_days
+        [(d, e1v + e2v) for d, e1v, e2v in rows], event_date, window_days, before_days
     )
 
 
@@ -232,6 +235,7 @@ def lift_from_posts(
     event_date,
     window_days: int = DEFAULT_WINDOW_DAYS,
     statistic: str = TARGET_STATISTIC,
+    before_days: int | None = None,
 ) -> float | None:
     """`row_target` for one (creator, event date) from prefetched posts.
 
@@ -241,7 +245,7 @@ def lift_from_posts(
     platform_lifts = {}
     for platform, by_creator in posts_by_platform.items():
         before, after = windowed_engagement(
-            by_creator.get(creator_id, ()), event_date, window_days
+            by_creator.get(creator_id, ()), event_date, window_days, before_days
         )
         if before and after:
             platform_lifts[platform] = platform_lift(before, after)

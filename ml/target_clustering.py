@@ -64,6 +64,7 @@ def windowed_engagement(
     dated_values: Sequence[tuple[date | datetime, float]],
     event_date: date | datetime,
     window_days: int = DEFAULT_WINDOW_DAYS,
+    before_days: int | None = None,
 ) -> tuple[list[float], list[float]]:
     """Engagement values in a bounded window either side of the event.
 
@@ -71,6 +72,9 @@ def windowed_engagement(
         dated_values: (date, engagement) pairs for ONE creator on ONE platform.
         event_date: when the sponsorship event happened.
         window_days: half-width of the window, in days.
+        before_days: width of the BEFORE (baseline) side only, if different.
+            The after side -- the causal window -- always stays `window_days`.
+            None (default) keeps the symmetric window.
 
     Returns:
         (before, after). `before` covers [event - window, event), `after`
@@ -79,7 +83,7 @@ def windowed_engagement(
         the "after" side would leak the treatment into its own outcome.
     """
     anchor = _as_date(event_date)
-    lo = anchor - timedelta(days=window_days)
+    lo = anchor - timedelta(days=window_days if before_days is None else before_days)
     hi = anchor + timedelta(days=window_days)
 
     before, after = [], []
