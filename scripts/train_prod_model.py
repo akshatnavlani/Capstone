@@ -194,6 +194,11 @@ if DR_MODE not in ("aipw", "mse"):
     raise SystemExit(f"GAIL_DR must be 'aipw' or 'mse', got {DR_MODE!r}")
 # Placebo (pre-trend) penalty weight; 0 = off. See ml/placebo.py.
 PLACEBO_WEIGHT = float(os.environ.get("GAIL_PLACEBO", "0"))
+# GAIL-R (ml/gail_r.py): placebo-penalty weight and bootstrap size. 30 removed
+# ~85% of a planted pre-trend bias at no cost when no trend was planted
+# (ml/semi_synthetic.py, 10 replicates).
+R_PLACEBO = float(os.environ.get("GAIL_R_PLACEBO", "30"))
+R_BOOT = int(os.environ.get("GAIL_R_BOOT", "200"))
 LR = 1e-2
 SEED = 0
 
@@ -1341,6 +1346,36 @@ def main() -> int:
         for rel, share in sorted(beta.items(), key=lambda kv: -kv[1]):
             print(f"  {rel:24s} {share:.3f}")
 
+    # GAIL-R (ml/gail_r.py): orthogonalised (R-learner) estimate of the same
+    # spillover. The head above memorises outcomes on ~400 creators, which
+    # drives its learned effect toward 0 (semi-synthetic benchmark,
+    # ml/semi_synthetic.py); GAIL-R learns the effect only from what an
+    # out-of-fold baseline cannot explain. Reported alongside, not instead of,
+    # the estimate above; the checkpoint and inference are unchanged.
+    from ml.gail_r import Observations, cluster_bootstrap, fit_gail_r
+    r_rows = [(w, id_to_index[o.neighbour_id], o.value,
+               pre_of.get((o.neighbour_id, f"{o.start}..{o.end}"), float("nan")))
+              for w, p in enumerate(passes) for o in p["obs"]]
+    r_obs = Observations(
+        node=torch.tensor([r[1] for r in r_rows], dtype=torch.long),
+        window=torch.tensor([r[0] for r in r_rows], dtype=torch.long),
+        y=torch.tensor([r[2] for r in r_rows], dtype=torch.float32),
+        pre=torch.tensor([r[3] for r in r_rows], dtype=torch.float32),
+    )
+    print(f"\n=== GAIL-R spillover estimate (R-learner, creator-level bootstrap B={R_BOOT}) ===")
+    gail_r_report = {}
+    for label, w_pl in (("with placebo penalty", R_PLACEBO), ("without placebo penalty", 0.0)):
+        fit = fit_gail_r(data, treatments, r_obs, placebo_weight=w_pl, seed=SEED)
+        ci = cluster_bootstrap(data, treatments, r_obs, B=R_BOOT, seed=SEED, placebo_weight=w_pl)
+        slopes = "  ".join(f"{k} {v:+.3f}" for k, v in fit["slopes"].items())
+        print(f"  {label:24s} effect {fit['ate']:+.4f}  95% CI [{ci['lo']:+.4f}, {ci['hi']:+.4f}]  "
+              f"placebo penalty {fit['placebo']:.5f}")
+        print(f"  {'':24s} effect of 0%->100% sponsored neighbours, per relation: {slopes}")
+        gail_r_report[label] = {"ate": fit["ate"], "ci": ci, "slopes": fit["slopes"],
+                                "placebo_penalty": fit["placebo"], "placebo_weight": w_pl}
+    print(f"  {len(r_rows)} observations from {len(set(r[1] for r in r_rows))} creators; "
+          "the interval resamples creators, so repeat observations do not narrow it.")
+
     # Save checkpoint
     models_dir = Path(__file__).resolve().parents[1] / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
@@ -1414,6 +1449,7 @@ def main() -> int:
             "below_min_exposed": len(treated_obs) < MIN_EXPOSED_FOR_ESTIMATE,
             "placebo_did": did_pre,
             "placebo_penalty_final": placebo_final,
+            "gail_r": gail_r_report,
             "per_observation_tau": tau_sorted,
             "se_caveat": (
                 "Assumes independent observations and ignores uncertainty in the "
