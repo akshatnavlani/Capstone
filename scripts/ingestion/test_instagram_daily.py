@@ -106,9 +106,9 @@ def test_the_backfill_reads_the_true_owner_and_refuses_the_wrong_page():
 
 
 def test_the_count_phase_takes_a_small_protected_share_of_the_day():
-    assert d.backfill_reserve(pending=300, budget=130) == 25            # a normal day: 25 loads
+    assert d.backfill_reserve(pending=300, budget=130) == 60            # a normal day: 60 loads while the backlog is cleared
     assert d.backfill_reserve(pending=7, budget=130) == 7               # never more than there are posts waiting
-    assert d.backfill_reserve(pending=300, budget=30) == 10             # a small leftover budget: at most a third of it
+    assert d.backfill_reserve(pending=300, budget=30) == 15             # a small leftover budget: at most half of it
     assert d.backfill_reserve(pending=0, budget=130) == 0 and d.backfill_reserve(pending=300, budget=0) == 0
     refresh, new = d.split_budget(130 - d.backfill_reserve(300, 130))
     assert refresh * d.LOADS_PER_REFRESH + new * d.LOADS_PER_NEW_CREATOR + 25 <= 130 + 1e-9   # the three phases together never exceed the cap

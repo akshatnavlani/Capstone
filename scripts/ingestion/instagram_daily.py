@@ -33,7 +33,8 @@ NEW_CREATOR_POSTS = 8       # older posts do not help the lag analysis; fewer po
 DEFAULT_DAILY_CAP = 130     # page loads per UTC day; 100-135 a day was measured safe (no block in about 700 loads over 6 days)
 REFRESH_SHARE = 0.6
 PAUSE_BETWEEN_NEW_CREATORS = 45
-BACKFILL_LOADS_PER_DAY = 25  # page loads kept each day for filling in the counts of old posts (and checking who really owns them); see instagram_backfill_counts.py
+BACKFILL_LOADS_PER_DAY = 60  # page loads kept each day for filling in the counts of old posts (and checking who really owns them); see instagram_backfill_counts.py
+                             # 27 Oct 2026: raised from 25 to clear the backlog (403 posts of the 150 had no counts) in about a week; put it back to 25 once the backlog is below about 50
 LOCK_HOURS = 3
 LOG_DIR = Path(os.environ.get("LOCALAPPDATA", ".")) / "CapstoneInstagram"
 log = logging.getLogger("instagram_daily")
@@ -49,8 +50,8 @@ def split_budget(budget: int) -> tuple[int, int]:
 
 
 def backfill_reserve(pending: int, budget: int) -> int:
-    """Page loads to keep for the old-post count filler: at most BACKFILL_LOADS_PER_DAY, never more than there are posts waiting, never the whole budget."""
-    return max(0, min(BACKFILL_LOADS_PER_DAY, pending, budget // 3))
+    """Page loads to keep for the old-post count filler: at most BACKFILL_LOADS_PER_DAY, never more than there are posts waiting, never more than half the budget (the refresh of young posts keeps the rest)."""
+    return max(0, min(BACKFILL_LOADS_PER_DAY, pending, budget // 2))
 
 
 def chrome_connected() -> bool:

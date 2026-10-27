@@ -3,6 +3,7 @@
     python spoken_scan.py --limit 150            # scan up to 150 not-yet-scanned videos of brand-promoting creators
     python spoken_scan.py --dry-run              # how many videos are waiting
     python spoken_scan.py --shorts --limit 150   # Shorts (3 min or less) of creators who also have Instagram posts
+    python spoken_scan.py --no-event-creators 4  # the latest 4 long videos of every verified creator that has NO sponsorship event yet (they are unlinked in the graph)
 
 YouTube refuses caption requests after about 10-20 in a row ('IpBlocked'). So: BATCH videos, GAP_SECONDS apart, then
 REST_SECONDS of rest; when blocked, wait BLOCK_WAIT_SECONDS and carry on; give up after MAX_BLOCKS blocks in a row (everything
@@ -49,12 +50,22 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--shorts", action="store_true",
                     help="scan Shorts (3 minutes or less) of creators that also have Instagram posts, instead of videos over 4 minutes")
+    ap.add_argument("--no-event-creators", type=int, default=0, metavar="N",
+                    help="instead of the usual set: the latest N videos over 4 minutes of each verified creator with no sponsorship event at all (27 Oct 2026: 49 creators had only 29 videos ever scanned)")
     args = ap.parse_args()
     conn = connect_with_retry(get_connection)
     length_rule = ("(v.duration_seconds <= 180 and exists (select 1 from instagram_posts p where p.creator_id = v.creator_id "
                    "and p.thumbnail_url is not null))" if args.shorts else "v.duration_seconds > 240")
     with conn.cursor() as cur:
-        cur.execute(f"""select v.video_id from youtube_videos v join creator_verification cv on cv.creator_id = v.creator_id
+        if args.no_event_creators:
+            cur.execute("""select video_id from (
+                             select v.video_id, row_number() over (partition by v.creator_id order by v.published_at desc) rn
+                               from youtube_videos v join creator_verification cv on cv.creator_id = v.creator_id
+                              where cv.link_level in ('confirmed','probable') and v.is_sponsored is not true and v.duration_seconds > 240
+                                and not exists (select 1 from creator_sponsorship_events e where e.creator_id = v.creator_id)
+                                and not exists (select 1 from spoken_scan s where s.video_id = v.video_id)) t where rn <= %s""", (args.no_event_creators,))
+        else:
+          cur.execute(f"""select v.video_id from youtube_videos v join creator_verification cv on cv.creator_id = v.creator_id
                        where v.is_sponsored is not true and cv.sponsor_group = 'A' and v.published_at > now() - interval '150 days'
                          and {length_rule} and not exists (select 1 from spoken_scan s where s.video_id = v.video_id)""")
         todo = [r[0] for r in cur.fetchall()]
