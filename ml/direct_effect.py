@@ -2,8 +2,15 @@
 
 ESTIMAND. For a sponsored post p by creator c on platform k:
 
-    effect(p) = log( (eng(p) + 1) / (median eng of c's non-sponsored posts on k
-                                      within +-window days of p) + 1 )
+    effect(p) = log(eng(p) + 1) - mean over B of log(eng(q) + 1)
+
+where B is c's non-sponsored posts of the same format on k within +-window days
+of p. Averaging on the log scale (a geometric mean) matters: engagement has a
+long right tail even in logs, so a single post compared with its neighbours'
+MEDIAN sits above it on average -- the 27 Oct run's placebo was +0.15 that way,
+and the distortion differs by creator, which would bias a ranking toward
+breakout-prone creators. Against the mean of logs, a random post is unbiased
+whatever the skew.
 
 The baseline is the same creator (audience size, niche and style cancel), the
 same format (YouTube Shorts vs long videos; Instagram media type), at nearby
@@ -50,14 +57,14 @@ def _day(d) -> date:
 
 def post_effect(post: Post, same_creator_platform: list[Post], window_days: int = 30,
                 min_baseline: int = MIN_BASELINE_POSTS) -> float | None:
-    """Log ratio of the post's engagement to the median of nearby ordinary posts
+    """Log engagement minus the mean log engagement of nearby ordinary posts
     of the SAME format (a long video is never compared with Shorts)."""
     lo, hi = post.day - timedelta(days=window_days), post.day + timedelta(days=window_days)
     base = [q.engagement for q in same_creator_platform
             if not q.sponsored and q.post_id != post.post_id and q.fmt == post.fmt and lo <= q.day <= hi]
     if len(base) < min_baseline:
         return None
-    return math.log((max(post.engagement, 0) + 1) / (max(statistics.median(base), 0) + 1))
+    return math.log(max(post.engagement, 0) + 1) - statistics.mean(math.log(max(b, 0) + 1) for b in base)
 
 
 def settled(posts: list[Post], today: date, min_age_days: int = MIN_AGE_DAYS) -> list[Post]:

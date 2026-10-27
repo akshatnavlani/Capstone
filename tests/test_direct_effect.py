@@ -67,3 +67,17 @@ def test_format_matching_removes_shorts_confound():
     unmatched = [Post(p.creator, p.platform, p.post_id, p.day, p.engagement, p.sponsored) for p in posts]
     biased = effects_by_creator([p for p in unmatched if p.sponsored], unmatched)["c"]
     assert sum(biased) / len(biased) < -0.3
+
+
+def test_placebo_unbiased_under_right_skewed_engagement():
+    # Log engagement with a breakout tail: a median-based comparison drifts above 0;
+    # the mean-of-log comparison must not.
+    import math
+    rng = random.Random(5)
+    posts = []
+    for c in range(30):
+        for i in range(80):
+            lg = rng.gauss(8, 0.6) + (rng.expovariate(1.5) if rng.random() < 0.3 else 0)
+            posts.append(Post(f"c{c}", "youtube", f"{c}-{i}", D0 + timedelta(days=2 * i), math.exp(lg), False))
+    pl = overall(effects_by_creator(placebo_targets(posts, {f"c{c}": 15 for c in range(30)}, seed=1), posts), B=200)
+    assert abs(pl["mean"]) < 0.04

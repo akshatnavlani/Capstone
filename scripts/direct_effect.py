@@ -127,7 +127,7 @@ def main() -> int:
     main_res = overall(eff)
     print(f"\nWith a baseline (>=3 same-format ordinary posts within +-{WINDOW}d): {main_res['n_posts']} posts "
           f"from {main_res['n_creators']} creators")
-    print(f"Mean effect (log ratio vs own ordinary posts): {main_res['mean']:+.3f}  "
+    print(f"Mean effect (log engagement vs own ordinary posts' mean log): {main_res['mean']:+.3f}  "
           f"95% CI [{main_res['lo']:+.3f}, {main_res['hi']:+.3f}]  (creator bootstrap)")
     print(f"  median {main_res['median']:+.3f}; sponsored post beat the creator's baseline in "
           f"{100 * main_res['share_positive']:.0f}% of cases")
@@ -135,9 +135,8 @@ def main() -> int:
     pl = overall(effects_by_creator(placebo_targets(posts, {c: len(v) for c, v in eff.items()}), posts, WINDOW))
     print(f"Placebo (random ORDINARY posts, same creators): {pl['mean']:+.3f}  "
           f"95% CI [{pl['lo']:+.3f}, {pl['hi']:+.3f}] -- should be ~0")
-    # A single post's log engagement against its neighbours' median is not exactly
-    # unbiased when engagement is skewed; the placebo measures that bias, so the
-    # difference is the estimate to quote.
+    # With the mean-of-log baseline the placebo should be ~0; any remainder is a
+    # bias of the comparison itself, so the difference is the estimate to quote.
     adj = main_res["mean"] - pl["mean"]
     print(f"Placebo-adjusted effect (quote this one): {adj:+.3f}  "
           f"(approx. 95% CI [{main_res['lo'] - pl['mean']:+.3f}, {main_res['hi'] - pl['mean']:+.3f}])")
