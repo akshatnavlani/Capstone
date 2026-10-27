@@ -23,12 +23,15 @@ import psycopg2
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from ml.direct_effect import Post, effects_by_creator, overall, placebo_targets, settled, shrink  # noqa: E402
+from ml.direct_effect import (Post, effects_by_creator, overall, placebo_targets, prior, settled, shrink,  # noqa: E402
+                              typical_log_engagement)
 
 EVENTS = os.environ.get("GAIL_DIRECT_EVENTS", "fitness")
 FITNESS_CATS = set(os.environ.get("GAIL_FITNESS_CATEGORIES",
                                   "supplement,footwear,apparel,equipment,wellness").split(","))
 WINDOW = int(os.environ.get("GAIL_DIRECT_WINDOW", "30"))
+RECENT_DAYS = int(os.environ.get("GAIL_RECENT_DAYS", "90"))  # window for "typical engagement now"
+DEFAULT_FMT = {"youtube": "long", "instagram": "video"}
 FITNESS_CREATOR_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}  # as in train_prod_model.py
 
 QUERIES = {
@@ -181,7 +184,71 @@ def main() -> int:
         "overall": main_res, "placebo": pl, "placebo_adjusted": adj, "event_counts": counts,
         "creators": {cid: s for cid, s in ranked}}, indent=2, default=str))
     print(f"\nSaved {models / 'direct_effect_creators.csv'} and {models / 'direct_effect.json'}")
+    write_creator_value(posts, sponsored, scores, prior(eff), creators, today, models)
     return 0
+
+
+def write_creator_value(posts, sponsored, scores, prior_score, creators, today, models) -> None:
+    """Per creator and platform: expected engagement of ONE sponsored post now.
+
+    expected = exp(typical recent log engagement + direct-effect score) - 1, where
+    typical = mean log engagement of the creator's ordinary posts in the last
+    RECENT_DAYS (in the format they usually sponsor in). Creators never measured
+    on a sponsored post get the population prior, marked basis='prior'.
+    Engagement units differ by platform (YouTube views+likes, Instagram
+    likes+comments): compare within a platform only.
+    """
+    import math
+    from collections import Counter
+    from datetime import timedelta
+    start = today - timedelta(days=14 + RECENT_DAYS)
+    by_cp: dict[tuple[str, str], list] = {}
+    for p in posts:
+        if p.day >= start:
+            by_cp.setdefault((p.creator, p.platform), []).append(p)
+    sp_fmt: dict[tuple[str, str], Counter] = {}
+    for p in sponsored:
+        sp_fmt.setdefault((p.creator, p.platform), Counter())[p.fmt] += 1
+    rows = []
+    for (c, k), recent in by_cp.items():
+        pref = sp_fmt[(c, k)].most_common(1)[0][0] if (c, k) in sp_fmt else DEFAULT_FMT.get(k, "any")
+        t = typical_log_engagement(recent, pref)
+        if t is None:
+            continue
+        log_typ, n_recent, fmt_used = t
+        s = scores.get(c)
+        basis = "measured" if s else "prior"
+        s = s or prior_score
+        rows.append({
+            "creator_id": c, "name": creators.get(c, ("", ""))[0], "category": creators.get(c, ("", ""))[1],
+            "platform": k, "format": fmt_used, "recent_ordinary_posts": n_recent,
+            "typical_engagement": math.exp(log_typ) - 1,
+            "direct_score": s["score"], "direct_lo": s["lo"], "direct_hi": s["hi"],
+            "direct_basis": basis, "n_sponsored_posts": s["n"],
+            "expected_sponsored_engagement": math.exp(log_typ + s["score"]) - 1,
+            "expected_lo": math.exp(log_typ + s["lo"]) - 1, "expected_hi": math.exp(log_typ + s["hi"]) - 1,
+        })
+    rows.sort(key=lambda r: (r["platform"], -r["expected_sponsored_engagement"]))
+    path = models / "creator_value.csv"
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()) if rows else ["creator_id"])
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: (f"{v:.4f}" if isinstance(v, float) else v) for k, v in r.items()})
+    print(f"\n=== Expected engagement of one sponsored post now (option A ranking input) ===")
+    print(f"{len(rows)} creator-platform rows ({sum(r['direct_basis'] == 'measured' for r in rows)} measured, "
+          f"{sum(r['direct_basis'] == 'prior' for r in rows)} on the population prior); last {RECENT_DAYS} days")
+    for k in ("youtube", "instagram"):
+        top = [r for r in rows if r["platform"] == k][:10]
+        if not top:
+            continue
+        unit = "views+likes" if k == "youtube" else "likes+comments"
+        print(f"  {k} top 10 ({unit} per sponsored post, 95% interval):")
+        for r in top:
+            print(f"    {r['name'][:30]:30s} {r['expected_sponsored_engagement']:>12,.0f}  "
+                  f"[{r['expected_lo']:,.0f} - {r['expected_hi']:,.0f}]  "
+                  f"typical {r['typical_engagement']:,.0f}, score {r['direct_score']:+.2f} ({r['direct_basis']})")
+    print(f"Saved {path}")
 
 
 if __name__ == "__main__":

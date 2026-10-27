@@ -100,16 +100,9 @@ def placebo_targets(all_posts: list[Post], sponsored_counts: dict[str, int], see
     return picks
 
 
-def shrink(effects: dict[str, list[float]]) -> dict[str, dict]:
-    """Normal-normal empirical Bayes per creator.
-
-    Within-creator variance is pooled across creators (one-post creators have
-    none of their own); between-creator variance tau^2 by method of moments,
-    floored at 0. Returns {creator: {n, raw, score, lo, hi}}.
-    """
+def _pool(effects: dict[str, list[float]]):
+    """Shared pieces of the empirical-Bayes model (see `shrink`)."""
     creators = [c for c, v in effects.items() if v]
-    if not creators:
-        return {}
     means = {c: statistics.mean(effects[c]) for c in creators}
     resid = [x - means[c] for c in creators for x in effects[c]]
     n_tot = sum(len(effects[c]) for c in creators)
@@ -119,6 +112,19 @@ def shrink(effects: dict[str, list[float]]) -> dict[str, dict]:
     mu = sum(means[c] / se2[c] for c in creators) / sum(1 / se2[c] for c in creators)
     tau2 = max(0.0, statistics.mean([(means[c] - mu) ** 2 - se2[c] for c in creators])) if len(creators) > 1 else 0.0
     se_mu2 = 1 / sum(1 / se2[c] for c in creators)   # uncertainty of the overall mean
+    return creators, means, se2, mu, tau2, se_mu2
+
+
+def shrink(effects: dict[str, list[float]]) -> dict[str, dict]:
+    """Normal-normal empirical Bayes per creator.
+
+    Within-creator variance is pooled across creators (one-post creators have
+    none of their own); between-creator variance tau^2 by method of moments,
+    floored at 0. Returns {creator: {n, raw, score, lo, hi}}.
+    """
+    if not any(effects.values()):
+        return {}
+    creators, means, se2, mu, tau2, se_mu2 = _pool(effects)
     out = {}
     for c in creators:
         w = tau2 / (tau2 + se2[c]) if tau2 + se2[c] > 0 else 0.0
@@ -129,6 +135,26 @@ def shrink(effects: dict[str, list[float]]) -> dict[str, dict]:
         out[c] = {"n": len(effects[c]), "raw": means[c], "score": score,
                   "lo": score - 1.96 * sd, "hi": score + 1.96 * sd}
     return out
+
+
+def prior(effects: dict[str, list[float]]) -> dict:
+    """Score for a creator with NO measured sponsored posts: the overall mean,
+    with an interval wide enough for any creator drawn from the population."""
+    _, _, _, mu, tau2, se_mu2 = _pool(effects)
+    sd = math.sqrt(tau2 + se_mu2)
+    return {"n": 0, "raw": float("nan"), "score": mu, "lo": mu - 1.96 * sd, "hi": mu + 1.96 * sd}
+
+
+def typical_log_engagement(recent: list[Post], preferred_fmt: str, min_posts: int = 3):
+    """Mean log(engagement + 1) of recent ordinary posts in the preferred format,
+    falling back to all formats when that format has too few.
+    Returns (value, n_posts, format_used) or None."""
+    ordinary = [p for p in recent if not p.sponsored]
+    same = [p for p in ordinary if p.fmt == preferred_fmt]
+    use, fmt = (same, preferred_fmt) if len(same) >= min_posts else (ordinary, "all")
+    if len(use) < min_posts:
+        return None
+    return statistics.mean(math.log(max(p.engagement, 0) + 1) for p in use), len(use), fmt
 
 
 def overall(effects: dict[str, list[float]], B: int = 1000, seed: int = 0) -> dict:

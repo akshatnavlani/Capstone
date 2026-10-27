@@ -81,3 +81,23 @@ def test_placebo_unbiased_under_right_skewed_engagement():
             posts.append(Post(f"c{c}", "youtube", f"{c}-{i}", D0 + timedelta(days=2 * i), math.exp(lg), False))
     pl = overall(effects_by_creator(placebo_targets(posts, {f"c{c}": 15 for c in range(30)}, seed=1), posts), B=200)
     assert abs(pl["mean"]) < 0.04
+
+
+def test_prior_for_unmeasured_creators_is_wide_and_centred():
+    from ml.direct_effect import prior
+    eff = {f"c{i}": [0.1 * (i % 5) - 0.2, 0.0, 0.05] for i in range(20)}
+    pr, sc = prior(eff), shrink(eff)
+    assert pr["lo"] < pr["score"] < pr["hi"]
+    widest_measured = max(s["hi"] - s["lo"] for s in sc.values())
+    assert pr["hi"] - pr["lo"] >= widest_measured
+
+
+def test_typical_log_engagement_prefers_sponsored_format_then_falls_back():
+    import math
+    from ml.direct_effect import typical_log_engagement
+    recent = [Post("a", "youtube", str(i), D0, 99.0 if i < 4 else 999.0, False, "long" if i < 4 else "short")
+              for i in range(10)]
+    val, n, fmt = typical_log_engagement(recent, "long")
+    assert fmt == "long" and n == 4 and abs(val - math.log(100)) < 1e-9
+    val, n, fmt = typical_log_engagement(recent[2:], "long")   # only 2 long posts -> all formats
+    assert fmt == "all" and n == 8
