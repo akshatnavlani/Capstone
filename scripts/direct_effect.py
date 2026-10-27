@@ -33,11 +33,13 @@ FITNESS_CREATOR_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}
 
 QUERIES = {
     "youtube": "select creator_id::text, video_id::text, published_at, view_count, like_count, "
-               "coalesce(is_sponsored, false) from youtube_videos where creator_id is not null "
+               "coalesce(is_sponsored, false), "
+               "case when duration_seconds is null then 'unknown' "
+               "when duration_seconds <= 180 then 'short' else 'long' end from youtube_videos where creator_id is not null "
                "and published_at is not null and view_count is not null and like_count is not null",
     "instagram": "select creator_id::text, post_id::text, posted_at, like_count, comment_count, "
-                 "coalesce(is_sponsored, false) or coalesce(has_paid_partnership_label, false) "
-                 "from instagram_posts where creator_id is not null and posted_at is not null "
+                 "coalesce(is_sponsored, false) or coalesce(has_paid_partnership_label, false), "
+                 "coalesce(media_type, 'unknown') from instagram_posts where creator_id is not null and posted_at is not null "
                  "and like_count is not null and comment_count is not null",
 }
 
@@ -67,9 +69,9 @@ def main() -> int:
     posts: list[Post] = []
     for platform, sql in QUERIES.items():
         cur.execute(sql)
-        for cid, pid, d, e1, e2, sp in cur.fetchall():
+        for cid, pid, d, e1, e2, sp, fmt in cur.fetchall():
             day = d.date() if isinstance(d, datetime) else d
-            posts.append(Post(cid, platform, pid, day, float(e1) + float(e2), bool(sp)))
+            posts.append(Post(cid, platform, pid, day, float(e1) + float(e2), bool(sp), fmt))
     posts = settled(posts, today)
 
     cur.execute("select creator_id::text, name, category from creators")
@@ -107,10 +109,23 @@ def main() -> int:
     print(f"Posts (in scope, older than 14 days): {len(posts)}; sponsored: {len(sponsored)} "
           f"(fitness brand {counts['yes']}, other brand {counts['no']}, brand unknown {counts['unclassified']})")
     print(f"Event rule: {EVENTS} -> {len(targets)} sponsored posts considered")
+    # Format mix: if sponsored and ordinary posts differ here, an unmatched
+    # comparison would measure the format, not the sponsorship.
+    for platform in QUERIES:
+        def mix(ps):
+            n = len(ps) or 1
+            fm = {}
+            for p in ps:
+                fm[p.fmt] = fm.get(p.fmt, 0) + 1
+            return ", ".join(f"{k} {100 * v / n:.0f}%" for k, v in sorted(fm.items()))
+        sp_p = [p for p in targets if p.platform == platform]
+        od_p = [p for p in posts if p.platform == platform and not p.sponsored]
+        if sp_p:
+            print(f"  {platform} format mix -- sponsored: {mix(sp_p)} | ordinary: {mix(od_p)}")
 
     eff = effects_by_creator(targets, posts, WINDOW)
     main_res = overall(eff)
-    print(f"\nWith a baseline (>=3 ordinary posts within +-{WINDOW}d): {main_res['n_posts']} posts "
+    print(f"\nWith a baseline (>=3 same-format ordinary posts within +-{WINDOW}d): {main_res['n_posts']} posts "
           f"from {main_res['n_creators']} creators")
     print(f"Mean effect (log ratio vs own ordinary posts): {main_res['mean']:+.3f}  "
           f"95% CI [{main_res['lo']:+.3f}, {main_res['hi']:+.3f}]  (creator bootstrap)")

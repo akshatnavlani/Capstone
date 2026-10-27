@@ -5,8 +5,11 @@ ESTIMAND. For a sponsored post p by creator c on platform k:
     effect(p) = log( (eng(p) + 1) / (median eng of c's non-sponsored posts on k
                                       within +-window days of p) + 1 )
 
-The baseline is the same creator (audience size, niche and style cancel) at
-nearby dates (slow trends cancel). The identifying assumption: had p not been
+The baseline is the same creator (audience size, niche and style cancel), the
+same format (YouTube Shorts vs long videos; Instagram media type), at nearby
+dates (slow trends cancel). Format matters: sponsorships sit mostly in long
+videos while ordinary posts mix in Shorts, whose views differ hugely; without
+format matching the placebo came out at +0.18 on the 27 Oct run. The identifying assumption: had p not been
 sponsored, it would have performed like the creator's nearby ordinary posts.
 
 PLACEBO. The same statistic for randomly chosen NON-sponsored posts. It should
@@ -38,6 +41,7 @@ class Post:
     day: date
     engagement: float
     sponsored: bool
+    fmt: str = "any"   # format: YouTube short/long, Instagram media type
 
 
 def _day(d) -> date:
@@ -46,10 +50,11 @@ def _day(d) -> date:
 
 def post_effect(post: Post, same_creator_platform: list[Post], window_days: int = 30,
                 min_baseline: int = MIN_BASELINE_POSTS) -> float | None:
-    """Log ratio of the post's engagement to the median of nearby ordinary posts."""
+    """Log ratio of the post's engagement to the median of nearby ordinary posts
+    of the SAME format (a long video is never compared with Shorts)."""
     lo, hi = post.day - timedelta(days=window_days), post.day + timedelta(days=window_days)
     base = [q.engagement for q in same_creator_platform
-            if not q.sponsored and q.post_id != post.post_id and lo <= q.day <= hi]
+            if not q.sponsored and q.post_id != post.post_id and q.fmt == post.fmt and lo <= q.day <= hi]
     if len(base) < min_baseline:
         return None
     return math.log((max(post.engagement, 0) + 1) / (max(statistics.median(base), 0) + 1))

@@ -51,3 +51,19 @@ def test_settled_drops_recent_posts():
     p_old = Post("a", "youtube", "1", date(2026, 10, 1), 1.0, False)
     p_new = Post("a", "youtube", "2", date(2026, 10, 25), 1.0, False)
     assert settled([p_old, p_new], date(2026, 10, 27)) == [p_old]
+
+
+def test_format_matching_removes_shorts_confound():
+    # Shorts get 3x the views; sponsored posts are all long videos with NO real effect.
+    posts = []
+    for i in range(60):
+        short = i % 2 == 0
+        sp = (not short) and i % 10 == 9
+        posts.append(Post("c", "youtube", str(i), D0 + timedelta(days=i), 3000.0 if short else 1000.0, sp,
+                          "short" if short else "long"))
+    targets = [p for p in posts if p.sponsored]
+    matched = effects_by_creator(targets, posts)["c"]
+    assert all(abs(x) < 1e-9 for x in matched)
+    unmatched = [Post(p.creator, p.platform, p.post_id, p.day, p.engagement, p.sponsored) for p in posts]
+    biased = effects_by_creator([p for p in unmatched if p.sponsored], unmatched)["c"]
+    assert sum(biased) / len(biased) < -0.3
