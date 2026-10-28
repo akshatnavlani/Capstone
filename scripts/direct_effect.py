@@ -23,6 +23,7 @@ import psycopg2
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from ml.creator_links import collaboration_pairs, india_links  # noqa: E402
 from ml.direct_effect import (Post, effects_by_creator, overall, placebo_targets, prior, settled, shrink,  # noqa: E402
                               typical_log_engagement)
 
@@ -79,13 +80,28 @@ def main() -> int:
 
     cur.execute("select creator_id::text, name, category from creators")
     creators = {cid: (name, cat) for cid, name, cat in cur.fetchall()}
-    overrides = {r["name"].strip().lower(): r["include"].strip().lower() in ("yes", "true", "1")
+    # include: yes / no / overseas. 'overseas' = not Indian: left out of every
+    # estimate, and kept in the RANKING only with an Indian-market link (below).
+    overrides = {r["name"].strip().lower(): r["include"].strip().lower()
                  for r in read_csv(ROOT / "data" / "creator_scope_overrides.csv") if r.get("name")}
 
+    def override_of(cid: str) -> str | None:
+        return overrides.get((creators.get(cid, ("", ""))[0] or "").strip().lower())
+
     def in_scope(cid: str) -> bool:
-        name, cat = creators.get(cid, ("", "other"))
-        key = (name or "").strip().lower()
-        return overrides[key] if key in overrides else cat in FITNESS_CREATOR_CATEGORIES
+        ov = override_of(cid)
+        if ov is not None:
+            return ov in ("yes", "true", "1")
+        return creators.get(cid, ("", "other"))[1] in FITNESS_CREATOR_CATEGORIES
+
+    overseas = {c for c in creators if override_of(c) == "overseas"}
+    cur.execute("select creator_id::text, brand_id::text from creator_sponsorship_events "
+                "where creator_id is not null and brand_id is not null")
+    brand_deals: dict[str, set[str]] = {}
+    for c, b in cur.fetchall():
+        brand_deals.setdefault(c, set()).add(b)
+    eligible = {c for c in overseas if creators[c][1] in FITNESS_CREATOR_CATEGORIES}
+    overseas_kept = india_links(eligible, set(creators) - overseas, brand_deals, collaboration_pairs(cur))
 
     cur.execute("select e.content_id::text, b.name, b.category from creator_sponsorship_events e "
                 "left join brands b on b.brand_id = e.brand_id")
@@ -102,7 +118,8 @@ def main() -> int:
             return "unclassified"
         return "yes" if cat in FITNESS_CATS else "no"
 
-    posts = [p for p in posts if in_scope(p.creator)]
+    posts_rank = [p for p in posts if in_scope(p.creator) or p.creator in overseas_kept]
+    posts = [p for p in posts_rank if p.creator not in overseas_kept]   # Indian creators: every estimate
     sponsored = [p for p in posts if p.sponsored]
     verdict = {p.post_id: fitness_event(p) for p in sponsored}
     counts = {v: sum(1 for x in verdict.values() if x == v) for v in ("yes", "no", "unclassified")}
@@ -155,6 +172,11 @@ def main() -> int:
         print(f"Sensitivity, ALL brands: {alt['mean']:+.3f}  [{alt['lo']:+.3f}, {alt['hi']:+.3f}]  "
               f"({alt['n_posts']} posts)")
 
+    # Ranking scores also cover overseas creators with an Indian-market link;
+    # the estimates printed above stay Indian-only.
+    sponsored_rank = [p for p in posts_rank if p.sponsored]
+    targets_rank = sponsored_rank if EVENTS == "all" else [p for p in sponsored_rank if fitness_event(p) == "yes"]
+    eff_rank = effects_by_creator(targets_rank, posts_rank, WINDOW)
     scores = shrink(eff)
     ranked = sorted(scores.items(), key=lambda kv: -kv[1]["score"])
     pos = sum(1 for _, s in ranked if s["lo"] > 0)
@@ -184,11 +206,16 @@ def main() -> int:
         "overall": main_res, "placebo": pl, "placebo_adjusted": adj, "event_counts": counts,
         "creators": {cid: s for cid, s in ranked}}, indent=2, default=str))
     print(f"\nSaved {models / 'direct_effect_creators.csv'} and {models / 'direct_effect.json'}")
-    write_creator_value(posts, sponsored, scores, prior(eff), creators, today, models)
+    print(f"\nOverseas accounts: {len(overseas)} marked; {len(overseas_kept)} kept for the ranking "
+          f"(Indian brand deal or Indian collaborator), {len(eligible) - len(overseas_kept)} dropped (no Indian link)")
+    for c, why in sorted(overseas_kept.items(), key=lambda kv: creators[kv[0]][0] or ""):
+        print(f"  kept {creators[c][0][:30]:30s} {why}")
+    write_creator_value(posts_rank, sponsored_rank, shrink(eff_rank), prior(eff_rank), creators, today, models,
+                        overseas_kept)
     return 0
 
 
-def write_creator_value(posts, sponsored, scores, prior_score, creators, today, models) -> None:
+def write_creator_value(posts, sponsored, scores, prior_score, creators, today, models, overseas_kept=None) -> None:
     """Per creator and platform: expected engagement of ONE sponsored post now.
 
     expected = exp(typical recent log engagement + direct-effect score) - 1, where
@@ -227,6 +254,8 @@ def write_creator_value(posts, sponsored, scores, prior_score, creators, today, 
             "direct_basis": basis, "n_sponsored_posts": s["n"],
             "expected_sponsored_engagement": math.exp(log_typ + s["score"]) - 1,
             "expected_lo": math.exp(log_typ + s["lo"]) - 1, "expected_hi": math.exp(log_typ + s["hi"]) - 1,
+            "overseas": "yes" if c in (overseas_kept or {}) else "no",
+            "india_link": (overseas_kept or {}).get(c, ""),
         })
     rows.sort(key=lambda r: (r["platform"], -r["expected_sponsored_engagement"]))
     path = models / "creator_value.csv"
