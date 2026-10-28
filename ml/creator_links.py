@@ -43,32 +43,24 @@ def collaboration_pairs(cur) -> set[tuple[str, str]]:
     return pairs
 
 
-def india_links(creator_ids: set[str], indian_ids: set[str], brand_deals: dict[str, set[str]],
-                collab: set[tuple[str, str]], creator_names: dict[str, str] | None = None,
-                brand_names: dict[str, str] | None = None) -> dict[str, str]:
-    """For each creator in `creator_ids`, the reason they are relevant to the Indian
-    market, or no entry if none.
+def india_links(creator_ids: set[str], indian_people: set[str], collab: set[tuple[str, str]],
+                creator_names: dict[str, str] | None = None) -> dict[str, str]:
+    """For each creator in `creator_ids`, the Indian people they collaborate with,
+    or no entry if none.
 
-    brand_deals: creator id -> brand ids they have a sponsored post for. A brand
-    counts as Indian-market when at least one creator in `indian_ids` has also
-    been sponsored by it (there is no brand-country column).
+    Rule set by the user (28 Oct): only collaborations with Indian PEOPLE count
+    (creators, athletes, celebrities). A team or league account listing a player
+    is not a connection, and brand deals do not count (global brands such as Nike
+    also sponsor Indian creators, so they cannot show Indian-market reach).
     """
-    indian_brands = {b for c in indian_ids for b in brand_deals.get(c, ())}
     partners: dict[str, set[str]] = defaultdict(set)
     for a, b in collab:
         partners[a].add(b)
         partners[b].add(a)
     out = {}
     for c in creator_ids:
-        shared = brand_deals.get(c, set()) & indian_brands
-        linked = partners.get(c, set()) & indian_ids
-        reasons = []
-        if shared:
-            names = sorted((brand_names or {}).get(x, x) for x in shared)
-            reasons.append(f"brand(s) also sponsoring Indian creators: {', '.join(names[:5])}")
+        linked = partners.get(c, set()) & indian_people
         if linked:
             names = sorted((creator_names or {}).get(x, x) for x in linked)
-            reasons.append(f"collaborates with: {', '.join(names[:5])}")
-        if reasons:
-            out[c] = "; ".join(reasons)
+            out[c] = "collaborates with: " + ", ".join(names[:5])
     return out

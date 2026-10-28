@@ -34,6 +34,7 @@ WINDOW = int(os.environ.get("GAIL_DIRECT_WINDOW", "30"))
 RECENT_DAYS = int(os.environ.get("GAIL_RECENT_DAYS", "90"))  # window for "typical engagement now"
 DEFAULT_FMT = {"youtube": "long", "instagram": "video"}
 FITNESS_CREATOR_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}  # as in train_prod_model.py
+PEOPLE_CATEGORIES = {"athlete", "fitness_influencer", "lifestyle_influencer"}
 
 QUERIES = {
     "youtube": "select creator_id::text, video_id::text, published_at, view_count, like_count, "
@@ -95,16 +96,12 @@ def main() -> int:
         return creators.get(cid, ("", "other"))[1] in FITNESS_CREATOR_CATEGORIES
 
     overseas = {c for c in creators if override_of(c) == "overseas"}
-    cur.execute("select creator_id::text, brand_id::text from creator_sponsorship_events "
-                "where creator_id is not null and brand_id is not null")
-    brand_deals: dict[str, set[str]] = {}
-    for c, b in cur.fetchall():
-        brand_deals.setdefault(c, set()).add(b)
     eligible = {c for c in overseas if creators[c][1] in FITNESS_CREATOR_CATEGORIES}
-    cur.execute("select brand_id::text, name from brands")
-    brand_names = dict(cur.fetchall())
-    overseas_kept = india_links(eligible, set(creators) - overseas, brand_deals, collaboration_pairs(cur),
-                                {c: n for c, (n, _) in creators.items()}, brand_names)
+    # Only collaborations with Indian PEOPLE count (user, 28 Oct): not team,
+    # league or organisation accounts, and not brand deals.
+    indian_people = {c for c, (_, cat) in creators.items() if c not in overseas and cat in PEOPLE_CATEGORIES}
+    overseas_kept = india_links(eligible, indian_people, collaboration_pairs(cur),
+                                {c: n for c, (n, _) in creators.items()})
 
     cur.execute("select e.content_id::text, b.name, b.category from creator_sponsorship_events e "
                 "left join brands b on b.brand_id = e.brand_id")
@@ -210,7 +207,7 @@ def main() -> int:
         "creators": {cid: s for cid, s in ranked}}, indent=2, default=str))
     print(f"\nSaved {models / 'direct_effect_creators.csv'} and {models / 'direct_effect.json'}")
     print(f"\nOverseas accounts: {len(overseas)} marked; {len(overseas_kept)} kept for the ranking "
-          f"(Indian brand deal or Indian collaborator), {len(eligible) - len(overseas_kept)} dropped (no Indian link)")
+          f"(collaborate with an Indian creator/athlete/celebrity), {len(eligible) - len(overseas_kept)} dropped")
     for c, why in sorted(overseas_kept.items(), key=lambda kv: creators[kv[0]][0] or ""):
         print(f"  kept {creators[c][0][:30]:30s} {why[:110]}")
     write_creator_value(posts_rank, sponsored_rank, shrink(eff_rank), prior(eff_rank), creators, today, models,
