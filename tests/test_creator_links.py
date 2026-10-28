@@ -8,6 +8,8 @@ def test_india_links_by_brand_or_collaboration():
     out = india_links({"o_brand", "o_collab", "o_none"}, indian, deals, collab)
     assert set(out) == {"o_brand", "o_collab"}
     assert "brand" in out["o_brand"] and "collaborates" in out["o_collab"]
+    named = india_links({"o_collab"}, indian, deals, collab, {"i2": "Mumbai Indians"})
+    assert "Mumbai Indians" in named["o_collab"]
 
 
 def test_brand_shared_only_with_other_overseas_does_not_count():

@@ -44,7 +44,8 @@ def collaboration_pairs(cur) -> set[tuple[str, str]]:
 
 
 def india_links(creator_ids: set[str], indian_ids: set[str], brand_deals: dict[str, set[str]],
-                collab: set[tuple[str, str]]) -> dict[str, str]:
+                collab: set[tuple[str, str]], creator_names: dict[str, str] | None = None,
+                brand_names: dict[str, str] | None = None) -> dict[str, str]:
     """For each creator in `creator_ids`, the reason they are relevant to the Indian
     market, or no entry if none.
 
@@ -63,9 +64,11 @@ def india_links(creator_ids: set[str], indian_ids: set[str], brand_deals: dict[s
         linked = partners.get(c, set()) & indian_ids
         reasons = []
         if shared:
-            reasons.append(f"{len(shared)} brand(s) also sponsoring Indian creators")
+            names = sorted((brand_names or {}).get(x, x) for x in shared)
+            reasons.append(f"brand(s) also sponsoring Indian creators: {', '.join(names[:5])}")
         if linked:
-            reasons.append(f"collaborates with {len(linked)} Indian creator(s)")
+            names = sorted((creator_names or {}).get(x, x) for x in linked)
+            reasons.append(f"collaborates with: {', '.join(names[:5])}")
         if reasons:
             out[c] = "; ".join(reasons)
     return out

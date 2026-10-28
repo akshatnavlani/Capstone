@@ -101,7 +101,10 @@ def main() -> int:
     for c, b in cur.fetchall():
         brand_deals.setdefault(c, set()).add(b)
     eligible = {c for c in overseas if creators[c][1] in FITNESS_CREATOR_CATEGORIES}
-    overseas_kept = india_links(eligible, set(creators) - overseas, brand_deals, collaboration_pairs(cur))
+    cur.execute("select brand_id::text, name from brands")
+    brand_names = dict(cur.fetchall())
+    overseas_kept = india_links(eligible, set(creators) - overseas, brand_deals, collaboration_pairs(cur),
+                                {c: n for c, (n, _) in creators.items()}, brand_names)
 
     cur.execute("select e.content_id::text, b.name, b.category from creator_sponsorship_events e "
                 "left join brands b on b.brand_id = e.brand_id")
@@ -209,7 +212,7 @@ def main() -> int:
     print(f"\nOverseas accounts: {len(overseas)} marked; {len(overseas_kept)} kept for the ranking "
           f"(Indian brand deal or Indian collaborator), {len(eligible) - len(overseas_kept)} dropped (no Indian link)")
     for c, why in sorted(overseas_kept.items(), key=lambda kv: creators[kv[0]][0] or ""):
-        print(f"  kept {creators[c][0][:30]:30s} {why}")
+        print(f"  kept {creators[c][0][:30]:30s} {why[:110]}")
     write_creator_value(posts_rank, sponsored_rank, shrink(eff_rank), prior(eff_rank), creators, today, models,
                         overseas_kept)
     return 0
