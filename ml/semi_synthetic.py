@@ -236,6 +236,38 @@ METHODS = {
 }
 
 
+def tnet(world: World, seed: int) -> dict:
+    from ml.external_baselines import run_tnet
+    return run_tnet(world.data["creator"].x, _union_edges(world), world.treatment, world.y, seed=seed)
+
+
+def _union_edges(world: World) -> torch.Tensor:
+    d = world.data
+    return torch.cat([d["creator", "collaborates_with", "creator"].edge_index,
+                      d["creator", "co_occurs_with", "creator"].edge_index], dim=1)
+
+
+def deepinf(world: World, seed: int) -> dict:
+    from ml.external_baselines import run_deepinf
+    return run_deepinf(world.data["creator"].x, _union_edges(world), world.treatment, world.y, seed=seed)
+
+
+def inflect(world: World, seed: int) -> dict:
+    from ml.external_baselines import run_inflect
+    return run_inflect(world.data["creator"].x, _union_edges(world), world.treatment, world.y, seed=seed)
+
+
+# Published baselines run from the authors' code; each is listed only when its
+# clone is set up (GAIL_TNET_DIR, GAIL_DEEPINF_DIR, GAIL_INFLECT_DIR).
+from ml.external_baselines import deepinf_dir, inflect_dir, tnet_dir  # noqa: E402
+if deepinf_dir() is not None:
+    METHODS["DeepInf (KDD 2018)"] = deepinf
+if inflect_dir() is not None:
+    METHODS["INFLECT-DGNN (IEEE Access 2024)"] = inflect
+if tnet_dir() is not None:
+    METHODS["TNet (ICML 2024)"] = tnet
+
+
 def score(world: World, out: dict) -> dict:
     return {
         "ate_error": abs(out["ate"] - world.true_ate),
@@ -284,12 +316,29 @@ def main() -> None:
     ap.add_argument("--fake", action="store_true", help="random graph of the real graph's size")
     ap.add_argument("--reps", type=int, default=10)
     ap.add_argument("--out", default="models/semi_synthetic_results.json")
+    ap.add_argument("--methods", default=None,
+                    help="comma-separated method names to run; results are merged into --out "
+                         "(e.g. run the slow TNet baseline on its own)")
     args = ap.parse_args()
 
     graph = fake_graph() if args.fake else load_graph(Path(args.checkpoint))
     print(f"Graph: {graph.x.size(0)} creators, {graph.collab.size(1)} collab and "
           f"{graph.coocc.size(1)} co-occurs directed edges ({'fake' if args.fake else args.checkpoint})")
-    results = run(graph, reps=args.reps)
+    methods = [m.strip() for m in args.methods.split(",")] if args.methods else None
+    unknown = [m for m in methods or [] if m not in METHODS]
+    if unknown:
+        raise SystemExit(f"unknown method(s) {unknown}; available: {list(METHODS)}")
+    results = run(graph, reps=args.reps, methods=methods)
+    out_path = Path(args.out)
+    if methods and out_path.exists():
+        # Merge into earlier results; only valid for the same replicates (same true effects).
+        old = json.loads(out_path.read_text())
+        for scen, by_method in results.items():
+            if scen in old and old[scen].get("_true_ate") == by_method["_true_ate"]:
+                old[scen].update({k: v for k, v in by_method.items() if not k.startswith("_")})
+            else:
+                old[scen] = by_method
+        results = old
     print(summarise(results))
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(results, indent=2))
