@@ -66,3 +66,14 @@ def test_own_sponsorship_input_removes_its_confounding():
     assert off["slopes"]["collaborates_with"] > 0.3
     assert abs(on["slopes"]["collaborates_with"]) < 0.1
     assert adj.subset(torch.tensor([0, 2])).own.tolist() == own[[0, 2]].tolist()
+
+
+def test_benchmark_merge_lines_up_shorter_runs_and_refuses_mismatch():
+    import pytest
+    from ml.semi_synthetic import merge
+    old = {"clean": {"_true_ate": [0.1, 0.2, 0.3], "A": [{"x": 1}] * 3}}
+    new = {"clean": {"_true_ate": [0.1], "B": [{"x": 2}]}}
+    out = merge(old, new)
+    assert out["clean"]["_true_ate"] == [0.1, 0.2, 0.3] and len(out["clean"]["A"]) == 3 and len(out["clean"]["B"]) == 1
+    with pytest.raises(SystemExit):
+        merge(old, {"clean": {"_true_ate": [0.9], "B": [{"x": 2}]}})

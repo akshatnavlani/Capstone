@@ -276,7 +276,11 @@ def score(world: World, out: dict) -> dict:
     }
 
 
-def run(graph: Graph, reps: int = 10, scenarios=("clean", "pretrend"), methods=None) -> dict:
+def run(graph: Graph, reps: int = 10, scenarios=("clean", "pretrend"), methods=None, on_replicate=None) -> dict:
+    """Score each method on `reps` replicates per scenario. Prints progress after
+    every fit, and calls on_replicate(results) after each replicate so a caller can
+    save partial results (a stopped run keeps the replicates it finished)."""
+    import time
     methods = methods or list(METHODS)
     results: dict = {}
     for scen in scenarios:
@@ -286,8 +290,33 @@ def run(graph: Graph, reps: int = 10, scenarios=("clean", "pretrend"), methods=N
             world = make_world(graph, scen, seed=r)
             results[scen]["_true_ate"].append(world.true_ate)
             for m in methods:
+                t0 = time.time()
                 results[scen][m].append(score(world, METHODS[m](world, r)))
+                print(f"  [{scen} {r + 1}/{reps}] {m}: {time.time() - t0:.0f}s", flush=True)
+            if on_replicate:
+                on_replicate(results)
     return results
+
+
+def merge(old: dict, new: dict) -> dict:
+    """Merge a run of some methods into earlier results. Replicate r uses seed r in
+    both, so a shorter run lines up with the first replicates of a longer one;
+    anything else is refused rather than overwriting earlier methods."""
+    out = dict(old)
+    for scen, by_method in new.items():
+        if scen not in out:
+            out[scen] = by_method
+            continue
+        a, b = out[scen]["_true_ate"], by_method["_true_ate"]
+        k = min(len(a), len(b))
+        if a[:k] != b[:k]:
+            raise SystemExit(f"{scen}: these replicates do not match the saved ones (different graph or "
+                             f"checkpoint?); use a different --out instead of merging")
+        merged = dict(out[scen])
+        merged.update({m: v for m, v in by_method.items() if not m.startswith("_")})
+        merged["_true_ate"] = a if len(a) >= len(b) else b
+        out[scen] = merged
+    return out
 
 
 def summarise(results: dict) -> str:
@@ -298,13 +327,13 @@ def summarise(results: dict) -> str:
     lines = []
     for scen, by_method in results.items():
         true = by_method["_true_ate"]
-        lines.append(f"\nScenario: {scen}   (true mean effect {ms(true)}, {len(true)} replicates)")
-        lines.append(f"  {'method':38} {'|ATE error|':>16} {'PEHE':>16} {'co-mention (true 0)':>18}")
+        lines.append(f"\nScenario: {scen}   (true mean effect {ms(true)}; n = replicates scored per method)")
+        lines.append(f"  {'method':38} {'n':>3} {'|ATE error|':>16} {'PEHE':>16} {'co-mention (true 0)':>18}")
         for m, rows in by_method.items():
-            if m.startswith("_"):
+            if m.startswith("_") or not rows:
                 continue
             b = [r["beta_co"] for r in rows if r["beta_co"] is not None]
-            lines.append(f"  {m:38} {ms([r['ate_error'] for r in rows]):>16} "
+            lines.append(f"  {m:38} {len(rows):>3} {ms([r['ate_error'] for r in rows]):>16} "
                          f"{ms([r['pehe'] for r in rows]):>16} {ms(b) if b else '-':>18}")
     return "\n".join(lines)
 
@@ -323,25 +352,25 @@ def main() -> None:
 
     graph = fake_graph() if args.fake else load_graph(Path(args.checkpoint))
     print(f"Graph: {graph.x.size(0)} creators, {graph.collab.size(1)} collab and "
-          f"{graph.coocc.size(1)} co-occurs directed edges ({'fake' if args.fake else args.checkpoint})")
-    methods = [m.strip() for m in args.methods.split(",")] if args.methods else None
-    unknown = [m for m in methods or [] if m not in METHODS]
-    if unknown:
-        raise SystemExit(f"unknown method(s) {unknown}; available: {list(METHODS)}")
-    results = run(graph, reps=args.reps, methods=methods)
+          f"{graph.coocc.size(1)} co-occurs directed edges ({'fake' if args.fake else args.checkpoint})", flush=True)
+    # Method names contain commas ("DR, no graph"), so match known names in the
+    # argument instead of splitting it.
+    methods = [m for m in METHODS if m in args.methods] if args.methods else None
+    if args.methods and not methods:
+        raise SystemExit(f"no known method in --methods; available: {list(METHODS)}")
+    if methods:
+        print(f"Running: {methods}", flush=True)
     out_path = Path(args.out)
-    if methods and out_path.exists():
-        # Merge into earlier results; only valid for the same replicates (same true effects).
-        old = json.loads(out_path.read_text())
-        for scen, by_method in results.items():
-            if scen in old and old[scen].get("_true_ate") == by_method["_true_ate"]:
-                old[scen].update({k: v for k, v in by_method.items() if not k.startswith("_")})
-            else:
-                old[scen] = by_method
-        results = old
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    base = json.loads(out_path.read_text()) if methods and out_path.exists() else None
+
+    def save(partial):
+        out_path.write_text(json.dumps(merge(base, partial) if base else partial, indent=2))
+
+    results = run(graph, reps=args.reps, methods=methods, on_replicate=save)
+    results = merge(base, results) if base else results
     print(summarise(results))
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(results, indent=2))
+    out_path.write_text(json.dumps(results, indent=2))
     print(f"\nSaved {args.out}")
 
 
