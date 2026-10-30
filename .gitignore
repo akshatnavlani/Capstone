@@ -22,3 +22,12 @@ scripts/ingestion/logs/
 *.log
 scripts/ingestion/coauthor_checkpoint.json
 exports/
+.venv/
+__pycache__/
+*.pyc
+
+.env
+
+training_pair_deltas.json
+
+models/feature_cache.pt

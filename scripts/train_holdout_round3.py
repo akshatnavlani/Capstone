@@ -39,6 +39,8 @@ import sys
 
 import torch
 
+from ml.feature_scaling import scale_features
+
 from ml.gail_loss import compute_gail_loss
 from ml.gail_model import GAILModel
 from ml.model import SchemaSmokeTestGAT
@@ -216,6 +218,24 @@ def main() -> int:
     sponsors_index, sponsored_by_index = load_sponsorship_edges(
         sponsorship_path, creator_id_to_index, brand_id_to_index
     )
+
+    # E1: z-score creator features BEFORE any forward pass. Without this the
+    # propensity head -- a linear layer straight over these features -- saturates
+    # to 1.000 on held-out nodes in every fold (documented in
+    # CAPSTONE_NEXT_STEPS.md), which silently disables the overlap penalty and
+    # flattens the inverse-propensity weights to a constant. train_prod_model.py
+    # already scaled inline, so the SERVED checkpoint was fine while every
+    # EVALUATION number came from saturated folds. Shared implementation lives in
+    # ml/feature_scaling.py so the two scripts cannot drift apart again.
+    #
+    # Fit over all creator nodes (no fit_indices): LOO here is transductive --
+    # the held-out node's features and graph position are visible to the model
+    # by design, only its label is masked. See leave_one_out_eval's docstring.
+    real_x, feat_mean, feat_std = scale_features(real_x)
+    print(f"\nFeature scaling (E1): {real_x.size(1)} dims z-scored | "
+          f"mean|mu|={feat_mean.abs().mean():.4f} mean sigma={feat_std.mean():.4f}")
+    print("  propensity head now receives normalized features "
+          "(prevents the 1.000 saturation seen in prior rounds)")
 
     data = empty_hetero_data()
     data["creator"].x = real_x

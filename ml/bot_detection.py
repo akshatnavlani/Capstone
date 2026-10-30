@@ -111,3 +111,74 @@ def compute_bot_score(
 
 def is_bot_flagged(bot_score: float, threshold: float = 0.6) -> bool:
     return bot_score >= threshold
+
+
+# --- loading signals from the live schema (E10) ------------------------------
+
+
+def _columns(cur, table: str) -> set[str]:
+    """Column names of a table, read from the server rather than assumed.
+
+    Track A's schema has moved during the project and guessing has cost real
+    runs -- `creator_sponsorship_events` has no `id`, found the hard way. The
+    bot-signal loader below needs columns that may or may not exist on a given
+    platform's profile table, so it asks first.
+    """
+    cur.execute(f"select * from {table} limit 0")
+    return {d[0] for d in cur.description}
+
+
+def load_bot_scores(cur, id_to_index: dict[str, int]) -> dict[str, dict]:
+    """E10. Heuristic bot score per creator, from whatever signals exist.
+
+    `ml/bot_detection.py` was written, tested (14 tests) and never connected to
+    anything -- the thresholds were set against no real profiles because none
+    existed then. This reads the signals it needs from the live schema, skipping
+    any the tables do not carry: a missing signal scores 0 (not suspicious)
+    rather than inflating the score, matching `compute_bot_score`'s contract.
+
+    NOTHING IS EXCLUDED HERE. The scores are reported and saved so the flagged
+    creators can be looked at, but no training pair is dropped on their account.
+    With 19 independent observations, removing a creator is a decision worth
+    making deliberately and stating in the write-up, not a side effect of
+    wiring a module in.
+    """
+    available = _columns(cur, "instagram_profiles")
+    wanted = ["creator_id::text"]
+    for col in ("follower_count", "following_count", "post_count"):
+        if col in available:
+            wanted.append(col)
+
+    cur.execute(f"select {', '.join(wanted)} from instagram_profiles")
+    names = [w.split("::")[0] for w in wanted]
+    rows = [dict(zip(names, r)) for r in cur.fetchall()]
+
+    # Posts per day, from the span of a creator's Instagram activity.
+    cur.execute(
+        "select creator_id::text, count(*), min(posted_at), max(posted_at) "
+        "from instagram_posts where posted_at is not null group by creator_id"
+    )
+    cadence = {}
+    for cid, n, first, last in cur.fetchall():
+        span_days = max((last - first).days, 1) if first and last else 1
+        cadence[cid] = n / span_days
+
+    scores: dict[str, dict] = {}
+    for row in rows:
+        cid = row["creator_id"]
+        if cid not in id_to_index:
+            continue
+        followers = int(row.get("follower_count") or 0)
+        following = int(row.get("following_count") or 0)
+        signals = BotSignals(
+            follower_count=followers,
+            following_count=following,
+            # Instagram does not expose account creation, per Track A's SCHEMA.md.
+            account_age_days=None,
+            posts_per_day=cadence.get(cid, 0.0),
+            # Engagement is scored elsewhere; 0 here means "no mismatch signal".
+            engagement_rate=0.0 if followers < 1000 else 1.0,
+        )
+        score = compute_bot_score(signals)
+        scores[cid] = {"bot_score": score, "is_bot_flagged": is_bot_flagged(score)}
+    return scores
