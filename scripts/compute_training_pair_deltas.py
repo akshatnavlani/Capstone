@@ -29,58 +29,37 @@ import os
 import statistics
 import sys
 
-TRACK_A_INGESTION = os.path.join(
-    os.path.dirname(__file__), "..", "..", "track-a-data-infra", "scripts", "ingestion"
-)
-sys.path.insert(0, os.path.abspath(TRACK_A_INGESTION))
-
 import psycopg2  # noqa: E402
-from pair_count import CANDIDATES, ENV, compute  # noqa: E402
 
-PLATFORM_TABLES = {
-    "instagram": ("instagram_posts", "posted_at", "like_count", "comment_count"),
-    "youtube": ("youtube_videos", "published_at", "view_count", "like_count"),
-    "reddit": ("reddit_posts", "posted_at", "score", "num_comments"),
-}
+# Track A's canonical pair definition. Imported through _track_a because
+# pair_count's own `from orchestrator import ENV` otherwise drags in the
+# ingestion orchestrator, which refuses to import without the opencli browser
+# tool on PATH. See scripts/_track_a.py.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _track_a import import_pair_count  # noqa: E402
+
+_pair_count = import_pair_count()
+CANDIDATES, ENV, compute = _pair_count.CANDIDATES, _pair_count.ENV, _pair_count.compute
+
+from ml.engagement_lift import (  # noqa: E402
+    PLATFORM_TABLES,
+    platform_engagement,
+    platform_lift,
+    row_target,
+)
+from ml.target_clustering import (  # noqa: E402
+    DEFAULT_WINDOW_DAYS,
+    cluster_events,
+    cluster_weights,
+    summarize,
+)
+
+# Half-width of the engagement measurement window, in days. Also the gap at
+# which two events on the same neighbour stop being treated as one observation.
+WINDOW_DAYS = DEFAULT_WINDOW_DAYS
 
 
-def platform_engagement(cur, creator_id: str, platform: str, event_date):
-    """Real (measured) engagement only.
 
-    DATA-QUALITY FINDING (this round, two layers -- the first fix was insufficient
-    on its own):
-
-    Layer 1 -- fully-unmeasured posts: Instagram engagement columns are sparse --
-    live check found only 507/1811 (28%) posts have like_count, 715/1811 (39.5%)
-    have comment_count. Coalescing NULL to 0 (the naive approach) silently treats
-    "never measured" as "measured zero engagement", producing multi-million-percent
-    fake "lifts" on Virat Kohli / Anushka Sharma pairs, where most pre-2026 posts
-    are entirely unmeasured (both columns NULL) and only late-2026 posts carry real
-    6-8 digit values. First fix: exclude posts where BOTH columns are NULL.
-
-    Layer 2 -- partial measurement, found AFTER applying layer 1 (LeBron James's
-    top-lift pair still looked implausible): of Instagram's 507+208 partially/fully
-    measured posts, 208 have comment_count but NULL like_count and ZERO have the
-    reverse (like_count present, comment_count null) -- i.e. `like_count` (the
-    larger-magnitude metric) is missing on a real, non-random subset of otherwise-
-    measured posts. Same pattern on Reddit: 436 have both `score`+`num_comments`,
-    2,312 have `num_comments` only (score always the one missing). A post counted
-    "measured" under layer 1 alone can still be a comment-count-only stand-in for a
-    like/score-dominated total, biasing whichever side (before/after) happens to
-    hold more partially-measured posts. Fix: require BOTH engagement columns
-    non-null (fully measured) to include a post at all.
-    """
-    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
-    cur.execute(
-        f"select {date_col}, {e1}, {e2} "
-        f"from {table} where creator_id::text = %s and {date_col} is not null "
-        f"and {e1} is not null and {e2} is not null order by {date_col}",
-        (creator_id,),
-    )
-    rows = cur.fetchall()
-    before = [e1v + e2v for d, e1v, e2v in rows if d < event_date]
-    after = [e1v + e2v for d, e1v, e2v in rows if d > event_date]
-    return before, after
 
 
 def main() -> int:
@@ -99,25 +78,20 @@ def main() -> int:
         event_creator_id, item_id, event_platform, event_date, neighbour_id, _, _ = row
         platform_lifts = {}
         for platform in PLATFORM_TABLES:
-            before, after = platform_engagement(cur, neighbour_id, platform, event_date)
+            before, after = platform_engagement(cur, neighbour_id, platform, event_date, WINDOW_DAYS)
             if before and after:
-                before_avg = statistics.mean(before)
-                after_avg = statistics.mean(after)
-                lift = (after_avg - before_avg) / (before_avg + 1)
-                platform_lifts[platform] = {
-                    "n_before": len(before),
-                    "n_after": len(after),
-                    "avg_before": before_avg,
-                    "avg_after": after_avg,
-                    "lift": lift,
-                }
+                # Shared with train_prod_model.py via ml/engagement_lift.py, so
+                # the number inspected here is the number that trains.
+                platform_lifts[platform] = platform_lift(before, after)
 
         if platform_lifts:
             same_platform_count += 1
-            mean_lift = statistics.mean(v["lift"] for v in platform_lifts.values())
+            mean_lift = row_target(platform_lifts, statistic="mean")
+            robust_lift = row_target(platform_lifts, statistic="median")
         else:
             cross_platform_only_count += 1
             mean_lift = None
+            robust_lift = None
 
         results.append(
             {
@@ -128,9 +102,34 @@ def main() -> int:
                 "neighbour_id": neighbour_id,
                 "platform_lifts": platform_lifts,
                 "mean_lift": mean_lift,
+                "robust_lift": robust_lift,
                 "computable_same_platform": bool(platform_lifts),
             }
         )
+
+    # E2: label each row with the cluster of events it shares an engagement
+    # change with, and a weight of 1/cluster_size. The honest sample size is the
+    # number of CLUSTERS, not the number of rows -- a point the training script
+    # and every confidence interval downstream depend on.
+    lift_rows = [r for r in results if r["mean_lift"] is not None]
+    clusters = cluster_events(lift_rows, window_days=WINDOW_DAYS)
+    weights = cluster_weights(clusters)
+    for row, cid, w in zip(lift_rows, clusters, weights):
+        row["cluster_id"] = cid
+        row["cluster_weight"] = w
+
+    stats = summarize(clusters)
+    print(f"\nE2 clustering (window {WINDOW_DAYS}d):")
+    print(f"  lift-computable rows          {stats['rows']}")
+    print(f"  distinct observations         {stats['clusters']}   <- effective N")
+    print(f"  distinct neighbours           {len({r['neighbour_id'] for r in lift_rows})}"
+          f"   (what per-creator averaging gave)")
+    if stats["largest"]:
+        cid, n = stats["largest"][0]
+        print(f"  largest cluster               {n} rows ({stats['max_cluster_share']:.0%}) -- {cid}")
+        if stats["max_cluster_share"] > 0.3:
+            print("  !! one engagement change dominates the dataset; quote the")
+            print("     cluster count, never the row count.")
 
     conn.close()
 
@@ -154,10 +153,25 @@ def main() -> int:
         if n > 1:
             print(f"  stdev    = {statistics.stdev(sorted_lifts):.4f}")
 
+        # Mean-based vs median-based target, side by side. If the median-based
+        # column has a much smaller spread for the same rows, the extra variance
+        # in the mean-based one is viral-post noise and not signal to model.
+        robust = [r["robust_lift"] for r in computed]
+        print("\nMean-based vs median-based target (same rows, same windows):")
+        print(f"  {'':<10} {'mean-based':>12} {'median-based':>14}")
+        print(f"  {'median':<10} {statistics.median(lifts):>12.4f} {statistics.median(robust):>14.4f}")
+        print(f"  {'mean':<10} {statistics.mean(lifts):>12.4f} {statistics.mean(robust):>14.4f}")
+        print(f"  {'max |v|':<10} {max(abs(v) for v in lifts):>12.4f} "
+              f"{max(abs(v) for v in robust):>14.4f}")
+        if n > 1:
+            print(f"  {'stdev':<10} {statistics.stdev(lifts):>12.4f} "
+                  f"{statistics.stdev(robust):>14.4f}")
+
         print("\nAll computed pairs, sorted by |lift| descending (outlier check):")
         for r in sorted(computed, key=lambda r: -abs(r["mean_lift"]))[:15]:
             print(
-                f"  lift={r['mean_lift']:+.3f}  event={r['event_item_id'][:16]:<16} "
+                f"  lift={r['mean_lift']:+.3f}  med={r['robust_lift']:+.3f}  "
+                f"event={r['event_item_id'][:16]:<16} "
                 f"({r['event_platform']})  neighbour={r['neighbour_id'][:8]}  "
                 f"platforms={list(r['platform_lifts'].keys())}"
             )

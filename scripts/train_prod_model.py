@@ -32,16 +32,17 @@ Deterministic: seed 0, scaler computed from training data only, 100 epochs.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
 import statistics
+from datetime import timedelta
 import subprocess
 import sys
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 
 # ---------------------------------------------------------------------------
 # Env handling — load .env like Track A's orchestrator (per-worktree .env)
@@ -70,15 +71,44 @@ def load_env() -> dict:
 ENV = load_env()
 
 # Track-A ingestion dir for fresh pair_count import
-TRACK_A_INGESTION = Path(__file__).resolve().parents[2] / "track-a-data-infra" / "scripts" / "ingestion"
-if TRACK_A_INGESTION.exists():
-    sys.path.insert(0, str(TRACK_A_INGESTION))
-
 import psycopg2  # noqa: E402
-from pair_count import compute as pair_count_compute  # noqa: E402
+
+# Track A's canonical pair definition. Imported through _track_a because
+# pair_count's own `from orchestrator import ENV` otherwise drags in the
+# ingestion orchestrator, which refuses to import without the opencli browser
+# tool on PATH. See scripts/_track_a.py.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _track_a import import_pair_count  # noqa: E402
+
+pair_count_compute = import_pair_count(ENV).compute
 
 from ml.feature_extraction import FeatureExtractor, RawCreatorRecord  # noqa: E402
+from ml.bot_detection import load_bot_scores  # noqa: E402
+from ml.engagement_lift import (  # noqa: E402
+    PLATFORM_TABLES,
+    platform_engagement,
+    platform_lift,
+    row_target,
+    lift_from_posts,
+    load_platform_posts,
+)
+from ml.feature_scaling import compute_feature_scaler  # noqa: E402
 from ml.gail_model import GAILModel  # noqa: E402
+from ml.target_clustering import (  # noqa: E402
+    DEFAULT_WINDOW_DAYS,
+    cluster_events,
+    per_creator_targets,
+    summarize,
+)
+from ml.time_indexed_treatment import (  # noqa: E402
+    build_control_observations,
+    matched_did,
+    build_observations,
+    drop_self_sponsored,
+    group_by_span,
+    sponsorship_dates,
+    treatment_in_span,
+)
 from ml.schema import (  # noqa: E402
     BRAND_METADATA_DIM,
     CREATOR_FEATURE_DIM,
@@ -90,11 +120,6 @@ from ml.schema import (  # noqa: E402
 # Constants
 # ---------------------------------------------------------------------------
 
-PLATFORM_TABLES = {
-    "instagram": ("instagram_posts", "posted_at", "like_count", "comment_count"),
-    "youtube": ("youtube_videos", "published_at", "view_count", "like_count"),
-    "reddit": ("reddit_posts", "posted_at", "score", "num_comments"),
-}
 
 # Must match backend/app/feature_store.py CREATOR_CATEGORIES exactly
 CREATOR_CATEGORIES = (
@@ -106,9 +131,74 @@ CREATOR_CATEGORIES = (
     "other",
 )
 
-HIDDEN_CHANNELS = 16
+# E8. Embedding width, overridable so the capacity ablation is one command:
+#     $env:GAIL_HIDDEN_CHANNELS=128; python scripts/train_prod_model.py
+#
+# The default stays 16 deliberately. E8 was specified as "raise hidden dim to
+# 128" on the assumption the model was under-capacity. The 2026-10-23 run shows
+# the opposite: with 16 labelled nodes it already fits in-sample to MSE 0.0068
+# (99.7% below the always-zero baseline) and the prediction barely moves when
+# exposure is zeroed -- mean |mu(e,X) - mu(0,X)| = 0.027 on targets spanning
+# +/-4. The head is reading each creator's target off a 1,289-dimensional
+# embedding that uniquely identifies them, so it has no need of exposure at all.
+# Eight times the width makes that worse, not better. The knob exists because
+# the ablation belongs in the write-up; the default should not change until
+# cross-fitting shows the model generalising at all.
+HIDDEN_CHANNELS = int(os.environ.get("GAIL_HIDDEN_CHANNELS", "16"))
 HEADS = 2
 EPOCHS = 100
+# P3. Control observations on by default; GAIL_CONTROLS=0 is the treated-only
+# ablation (the P2 run: 15 exposed observations, no T = 0 data).
+USE_CONTROLS = os.environ.get("GAIL_CONTROLS", "1") != "0"
+# P3b. Which lift is the target. "log" = log((median_after+1)/(median_before+1)),
+# chosen for scale, before seeing any estimate on it. GAIL_LIFT=median restores
+# the ratio-minus-one lift of every earlier run.
+LIFT_STATISTIC = os.environ.get("GAIL_LIFT", "log")
+LIFT_KEY = {"log": "log_lift", "median": "robust_lift"}[LIFT_STATISTIC]
+# Event rule (team decision 2026-10-25): treated observations come only from
+# sponsorships by fitness / athleisure brands, because the product ranks creators
+# for those brands. Labels live in data/event_brand_labels.csv (yes / no /
+# unsure); "unsure" and unlabelled events are EXCLUDED and listed, never guessed.
+# GAIL_EVENTS=all reproduces the all-brands run (c8c94de), reported alongside.
+EVENT_RULE = os.environ.get("GAIL_EVENTS", "fitness")
+EVENT_LABELS_PATH = Path(__file__).resolve().parents[1] / "data" / "event_brand_labels.csv"
+# Creator rule (user decision 2026-10-26): the creators whose engagement is
+# MEASURED -- exposed observations and controls -- must be fitness / health
+# creators, the project's niche. The sponsored creator can be anyone (a film
+# star's Puma deal is a fitness-brand event); the graph keeps every node, since
+# dropping nodes would change everyone else's exposure. Scope is by creator
+# category, with data/creator_scope_overrides.csv (name,include) to correct
+# individuals. GAIL_CREATORS=all disables the rule.
+CREATOR_RULE = os.environ.get("GAIL_CREATORS", "fitness")
+# Pre-declared 2026-10-26, before any run under these rules: with fewer exposed
+# observations than this, the estimates are printed for completeness but are
+# NOT a result -- the finding is "too few fitness-scoped observations to
+# estimate spillover", with the all-brands / all-creators run as context.
+MIN_EXPOSED_FOR_ESTIMATE = 8
+FITNESS_CREATOR_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}
+CREATOR_OVERRIDES_PATH = Path(__file__).resolve().parents[1] / "data" / "creator_scope_overrides.csv"
+# Baseline (before-side) window width in days. The after side -- the causal
+# window -- stays DEFAULT_WINDOW_DAYS. Widening only the baseline recovers pairs
+# whose neighbour posted after the event but not in the 30 days before it (35/75
+# "cross-platform-only" rows on 2026-10-26). Cost: an older baseline admits more
+# secular trend, so choose the width from scripts/straddle_recovery.py and keep
+# it at 60-90 days, never unbounded. Default = symmetric, as every earlier run.
+BASELINE_DAYS = int(os.environ.get("GAIL_BASELINE_DAYS", str(DEFAULT_WINDOW_DAYS)))
+# E4 ablation. "aipw" (default): attention is supervised by the doubly robust
+# pseudo-outcome, whose gradient reaches it through exposure. "mse": plain
+# prediction loss on the raw lift, no selection correction -- the arm E4 is
+# compared against. ("mse" also switches off the propensity term, since
+# compute_gail_loss only fits propensity when a treatment vector is passed.)
+DR_MODE = os.environ.get("GAIL_DR", "aipw")
+if DR_MODE not in ("aipw", "mse"):
+    raise SystemExit(f"GAIL_DR must be 'aipw' or 'mse', got {DR_MODE!r}")
+# Placebo (pre-trend) penalty weight; 0 = off. See ml/placebo.py.
+PLACEBO_WEIGHT = float(os.environ.get("GAIL_PLACEBO", "0"))
+# GAIL-R (ml/gail_r.py): placebo-penalty weight and bootstrap size. 30 removed
+# ~85% of a planted pre-trend bias at no cost when no trend was planted
+# (ml/semi_synthetic.py, 10 replicates).
+R_PLACEBO = float(os.environ.get("GAIL_R_PLACEBO", "30"))
+R_BOOT = int(os.environ.get("GAIL_R_BOOT", "200"))
 LR = 1e-2
 SEED = 0
 
@@ -130,36 +220,6 @@ def category_one_hot(category: str | None) -> list[int]:
     return vec
 
 
-def compute_feature_scaler(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    """Per-dim mean/std over N creators. Std clamped to avoid div/0."""
-    mean = x.mean(dim=0)
-    std = x.std(dim=0, unbiased=False)
-    std = std.clamp(min=1e-6)
-    # One-hot dims have tiny std; keep them as-is — clamping prevents explosion
-    return mean, std
-
-
-def platform_engagement(cur, creator_id: str, platform: str, event_date):
-    """Real (fully-measured) engagement only — BOTH cols must be non-null.
-
-    Layer 1 fix: coalesce NULL→0 fabricated million-percent lifts (28% of
-    instagram_posts have like_count, 39% have comment_count, and the missingness
-    is temporally skewed — pre-2026 posts are mostly both-NULL).
-    Layer 2 fix: even after excluding both-NULL, posts with only the smaller
-    metric measured (comment_count present, like_count NULL) still bias the avg.
-    So require BOTH columns non-null, per compute_training_pair_deltas.py.
-    """
-    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
-    cur.execute(
-        f"select {date_col}, {e1}, {e2} "
-        f"from {table} where creator_id::text = %s and {date_col} is not null "
-        f"and {e1} is not null and {e2} is not null order by {date_col}",
-        (creator_id,),
-    )
-    rows = cur.fetchall()
-    before = [e1v + e2v for d, e1v, e2v in rows if d < event_date]
-    after = [e1v + e2v for d, e1v, e2v in rows if d > event_date]
-    return before, after
 
 
 def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_creators: int):
@@ -191,22 +251,21 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
         event_creator_id, item_id, event_platform, event_date, neighbour_id, _, _ = row
         platform_lifts: dict[str, dict] = {}
         for platform in PLATFORM_TABLES:
-            before, after = platform_engagement(cur, neighbour_id, platform, event_date)
+            before, after = platform_engagement(
+                cur, neighbour_id, platform, event_date, DEFAULT_WINDOW_DAYS, before_days=BASELINE_DAYS
+            )
             if before and after:
-                before_avg = statistics.mean(before)
-                after_avg = statistics.mean(after)
-                lift = (after_avg - before_avg) / (before_avg + 1)
-                platform_lifts[platform] = {
-                    "n_before": len(before),
-                    "n_after": len(after),
-                    "avg_before": before_avg,
-                    "avg_after": after_avg,
-                    "lift": lift,
-                }
+                # Shared with compute_training_pair_deltas.py via
+                # ml/engagement_lift.py. Previously each script carried its own
+                # copy of this formula, so a fix to one left the model training
+                # on the other.
+                platform_lifts[platform] = platform_lift(before, after)
         if platform_lifts:
             same_platform_rows += 1
-            mean_lift = statistics.mean(v["lift"] for v in platform_lifts.values())
-            lifts_by_neighbour.setdefault(neighbour_id, []).append(mean_lift)
+            mean_lift = row_target(platform_lifts, statistic="mean")
+            robust_lift = row_target(platform_lifts, statistic="median")
+            log_lift = row_target(platform_lifts, statistic="log")
+            lifts_by_neighbour.setdefault(neighbour_id, []).append(robust_lift)
             detailed.append({
                 "event_creator_id": event_creator_id,
                 "item_id": item_id,
@@ -215,6 +274,8 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
                 "neighbour_id": neighbour_id,
                 "platform_lifts": platform_lifts,
                 "mean_lift": mean_lift,
+                "robust_lift": robust_lift,
+                "log_lift": log_lift,
             })
         else:
             cross_platform_only += 1
@@ -226,14 +287,47 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
                 "neighbour_id": neighbour_id,
                 "platform_lifts": {},
                 "mean_lift": None,
+                "robust_lift": None,
+                "log_lift": None,
             })
 
+    # E2: cluster rows that measure the SAME engagement change before averaging.
+    # Previously `target[creator] = mean(all that creator's lifts)`, which let one
+    # engagement change recorded N times dominate that creator's own target, and
+    # gave a creator backed by one repeated measurement the same training weight
+    # as one backed by several independent events.
+    #
+    # `per_creator_targets` averages within a cluster (one observation measured
+    # repeatedly), then across clusters (genuinely separate observations), and
+    # returns how many clusters back each target. That count becomes the node's
+    # sample weight in the loss.
     target = torch.zeros(num_creators, dtype=torch.float32)
-    for nid, lifts in lifts_by_neighbour.items():
+    sample_weight = torch.zeros(num_creators, dtype=torch.float32)
+    # `robust_lift` is the median-based target (ml/engagement_lift.py). The
+    # mean-based one is kept in `detailed` for the checkpoint record, but the
+    # model trains on the median: on the 2026-10-19 data the mean-based target
+    # had stdev 6.893 and a max of +34.724, both produced by single viral posts.
+    lift_rows = [d for d in detailed if d["robust_lift"] is not None]
+    clustered = per_creator_targets(
+        lift_rows, window_days=DEFAULT_WINDOW_DAYS, value_key="robust_lift"
+    )
+    for nid, (value, n_clusters) in clustered.items():
         if nid in creator_id_to_index:
-            target[creator_id_to_index[nid]] = statistics.mean(lifts)
+            idx = creator_id_to_index[nid]
+            target[idx] = value
+            sample_weight[idx] = float(n_clusters)
 
-    n_labeled = len(lifts_by_neighbour)
+    cluster_stats = summarize(cluster_events(lift_rows, window_days=DEFAULT_WINDOW_DAYS))
+    print(f"E2 clustering (window {DEFAULT_WINDOW_DAYS}d): {cluster_stats['rows']} rows -> "
+          f"{cluster_stats['clusters']} independent observations across "
+          f"{len(clustered)} creators")
+    if cluster_stats["largest"]:
+        cid, n = cluster_stats["largest"][0]
+        print(f"  largest cluster {n} rows ({cluster_stats['max_cluster_share']:.0%}) -- {cid}")
+        if cluster_stats["max_cluster_share"] > 0.3:
+            print("  !! one engagement change dominates; quote the cluster count, not the row count")
+
+    n_labeled = len(clustered)
     print(f"Same-platform-computable lifts: {same_platform_rows}/{len(good_rows)} "
           f"(cross-platform-only straddle, no lift: {cross_platform_only}/{len(good_rows)})")
     if n_labeled:
@@ -243,7 +337,21 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
               f"min={vals_sorted[0]:.4f} median={statistics.median(vals_sorted):.4f} "
               f"mean={statistics.mean(vals_sorted):.4f} max={vals_sorted[-1]:.4f}")
 
-    return target, lifts_by_neighbour, summary, detailed
+    return target, lifts_by_neighbour, summary, detailed, sample_weight
+
+
+def _reconnect(conn, database_url: str):
+    """Replace a connection that may have gone stale. Returns (conn, cur).
+
+    Closing the old one is best-effort: if the pooler already dropped it, the
+    close itself raises, and that is exactly the case this exists to survive.
+    """
+    try:
+        conn.close()
+    except Exception:
+        pass
+    fresh = psycopg2.connect(database_url)
+    return fresh, fresh.cursor()
 
 
 def build_creator_features(cur, extractor: FeatureExtractor):
@@ -267,8 +375,63 @@ def build_creator_features(cur, extractor: FeatureExtractor):
     cur.execute("select creator_id::text, follower_count, bio, full_name from instagram_profiles")
     ig_by_creator = {r[0]: r for r in cur.fetchall()}
 
+    # E14. Pre-fetch per-creator content BEFORE the extraction loop.
+    #
+    # These two queries used to run inside the loop, once per creator, which
+    # meant the database connection had to survive the whole CLIP/BERT pass --
+    # over half an hour for 390 creators, mostly idle between queries. Supabase's
+    # pooler closes idle connections, and the run died at creator 53/390 with
+    # "server closed the connection unexpectedly", losing eight minutes of
+    # extraction. Fetching up front means the connection is finished with before
+    # the slow work starts.
+    #
+    # ORDER BY is deliberate. The per-creator queries used `limit 20` with no
+    # ordering, so which twenty rows arrived was up to Postgres and could differ
+    # between runs -- the module docstring claims determinism, and for feature
+    # extraction that was not true. Ordering by date takes the twenty most
+    # recent, which is both reproducible and the more defensible definition:
+    # a creator's current content describes them better than whichever rows the
+    # planner happened to return first.
+    def _grouped(sql: str, per_creator: int = 20) -> dict[str, list]:
+        cur.execute(sql)
+        out: dict[str, list] = {}
+        for row in cur.fetchall():
+            bucket = out.setdefault(row[0], [])
+            if len(bucket) < per_creator:
+                bucket.append(row[1:])
+        return out
+
+    yt_videos_by_creator = _grouped(
+        "select creator_id::text, title, description, thumbnail_url, view_count, "
+        "like_count, comment_count from youtube_videos "
+        "order by creator_id, published_at desc nulls last"
+    )
+    ig_posts_by_creator = _grouped(
+        "select creator_id::text, caption, thumbnail_url, like_count, comment_count "
+        "from instagram_posts order by creator_id, posted_at desc nulls last"
+    )
+    print(f"Pre-fetched content for {len(yt_videos_by_creator)} creators with YouTube videos, "
+          f"{len(ig_posts_by_creator)} with Instagram posts (connection no longer needed)")
+
     # Engagement helper needs videos/posts per creator for rate
     # We'll compute engagement_rate lazily per creator inside loop
+
+    # E14. Feature cache, keyed by a hash of the exact inputs CLIP and BERT see.
+    #
+    # Extraction is the slow part of this script -- around half an hour for 390
+    # creators -- and nothing about it changes between runs unless the creator's
+    # content changes. Hashing the record rather than the creator id means the
+    # cache invalidates itself when Track A scrapes new posts for someone: their
+    # text and thumbnails change, so does the hash, and that creator alone is
+    # recomputed. A corrupt or unreadable cache is ignored rather than fatal.
+    cache_path = Path(__file__).resolve().parents[1] / "models" / "feature_cache.pt"
+    try:
+        feature_cache: dict[str, torch.Tensor] = torch.load(cache_path, weights_only=True)
+        print(f"Feature cache: {len(feature_cache)} entries from {cache_path.name}")
+    except Exception:
+        feature_cache = {}
+        print("Feature cache: starting empty")
+    cache_hits = 0
 
     vecs = []
     id_to_index: dict[str, int] = {}
@@ -288,10 +451,8 @@ def build_creator_features(cur, extractor: FeatureExtractor):
 
     for idx, (cid, name, category, yt_handle, ig_handle, reddit_handles) in enumerate(creator_rows):
         # limit per-creator content fetch to 20 each (matches feature_store)
-        cur.execute("select title, description, thumbnail_url, view_count, like_count, comment_count from youtube_videos where creator_id::text=%s limit 20", (cid,))
-        yt_videos = cur.fetchall()
-        cur.execute("select caption, thumbnail_url, like_count, comment_count from instagram_posts where creator_id::text=%s limit 20", (cid,))
-        ig_posts = cur.fetchall()
+        yt_videos = yt_videos_by_creator.get(cid, [])
+        ig_posts = ig_posts_by_creator.get(cid, [])
 
         yt_row = yt_by_creator.get(cid)
         ig_row = ig_by_creator.get(cid)
@@ -368,14 +529,41 @@ def build_creator_features(cur, extractor: FeatureExtractor):
             raw_text=raw_text,
             thumbnail_urls=thumbs[:20],
         )
-        print(f"  [{idx+1}/{len(creator_rows)}] extracting features for {name!r} (yt_subs={yt_subs} ig_followers={ig_followers} thumbs={len(thumbs)})...")
-        vec = extractor.extract(record)
+        cache_key = hashlib.sha256(
+            repr((
+                record.category_one_hot,
+                record.log_subscriber_count,
+                record.engagement_rate,
+                record.reputation_score,
+                record.raw_text,
+                record.thumbnail_urls,
+            )).encode("utf-8")
+        ).hexdigest()
+
+        cached = feature_cache.get(cache_key)
+        if cached is not None and cached.shape[0] == CREATOR_FEATURE_DIM:
+            cache_hits += 1
+            vec = cached
+        else:
+            print(f"  [{idx+1}/{len(creator_rows)}] extracting features for {name!r} "
+                  f"(yt_subs={yt_subs} ig_followers={ig_followers} thumbs={len(thumbs)})...")
+            vec = extractor.extract(record)
+            feature_cache[cache_key] = vec
         assert vec.shape[0] == CREATOR_FEATURE_DIM, f"dim mismatch {vec.shape[0]} != {CREATOR_FEATURE_DIM}"
         vecs.append(vec)
         id_to_index[cid] = idx
         order.append(cid)
         id_to_name[cid] = name
         id_to_category[cid] = category or "other"
+
+    print(f"Features: {cache_hits}/{len(creator_rows)} from cache, "
+          f"{len(creator_rows) - cache_hits} extracted")
+    if cache_hits < len(creator_rows):
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(feature_cache, cache_path)
+        except Exception as exc:  # a cache that cannot be written is not fatal
+            print(f"  (could not write feature cache: {exc})")
 
     x = torch.stack(vecs)
     return x, id_to_index, order, id_to_name, id_to_category
@@ -479,14 +667,61 @@ def load_brands(cur):
     return torch.stack(vecs), id_to_index
 
 
-def load_treatment(cur, id_to_index: dict[str, int], num_creators: int):
-    cur.execute("select distinct creator_id::text from creator_sponsorship_events")
-    sponsored = {r[0] for r in cur.fetchall()}
-    t = torch.zeros(num_creators, dtype=torch.float32)
-    for cid in sponsored:
-        if cid in id_to_index:
-            t[id_to_index[cid]] = 1.0
-    return t
+def load_creator_overrides(path: Path) -> dict[str, bool]:
+    """creator name (lower-cased) -> include, from the optional override file."""
+    import csv
+    if not path.exists():
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return {
+            r["name"].strip().lower(): r["include"].strip().lower() in ("yes", "true", "1")
+            for r in csv.DictReader(f) if r.get("name", "").strip()
+        }
+
+
+def load_event_labels(path: Path) -> dict[str, dict]:
+    """content_id -> {brand, fitness, note} from the hand-labelled event file."""
+    import csv
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} not found; it is required for GAIL_EVENTS=fitness "
+            f"(set GAIL_EVENTS=all to run without it)"
+        )
+    with open(path, encoding="utf-8") as f:
+        return {
+            r["content_id"]: {
+                "brand": r["brand"],
+                "fitness": r["fitness"].strip().lower(),
+                "note": r.get("note", ""),
+            }
+            for r in csv.DictReader(f)
+        }
+
+
+def load_sponsorship_dates(cur) -> dict:
+    """Dated sponsorship events per creator, for time-indexed treatment (P2).
+
+    Uses the SAME event definition as Track A's pair_count (Clause 1): on
+    Instagram, `is_sponsored OR has_paid_partnership_label`. The previous
+    `load_treatment` read `creator_sponsorship_events`, which uses
+    `is_sponsored` only, so a creator sponsored only via Instagram's native
+    label could generate training pairs while having T = 0. One definition now
+    drives both. P0 found the label-carrying events 33/33 genuine.
+    """
+    cur.execute(
+        """
+        select creator_id::text, posted_at from instagram_posts
+         where (is_sponsored or has_paid_partnership_label)
+           and posted_at is not null and creator_id is not null
+        union all
+        select creator_id::text, published_at from youtube_videos
+         where is_sponsored and published_at is not null and creator_id is not null
+        union all
+        select creator_id::text, posted_at from reddit_posts
+         where is_sponsored and posted_at is not null and creator_id is not null
+        """
+    )
+    return sponsorship_dates(cur.fetchall())
 
 
 def main() -> int:
@@ -498,6 +733,9 @@ def main() -> int:
     except Exception:
         pass
     print("=== Track B prod training (ALL pairs, normalized propensity) ===")
+    print(f"Windows: baseline {BASELINE_DAYS}d, outcome {DEFAULT_WINDOW_DAYS}d "
+          f"(GAIL_BASELINE_DAYS); placebo penalty weight {PLACEBO_WEIGHT} (GAIL_PLACEBO); "
+          f"loss {DR_MODE} (GAIL_DR)")
     database_url = ENV.get("DATABASE_URL")
     if not database_url:
         print("DATABASE_URL not set (check .env)")
@@ -540,6 +778,7 @@ def main() -> int:
             id_to_name[r["creator_id"]] = r["name"]
         creator_x = torch.stack(vecs)
         num_creators = creator_x.size(0)
+        id_to_category = {r["creator_id"]: r.get("category") or "other" for r in records}
         # edges from JSON
         with open(collab_path, encoding="utf-8") as f:
             collab_rows = _json.load(f)
@@ -560,14 +799,29 @@ def main() -> int:
             return torch.tensor([s,d], dtype=torch.long), torch.tensor(w, dtype=torch.float32).unsqueeze(-1)
         collab_index, collab_attr = _edges_from_rows(collab_rows)
         cooccur_index, cooccur_attr = _edges_from_rows(cooccur_rows)
+        # Same stale-connection exposure as the DB path below: this branch also
+        # runs CLIP/BERT over every creator before querying again.
+        conn, cur = _reconnect(conn, database_url)
         brand_x, brand_id_to_index = load_brands(cur)
         # sponsorship edges not needed for training except maybe reporting — build empty
         sponsors_index = torch.empty((2,0), dtype=torch.long)
         sponsored_by_index = torch.empty((2,0), dtype=torch.long)
     else:
-        creator_x, id_to_index, order, id_to_name, _ = build_creator_features(cur, extractor)
+        creator_x, id_to_index, order, id_to_name, id_to_category = build_creator_features(cur, extractor)
         num_creators = creator_x.size(0)
         print(f"Creator features: {num_creators} creators, dim {creator_x.shape[1]}")
+
+        # E14b. Reconnect before the remaining queries.
+        #
+        # Feature extraction can take half an hour on a cold cache, during which
+        # this connection is idle. Supabase's pooler closes idle connections, so
+        # the next query fails with "server closed the connection unexpectedly"
+        # -- which is how two runs died, once at creator 53/390 and once at
+        # load_collab_edges with all 390 already extracted. Everything from here
+        # on is fast, so a single reconnect is enough; nothing needs to span the
+        # slow part.
+        conn, cur = _reconnect(conn, database_url)
+
         collab_index, collab_attr = load_collab_edges(cur, id_to_index)
         cooccur_index, cooccur_attr = load_cooccurrence_edges(cur, id_to_index)
         brand_x, brand_id_to_index = load_brands(cur)
@@ -598,23 +852,126 @@ def main() -> int:
     except Exception as e:
         print(f"Warning: sponsorship edges build failed: {e}")
 
-    treatment = load_treatment(cur, id_to_index, num_creators)
-    n_sponsored = int(treatment.sum().item())
-    print(f"Treatment: {n_sponsored}/{num_creators} creators have is_sponsored event")
+    # P2. Dated sponsorship events, one definition shared with pair_count.
+    spons_dates = load_sponsorship_dates(cur)
+    ever = [c for c in spons_dates if c in id_to_index]
+    print(f"Sponsorship events: {sum(len(v) for v in spons_dates.values())} dated; "
+          f"{len(ever)}/{num_creators} creators sponsored at some point")
 
-    # Targets from canonical pair_count + platform_engagement (both-engagement-cols fix)
-    target, lifts_by_neighbour, pair_summary, detailed = build_targets_from_canonical(cur, id_to_index, num_creators)
-    labeled_idx = [id_to_index[cid] for cid in lifts_by_neighbour if cid in id_to_index]
-    labeled_ids = [cid for cid in lifts_by_neighbour if cid in id_to_index]
-    print(f"Labeled creator-nodes (distinct neighbours with same-platform lift): {len(labeled_idx)}")
-    for cid, lifts in lifts_by_neighbour.items():
-        if cid in id_to_index:
-            print(f"  {id_to_name.get(cid, cid)[:30]:30s} N={len(lifts)} mean_lift={statistics.mean(lifts):+.4f}")
+    # Targets from canonical pair_count + platform_engagement (both-engagement-cols fix).
+    # The per-creator target it returns is superseded by observations below.
+    _, lifts_by_neighbour, pair_summary, detailed, _ = build_targets_from_canonical(
+        cur, id_to_index, num_creators
+    )
 
-    if not labeled_idx:
-        print("ERROR: no labeled nodes — cannot train")
+    # P2b. Drop rows where the NEIGHBOUR ran their own sponsorship inside the
+    # window: their lift mixes their own direct effect into the "spillover".
+    lift_rows = [d for d in detailed if d["robust_lift"] is not None]
+
+    # Event rule: which sponsorships define a treated observation.
+    if EVENT_RULE == "fitness":
+        labels = load_event_labels(EVENT_LABELS_PATH)
+        kept_by_rule, off_rule, unlabelled = [], [], []
+        for d in lift_rows:
+            lab = labels.get(str(d["item_id"]))
+            if lab is None:
+                unlabelled.append(d)
+            elif lab["fitness"] == "yes":
+                kept_by_rule.append(d)
+            else:
+                d["excluded"] = f"event_rule:{lab['fitness']}:{lab['brand']}"
+                off_rule.append((d, lab))
+        print(f"\nEvent rule (fitness/athleisure brands only): kept {len(kept_by_rule)}/{len(lift_rows)} lift rows")
+        for d, lab in off_rule:
+            print(f"  excluded [{lab['fitness']:6s}] {lab['brand'][:22]:22s} event {str(d['event_date'])[:10]} "
+                  f"by {id_to_name.get(d['event_creator_id'], d['event_creator_id'])[:24]}")
+        caption_sql = {
+            "youtube": "select coalesce(title,'') || ' | ' || coalesce(description,'') "
+                       "from youtube_videos where video_id = %s",
+            "instagram": "select coalesce(caption,'') from instagram_posts where post_id = %s",
+            "reddit": "select coalesce(title,'') || ' | ' || coalesce(body,'') "
+                      "from reddit_posts where post_id = %s",
+        }
+        for d in unlabelled:
+            d["excluded"] = "event_rule:unlabelled"
+            print(f"  !! UNLABELLED event {d['item_id']} ({d['event_platform']}) by "
+                  f"{id_to_name.get(d['event_creator_id'], d['event_creator_id'])[:24]} -- "
+                  f"add it to data/event_brand_labels.csv")
+            # The caption usually names the sponsor, so label straight from the log.
+            sql = caption_sql.get(d["event_platform"])
+            if sql:
+                cur.execute(sql, (str(d["item_id"]),))
+                hit = cur.fetchone()
+                text = " ".join((hit[0] if hit else "").split())
+                print(f"       caption: {text[:220] or '(empty)'}")
+        lift_rows = kept_by_rule
+    else:
+        print(f"\nEvent rule: ALL brands (GAIL_EVENTS={EVENT_RULE})")
+
+    # Creator rule: who may be MEASURED (exposed observation or control).
+    overrides = load_creator_overrides(CREATOR_OVERRIDES_PATH)
+
+    def in_scope(cid: str) -> bool:
+        if CREATOR_RULE != "fitness":
+            return True
+        name = id_to_name.get(cid, "").strip().lower()
+        if name in overrides:
+            return overrides[name]
+        return id_to_category.get(cid, "other") in FITNESS_CREATOR_CATEGORIES
+
+    if CREATOR_RULE == "fitness":
+        out_of_scope = [d for d in lift_rows if not in_scope(d["neighbour_id"])]
+        for d in out_of_scope:
+            d["excluded"] = "creator_rule"
+        lift_rows = [d for d in lift_rows if in_scope(d["neighbour_id"])]
+        print(f"Creator rule (fitness/health creators only): kept {len(lift_rows)} lift rows, "
+              f"excluded {len(out_of_scope)}")
+        for cid in sorted({d["neighbour_id"] for d in out_of_scope}, key=lambda c: id_to_name.get(c, c)):
+            print(f"  excluded creator: {id_to_name.get(cid, cid)[:30]:30s} "
+                  f"category={id_to_category.get(cid, 'other')}")
+        if out_of_scope:
+            print("  (to include someone, add 'name,yes' to data/creator_scope_overrides.csv)")
+    else:
+        print(f"Creator rule: ALL creators (GAIL_CREATORS={CREATOR_RULE})")
+
+    kept_rows, self_sponsored = drop_self_sponsored(lift_rows, spons_dates, DEFAULT_WINDOW_DAYS)
+    for d in self_sponsored:
+        d["excluded"] = "neighbour_own_sponsorship_in_window"
+    print(f"\nP2b: dropped {len(self_sponsored)}/{len(lift_rows)} lift rows -- the neighbour "
+          f"ran their own sponsorship within +/-{DEFAULT_WINDOW_DAYS}d of the event")
+    for d in self_sponsored:
+        print(f"  dropped  {id_to_name.get(d['neighbour_id'], d['neighbour_id'])[:28]:28s} "
+              f"event {str(d['event_date'])[:10]} by "
+              f"{id_to_name.get(d['event_creator_id'], d['event_creator_id'])[:28]}")
+
+    # P2. One observation per cluster (same clustering rule as E2), each
+    # carrying the span of dates it measures.
+    observations = [
+        o for o in build_observations(kept_rows, DEFAULT_WINDOW_DAYS, LIFT_KEY)
+        if o.neighbour_id in id_to_index
+    ]
+    n_obs = len(observations)
+    labeled_ids = sorted({o.neighbour_id for o in observations})
+    labeled_idx = [id_to_index[c] for c in labeled_ids]
+    print(f"\nObservations: {n_obs} independent, across {len(labeled_ids)} creators")
+    for o in observations:
+        print(f"  {id_to_name.get(o.neighbour_id, o.neighbour_id)[:28]:28s} "
+              f"{o.start}..{o.end}  rows={o.n_rows:<2} lift={o.value:+.4f}  "
+              f"[{id_to_category.get(o.neighbour_id, 'other')}]")
+
+    if not observations:
+        print("ERROR: no observations left under the event/creator rules -- cannot train.")
+        print("  Finding: no fitness-scoped observations. For context run with")
+        print("  GAIL_EVENTS=all and GAIL_CREATORS=all.")
         conn.close()
         return 1
+
+    # Per-creator target, kept only for the checkpoint record and inference
+    # display. Training no longer uses it: it supervises observations.
+    target = torch.zeros(num_creators, dtype=torch.float32)
+    for cid in labeled_ids:
+        vals = [o.value for o in observations if o.neighbour_id == cid]
+        target[id_to_index[cid]] = sum(vals) / len(vals)
 
     # Feature normalization — per-dim z-score, saved for inference
     mean, std = compute_feature_scaler(creator_x)
@@ -624,33 +981,244 @@ def main() -> int:
     print(f"Feature scaler: mean abs {mean.abs().mean():.4f}, std mean {std.mean():.4f} "
           f"(propensity head will receive normalized features — fixes saturation)")
 
-    # Training — single model on ALL pairs
-    from ml.causal_regularization import has_sponsored_neighbor
+    from ml.causal_regularization import doubly_robust_effect, has_sponsored_neighbor
     from ml.gail_loss import GAILLossWeights, compute_gail_loss
 
     torch.manual_seed(SEED)
-    model = GAILModel(creator_feature_dim=CREATOR_FEATURE_DIM, hidden_channels=HIDDEN_CHANNELS, heads=HEADS)
+    # Metadata-only logistic propensity: the 1289-d MLP head saturated to 0/1
+    # on the 2026-10-26 run (prop_min 0.000, max 1.000 by epoch 60).
+    model = GAILModel(creator_feature_dim=CREATOR_FEATURE_DIM, hidden_channels=HIDDEN_CHANNELS, heads=HEADS,
+                      propensity_metadata_only=True)
 
-    # Use full mask for supervised term (all labeled nodes)
     num_creators_t = data["creator"].x.size(0)
-    train_mask = torch.zeros(num_creators_t, dtype=torch.bool)
-    train_mask[labeled_idx] = True
-
     collab_edge_index = data["creator", "collaborates_with", "creator"].edge_index
     collab_edge_weight = data["creator", "collaborates_with", "creator"].edge_attr
-    has_sponsored = has_sponsored_neighbor(collab_edge_index, treatment)
-    loss_weights = GAILLossWeights()
 
+    # E12a. The consistency penalty must see every relation exposure travels
+    # through (collaborates_with AND co_occurs_with), or the loss penalises
+    # exposure the model was built to give.
+    interference_edge_index = torch.cat(
+        [collab_edge_index, data["creator", "co_occurs_with", "creator"].edge_index],
+        dim=1,
+    )
+
+    # P2. One treatment vector per distinct observation span. E12b still holds
+    # within each: own sponsorship PROPAGATES through the exposure module, and
+    # the loss uses the interference indicator ("has a sponsored neighbour")
+    # derived from it -- now for that window only.
+    passes = []
+    for (start, end), group in sorted(group_by_span(observations).items()):
+        t_p = treatment_in_span(spons_dates, id_to_index, num_creators_t, start, end)
+        has_p = has_sponsored_neighbor(interference_edge_index, t_p)
+        mask_p = torch.zeros(num_creators_t, dtype=torch.bool)
+        target_p = torch.zeros(num_creators_t, dtype=torch.float32)
+        for o in group:
+            idx = id_to_index[o.neighbour_id]
+            mask_p[idx] = True
+            target_p[idx] = o.value
+        passes.append({
+            "span": (start, end), "obs": group, "treatment": t_p,
+            "has_sponsored": has_p, "interference": has_p.to(torch.float32),
+            "mask": mask_p, "target": target_p,
+        })
+    n_spons = [int(p["treatment"].sum().item()) for p in passes]
+    print(f"\nP2: {len(passes)} treatment windows; sponsored creators per window "
+          f"min={min(n_spons)} median={statistics.median(n_spons)} max={max(n_spons)} "
+          f"(all-time: {len(ever)})")
+
+    # Each observation exists because a collaborator was sponsored inside its
+    # window, so it should be exposed. If not, the graph lacks the edge
+    # pair_count used, and the lift is being read as an UNEXPOSED outcome.
+    not_exposed = [
+        o for p in passes for o in p["obs"]
+        if not bool(p["has_sponsored"][id_to_index[o.neighbour_id]])
+    ]
+    if not_exposed:
+        print(f"  !! {len(not_exposed)}/{n_obs} observations have NO sponsored neighbour "
+              f"in their own window in the graph:")
+        for o in not_exposed:
+            print(f"     {id_to_name.get(o.neighbour_id, o.neighbour_id)[:28]:28s} {o.start}..{o.end}")
+        print("     pair_count's edge (handle match) is missing from the graph's edges")
+
+    # P3. Control observations: creators with NO sponsored neighbour and NO own
+    # sponsorship in a window, measured around the SAME event dates with the
+    # same lift. They join that window's pass, so they share its treatment
+    # vector and enter the loss with interference = 0 -- the first T = 0 data
+    # the model has seen. GAIL_CONTROLS=0 recovers the P2 (treated-only) run.
+    treated_obs = list(observations)
+    controls = []
+    if USE_CONTROLS:
+        posts_by_platform = {pl: load_platform_posts(cur, pl) for pl in PLATFORM_TABLES}
+        index_to_id = {v: k for k, v in id_to_index.items()}
+        reserved: dict[str, list] = {}
+        for o in treated_obs:
+            reserved.setdefault(o.neighbour_id, []).append(o.span)
+        windows = []
+        for p in passes:
+            eligible = [
+                index_to_id[j] for j in range(num_creators_t)
+                if j in index_to_id and not bool(p["has_sponsored"][j]) and not bool(p["treatment"][j])
+                and in_scope(index_to_id[j])
+            ]
+            dates = sorted({d for o in p["obs"] for d in o.event_dates})
+            windows.append((p["span"], dates, eligible))
+        controls = build_control_observations(
+            windows,
+            lambda cid, d: lift_from_posts(
+                posts_by_platform, cid, d, DEFAULT_WINDOW_DAYS, statistic=LIFT_STATISTIC,
+                before_days=BASELINE_DAYS,
+            ),
+            reserved_spans=reserved,
+        )
+        pass_by_span = {p["span"]: p for p in passes}
+        for c in controls:
+            p = pass_by_span[c.span]
+            idx = id_to_index[c.neighbour_id]
+            assert not p["mask"][idx], "a creator appears twice in one window"
+            p["mask"][idx] = True
+            p["target"][idx] = c.value
+            p["obs"].append(c)
+    observations = treated_obs + controls
+    n_obs = len(observations)
+
+    print(f"\nTarget: {LIFT_KEY} (GAIL_LIFT={LIFT_STATISTIC})")
+    print(f"P3: {len(treated_obs)} exposed + {len(controls)} control observations "
+          f"(controls {'ON' if USE_CONTROLS else 'OFF -- GAIL_CONTROLS=0'})")
+    for p in passes:
+        n_t = sum(o.exposed for o in p["obs"])
+        print(f"  {p['span'][0]}..{p['span'][1]}  exposed={n_t:<2} control={len(p['obs']) - n_t}")
+    if controls:
+        cv = sorted(c.value for c in controls)
+        print(f"  control lift: min={cv[0]:+.3f} median={statistics.median(cv):+.3f} "
+              f"max={cv[-1]:+.3f}  (exposed median "
+              f"{statistics.median(o.value for o in treated_obs):+.3f})")
+
+    # Model-free check, computed before any training: within each window,
+    # exposed lift minus control lift. If the GNN's estimate and this disagree
+    # wildly, believe this one first.
+    did = matched_did(observations)
+    print(f"\nMatched DiD (no model): {did['estimate']:+.4f}  SE {did['se']:.4f}  "
+          f"[{did['estimate'] - 1.96 * did['se']:+.4f}, {did['estimate'] + 1.96 * did['se']:+.4f}]  "
+          f"over {did['n_treated']} exposed vs {did['n_control']} controls in {did['windows']} windows")
+    print(f"  median version (robust to single extreme creators): {did['median_estimate']:+.4f}")
+    if len(treated_obs) < MIN_EXPOSED_FOR_ESTIMATE:
+        print(f"\n  !! {len(treated_obs)} exposed observations, below the pre-declared minimum of "
+              f"{MIN_EXPOSED_FOR_ESTIMATE}.")
+        print("     Every estimate in this run is reported for completeness only, NOT as a result.")
+    # P6a. Compare like with like: exposed vs controls of the SAME creator
+    # category in the same window (athletes with athletes, teams with teams).
+    did_cat = matched_did(observations, stratum_of=lambda o: id_to_category.get(o.neighbour_id, "other"))
+    print(f"Category-matched DiD:   {did_cat['estimate']:+.4f}  SE {did_cat['se']:.4f}  "
+          f"(median {did_cat['median_estimate']:+.4f})  over {did_cat['n_treated']} exposed vs "
+          f"{did_cat['n_control']} controls; {did_cat['treated_without_control']} exposed had no "
+          f"same-category control")
+    cats = {}
+    for o in treated_obs:
+        cats.setdefault(id_to_category.get(o.neighbour_id, "other"), 0)
+        cats[id_to_category.get(o.neighbour_id, "other")] += 1
+    print(f"  exposed by category: {cats}")
+    if did["treated_without_control"]:
+        print(f"  {did['treated_without_control']} exposed observations had no control in their window "
+              f"and are left out of this estimate")
+
+    # Placebo (pre-trend) lifts: the same lift, measured one window BEFORE the
+    # event, for every observation. Model-free check first: matched DiD on them.
+    # A clearly non-zero placebo DiD means exposed and control creators were
+    # already diverging before the sponsorship.
+    from dataclasses import replace as _replace
+    from ml.placebo import placebo_lift, placebo_penalty
+    if not USE_CONTROLS:
+        posts_by_platform = {pl: load_platform_posts(cur, pl) for pl in PLATFORM_TABLES}
+    pre_of: dict[tuple[str, str], float] = {}
+    for o in observations:
+        v = placebo_lift(
+            o.event_dates,
+            lambda a, cid=o.neighbour_id: lift_from_posts(
+                posts_by_platform, cid, a, DEFAULT_WINDOW_DAYS,
+                statistic=LIFT_STATISTIC, before_days=BASELINE_DAYS,
+            ),
+            DEFAULT_WINDOW_DAYS,
+        )
+        if v is not None:
+            pre_of[(o.neighbour_id, f"{o.start}..{o.end}")] = v
+    placebo_obs = [
+        _replace(o, value=pre_of[(o.neighbour_id, f"{o.start}..{o.end}")])
+        for o in observations if (o.neighbour_id, f"{o.start}..{o.end}") in pre_of
+    ]
+    n_pre_t = sum(o.exposed for o in placebo_obs)
+    print(f"\nPlacebo lifts: {len(placebo_obs)}/{n_obs} observations "
+          f"({n_pre_t} exposed) have pre-period data")
+    did_pre = matched_did(placebo_obs) if n_pre_t else None
+    if did_pre and did_pre["n_treated"]:
+        print(f"Placebo (pre-trend) DiD: {did_pre['estimate']:+.4f}  SE {did_pre['se']:.4f}  "
+              f"(median {did_pre['median_estimate']:+.4f})  -- should be ~0; a clear "
+              f"non-zero value means the real DiD is confounded by pre-existing trends")
+    else:
+        print("Placebo (pre-trend) DiD: not computable (no exposed observation has pre-period data)")
+
+    # E10. Bot scores, reported not enforced (see load_bot_scores).
+    bot_scores = load_bot_scores(cur, id_to_index)
+    flagged = {cid for cid, v in bot_scores.items() if v["is_bot_flagged"]}
+    print(f"Bot detection: {len(flagged)}/{len(bot_scores)} creators flagged "
+          f"(threshold 0.6, heuristic, nothing excluded)")
+    flagged_labeled = [id_to_name.get(c, c) for c in labeled_ids if c in flagged]
+    if flagged_labeled:
+        print(f"  !! flagged creators among the {len(labeled_ids)} LABELLED nodes: "
+              f"{', '.join(flagged_labeled)}")
+        print("     their measured lift carries the same weight as everyone else's; "
+              "decide deliberately whether to keep them")
+
+    # Treatment for inference/ranking: who is sponsored NOW, i.e. in the last
+    # window up to the latest event in the data -- the same kind of quantity
+    # the model was trained on, rather than an all-time flag.
+    latest = max(d for v in spons_dates.values() for d in v)
+    treatment = treatment_in_span(
+        spons_dates, id_to_index, num_creators_t,
+        latest - timedelta(days=DEFAULT_WINDOW_DAYS), latest,
+    )
+    print(f"Inference treatment: {int(treatment.sum().item())} creators sponsored in the "
+          f"{DEFAULT_WINDOW_DAYS}d up to {latest}")
+
+    loss_weights = GAILLossWeights()
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    treatments = [p["treatment"] for p in passes]
     history = []
+    for p in passes:
+        idx, pre = [], []
+        for o in p["obs"]:
+            v = pre_of.get((o.neighbour_id, f"{o.start}..{o.end}"))
+            if v is not None:
+                idx.append(id_to_index[o.neighbour_id])
+                pre.append(v)
+        p["pre_idx"] = torch.tensor(idx, dtype=torch.long)
+        p["pre_lift"] = torch.tensor(pre, dtype=torch.float32)
     for epoch in range(EPOCHS):
         model.train()
         optimizer.zero_grad()
-        prediction, exposure, propensity = model(data, treatment)
-        loss, comps = compute_gail_loss(
-            prediction, target, propensity, collab_edge_index, collab_edge_weight,
-            has_sponsored, loss_weights, prediction_mask=train_mask, treatment=treatment,
-        )
+        preds, _, propensity = model.forward_multi(data, treatments)
+        # E12c: AIPW pseudo-outcome. P2: one loss per window, weighted by its
+        # share of observations, so every observation counts equally and the
+        # graph-wide regularisers keep their single-pass scale.
+        loss = torch.zeros(())
+        comps: dict[str, float] = {}
+        for p, pred in zip(passes, preds):
+            share = len(p["obs"]) / n_obs
+            loss_p, comps_p = compute_gail_loss(
+                pred, p["target"], propensity, collab_edge_index, collab_edge_weight,
+                p["has_sponsored"], loss_weights, prediction_mask=p["mask"],
+                treatment=p["interference"] if DR_MODE == "aipw" else None, dr_mode="aipw",
+            )
+            loss = loss + share * loss_p
+            for k, v in comps_p.items():
+                comps[k] = comps.get(k, 0.0) + share * v
+        if PLACEBO_WEIGHT > 0:
+            # Exposure-driven part of each prediction vs the pre-period lift.
+            mu0 = model.predict_unexposed(data)
+            gaps = torch.cat([(pred - mu0)[p["pre_idx"]] for p, pred in zip(passes, preds)])
+            pres = torch.cat([p["pre_lift"] for p in passes])
+            l_pre = placebo_penalty(gaps, pres)
+            loss = loss + PLACEBO_WEIGHT * l_pre
+            comps["placebo"] = float(l_pre.item())
         loss.backward()
         optimizer.step()
         history.append(comps)
@@ -659,33 +1227,161 @@ def main() -> int:
                   f"overlap={comps['overlap']:.4f} prop_mean={propensity.mean().item():.3f} "
                   f"prop_min={propensity.min().item():.3f} max={propensity.max().item():.3f}")
 
-    # Final evaluation on trained nodes
+    # Final evaluation, per observation, each against its own window's treatment.
     model.eval()
     with torch.no_grad():
-        final_pred, _, final_prop = model(data, treatment)
-        labeled_pred = final_pred[labeled_idx]
-        labeled_target = target[labeled_idx]
-        mse = F.mse_loss(labeled_pred, labeled_target).item()
-        baseline_mse = (labeled_target ** 2).mean().item()
-        per_node = []
-        for idx, cid in zip(labeled_idx, labeled_ids):
-            per_node.append({
-                "creator_id": cid,
-                "name": id_to_name.get(cid, cid),
-                "target": float(target[idx].item()),
-                "pred": float(final_pred[idx].item()),
-                "sq_err": float((final_pred[idx] - target[idx]) ** 2),
-                "propensity": float(final_prop[idx].item()),
-            })
-        per_node_sorted = sorted(per_node, key=lambda r: r["sq_err"], reverse=True)
-        print(f"\n=== Prod training result (N={len(labeled_idx)} labeled nodes, {EPOCHS} epochs) ===")
+        preds, exposures, final_prop = model.forward_multi(data, treatments)
+        # E12d. The counterfactual: exposure zeroed, embedding unchanged. Since P1
+        # the embedding carries no treatment, so this is a real "no sponsored
+        # neighbours" prediction.
+        mu_unexposed = model.predict_unexposed(data)
+        per_obs = []
+        for p, pred, expo in zip(passes, preds, exposures):
+            tau_p = doubly_robust_effect(
+                pred, mu_unexposed, p["target"], p["interference"], final_prop
+            )
+            for o in p["obs"]:
+                idx = id_to_index[o.neighbour_id]
+                per_obs.append({
+                    "creator_id": o.neighbour_id,
+                    "kind": "exposed" if o.exposed else "control",
+                    "name": id_to_name.get(o.neighbour_id, o.neighbour_id),
+                    "span": f"{o.start}..{o.end}",
+                    "rows": o.n_rows,
+                    "target": o.value,
+                    "pred": float(pred[idx].item()),
+                    "sq_err": float((pred[idx].item() - o.value) ** 2),
+                    "propensity": float(final_prop[idx].item()),
+                    "exposed": bool(p["has_sponsored"][idx]),
+                    "exposure": float(expo[idx].item()),
+                    "mu_e_minus_mu_0": float((pred[idx] - mu_unexposed[idx]).item()),
+                    "tau": float(tau_p[idx].item()),
+                })
+
+        targets_t = torch.tensor([r["target"] for r in per_obs])
+        preds_t = torch.tensor([r["pred"] for r in per_obs])
+        mse = float(((preds_t - targets_t) ** 2).mean().item())
+        baseline_mse = float((targets_t ** 2).mean().item())
+        per_node_sorted = sorted(per_obs, key=lambda r: r["sq_err"], reverse=True)
+        print(f"\n=== Prod training result (N={n_obs} observations, {EPOCHS} epochs) ===")
         print(f"MSE trained: {mse:.4f}  baseline (always 0): {baseline_mse:.4f}  "
-              f"improvement: {(baseline_mse - mse) / baseline_mse * 100:.1f}%")
-        print("Per-node (sorted by sq_err descending — Kohli outlier expected):")
-        for r in per_node_sorted:
-            print(f"  {r['name'][:28]:28s} target={r['target']:+.3f} pred={r['pred']:+.3f} sq_err={r['sq_err']:.3f} prop={r['propensity']:.3f}")
-        print(f"Propensity stats: mean={final_prop.mean().item():.3f} min={final_prop.min().item():.3f} max={final_prop.max().item():.3f} "
-              f"(saturation to 1.000 fixed if max < 0.999)")
+              f"improvement: {(baseline_mse - mse) / max(baseline_mse, 1e-12) * 100:.1f}%")
+        exposed_rows = [r for r in per_obs if r["kind"] == "exposed"]
+        control_rows = [r for r in per_obs if r["kind"] == "control"]
+        if control_rows:
+            c_mse = statistics.mean(r["sq_err"] for r in control_rows)
+            print(f"Control observations: {len(control_rows)}, MSE {c_mse:.4f}")
+        print("Exposed observations (sorted by sq_err descending):")
+        for r in sorted(exposed_rows, key=lambda r: r["sq_err"], reverse=True):
+            print(f"  {r['name'][:28]:28s} {r['span']} target={r['target']:+.3f} "
+                  f"pred={r['pred']:+.3f} exposure={r['exposure']:.4g} "
+                  f"sq_err={r['sq_err']:.3f} prop={r['propensity']:.3f}")
+        print(f"Propensity stats: mean={final_prop.mean().item():.3f} min={final_prop.min().item():.3f} "
+              f"max={final_prop.max().item():.3f}")
+        if control_rows:
+            print(f"  propensity on exposed obs: mean "
+                  f"{statistics.mean(r['propensity'] for r in exposed_rows):.3f}; on controls: mean "
+                  f"{statistics.mean(r['propensity'] for r in control_rows):.3f}")
+        gap = statistics.mean(abs(r["mu_e_minus_mu_0"]) for r in exposed_rows)
+        print(f"Mean |mu(e,X) - mu(0,X)| on exposed observations: {gap:.4f}  "
+              f"(0.017 without controls; near zero means the head ignores exposure)")
+
+        # In-sample AIPW. Two summaries: over every observation (the AIPW ATE,
+        # which the controls dominate numerically) and over the exposed ones,
+        # which is the population the spillover question is about. Still
+        # in-sample: cross-fitting (P5) is what makes either quotable.
+        taus = torch.tensor([r["tau"] for r in per_obs])
+        ate = float(taus.mean().item())
+        n_clusters = n_obs
+        naive_se = float(taus.std(unbiased=True).item() / n_obs ** 0.5) if n_obs > 1 else float("nan")
+        tau_exp = torch.tensor([r["tau"] for r in exposed_rows])
+        mean_tau_exposed = float(tau_exp.mean().item())
+
+        print("\n=== Causal estimate (AIPW spillover effect, in-sample) ===")
+        print(f"ATE (all {n_obs} observations): {ate:+.4f}")
+        print(f"Naive SE:                      {naive_se:.4f}")
+        print(f"Rough 95% interval:            [{ate - 1.96 * naive_se:+.4f}, {ate + 1.96 * naive_se:+.4f}]")
+        print(f"Mean tau on the {len(exposed_rows)} exposed:    {mean_tau_exposed:+.4f}")
+        print(f"Matched DiD (no model), for comparison: {did['estimate']:+.4f}  SE {did['se']:.4f}"
+              f"  (median version {did['median_estimate']:+.4f})")
+
+        # P6b. Overlap-trimmed DiD: keep only controls whose propensity falls
+        # inside the exposed observations' propensity range, i.e. creators the
+        # model finds about as likely to be exposed. Controls the model is sure
+        # are unexposed are a different kind of creator and drop out.
+        lo = min(r["propensity"] for r in exposed_rows)
+        hi = max(r["propensity"] for r in exposed_rows)
+        prop_of = {(r["creator_id"], r["span"]): r["propensity"] for r in per_obs}
+        trimmed = [
+            o for o in observations
+            if o.exposed or lo <= prop_of[(o.neighbour_id, f"{o.start}..{o.end}")] <= hi
+        ]
+        did_trim = matched_did(trimmed)
+        n_ctrl_kept = sum(not o.exposed for o in trimmed)
+        print(f"Overlap-trimmed DiD:    {did_trim['estimate']:+.4f}  SE {did_trim['se']:.4f}  "
+              f"(median {did_trim['median_estimate']:+.4f})  controls kept {n_ctrl_kept}/{len(controls)} "
+              f"with propensity in [{lo:.3f}, {hi:.3f}]; {did_trim['treated_without_control']} "
+              f"exposed left without a control")
+        print(f"Category-matched DiD:   {did_cat['estimate']:+.4f}  SE {did_cat['se']:.4f}")
+        print("  SEs ignore nuisance-model uncertainty and assume independent")
+        print("  observations, so they understate the true width. Do not quote them bare.")
+        tau_sorted = sorted(per_obs, key=lambda r: -abs(r["tau"]))
+        print("Largest per-observation effects (|tau| descending, top 15):")
+        for r in tau_sorted[:15]:
+            print(f"  {r['kind']:7s} {r['name'][:28]:28s} {r['span']} tau={r['tau']:+.3f}")
+
+        # Placebo diagnostic on the trained model: does the exposure-driven part
+        # of the prediction track pre-period change? Should be ~0.
+        gaps_f = torch.cat([(pred - mu_unexposed)[p["pre_idx"]] for p, pred in zip(passes, preds)])
+        pres_f = torch.cat([p["pre_lift"] for p in passes])
+        placebo_final = float(placebo_penalty(gaps_f, pres_f).item())
+        print(f"Placebo penalty on trained model (cov^2 / var, ~0 is good): {placebo_final:.6f}")
+
+        # E12e. The learned transmission shares: which relation carries
+        # spillover. This is an explainability claim in the write-up and no
+        # artifact recorded it -- `transmission_shares()` was defined and never
+        # called anywhere in the codebase.
+        beta = model.transmission_shares()
+        print("\nLearned transmission shares (beta):")
+        for rel, share in sorted(beta.items(), key=lambda kv: -kv[1]):
+            print(f"  {rel:24s} {share:.3f}")
+
+    # GAIL-R (ml/gail_r.py): orthogonalised (R-learner) estimate of the same
+    # spillover. The head above memorises outcomes on ~400 creators, which
+    # drives its learned effect toward 0 (semi-synthetic benchmark,
+    # ml/semi_synthetic.py); GAIL-R learns the effect only from what an
+    # out-of-fold baseline cannot explain. Reported alongside, not instead of,
+    # the estimate above; the checkpoint and inference are unchanged.
+    from ml.gail_r import Observations, cluster_bootstrap, fit_gail_r
+    r_rows = [(w, id_to_index[o.neighbour_id], o.value,
+               pre_of.get((o.neighbour_id, f"{o.start}..{o.end}"), float("nan")))
+              for w, p in enumerate(passes) for o in p["obs"]]
+    r_obs = Observations(
+        node=torch.tensor([r[1] for r in r_rows], dtype=torch.long),
+        window=torch.tensor([r[0] for r in r_rows], dtype=torch.long),
+        y=torch.tensor([r[2] for r in r_rows], dtype=torch.float32),
+        pre=torch.tensor([r[3] for r in r_rows], dtype=torch.float32),
+    )
+    print(f"\n=== GAIL-R spillover estimate (R-learner, creator-level bootstrap B={R_BOOT}) ===")
+    gail_r_report = {}
+    for label, w_pl in (("with placebo penalty", R_PLACEBO), ("without placebo penalty", 0.0)):
+        fit = fit_gail_r(data, treatments, r_obs, placebo_weight=w_pl, seed=SEED)
+        ci = cluster_bootstrap(data, treatments, r_obs, B=R_BOOT, seed=SEED, placebo_weight=w_pl)
+        a = ci["att"]
+        print(f"  {label}:")
+        print(f"    effect on the {fit['n_exposed']} observations with a sponsored collaborator: "
+              f"{fit['att']:+.4f}  95% CI [{a['lo']:+.4f}, {a['hi']:+.4f}]")
+        for rel, v in fit["slopes"].items():
+            c = ci["slopes"][rel]
+            print(f"    {rel:18s} effect of 0%->100% neighbours sponsored: {v:+.3f}  "
+                  f"95% CI [{c['lo']:+.3f}, {c['hi']:+.3f}]")
+        print(f"    placebo penalty {fit['placebo']:.5f}; mean over all {len(r_rows)} observations "
+              f"{fit['ate']:+.4f} (diluted by unexposed rows, whose effect is 0 by definition)")
+        gail_r_report[label] = {"ate": fit["ate"], "att": fit["att"], "n_exposed": fit["n_exposed"],
+                                "ci": ci, "slopes": fit["slopes"],
+                                "placebo_penalty": fit["placebo"], "placebo_weight": w_pl}
+    print(f"  {len(r_rows)} observations from {len(set(r[1] for r in r_rows))} creators; "
+          "the interval resamples creators, so repeat observations do not narrow it.")
 
     # Save checkpoint
     models_dir = Path(__file__).resolve().parents[1] / "models"
@@ -699,9 +1395,14 @@ def main() -> int:
             "creator_feature_dim": CREATOR_FEATURE_DIM,
             "hidden_channels": HIDDEN_CHANNELS,
             "heads": HEADS,
+            "backbone_sees_treatment": model.backbone_sees_treatment,
+            "propensity_metadata_only": model.propensity_metadata_only,
             "epochs": EPOCHS,
             "lr": LR,
             "seed": SEED,
+            "baseline_days": BASELINE_DAYS,
+            "dr_mode": DR_MODE,
+            "placebo_weight": PLACEBO_WEIGHT,
             "loss_weights": {"prediction": loss_weights.prediction, "overlap": loss_weights.overlap,
                              "smoothness": loss_weights.smoothness, "consistency": loss_weights.consistency},
         },
@@ -723,7 +1424,54 @@ def main() -> int:
             "same_platform_computable": len([d for d in detailed if d["mean_lift"] is not None]),
             "cross_platform_only": len([d for d in detailed if d["mean_lift"] is None]),
             "effective_N_labeled_nodes": len(labeled_idx),
+            # E12f. The number to quote. `effective_N_labeled_nodes` above counts
+            # creators; E2 established that several of a creator's rows can be one
+            # engagement change measured repeatedly, so the honest sample size is
+            # the count of independent CLUSTERS. Both are recorded because they
+            # differ and the difference is a finding.
+            "effective_N_clusters": n_clusters,
         },
+        # E12. The causal estimate and the learned transmission shares -- the two
+        # outputs the thesis actually argues from. Neither was previously saved.
+        "causal_estimate": {
+            "ate_per_observation": ate,
+            "naive_se": naive_se,
+            "n_independent_observations": n_clusters,
+            "dr_mode": DR_MODE,
+            "in_sample": True,
+            "target": LIFT_KEY,
+            "treatment_definition": (
+                "has_sponsored_neighbour within the observation's own measurement "
+                "window (P2); sponsorship = is_sponsored OR Instagram paid-partnership label"
+            ),
+            "excluded_self_sponsored_rows": len(self_sponsored),
+            "n_exposed": len(treated_obs),
+            "n_control": len(controls),
+            "mean_tau_exposed": mean_tau_exposed,
+            "matched_did": did,
+            "matched_did_category": did_cat,
+            "matched_did_overlap_trimmed": did_trim,
+            "event_rule": EVENT_RULE,
+            "creator_rule": CREATOR_RULE,
+            "below_min_exposed": len(treated_obs) < MIN_EXPOSED_FOR_ESTIMATE,
+            "placebo_did": did_pre,
+            "placebo_penalty_final": placebo_final,
+            "gail_r": gail_r_report,
+            "per_observation_tau": tau_sorted,
+            "se_caveat": (
+                "Assumes independent observations and ignores uncertainty in the "
+                "propensity and outcome models. A floor on the true width."
+            ),
+        },
+        "observations": [
+            {"creator_id": o.neighbour_id, "start": str(o.start), "end": str(o.end),
+             "rows": o.n_rows, "value": o.value, "cluster_id": o.cluster_id,
+             "exposed": o.exposed}
+            for o in observations
+        ],
+        "transmission_shares": beta,
+        # E10. Heuristic, reported for inspection -- no pair was excluded on it.
+        "bot_scores": bot_scores,
         "graph": {
             "num_creators": num_creators,
             "num_brands": brand_x.size(0),
@@ -741,9 +1489,11 @@ def main() -> int:
             "collab_edge_attr": collab_attr,
             "coocc_edge_index": cooccur_index,
             "coocc_edge_attr": cooccur_attr,
+            # P2: sponsored in the window up to `treatment_as_of`, not all-time.
             "treatment": treatment,
             "target": target,
         },
+        "treatment_as_of": str(latest),
         "training_stats": {
             "mse_trained": mse,
             "baseline_mse": baseline_mse,

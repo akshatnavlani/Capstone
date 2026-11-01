@@ -2,6 +2,19 @@
 prediction head into a single forward pass — the piece that was missing
 between "individually tested components" and "something a training loop
 can actually optimize."
+
+EXPOSURE RELATIONS. By default, treatment propagates through every
+creator-to-creator relation in `DEFAULT_EXPOSURE_RELATIONS`, each with its own
+attention parameters and a learned transmission share `beta_r`
+(ml/multi_relation_exposure.py). Prior to this, exposure was computed over
+`collaborates_with` alone and the ~1,414 `co_occurs_with` edges carried no
+treatment — a modelling assumption that co-mention transmits nothing, asserted
+rather than tested.
+
+Pass `exposure_relations=("collaborates_with",)` to recover exactly the old
+single-relation behaviour. That is the ablation arm: single-relation vs
+multi-relational is what evidences whether the extra channel carries real
+spillover, so the collapsed configuration has to stay reachable.
 """
 
 from __future__ import annotations
@@ -11,25 +24,141 @@ from torch import nn
 from torch_geometric.data import HeteroData
 
 from ml.causal_regularization import PropensityScoreModel
-from ml.exposure import ExposureModule
-from ml.model import SchemaSmokeTestGAT
+from ml.model import DEFAULT_NUM_LAYERS, HeteroGATBackbone
+from ml.schema import CAUSAL_BACKBONE_EDGE_TYPES, CREATOR_METADATA_DIM, EDGE_TYPES
+from ml.multi_relation_exposure import (
+    DEFAULT_EXPOSURE_RELATIONS,
+    MultiRelationExposureModule,
+)
 from ml.spillover_head import SpilloverPredictionHead
 
 
 class GAILModel(nn.Module):
-    def __init__(self, creator_feature_dim: int, hidden_channels: int = 16, heads: int = 2):
+    def __init__(
+        self,
+        creator_feature_dim: int,
+        hidden_channels: int = 16,
+        heads: int = 2,
+        exposure_relations: tuple[str, ...] = DEFAULT_EXPOSURE_RELATIONS,
+        num_layers: int = DEFAULT_NUM_LAYERS,
+        backbone_sees_treatment: bool = False,
+        propensity_metadata_only: bool = False,
+    ):
+        """`backbone_sees_treatment=False` (P1) keeps the sponsorship edges out
+        of the backbone, so treatment reaches the prediction ONLY through the
+        exposure input and `predict_unexposed` is a real counterfactual. True
+        restores the pre-P1 leaky behaviour, kept only so checkpoints trained
+        before the fix still load (see ml/inference.py).
+
+        `propensity_metadata_only=True` fits the propensity as a logistic
+        regression on the creator metadata tail only (reach, engagement,
+        reputation, category one-hot -- the last CREATOR_METADATA_DIM columns).
+        With the full 1289-d input and a hidden layer, the head can separate
+        ~400 creators perfectly and saturates to 0/1 (seen in the 2026-10-26
+        run; reproduced on synthetic data: 100% of nodes saturated vs 0% with
+        the metadata-only logistic head). The metadata columns are also the
+        plausible confounders of who brands sponsor. False keeps the old head
+        so earlier checkpoints still load.
+        """
         super().__init__()
-        self.backbone = SchemaSmokeTestGAT(hidden_channels=hidden_channels, heads=heads)
-        self.exposure_module = ExposureModule(in_channels=hidden_channels, hidden_channels=hidden_channels)
-        self.propensity_model = PropensityScoreModel(in_dim=creator_feature_dim, hidden_dim=hidden_channels)
+        self.exposure_relations = tuple(exposure_relations)
+        self.backbone_sees_treatment = backbone_sees_treatment
+        # num_layers controls hops of receptive field; 2 lets spillover reach a
+        # creator through an intermediary, which a one-hop backbone cannot see.
+        self.backbone = HeteroGATBackbone(
+            hidden_channels=hidden_channels,
+            heads=heads,
+            num_layers=num_layers,
+            edge_types=EDGE_TYPES if backbone_sees_treatment else CAUSAL_BACKBONE_EDGE_TYPES,
+        )
+        self.exposure_module = MultiRelationExposureModule(
+            in_channels=hidden_channels,
+            hidden_channels=hidden_channels,
+            relations=self.exposure_relations,
+        )
+        self.propensity_metadata_only = propensity_metadata_only
+        if propensity_metadata_only:
+            self.propensity_model = PropensityScoreModel(in_dim=CREATOR_METADATA_DIM)
+        else:
+            self.propensity_model = PropensityScoreModel(in_dim=creator_feature_dim, hidden_dim=hidden_channels)
         self.prediction_head = SpilloverPredictionHead(embedding_dim=hidden_channels)
+
+    def _propensity(self, data: HeteroData) -> torch.Tensor:
+        x = data["creator"].x
+        if self.propensity_metadata_only:
+            x = x[:, -CREATOR_METADATA_DIM:]
+        return self.propensity_model(x)
+
+    def _edge_index_dict(self, data: HeteroData) -> dict[str, torch.Tensor]:
+        """Pull the creator->creator edge index for each exposure relation.
+
+        Missing relations are omitted rather than defaulted to empty: the
+        exposure module renormalizes beta over the relations actually present,
+        so an absent relation must not be mistaken for one with zero edges.
+        """
+        out: dict[str, torch.Tensor] = {}
+        for rel in self.exposure_relations:
+            key = ("creator", rel, "creator")
+            if key in data.edge_types:
+                out[rel] = data[key].edge_index
+        return out
 
     def forward(
         self, data: HeteroData, treatment: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         embeddings = self.backbone(data)["creator"]
-        collab_edge_index = data["creator", "collaborates_with", "creator"].edge_index
-        exposure = self.exposure_module(embeddings, collab_edge_index, treatment)
-        propensity = self.propensity_model(data["creator"].x)
+        exposure = self.exposure_module(
+            embeddings, self._edge_index_dict(data), treatment
+        )
+        propensity = self._propensity(data)
         prediction = self.prediction_head(embeddings, exposure)
         return prediction, exposure, propensity
+
+    def forward_multi(
+        self, data: HeteroData, treatments: list[torch.Tensor]
+    ) -> tuple[list[torch.Tensor], list[torch.Tensor], torch.Tensor]:
+        """One prediction per treatment vector, sharing a single backbone pass.
+
+        P2 supervises each observation against the treatment active during its
+        own window, so a training step needs several treatment vectors. Since
+        P1 the embeddings do not depend on treatment, so the backbone runs once
+        and only exposure and the head are repeated.
+
+        Returns (predictions, exposures, propensity); propensity does not
+        depend on treatment either, so it is returned once.
+        """
+        if self.backbone_sees_treatment:
+            raise RuntimeError(
+                "forward_multi shares one backbone pass across treatments, which is "
+                "only valid when the backbone does not see treatment edges"
+            )
+        embeddings = self.backbone(data)["creator"]
+        edge_index_dict = self._edge_index_dict(data)
+        propensity = self._propensity(data)
+        predictions, exposures = [], []
+        for treatment in treatments:
+            exposure = self.exposure_module(embeddings, edge_index_dict, treatment)
+            exposures.append(exposure)
+            predictions.append(self.prediction_head(embeddings, exposure))
+        return predictions, exposures, propensity
+
+    def predict_unexposed(self, data: HeteroData) -> torch.Tensor:
+        """mu(0, X): predicted spillover with exposure forced to zero.
+
+        The counterfactual arm of the doubly robust effect estimator
+        (`ml.causal_regularization.doubly_robust_effect`). GAIL needs no separate
+        counterfactual model: "what if this creator had no sponsored neighbours"
+        is just the prediction head with exposure zeroed and the embedding --
+        which encodes who they are and where they sit in the graph -- unchanged.
+        """
+        embeddings = self.backbone(data)["creator"]
+        zero_exposure = torch.zeros(
+            embeddings.size(0), device=embeddings.device, dtype=embeddings.dtype
+        )
+        return self.prediction_head(embeddings, zero_exposure)
+
+    def transmission_shares(self) -> dict[str, float]:
+        """Learned `beta_r` per relation — which relationship type carries
+        spillover. Inspectable output, not just an internal parameter.
+        """
+        return self.exposure_module.beta_dict()

@@ -68,6 +68,20 @@ EDGE_TYPES = (
     ("creator", "sponsored_by", "brand"),           # reverse of "sponsors", for message passing
 )
 
+# Edge types that DEFINE treatment. They must not reach the causal model's
+# backbone: two rounds of message passing over brand -> sponsored creator ->
+# collaborator put "my neighbour is sponsored" into the collaborator's own
+# embedding, so zeroing exposure in `predict_unexposed` no longer produces an
+# unexposed counterfactual (P1, 2026-10-25). They stay in the schema because
+# the graph UI and brand-side features still use them.
+TREATMENT_EDGE_TYPES = (
+    ("brand", "sponsors", "creator"),
+    ("creator", "sponsored_by", "brand"),
+)
+
+# What the causal backbone passes messages over: everything except treatment.
+CAUSAL_BACKBONE_EDGE_TYPES = tuple(e for e in EDGE_TYPES if e not in TREATMENT_EDGE_TYPES)
+
 # Edge types that carry a scalar edge_attr weight.
 WEIGHTED_EDGE_TYPES = (
     ("creator", "collaborates_with", "creator"),

@@ -16,6 +16,7 @@ import torch.nn.functional as F
 
 from ml.causal_regularization import (
     consistency_penalty,
+    doubly_robust_pseudo_outcome,
     doubly_robust_weights,
     laplacian_smoothness_penalty,
     overlap_penalty,
@@ -28,6 +29,16 @@ class GAILLossWeights:
     overlap: float = 0.1
     smoothness: float = 0.1
     consistency: float = 0.1
+    # E3b. Weight on the propensity-prediction term. Nonzero by default because
+    # without it the propensity head is never told what to predict: the only
+    # other term touching it is `overlap`, which merely pushes values away from
+    # 0 and 1, so the head converges to roughly the same number for every node
+    # (measured std 0.003 on synthetic data). A constant propensity makes the
+    # inverse-propensity weight T/pi a constant multiplier, which carries no
+    # per-node selection information at all -- the doubly robust correction
+    # then has nothing to correct with. Set to 0.0 to recover pre-E3b behaviour
+    # for ablation.
+    propensity: float = 1.0
 
 
 def compute_gail_loss(
@@ -40,6 +51,8 @@ def compute_gail_loss(
     weights: GAILLossWeights | None = None,
     prediction_mask: torch.Tensor | None = None,
     treatment: torch.Tensor | None = None,
+    dr_mode: str = "ipw",
+    sample_weight: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """`predicted_spillover`/`target_spillover`/`propensity`/
     `has_sponsored_neighbor_mask` must all be over the SAME full node set
@@ -51,23 +64,84 @@ def compute_gail_loss(
     are structural/unsupervised and always use the full graph, standard
     practice for transductive GNN train/val splits.
 
-    `treatment`, if given, applies `doubly_robust_weights` (inverse-
-    propensity weighting) to the supervised term — the doubly-robust
-    correction named in `ml/causal_regularization.py` but left unwired
-    until now because no real outcome predictor/held-out data existed to
-    apply it to. Optional and defaults to plain unweighted MSE so existing
-    callers/tests are unaffected.
+    `treatment` is the interference indicator (1 when the node has a
+    sponsored NEIGHBOUR). Given it, `dr_mode` selects how selection bias is
+    corrected in the supervised term:
+
+      "ipw"  (default) -- weight the squared error by `doubly_robust_weights`.
+               Unbiased only if the propensity model is correct. This is the
+               historical behaviour and stays the default so existing callers
+               and the ablation arm are unaffected.
+      "aipw" -- regress onto the `doubly_robust_pseudo_outcome`, which adds
+               the outcome-model arm. Unbiased if EITHER the propensity or the
+               outcome model is correct, which is the actual doubly robust
+               property; "ipw" alone never had it despite the function name.
+
+    Without `treatment`, both modes fall back to plain unweighted MSE.
+
+    `sample_weight` (E2), if given, scales each node's contribution to the
+    supervised term. It exists because a creator's target is not always backed
+    by the same amount of evidence: one engagement change measured sixteen times
+    is one observation, while three separate events are three. Pass the cluster
+    count per creator (`ml.target_clustering.per_creator_targets`) so a target
+    backed by more independent observations carries proportionally more weight.
+    Without it every labelled node counts equally, which over-weights whichever
+    creator happens to have the most overlapping events.
     """
     weights = weights or GAILLossWeights()
     if prediction_mask is None:
         prediction_mask = torch.ones_like(predicted_spillover, dtype=torch.bool)
 
+    if dr_mode not in ("ipw", "aipw"):
+        raise ValueError(f"dr_mode must be 'ipw' or 'aipw', got {dr_mode!r}")
+
+    # E2: per-node evidence weights. Normalized to mean 1 over the supervised
+    # nodes so the prediction term keeps the same scale as the unweighted case —
+    # otherwise changing the weights would silently retune the balance against
+    # the propensity and regularization terms.
+    if sample_weight is None:
+        node_weight = None
+    else:
+        selected = sample_weight[prediction_mask].to(predicted_spillover.dtype)
+        node_weight = selected / selected.mean().clamp(min=1e-12)
+
     if treatment is None:
-        prediction_loss = F.mse_loss(predicted_spillover[prediction_mask], target_spillover[prediction_mask])
+        err = (predicted_spillover[prediction_mask] - target_spillover[prediction_mask]).pow(2)
+        prediction_loss = err.mean() if node_weight is None else (node_weight * err).mean()
+    elif dr_mode == "aipw":
+        # Full doubly robust: supervise against the selection-corrected target
+        # rather than the raw observed one. The pseudo-outcome detaches its
+        # nuisances, so this is an ordinary regression onto a fixed target.
+        pseudo = doubly_robust_pseudo_outcome(
+            predicted_spillover, target_spillover, treatment, propensity
+        )
+        err = (predicted_spillover[prediction_mask] - pseudo[prediction_mask]).pow(2)
+        prediction_loss = err.mean() if node_weight is None else (node_weight * err).mean()
     else:
         dr_weights = doubly_robust_weights(treatment, propensity)[prediction_mask]
+        if node_weight is not None:
+            dr_weights = dr_weights * node_weight
         sq_err = (predicted_spillover[prediction_mask] - target_spillover[prediction_mask]).pow(2)
-        prediction_loss = (dr_weights * sq_err).sum() / dr_weights.sum()
+        prediction_loss = (dr_weights * sq_err).sum() / dr_weights.sum().clamp(min=1e-12)
+    # E3b: supervise the propensity head against the treatment it is supposed
+    # to model. Skipped when `treatment` is absent, since there is then nothing
+    # to predict -- which also keeps every pre-E3b caller unchanged.
+    #
+    # NOTE on which treatment. This supervises against whatever `treatment` the
+    # caller passes, deliberately, so the head is trained on exactly the signal
+    # the DR weights below divide by; training it on one definition and
+    # weighting by another would reintroduce the mismatch this term exists to
+    # remove. Be aware that `train_prod_model.py` currently passes the
+    # creator's OWN sponsorship, whereas the spillover estimand arguably calls
+    # for P(has a sponsored NEIGHBOUR) -- that choice is open, and changing it
+    # means changing what is passed here, not this term.
+    if treatment is None:
+        propensity_loss = torch.zeros((), dtype=predicted_spillover.dtype)
+    else:
+        propensity_loss = F.binary_cross_entropy(
+            propensity.clamp(1e-6, 1 - 1e-6), treatment.to(propensity.dtype)
+        )
+
     overlap = overlap_penalty(propensity)
     smoothness = laplacian_smoothness_penalty(predicted_spillover, collab_edge_index, collab_edge_weight)
     # Applied to the PREDICTED spillover, not exposure: ml/exposure.py's
@@ -82,6 +156,7 @@ def compute_gail_loss(
 
     total = (
         weights.prediction * prediction_loss
+        + weights.propensity * propensity_loss
         + weights.overlap * overlap
         + weights.smoothness * smoothness
         + weights.consistency * consistency
@@ -89,6 +164,7 @@ def compute_gail_loss(
 
     components = {
         "prediction": prediction_loss.item(),
+        "propensity": propensity_loss.item(),
         "overlap": overlap.item(),
         "smoothness": smoothness.item(),
         "consistency": consistency.item(),
