@@ -1,0 +1,48 @@
+{
+ "as_of": "2026-10-31T20:42:11+00:00",
+ "labelled": 24,
+ "labels": {
+  "negative": 6,
+  "neutral": 6,
+  "positive": 12
+ },
+ "models": {
+  "cardiffnlp/twitter-roberta-base-sentiment-latest": {
+   "n": 24,
+   "spearman": 0.58,
+   "spearman_ci95": [
+    0.18,
+    0.77
+   ],
+   "auc_pos_vs_neg": 0.89,
+   "mean_score_by_label": {
+    "negative": 0.33,
+    "neutral": 0.44,
+    "positive": 0.62
+   },
+   "auc_ci95": [
+    0.69,
+    1.0
+   ]
+  },
+  "cardiffnlp/twitter-xlm-roberta-base-sentiment": {
+   "n": 24,
+   "spearman": 0.65,
+   "spearman_ci95": [
+    0.24,
+    0.75
+   ],
+   "auc_pos_vs_neg": 0.9,
+   "mean_score_by_label": {
+    "negative": 0.43,
+    "neutral": 0.39,
+    "positive": 0.58
+   },
+   "auc_ci95": [
+    0.72,
+    1.0
+   ]
+  }
+ },
+ "limits": "a few dozen labels from one labeller, drawn at random from code-mixed YouTube comments (at most 3 per creator); the intervals are wide; skipped rows (links, unclear) are left out"
+}

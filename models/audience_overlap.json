@@ -1,0 +1,18 @@
+{
+ "as_of": "2026-10-29T08:05:16+00:00",
+ "settings": {
+  "min_shared_commenters": 3,
+  "top_k_per_creator": 6
+ },
+ "commenters": 525872,
+ "commenters_on_2plus_creators": 37321,
+ "undirected_edges": 572,
+ "directed_edges": 1144,
+ "creators_linked": 135,
+ "median_degree": 7.0,
+ "max_degree": 25,
+ "same_category_share_of_edges": 0.944,
+ "same_category_share_of_random_pairs": 0.816,
+ "p_value_against_random_pairs": 0.0005,
+ "limit": "same handle on YouTube comments only; handle may be a bot; no match across platforms. Overlap is shared audience, not influence."
+}

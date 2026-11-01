@@ -1,0 +1,23 @@
+{
+ "as_of": "2026-11-01T06:06:53+00:00",
+ "observations": 324,
+ "creators": 97,
+ "windows": 68,
+ "exposed_observations": 74,
+ "folds": 5,
+ "repeats": 20,
+ "gain_median": -0.0324,
+ "gain_range": [
+  -0.0874,
+  -0.0001
+ ],
+ "mean_loss_reduction_per_row": -0.01636,
+ "ci95_loss_reduction": [
+  -0.02843,
+  -0.00589
+ ],
+ "null_gain_median": -0.0215,
+ "null_gain_95th": -0.002,
+ "note": "gain = 1 - loss_with / loss_without on held-out creators; above 0 means the effect term helped. The null gives every row another window's exposure.",
+ "limits": "only a handful of held-out rows have exposure above 0, so the interval is wide by construction"
+}

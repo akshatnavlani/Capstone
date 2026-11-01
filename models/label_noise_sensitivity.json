@@ -1,0 +1,56 @@
+{
+ "as_of": "2026-11-01T06:29:08+00:00",
+ "observed_estimate": -0.092,
+ "observed_se": 0.1157,
+ "exposed": 74,
+ "controls": 250,
+ "rows": [
+  {
+   "share_of_comparison_group_truly_exposed": 0.0,
+   "corrected_estimate": -0.092,
+   "ci95": [
+    -0.319,
+    0.135
+   ],
+   "upper_bound_as_engagement_ratio": 1.14
+  },
+  {
+   "share_of_comparison_group_truly_exposed": 0.05,
+   "corrected_estimate": -0.097,
+   "ci95": [
+    -0.336,
+    0.142
+   ],
+   "upper_bound_as_engagement_ratio": 1.15
+  },
+  {
+   "share_of_comparison_group_truly_exposed": 0.1,
+   "corrected_estimate": -0.102,
+   "ci95": [
+    -0.354,
+    0.15
+   ],
+   "upper_bound_as_engagement_ratio": 1.16
+  },
+  {
+   "share_of_comparison_group_truly_exposed": 0.2,
+   "corrected_estimate": -0.115,
+   "ci95": [
+    -0.398,
+    0.168
+   ],
+   "upper_bound_as_engagement_ratio": 1.18
+  },
+  {
+   "share_of_comparison_group_truly_exposed": 0.3,
+   "corrected_estimate": -0.131,
+   "ci95": [
+    -0.455,
+    0.193
+   ],
+   "upper_bound_as_engagement_ratio": 1.21
+  }
+ ],
+ "reading": "Even if 30% of the comparison group were truly exposed, the upper end of the 95% interval stays below a 1.3x engagement effect; the null is not an artefact of a moderate number of missed labels.",
+ "limits": "homogeneous effect; random missing labels; a correct exposed group; this is a sensitivity table, not the full mismeasured-treatment model"
+}

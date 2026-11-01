@@ -1,0 +1,108 @@
+{
+ "as_of": "2026-10-29T05:48:40+00:00",
+ "unit": "difference in within-creator percentile (0-1) of paired minus unpaired items; 0.05 = five percentile points",
+ "instagram_posts_with_a_video_within_48h": {
+  "long": 58,
+  "short": 54
+ },
+ "placebo_runs": 100,
+ "results": [
+  {
+   "side": "instagram_post_vs_long_video",
+   "group": "Instagram first (gap 0-48 h)",
+   "creators": 8,
+   "effect": 0.219,
+   "ci95": [
+    0.028,
+    0.395
+   ],
+   "placebo_mean": 0.038,
+   "p_one_sided_vs_placebo": 0.0099
+  },
+  {
+   "side": "instagram_post_vs_long_video",
+   "group": "any pair within 48 h",
+   "creators": 9,
+   "effect": 0.237,
+   "ci95": [
+    0.068,
+    0.403
+   ],
+   "placebo_mean": 0.025,
+   "p_one_sided_vs_placebo": 0.0099
+  },
+  {
+   "side": "long_video_vs_instagram_post",
+   "group": "any pair within 48 h",
+   "creators": 10,
+   "effect": -0.003,
+   "ci95": [
+    -0.13,
+    0.137
+   ],
+   "placebo_mean": -0.004,
+   "p_one_sided_vs_placebo": 0.5347
+  },
+  {
+   "side": "long_video_vs_instagram_post",
+   "group": "Instagram first (gap 0-48 h)",
+   "creators": 6,
+   "effect": 0.004,
+   "ci95": [
+    -0.144,
+    0.148
+   ],
+   "placebo_mean": -0.006,
+   "p_one_sided_vs_placebo": 0.4059
+  },
+  {
+   "side": "short_video_vs_instagram_post",
+   "group": "YouTube first (gap 0-48 h)",
+   "creators": 6,
+   "effect": -0.003,
+   "ci95": [
+    -0.223,
+    0.18
+   ],
+   "placebo_mean": -0.08,
+   "p_one_sided_vs_placebo": 0.0396
+  },
+  {
+   "side": "short_video_vs_instagram_post",
+   "group": "Instagram first (gap 0-48 h)",
+   "creators": 6,
+   "effect": -0.048,
+   "ci95": [
+    -0.142,
+    0.053
+   ],
+   "placebo_mean": -0.083,
+   "p_one_sided_vs_placebo": 0.198
+  },
+  {
+   "side": "short_video_vs_instagram_post",
+   "group": "any pair within 48 h",
+   "creators": 9,
+   "effect": -0.04,
+   "ci95": [
+    -0.18,
+    0.071
+   ],
+   "placebo_mean": -0.106,
+   "p_one_sided_vs_placebo": 0.0198
+  },
+  {
+   "side": "instagram_post_vs_short_video",
+   "group": "any pair within 48 h",
+   "creators": 6,
+   "effect": 0.137,
+   "ci95": [
+    -0.054,
+    0.341
+   ],
+   "placebo_mean": 0.035,
+   "p_one_sided_vs_placebo": 0.0099
+  }
+ ],
+ "limits": "final counts, not first 12-24 h; association within a creator; placebo removes posting-rhythm confounding only; Instagram counts are read-time snapshots."
+}

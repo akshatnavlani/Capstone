@@ -8,7 +8,7 @@ const BASIS_META: Record<
   { label: string; className: string; short: string }
 > = {
   trained: {
-    label: "Trained — N=10",
+    label: "Trained — very small N",
     short: "Trained",
     className:
       "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",

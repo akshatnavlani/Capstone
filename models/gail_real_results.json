@@ -1,0 +1,310 @@
+{
+ "as_of": "2026-11-01 (after the standing-affiliate-code label fix)",
+ "note": "Compiled by hand from the training logs named in each row (models/gail_train_29oct_run*.log, gail_holdout_29oct.log, gail_acceptance_29oct.log, semisynth_29oct_effect*.log). CPU runs on a scratch copy of Eesha's c28fbe6 plus the audience-edge patch.",
+ "runs": [
+  {
+   "name": "After the standing-affiliate-code fix (1 Nov): corrected labels, inputs rebuilt, GAIL-R refitted (no full GAIL v1 retraining)",
+   "log": "models/gail_r_multiseed.json (10 seeds, creator-level bootstrap), models/power_analysis.json, models/gail_r_holdout.json",
+   "exposed": 74,
+   "observations": 324,
+   "creators": 97,
+   "gail_r_effect": 0.01,
+   "gail_r_ci95": [
+    -0.55,
+    0.33
+   ],
+   "gail_r_seed_range": [
+    -0.1,
+    0.16
+   ],
+   "matched_did": -0.09,
+   "matched_did_se": 0.12,
+   "held_out_gain_median": -0.032,
+   "held_out_null_median": -0.021,
+   "verdict": "no spillover detected",
+   "matched_did_label": "category-matched difference-in-differences",
+   "plain_matched_did": -0.15,
+   "plain_matched_did_se": 0.11,
+   "independent_examples_total": 557,
+   "exposed_creators": 20
+  },
+  {
+   "name": "After 14 mined collaborators and the new links: project rule (exposure includes @mention links)",
+   "log": "gail_train_31oct_run7.log",
+   "exposed": 60,
+   "observations": 466,
+   "creators": 93,
+   "gail_r_effect": -0.16,
+   "gail_r_ci95": [
+    -0.4,
+    0.4
+   ],
+   "matched_did": -0.09,
+   "matched_did_se": 0.11,
+   "verdict": "no spillover detected"
+  },
+  {
+   "name": "After the catch-up and 8 new creator-to-creator links: project rule",
+   "log": "gail_train_30oct_run6.log",
+   "exposed": 19,
+   "observations": 333,
+   "creators": 75,
+   "gail_r_effect": 0.01,
+   "gail_r_ci95": [
+    -0.96,
+    0.47
+   ],
+   "matched_did": -0.11,
+   "matched_did_se": 0.2,
+   "verdict": "no spillover detected"
+  },
+  {
+   "name": "After the 30 Oct YouTube catch-up (105,190 videos, 2,948 sponsored): project rule",
+   "log": "gail_train_30oct_run5.log",
+   "exposed": 12,
+   "observations": 272,
+   "creators": 66,
+   "gail_r_effect": -0.53,
+   "gail_r_ci95": [
+    -1.18,
+    0.62
+   ],
+   "matched_did": -0.06,
+   "matched_did_se": 0.26,
+   "verdict": "no spillover detected"
+  },
+  {
+   "name": "Project rule (fitness brands, fitness creators)",
+   "log": "gail_train_29oct_run3_fitness_db_labels.log",
+   "exposed": 11,
+   "observations": 306,
+   "creators": 80,
+   "gail_r_effect": -0.44,
+   "gail_r_ci95": [
+    -1.27,
+    0.45
+   ],
+   "matched_did": 0.27,
+   "matched_did_se": 0.28,
+   "verdict": "no spillover detected"
+  },
+  {
+   "name": "All brands, all creators",
+   "log": "gail_train_29oct_run2_all_brands.log",
+   "exposed": 18,
+   "observations": 385,
+   "creators": 85,
+   "gail_r_effect": -0.4,
+   "gail_r_ci95": [
+    -1.06,
+    0.26
+   ],
+   "matched_did": 0.1,
+   "matched_did_se": 0.37,
+   "verdict": "no spillover detected"
+  },
+  {
+   "name": "Looser rule: neighbour's own-sponsorship window 14 days instead of 30",
+   "log": "gail_train_30oct_run4_p2b14.log",
+   "exposed": 11,
+   "observations": 306,
+   "creators": 80,
+   "gail_r_effect": -0.45,
+   "gail_r_ci95": [
+    -1.27,
+    0.43
+   ],
+   "matched_did": 0.27,
+   "matched_did_se": 0.28,
+   "verdict": "no spillover detected; the looser rule keeps 2,600 more rows but no more independent exposed observations"
+  }
+ ],
+ "held_out": {
+  "what": "Leave-one-creator-out prediction of the engagement change, GAIL v1 predictor, 99 creators",
+  "log": "gail_holdout_29oct.log",
+  "mse": {
+   "GAIL v1": 4.074,
+   "always zero": 4.205,
+   "train mean": 3.77,
+   "train median": 3.938
+  },
+  "spearman": 0.144,
+  "spearman_p": 0.155,
+  "verdict": "does not beat the simple baselines (improvement over always-zero +0.13, interval -0.06 to +0.38)"
+ },
+ "acceptance": {
+  "what": "scripts/gail_acceptance.py on synthetic worlds: tests the OLDER estimator (GAIL v1)",
+  "passed": 0,
+  "of": 4,
+  "log": "gail_acceptance_29oct.log",
+  "verdict": "not accepted: the old estimator under-estimates a planted effect (dense) and is wrong in the sparse worlds; the newer GAIL-R is evaluated by the benchmark below"
+ },
+ "benchmark": {
+  "what": "Semi-synthetic: the real creator graph (390 creators, 354 collaboration edges) with an effect planted only through collaboration edges; 10 repetitions",
+  "logs": [
+   "semisynth_29oct_effect1.log",
+   "semisynth_29oct_effect0.log"
+  ],
+  "caveat": "the effect travels only through the edges GAIL can see, so this favours GAIL; real data is noisier and the effect, if any, may not follow collaboration edges",
+  "rows": [
+   {
+    "setting": "effect 1.0, clean",
+    "method": "GAIL-R",
+    "ate_error": 0.018,
+    "pehe": 0.064
+   },
+   {
+    "setting": "effect 1.0, clean",
+    "method": "GAIL v1",
+    "ate_error": 0.185,
+    "pehe": 0.444
+   },
+   {
+    "setting": "effect 1.0, clean",
+    "method": "naive difference",
+    "ate_error": 0.153,
+    "pehe": 0.405
+   },
+   {
+    "setting": "effect 1.0, with a pre-trend",
+    "method": "GAIL-R + placebo penalty",
+    "ate_error": 0.054,
+    "pehe": 0.104
+   },
+   {
+    "setting": "effect 1.0, with a pre-trend",
+    "method": "GAIL-R without the penalty",
+    "ate_error": 0.162,
+    "pehe": 0.302
+   },
+   {
+    "setting": "effect 0, clean",
+    "method": "GAIL-R",
+    "ate_error": 0.017,
+    "pehe": null
+   },
+   {
+    "setting": "effect 0, clean",
+    "method": "GAIL v1",
+    "ate_error": 0.135,
+    "pehe": null
+   }
+  ]
+ },
+ "benchmark_hard": {
+  "what": "Same real graph, weaker planted effect and noisier outcomes (real control changes have sd 0.88); mean absolute error of the estimated mean effect, 10 repetitions each; the mean true effect is small because only creators with a sponsored collaborator carry the effect",
+  "logs": [
+   "semisynth hard runs of 30 Oct (effect 0.25 / 0.5 at noise 0.9 / 1.5)"
+  ],
+  "rows": [
+   {
+    "effect": 0.25,
+    "noise": 0.9,
+    "scenario": "clean",
+    "true_mean_effect": 0.056,
+    "naive": 0.154,
+    "gail_v1": 0.137,
+    "gail_r": 0.032,
+    "gail_r_placebo": 0.031
+   },
+   {
+    "effect": 0.25,
+    "noise": 0.9,
+    "scenario": "with a pre-trend",
+    "true_mean_effect": 0.056,
+    "naive": 0.097,
+    "gail_v1": 0.139,
+    "gail_r": 0.169,
+    "gail_r_placebo": 0.065
+   },
+   {
+    "effect": 0.5,
+    "noise": 0.9,
+    "scenario": "clean",
+    "true_mean_effect": 0.112,
+    "naive": 0.154,
+    "gail_v1": 0.19,
+    "gail_r": 0.032,
+    "gail_r_placebo": 0.032
+   },
+   {
+    "effect": 0.5,
+    "noise": 0.9,
+    "scenario": "with a pre-trend",
+    "true_mean_effect": 0.112,
+    "naive": 0.097,
+    "gail_v1": 0.15,
+    "gail_r": 0.17,
+    "gail_r_placebo": 0.071
+   },
+   {
+    "effect": 0.25,
+    "noise": 1.5,
+    "scenario": "clean",
+    "true_mean_effect": 0.056,
+    "naive": 0.156,
+    "gail_v1": 0.222,
+    "gail_r": 0.055,
+    "gail_r_placebo": 0.053
+   },
+   {
+    "effect": 0.25,
+    "noise": 1.5,
+    "scenario": "with a pre-trend",
+    "true_mean_effect": 0.056,
+    "naive": 0.1,
+    "gail_v1": 0.203,
+    "gail_r": 0.177,
+    "gail_r_placebo": 0.114
+   },
+   {
+    "effect": 0.5,
+    "noise": 1.5,
+    "scenario": "clean",
+    "true_mean_effect": 0.112,
+    "naive": 0.156,
+    "gail_v1": 0.249,
+    "gail_r": 0.056,
+    "gail_r_placebo": 0.054
+   },
+   {
+    "effect": 0.5,
+    "noise": 1.5,
+    "scenario": "with a pre-trend",
+    "true_mean_effect": 0.112,
+    "naive": 0.1,
+    "gail_v1": 0.166,
+    "gail_r": 0.179,
+    "gail_r_placebo": 0.114
+   }
+  ],
+  "reading": "At realistic noise (1.5) GAIL-R's error (about 0.05) is as large as the true mean effect (0.06 to 0.11), and with a pre-trend even the placebo-penalised version errs by about 0.11: effects this small could not be told from zero. The older GAIL v1 errs by 0.14 to 0.25 throughout."
+ },
+ "held_out_gail_r": {
+  "what": "Held-out check of GAIL-R itself on the extended graph (60 exposed): 5-fold split by creator, 20 repetitions; does its effect term reduce error on creators it never saw?",
+  "gain_median": -0.0319,
+  "gain_range": [
+   -0.1096,
+   -0.0106
+  ],
+  "null_gain_median": -0.0179,
+  "null_gain_95th": -0.0014,
+  "exposed_observations": 60,
+  "verdict": "no: the effect term does not help on unseen creators (median gain -3.2%; the wrong-window control is -1.8%). Earlier: 19 exposed -3.8% vs -1.5%; 12 exposed -3.4% vs -5.4%; 11 exposed -1.8% vs -1.8%."
+ },
+ "multiseed": {
+  "what": "GAIL-R with learned attention over 10 seeds on the extended graph (60 exposed, 93 creators), plus a creator-level bootstrap",
+  "att_mean": -0.0455,
+  "att_sd_over_seeds": 0.0649,
+  "att_range": [
+   -0.1581,
+   0.0947
+  ],
+  "bootstrap_ci95": [
+   -0.4025,
+   0.3959
+  ],
+  "n_exposed": 60,
+  "verdict": "the estimate is near zero in every seed (-0.16 to +0.09) and the interval [-0.40, +0.40] includes zero, about half as wide as with 19 exposed. Earlier: 19 exposed mean -0.28; 12 exposed -0.29; 11 exposed -0.54."
+ }
+}

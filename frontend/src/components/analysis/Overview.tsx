@@ -5,7 +5,7 @@ import type { AnalysisData } from "@/types/analysis";
 import { Card, Note, Verdict } from "./ui";
 import type { Tone } from "./ui";
 
-export type TabId = "overview" | "s1" | "s2" | "s3" | "s6" | "s7" | "s8" | "s9";
+export type TabId = "overview" | "s1" | "s2" | "s3" | "s6" | "s7" | "s8" | "s9" | "s10";
 
 const CHIP: Record<Tone, string> = {
   good: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -17,6 +17,15 @@ const CHIP: Record<Tone, string> = {
 export function Overview({ data, onSelect }: { data: AnalysisData; onSelect: (t: TabId) => void }) {
   const hr = data.s8.hand_review;
   const cards: { id: TabId; tag: string; title: string; status: string; tone: Tone; big: string; line: string }[] = [
+    {
+      id: "s10",
+      tag: "S10",
+      title: "Cross-platform & new tests",
+      status: "New · 30 Oct",
+      tone: "info",
+      big: data.s10 ? `${data.s10.pairs.pairs} matched YouTube/Instagram posts` : "run the export",
+      line: "Your idea: the same creator on both platforms within 24 hours, each against its own usual. Plus Granger, ad fatigue, long lag, disclosure and audience response, and the real-data spillover result with what size of effect it could see.",
+    },
     {
       id: "s1",
       tag: "S1",
@@ -59,7 +68,7 @@ export function Overview({ data, onSelect }: { data: AnalysisData; onSelect: (t:
       title: "Creator graph",
       status: "Built",
       tone: "good",
-      big: "187 connected creators",
+      big: `${data.s3.calibration.creators} creators in the model`,
       line: "An interactive map of the collaboration and co-occurrence links the model reads. Click a creator to highlight their links.",
     },
     {
@@ -78,7 +87,7 @@ export function Overview({ data, onSelect }: { data: AnalysisData; onSelect: (t:
       status: "Audited · fixes pending",
       tone: "warn",
       big: `${data.s8.cross_platform_pairs.measured_on_2plus} of ${data.s8.cross_platform_pairs.pairs} pairs on 2 platforms`,
-      line: `The cross-platform claim rests on one pair. About a quarter of Reddit links are wrong and ${hr.non_creator_accounts.low}-${hr.non_creator_accounts.high} 'creators' are shops, gyms or news pages.`,
+      line: `The October link audit found one pair measured on two platforms; the newer matched-post comparison (S10) has far more. About a quarter of Reddit links are wrong and ${hr.non_creator_accounts.low}-${hr.non_creator_accounts.high} 'creators' are shops, gyms or news pages.`,
     },
   ];
 

@@ -20,7 +20,25 @@ def test_the_plan_never_costs_more_than_the_budget():
 
 def test_a_full_day_mixes_refreshes_and_new_creators():
     refresh, new = d.split_budget(100)
-    assert refresh >= 10 and new >= 2
+    assert refresh >= 5 and new >= 5   # since 30 Oct 2026 the new-creator share is the larger one (REFRESH_SHARE 0.3)
+
+
+class _Cur:
+    """Stands in for a database cursor: the verified-creator query returns two rows."""
+    connection = None
+
+    def execute(self, *a, **k):
+        pass
+
+    def fetchall(self):
+        return [("v1", "verified_one"), ("v2", "verified_two")]
+
+
+def test_creators_that_block_training_pairs_come_first_and_are_not_repeated(monkeypatch):
+    monkeypatch.setattr(d, "exposure_targets", lambda cur, n: [("t1", "target_one"), ("v2", "verified_two")])
+    got = d.new_creators(_Cur(), 3)
+    assert got == [("t1", "target_one"), ("v1", "verified_one"), ("v2", "verified_two")]   # alternates: a blocking creator, then a verified one
+    assert d.new_creators(_Cur(), 1) == [("t1", "target_one")]
 
 
 def test_a_creators_empty_page_is_not_a_block_but_instagram_pushing_back_is():
@@ -105,8 +123,20 @@ def test_the_backfill_reads_the_true_owner_and_refuses_the_wrong_page():
     assert b.same_page("DAbc123", None) is False
 
 
+def test_posts_that_gave_no_counts_are_not_asked_for_again(monkeypatch):
+    import instagram_backfill_counts as b
+
+    class Cur:
+        def execute(self, sql, params=None):
+            pass
+        def fetchall(self):
+            return [("a", "u1"), ("b", "u2"), ("c", "u3")]
+    monkeypatch.setattr(b, "load_seen", lambda: {"b": {"stored": "u2", "real": None, "no_counts": True}})
+    assert [w["post_id"] for w in b.posts_to_fill(Cur(), 10)] == ["a", "c"]
+
+
 def test_the_count_phase_takes_a_small_protected_share_of_the_day():
-    assert d.backfill_reserve(pending=300, budget=130) == 60            # a normal day: 60 loads while the backlog is cleared
+    assert d.backfill_reserve(pending=300, budget=130) == d.BACKFILL_LOADS_PER_DAY == 30   # a normal day (60 until 30 Oct 2026, then 30 so the new-creator share can reach the creators that block training pairs)
     assert d.backfill_reserve(pending=7, budget=130) == 7               # never more than there are posts waiting
     assert d.backfill_reserve(pending=300, budget=30) == 15             # a small leftover budget: at most half of it
     assert d.backfill_reserve(pending=0, budget=130) == 0 and d.backfill_reserve(pending=300, budget=0) == 0

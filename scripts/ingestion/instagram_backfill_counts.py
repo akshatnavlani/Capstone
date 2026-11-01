@@ -44,7 +44,9 @@ DAILY_REVIEW_SQL = """
     select p.post_id, p.username from instagram_posts p
     where p.creator_id in (select creator_id from creator_verification where creator_id is not null and link_level in ('confirmed', 'probable'))
       and (p.like_count is null or p.comment_count is null)
-    order by exists (select 1 from creator_sponsorship_events e where e.creator_id = p.creator_id) desc, p.posted_at desc"""
+    order by exists (select 1 from youtube_videos v where v.creator_id = p.creator_id and abs(extract(epoch from v.published_at - p.posted_at)) <= 86400) desc,
+             exists (select 1 from creator_sponsorship_events e where e.creator_id = p.creator_id) desc, p.posted_at desc"""
+# 29 Oct 2026: posts with a YouTube video of the same creator within 24 h come first: they are the pairs of the YouTube-vs-Instagram comparison (scripts/run_platform_pairs.py)
 
 
 def posts_to_fill(cur, n: int) -> list[dict]:
@@ -104,9 +106,11 @@ def read_and_fill(conn, todo: list[dict], limit: int) -> tuple[int, int, int]:
                     row = cur.fetchone()
                     record_post_snapshot(cur, "instagram", code, row[0] if row else None, None, likes, comments)
                 conn.commit()
-                if owner:
+                if owner or (likes is None and comments is None):
+                    # 31 Oct 2026: a read that gives no counts (an account that hides them, or a page without them) used to be retried every day and used up the whole daily
+                    # count budget on the same posts (0 filled out of 30 loads on 30 and 31 Oct). Remember it; posts_to_fill leaves remembered posts out.
                     seen = load_seen()
-                    seen[code] = {"stored": handle, "real": owner}
+                    seen[code] = {"stored": handle, "real": owner, **({"no_counts": True} if likes is None and comments is None else {})}
                     save_seen(seen)
                 fails = 0
                 filled += int(likes is not None or comments is not None)

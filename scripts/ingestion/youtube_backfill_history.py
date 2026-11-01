@@ -13,6 +13,7 @@ Each new video also gets the one snapshot row `upsert_youtube_video` writes (a r
 """
 import argparse
 import logging
+import psycopg2
 from datetime import datetime, timedelta, timezone
 
 from orchestrator import get_connection, log, upsert_youtube_video, youtube_api_get
@@ -79,6 +80,8 @@ def main() -> None:
     budget = [args.quota_budget]
     added = 0
     for channel_id, creator_id, title, _vc, _stored, _oldest in channels:
+        if _oldest is not None and _oldest <= cutoff + timedelta(days=30):
+            continue   # this channel already reaches back to the cutoff: walking its playlist again would only spend quota
         if budget[0] <= 2:
             log.warning("quota budget used up; stopping")
             break
@@ -100,6 +103,10 @@ def main() -> None:
                 conn.commit()
             added += n
             log.info("%s: %d older videos added (%d quota units left)", (title or channel_id)[:30], n, budget[0])
+        except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:   # the database dropped the connection: reconnect and go on with the next channel
+            log.warning("database connection lost at %s (%s); reconnecting", title or channel_id, str(e)[:80])
+            conn = get_connection()
+            continue
         except Exception as e:  # stop at the first API/DB error, as the other collectors do
             conn.rollback()
             log.error("STOPPING at %s: %s", title or channel_id, str(e)[:200])

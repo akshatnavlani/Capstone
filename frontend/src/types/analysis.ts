@@ -189,10 +189,97 @@ export interface S9Data {
     "effect_1.00": number;
     false_alarm: number;
   }[];
+  /** Hybrid what-if (31 Oct 2026): simulated extra exposed creators on real outcomes. Never a result. */
+  power_curve_simulated?: {
+    exposed: number;
+    "effect_0.25": number;
+    "effect_0.50": number;
+    "effect_0.75": number;
+    "effect_1.00": number;
+    false_alarm: number;
+  }[];
+  power_real_exposed?: number;
+  /** SIMULATED: GAIL-R error as the number of exposed creators grows (real graph, planted effect). */
+  gail_scaling?: { planted_effect: number; noise: number; rows: { scenario: string; exposed: number; mean_abs_error: number; reps: number }[] } | null;
+  /** Sensitivity of the real null result to missed sponsorship labels (31 Oct 2026). */
+  /** Real exposed cases (a linked collaborator posted a sponsored video) with the unexposed base rate; an illustration, not proof. */
+  spillover_cases?: {
+    summary: { exposed: number; unexposed: number; median_lift_exposed: number; median_lift_unexposed: number; share_above_0_5_exposed: number; share_above_0_5_unexposed: number };
+    top_cases: { creator: string; category: string; window: string[]; lift: number; sponsoring_collaborator: string | null; sponsored_video: string | null; sponsored_on: string | null }[];
+    reading: string;
+  } | null;
+  label_noise?: { rows: { share_of_comparison_group_truly_exposed: number; corrected_estimate: number; ci95: [number, number]; upper_bound_as_engagement_ratio: number }[]; reading: string } | null;
+  /** E4 (attention supervision) and E5 (mismeasured treatment): SIMULATED benchmark with known truth, plus the real-data E5 sensitivity. */
+  e4_e5?: {
+    reps: number;
+    e4_simulated: Record<string, { pehe: { mean: number; sd: number }; abs_error_of_mean_effect: { mean: number; sd: number } }>;
+    e5_simulated: Record<string, { true_ate: number; naive_ate: { mean: number }; simex_ate: { mean: number }; naive_abs_error: number; simex_abs_error: number }>;
+    e5_real: Record<string, { naive: Record<string, number>; corrected: Record<string, number> }>;
+  } | null;
+}
+
+/** Added 2026-10-30: YouTube-vs-Instagram comparison, Granger, ad fatigue, long lag, promotion behaviour, GAIL real-data results and the power analysis. */
+export interface S10Data {
+  pairs: {
+    window_hours: number;
+    pairs: number;
+    creators_with_pairs: number;
+    median_difference: number;
+    median_difference_adjusted: number;
+    share_pairs_instagram_better_adjusted: number;
+    pairs_with_text_overlap: number;
+    median_difference_with_overlap: number;
+    placebo: { runs: number; median_difference_placebo: number; share_instagram_better_placebo: number };
+    calibration_subtracted: number;
+    granger: Record<string, { creators: number; tests: Record<string, { F: number; placebo_F_median: number; p_value: number }> }>;
+    stronger_platform_counts: Record<string, number>;
+    limits: string;
+  };
+  ad_fatigue: {
+    window_days: number;
+    creators: number;
+    organic_videos: number;
+    results: { outcome: string; creators: number; median_slope: number; ci95: number[]; placebo_median: number; p_one_sided_fatigue: number; share_of_creators_with_negative_slope: number }[];
+    limits: string;
+  };
+  long_lag: {
+    method_check_passed: boolean;
+    limits: string;
+    results: { name: string; n_units: number; n_creators: number; smallest_p_after_event: number | null; window_of_smallest_p: string | null; detected_after_correction: boolean }[];
+  };
+  promotion: {
+    disclosure: { creators: number; sponsored_videos: number; share_disclosed_overall: number; median_creator_share: number | null; creators_most: number; creators_some: number; creators_few: number };
+    response: { creators: number; median_ratio: number | null; ci95_ratio: number[] | null; placebo_median_ratio: number | null; p_one_sided_more_on_sponsored: number | null; creators_more: number; creators_fewer: number; creators_same: number };
+    limits: string;
+  };
+  gail: {
+    note: string;
+    runs: { name: string; log: string; exposed: number; observations: number; creators: number; gail_r_effect: number; gail_r_ci95: number[]; matched_did: number; matched_did_se: number; verdict: string }[];
+    held_out: { what: string; mse: Record<string, number>; spearman: number; spearman_p: number; verdict: string };
+    acceptance: { what: string; passed: number; of: number; verdict: string };
+    benchmark: { what: string; caveat: string; rows: { setting: string; method: string; ate_error: number; pehe: number | null }[] };
+    held_out_gail_r?: { gain_median: number; null_gain_median: number; null_gain_95th: number; verdict: string };
+    benchmark_hard?: {
+      what: string;
+      reading: string;
+      rows: { effect: number; noise: number; scenario: string; true_mean_effect: number; naive: number; gail_v1: number; gail_r: number; gail_r_placebo: number }[];
+    };
+  };
+  power: {
+    real_exposed: number;
+    real_controls: number;
+    real_estimate: number;
+    real_se: number;
+    deltas: number[];
+    reps: number;
+    real_structure: { share_detected: Record<string, number[]>; min_detectable_80pct: Record<string, number | null> };
+    limits: string;
+  };
 }
 
 export interface AnalysisData {
   generated_at: string;
+  s10?: S10Data;
   s9?: S9Data;
   s1: {
     sentiment: SentimentSummary;

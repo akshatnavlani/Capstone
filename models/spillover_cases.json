@@ -1,0 +1,138 @@
+{
+ "as_of": "2026-11-01T06:29:17+00:00",
+ "summary": {
+  "exposed": 74,
+  "unexposed": 250,
+  "median_lift_exposed": -0.027,
+  "median_lift_unexposed": -0.013,
+  "share_above_0_5_exposed": 0.095,
+  "share_above_0_5_unexposed": 0.18,
+  "share_above_1_exposed": 0.041,
+  "share_above_1_unexposed": 0.076
+ },
+ "top_cases": [
+  {
+   "creator": "Ronnie Coleman",
+   "category": "athlete",
+   "window": [
+    "2023-06-18",
+    "2023-08-18"
+   ],
+   "lift": 1.57,
+   "sponsoring_collaborator": "COREFITLAB",
+   "sponsored_video": "My Best Fat Loss Lunch \ud83e\udd57 With High Protein & Fiber \ud83d\ude0b #trendingshorts #minivlog #viral #fat",
+   "sponsored_on": "2023-07-18"
+  },
+  {
+   "creator": "PV Sindhu",
+   "category": "athlete",
+   "window": [
+    "2026-03-30",
+    "2026-05-29"
+   ],
+   "lift": 1.31,
+   "sponsoring_collaborator": null,
+   "sponsored_video": null,
+   "sponsored_on": null
+  },
+  {
+   "creator": "Bhuwan Chauhan",
+   "category": "fitness_influencer",
+   "window": [
+    "2026-07-01",
+    "2026-08-30"
+   ],
+   "lift": 1.24,
+   "sponsoring_collaborator": "Aryan Kandari (Aryan Fit Vlogs)",
+   "sponsored_video": "Delts+ARMS DAY \ud83d\udc80 USE CODE  ARYANKASITIS FOR THE BEST DISCOUNT ON ASITIS NUTRITION \ud83d\udcaa",
+   "sponsored_on": "2026-07-31"
+  },
+  {
+   "creator": "Nawin Goldenboy",
+   "category": "fitness_influencer",
+   "window": [
+    "2025-10-25",
+    "2025-12-24"
+   ],
+   "lift": 0.76,
+   "sponsoring_collaborator": "Eshwar Bolegar",
+   "sponsored_video": "What I Eat in a Day for Lean Muscle Growth (150g Protein)",
+   "sponsored_on": "2025-11-24"
+  },
+  {
+   "creator": "Bhuwan Chauhan",
+   "category": "fitness_influencer",
+   "window": [
+    "2023-01-04",
+    "2023-03-05"
+   ],
+   "lift": 0.62,
+   "sponsoring_collaborator": "Aryan Kandari (Aryan Fit Vlogs)",
+   "sponsored_video": "Armwrestling goals\ud83c\udf1a Buy The Best Protein bar from Asitis Nutrition Use My Coupon Code ARYA",
+   "sponsored_on": "2023-02-03"
+  },
+  {
+   "creator": "MIND WITH MUSCLE",
+   "category": "fitness_influencer",
+   "window": [
+    "2026-02-18",
+    "2026-04-19"
+   ],
+   "lift": 0.51,
+   "sponsoring_collaborator": "Ekansh Taneja",
+   "sponsored_video": "Exposing Wellcore Creatine",
+   "sponsored_on": "2026-03-20"
+  },
+  {
+   "creator": "Shivohaam and Vrindda",
+   "category": "fitness_influencer",
+   "window": [
+    "2024-10-25",
+    "2024-12-24"
+   ],
+   "lift": 0.51,
+   "sponsoring_collaborator": "Gunjan Taneja (GunjanShouts)",
+   "sponsored_video": "Find out the reason of your Acne and Pimples and Fix them permanently | By Gunjanshouts",
+   "sponsored_on": "2024-11-24"
+  },
+  {
+   "creator": "Bhuwan Chauhan",
+   "category": "fitness_influencer",
+   "window": [
+    "2023-08-27",
+    "2024-01-17"
+   ],
+   "lift": 0.47,
+   "sponsoring_collaborator": "Aryan Kandari (Aryan Fit Vlogs)",
+   "sponsored_video": "//ARMWRESTLING AND PLANK CHALLANGE WITH HER\ud83d\udcaa//~ARYAN KANDARI",
+   "sponsored_on": "2023-11-09"
+  },
+  {
+   "creator": "Nawin Goldenboy",
+   "category": "fitness_influencer",
+   "window": [
+    "2024-07-22",
+    "2024-10-21"
+   ],
+   "lift": 0.46,
+   "sponsoring_collaborator": "Eshwar Bolegar",
+   "sponsored_video": "GOA LO RAMP WORKOUT CHESINA \ud83e\udd75",
+   "sponsored_on": "2024-08-28"
+  },
+  {
+   "creator": "Jeet Selal Aesthetics",
+   "category": "fitness_influencer",
+   "window": [
+    "2025-04-12",
+    "2025-07-06"
+   ],
+   "lift": 0.46,
+   "sponsoring_collaborator": "COREFITLAB",
+   "sponsored_video": "ISOLATE Whey Protein Under 2800 Rs",
+   "sponsored_on": "2025-05-23"
+  }
+ ],
+ "all_exposed_cases": 74,
+ "reading": "Exposed creators are not more likely to show a big rise than unexposed ones, so these cases are what chance alone produces; they illustrate the situation, they do not show spillover.",
+ "limits": "illustration, not proof; the sponsored video is the one nearest the middle of the window among linked collaborators; mention-linked exposure is weaker than co-author posts"
+}

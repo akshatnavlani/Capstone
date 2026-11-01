@@ -10,23 +10,98 @@ Instagram (likes + comments) / followers of the latest posts with counts.
 """
 from __future__ import annotations
 
+import json
 import statistics as st
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Optional
 
 from sqlalchemy import text
 from sqlmodel import Session, select
 
 from app.models import InstagramPost, InstagramProfile, YouTubeChannel, YouTubeVideo
-from app.schemas import FirstDayGrowth, PlatformProfile, PlatformSide
+from app.schemas import DisclosureEvidence, FirstDayGrowth, PairedEvidence, PlatformProfile, PlatformSide, PromotionBehaviour, ResponseEvidence
 
 MIN_ITEMS = 5            # posts with counts needed before a status is given
 RECENT_ITEMS = 20        # the latest items that describe "typical now"
 MATURE_DAYS_YOUTUBE = 30  # younger videos are still collecting views
 CACHE_SECONDS = 600
 _cohort_cache: dict[str, tuple[float, list[float]]] = {}
+
+
+PAIRS_PATH = Path(__file__).resolve().parents[2] / "models" / "platform_pairs.json"   # written by scripts/run_platform_pairs.py
+_pairs_cache: dict = {"mtime": None, "path": None, "by_creator": {}, "as_of": None}
+
+
+def _pairs_by_creator() -> tuple[dict, Optional[str]]:
+    """The per-creator matched-post summaries, re-read only when the file changes. Missing or unreadable file: nothing (the profile simply has no paired block)."""
+    try:
+        mtime = PAIRS_PATH.stat().st_mtime
+    except OSError:
+        return {}, None
+    if _pairs_cache["mtime"] != mtime or _pairs_cache["path"] != str(PAIRS_PATH):
+        try:
+            data = json.loads(PAIRS_PATH.read_text(encoding="utf-8"))
+            _pairs_cache.update(mtime=mtime, path=str(PAIRS_PATH), by_creator={c["creator_id"]: c for c in data.get("creators", [])}, as_of=data.get("as_of"))
+        except (OSError, ValueError, KeyError):
+            return {}, None
+    return _pairs_cache["by_creator"], _pairs_cache["as_of"]
+
+
+PROMO_PATH = Path(__file__).resolve().parents[2] / "models" / "promotion_behaviour.json"   # written by scripts/run_promotion_behaviour.py
+_promo_cache: dict = {"mtime": None, "path": None, "by_creator": {}, "as_of": None}
+
+
+def _promo_by_creator() -> tuple[dict, Optional[str]]:
+    """Same pattern as _pairs_by_creator: re-read only when the file changes; a missing or unreadable file means no promotion block."""
+    try:
+        mtime = PROMO_PATH.stat().st_mtime
+    except OSError:
+        return {}, None
+    if _promo_cache["mtime"] != mtime or _promo_cache["path"] != str(PROMO_PATH):
+        try:
+            data = json.loads(PROMO_PATH.read_text(encoding="utf-8"))
+            _promo_cache.update(mtime=mtime, path=str(PROMO_PATH), by_creator={c["creator_id"]: c for c in data.get("creators", [])}, as_of=data.get("as_of"))
+        except (OSError, ValueError, KeyError):
+            return {}, None
+    return _promo_cache["by_creator"], _promo_cache["as_of"]
+
+
+def promotion_behaviour(creator_id: uuid.UUID) -> Optional[PromotionBehaviour]:
+    """Plain-words disclosure and audience-response blocks, each present only when the creator had enough sponsored videos for it."""
+    by, as_of = _promo_by_creator()
+    c = by.get(str(creator_id))
+    if not c:
+        return None
+    disclosure = response = None
+    if d := c.get("disclosure"):
+        disclosure = DisclosureEvidence(sponsored_videos=d["sponsored_videos"], disclosed=d["disclosed"], share=d["share"],
+                                        text=f"An explicit disclosure (#ad, a paid-partnership label or a spoken one) is on {d['disclosed']} of {d['sponsored_videos']} sponsored videos we detected. Promotions found only from a brand name and code count as not disclosed, so this is a floor.")
+    if r := c.get("response"):
+        response = ResponseEvidence(**{k: r[k] for k in ("sponsored_videos", "other_videos", "intent_per_1000_sponsored", "intent_per_1000_other", "ratio", "ci95", "verdict")},
+                                    text=f"Per 1,000 comments, sponsored videos draw {r['intent_per_1000_sponsored']:g} buying-looking comments and other videos {r['intent_per_1000_other']:g} ({r['verdict']}). A proxy for reaction, not sales.")
+    if disclosure is None and response is None:
+        return None
+    return PromotionBehaviour(disclosure=disclosure, response=response, as_of=as_of)
+
+
+def paired_evidence(creator_id: uuid.UUID) -> Optional[PairedEvidence]:
+    """Plain-words result of the matched-post comparison, or None when the creator has no matched post. Never says which platform is stronger without a fair baseline."""
+    by, as_of = _pairs_by_creator()
+    c = by.get(str(creator_id))
+    if not c:
+        return None
+    n, nb, who = int(c["pairs"]), int(c.get("pairs_with_adjustment") or 0), c["stronger_platform"]
+    if who in ("Instagram", "YouTube"):
+        text = f"On {nb} matched posts (the same creator on both platforms within 24 hours), {who} did better against that platform's usual for this creator."
+    elif who == "balanced":
+        text = f"On {nb} matched posts (both platforms within 24 hours), YouTube and Instagram did about equally well against their own usual."
+    else:
+        text = f"{n} matched post{'s' if n != 1 else ''} found (both platforms within 24 hours), but too few with a fair baseline to say which platform did better."
+    return PairedEvidence(pairs=n, pairs_with_baseline=nb, stronger_platform=who, median_difference_adjusted=c.get("median_difference_adjusted"), text=text, as_of=as_of)
+
 
 
 def _aware(d: Optional[datetime]) -> Optional[datetime]:
@@ -200,7 +275,7 @@ def build_profile(session: Session, creator_id: uuid.UUID, refresh: bool = False
         summary = f"Instagram engagement is {ig.status}; YouTube cannot be judged from the data we have."
     else:
         summary = "Not enough data on either platform to judge engagement."
-    return PlatformProfile(creator_id=creator_id, summary=summary, youtube=yt, instagram=ig)
+    return PlatformProfile(creator_id=creator_id, summary=summary, youtube=yt, instagram=ig, paired=paired_evidence(creator_id), promotion=promotion_behaviour(creator_id))
 
 
 def warm_up() -> None:

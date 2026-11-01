@@ -165,7 +165,7 @@ Prompted by `CAPSTONE_NEXT_STEPS.md:778-795` (effective N=10, propensity saturat
 - `placeholder`/`isolated`: same wide `0.25` min.
 - **S3 update (2026-10-05):** the figures above are on the raw GAIL lift scale (unbounded, -1 to +23). Fusion uses the creator's percentile instead (`spillover_unit`, 0-1; the interval is mapped through the same percentile, `unit_low`/`unit_high`); no graph signal = `0.5` with the widest uniform interval (`0.025-0.975`). Final CI on `0-100` combines all three branches in quadrature: `margin = 100*sqrt((w1*hw1)^2 + (w2*hw2)^2 + (w3*hw3)^2)`, `hw2 = 1.96*0.5/sqrt(n_comments+20)` (`0.27` with no scored comments), `hw3 = 0.43` when the feature score has evidence, `0.475` otherwise. Clamped `[0,100]`. Typical width is 45-51 pts (it was the whole 0-100 range for every graph-connected creator before). A caller passing only `spillover_half_width` keeps the old spillover-only formula; no half-width at all gives the fixed `±8`. Derivation and constants: `backend/app/fusion.py`.
 
-**Weights — documented priors, not fitted (S3):** `backend/app/config.py` stays `0.4/0.3/0.3`. All three branches are live now (spillover, Temporal sentiment, CLIP/BERT feature) but no outcome exists to fit the weights to: only 10 creators have an observed lift, and sentiment shows no association with it (Spearman -0.05, p 0.89). `scripts/calibrate_fusion.py` (results in `models/fusion_calibration.json`) shows the ranking is stable for weight changes up to 0.1 (median 9 of the top 10 kept) and changes a lot only at extreme weightings.
+**Weights — documented priors, not fitted (S3):** `backend/app/config.py` is `0/0.5/0.5` since 1 Nov 2026 (spillover taken OUT of the score; it is still returned and shown as context; set `FUSION_WEIGHT_SPILLOVER=0.2`, `FUSION_WEIGHT_SENTIMENT_RISK=0.4`, `FUSION_WEIGHT_CREATOR_FEATURE=0.4` to restore the 30 Oct priors). Before that it was `0.2/0.4/0.4` (lowered from `0.4/0.3/0.3`: the real-data spillover test found nothing and its held-out check did not beat baselines). All three branches are live now (spillover, Temporal sentiment, CLIP/BERT feature) but no outcome exists to fit the weights to: only 10 creators have an observed lift, and sentiment shows no association with it (Spearman -0.05, p 0.89). `scripts/calibrate_fusion.py` (results in `models/fusion_calibration.json`) shows the ranking is stable for weight changes up to 0.1 (median 9 of the top 10 kept) and changes a lot only at extreme weightings.
 
 **Live verification (pooler `CAPSTONE_NEXT_STEPS.md:440`):** `pytest 49` still pass (lazy GAIL import — no torch needed), plus live `GET /health`, `/feature-store/edges/sponsorships`, and `POST /recommendations` showing 3 rows with full JSON (see HANDOFF.md Task 4). See `backend/migrations/0003_add_fusion_spillover_basis.sql` for `fusionscore.spillover_basis`.
 
@@ -839,10 +839,15 @@ Response: `{ query, results: [InfluencerRecommendation...], is_mock_data }`
   "spillover_basis": "trained",
   "estimated_reach": 1000000,
   "estimated_cost": 500000.0,
-  "score_breakdown": { "spillover_score": 0.61, "sentiment_risk_score": 0.5, "creator_feature_score": 0.5, "weight_spillover": 0.4, "weight_sentiment_risk": 0.3, "weight_creator_feature": 0.3 }
+  "score_breakdown": { "spillover_score": 0.61, "sentiment_risk_score": 0.5, "creator_feature_score": 0.5, "weight_spillover": 0.2, "weight_sentiment_risk": 0.4, "weight_creator_feature": 0.4 }
 }
 ```
 `spillover_basis` values: `trained` (is in GAIL labeled N=10 set, tighter but still wide), `inferred` (graph-connected, GAT inductive, wider), `placeholder` (checkpoint missing/fallback, neutral `0.5`, widest interval), `isolated` (degree 0 → neutral `0.5`, never `inferred`, no crash). `score_breakdown.spillover_score` is the 0-1 percentile of the GAIL lift. Track D must key on `spillover_basis`, not just `final_score`. See P1.6 section for `hw` derivation.
+
+**Added 30 Oct 2026 (additive, nothing removed):**
+- `InfluencerRecommendation.evidence_grade: "A"|"B"|"C"|"D"` and `evidence_notes: string[]` (`backend/app/evidence.py`): how much real data stands behind the score (scored comments, a scored content match, platforms with data, graph links; the spillover point is capped at 1 because that branch found no effect on the real data). It says how well we know the creator, not how good they are. Defaults to `"D"` and `[]` when absent.
+- `GET /platform-profiles/{creator_id}` gains `promotion` (or `null`): `disclosure` {sponsored_videos, disclosed, share, text} (share of detected sponsored YouTube videos with an explicit disclosure; a floor) and `response` {sponsored_videos, other_videos, intent_per_1000_sponsored, intent_per_1000_other, ratio, ci95, verdict, text} (buying-looking comments per 1,000 comments on sponsored vs other long videos; a proxy, not sales). Either part is `null` when the creator has too few sponsored videos. Source file `models/promotion_behaviour.json` from `scripts/run_promotion_behaviour.py`, re-read when it changes. Earlier the same day `paired` was added (YouTube vs Instagram within 24 h, `models/platform_pairs.json`).
+- Fusion weights are now `0.2 / 0.4 / 0.4` (spillover / sentiment / creator feature); the example above shows the old `0.4 / 0.3 / 0.3`.
 
 **Filtering/ranking behavior (fully real as of 2026-08-09):**
 - **Budget** — hard filter. `estimated_cost = max(youtube subscriber_count,
@@ -1049,7 +1054,7 @@ columns already normalize to UTC internally for anything already in the DB.
 
 Response `FusionScoreResponse` now includes `spillover_basis: "trained"|"inferred"|"placeholder"|"isolated"` + `confidence_low/high` reflecting honest small-N CI (see P1.6 section). `GET /scores/{creator_id}` recomputes live spillover (not stale DB row) — use it to see current basis/CI; it never 404s with placeholder — if no stored row it computes on-the-fly with `0.5` for `sentiment/creator_feature`.
 
-Formula (`backend/app/fusion.py`, PROJECT_PLAN Section 4): `final = (w1*spillover + w2*sentiment + w3*creator)*100 + risk_adj`, all three inputs on 0-1 (spillover as a percentile); `w1=0.4 w2=0.3 w3=0.3` are documented priors (S3). Confidence: three-branch interval (see P1.6 section), fallback `±8` when no half-width is given. Risk: `-10` if `sentiment<0.3`. `GET /scores/{id}` uses live spillover with the stored sentiment/feature, or neutral `0.5` with the widest intervals when no row exists; `/recommendations` carries the live brief-dependent values.
+Formula (`backend/app/fusion.py`, PROJECT_PLAN Section 4): `final = (w1*spillover + w2*sentiment + w3*creator)*100 + risk_adj`, all three inputs on 0-1 (spillover as a percentile); `w1=0.2 w2=0.4 w3=0.4` are documented priors (S3; was 0.4/0.3/0.3 until 30 Oct 2026). Confidence: three-branch interval (see P1.6 section), fallback `±8` when no half-width is given. Risk: `-10` if `sentiment<0.3`. `GET /scores/{id}` uses live spillover with the stored sentiment/feature, or neutral `0.5` with the widest intervals when no row exists; `/recommendations` carries the live brief-dependent values.
 
 ### Monitoring / alerts
 
@@ -1156,3 +1161,19 @@ creates the full local schema (including Track A-mirrored tables) so
 `.env.example` to `.env` and set `DATABASE_URL` to connect to the real
 Supabase instance — get the connection string from the user directly (never
 committed, never in memory).
+
+## Spillover what-if scenario (31 Oct 2026)
+
+`GET /scenario/spillover?effect=0.5` (effect: assumed spillover strength on the log scale, 0 to 2; 0.25 is about +28%, 0.5 about +65%, 1.0 about +172% for a fully exposed creator).
+
+Uses the REAL collaboration graph and the REAL sponsorships of the last 30 days; the strength is an ASSUMPTION chosen by the caller. Returns `assumed_effect_log`, `window_days`, `creators_with_links`, `creators_exposed`, a `note` that says it is an assumption, and `rows`: per creator with at least one link, `linked_collaborators`, `sponsored_collaborators`, `sponsored_names` (up to 3), `exposure` (sponsored share, 0-1) and `projected_change_pct` (= 100 * (exp(effect * exposure) - 1)). Read only. It never changes a score, a ranking or a confidence interval: the real data shows no detectable spillover (CAPSTONE_NEXT_STEPS.md). Used by the dashboard's "Spillover what-if" switch. Code: `backend/app/spillover_scenario.py`, tests `backend/tests/test_spillover_scenario.py`.
+
+
+## Creator Passport (1 Nov 2026)
+
+Read-only; nothing here changes a score or a ranking. Data comes from `models/creator_passport.json`, written by `scripts/build_creator_passport.py` (part of `scripts/refresh_analyses.py`).
+
+- `GET /passport/summary` — group-level result of each novelty analysis (mood gap, sponsored response by platform with placebo, attention speed, missing-platform prediction with leave-one-out accuracy, ad load, clash coverage) and the limits.
+- `GET /passport/creators` — light list for search: `creator_id, name, category, platforms, grade, mood_gap_flag, has_recent_brand_posts, sections_filled`.
+- `GET /passport/{creator_id}` — the full passport: `coverage, platform_strength, mood, speed, sponsored, fatigue, network, clash_events, predicted_instagram, evidence`. Every block is `null` when there is not enough data.
+- `GET /passport/clash?product=...&brand=...` — creators who promoted a RIVAL brand of the brief's category (inferred from the product words; no category, no check) in the last 120 days. A brand never clashes with itself. 503 until the passport file has been built.

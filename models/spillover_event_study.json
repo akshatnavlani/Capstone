@@ -1,0 +1,429 @@
+{
+  "run_at": "2026-11-01T05:49:29+00:00",
+  "days_of_readings": 20.3,
+  "windows": [
+    "-48..-36h",
+    "-36..-24h",
+    "-24..-12h",
+    "-12..0h",
+    "0..12h",
+    "12..24h",
+    "24..36h",
+    "36..48h"
+  ],
+  "sponsored_events": 49,
+  "event_responder_pairs": 9,
+  "comments_events": 2900,
+  "comments_event_responder_pairs": 116,
+  "results": [
+    {
+      "name": "readings spillover: sponsored video of A -> views gained on B's older videos (B linked to A)",
+      "status": "ok",
+      "n_units": 9,
+      "n_creators": 8,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.3699,
+        -0.0808,
+        -0.0337,
+        -0.2554,
+        -0.1831,
+        -0.1805,
+        -0.216,
+        -0.321
+      ],
+      "placebo_mean": [
+        0.1339,
+        -0.1195,
+        0.071,
+        -0.0854,
+        0.0638,
+        -0.0917,
+        0.0493,
+        -0.0501
+      ],
+      "p_one_sided": [
+        0.2027,
+        0.4518,
+        0.711,
+        0.6777,
+        0.7442,
+        0.5249,
+        0.7375,
+        0.7043
+      ],
+      "smallest_p_after_event": 0.5249,
+      "window_of_smallest_p": "12..24h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "the test of interest"
+    },
+    {
+      "name": "readings spillover_pure: same, B uploaded nothing within 24 h of the event",
+      "status": "ok",
+      "n_units": 6,
+      "n_creators": 5,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.1464,
+        -0.0935,
+        0.0506,
+        -0.1035,
+        -0.0323,
+        0.0507,
+        -0.0553,
+        -0.1812
+      ],
+      "placebo_mean": [
+        0.1737,
+        -0.111,
+        0.0933,
+        -0.156,
+        0.0076,
+        -0.2767,
+        -0.0181,
+        -0.2211
+      ],
+      "p_one_sided": [
+        0.5781,
+        0.4983,
+        0.505,
+        0.3654,
+        0.4751,
+        0.2027,
+        0.5083,
+        0.4319
+      ],
+      "smallest_p_after_event": 0.2027,
+      "window_of_smallest_p": "12..24h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "B's own upload cannot be the cause"
+    },
+    {
+      "name": "readings random_pairs: same events, a random UNLINKED creator as the responder",
+      "status": "ok",
+      "n_units": 8,
+      "n_creators": 8,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.4202,
+        -0.2893,
+        -0.1143,
+        -0.0166,
+        0.2047,
+        -0.0003,
+        0.108,
+        -0.2098
+      ],
+      "placebo_mean": [
+        0.1183,
+        -0.1747,
+        0.184,
+        -0.1277,
+        0.2508,
+        -0.0713,
+        0.1775,
+        -0.0957
+      ],
+      "p_one_sided": [
+        0.1528,
+        0.6944,
+        0.8505,
+        0.2957,
+        0.505,
+        0.4319,
+        0.5449,
+        0.6013
+      ],
+      "smallest_p_after_event": 0.4319,
+      "window_of_smallest_p": "12..24h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "false-alarm check: must not be detected"
+    },
+    {
+      "name": "readings direct: A's sponsored video -> A's own older videos",
+      "status": "ok",
+      "n_units": 41,
+      "n_creators": 14,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.107,
+        -0.2172,
+        0.2952,
+        -0.1851,
+        0.0305,
+        -0.3351,
+        0.1083,
+        -0.2403
+      ],
+      "placebo_mean": [
+        0.1311,
+        -0.2152,
+        0.2013,
+        -0.1171,
+        0.3133,
+        -0.0504,
+        0.3953,
+        -0.0025
+      ],
+      "p_one_sided": [
+        0.5914,
+        0.5216,
+        0.1262,
+        0.7641,
+        0.9834,
+        0.9834,
+        0.9468,
+        0.9601
+      ],
+      "smallest_p_after_event": 0.9468,
+      "window_of_smallest_p": "24..36h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "positive control: the sponsored creator itself"
+    },
+    {
+      "name": "comments spillover: sponsored video of A -> comments arriving on B's older videos (B linked to A)",
+      "status": "ok",
+      "n_units": 116,
+      "n_creators": 21,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.0408,
+        0.1091,
+        -0.1435,
+        -0.0065,
+        -0.1815,
+        0.0908,
+        -0.239,
+        -0.1355
+      ],
+      "placebo_mean": [
+        -0.0484,
+        0.0413,
+        -0.0481,
+        0.0552,
+        -0.0603,
+        0.0526,
+        -0.05,
+        0.0554
+      ],
+      "p_one_sided": [
+        0.1595,
+        0.2591,
+        0.8173,
+        0.7176,
+        0.7841,
+        0.3621,
+        0.9169,
+        0.9269
+      ],
+      "smallest_p_after_event": 0.3621,
+      "window_of_smallest_p": "12..24h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "the test of interest, long history"
+    },
+    {
+      "name": "comments spillover_pure: same, B uploaded nothing within 24 h of the event",
+      "status": "ok",
+      "n_units": 54,
+      "n_creators": 14,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        -0.083,
+        -0.0576,
+        0.109,
+        0.0316,
+        0.0184,
+        0.1694,
+        -0.3046,
+        -0.2732
+      ],
+      "placebo_mean": [
+        -0.0168,
+        0.0009,
+        -0.0102,
+        0.0261,
+        -0.0085,
+        0.0251,
+        0.0026,
+        0.0149
+      ],
+      "p_one_sided": [
+        0.6279,
+        0.6312,
+        0.2359,
+        0.4983,
+        0.4352,
+        0.2658,
+        0.8771,
+        0.8804
+      ],
+      "smallest_p_after_event": 0.2658,
+      "window_of_smallest_p": "12..24h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "B's own upload cannot be the cause"
+    },
+    {
+      "name": "comments random_pairs: same events, a random UNLINKED creator as the responder",
+      "status": "ok",
+      "n_units": 111,
+      "n_creators": 85,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        -0.1083,
+        0.1252,
+        -0.1981,
+        0.1812,
+        -0.1553,
+        -0.1511,
+        -0.1069,
+        -0.092
+      ],
+      "placebo_mean": [
+        -0.0453,
+        0.0607,
+        -0.0504,
+        0.035,
+        -0.062,
+        0.0606,
+        -0.0608,
+        0.0557
+      ],
+      "p_one_sided": [
+        0.6379,
+        0.289,
+        0.8173,
+        0.1927,
+        0.6611,
+        0.8605,
+        0.5382,
+        0.6944
+      ],
+      "smallest_p_after_event": 0.5382,
+      "window_of_smallest_p": "24..36h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "false-alarm check: must not be detected"
+    },
+    {
+      "name": "comments direct: A's sponsored video -> comments on A's own older videos",
+      "status": "ok",
+      "n_units": 1294,
+      "n_creators": 72,
+      "windows": [
+        "-48..-36h",
+        "-36..-24h",
+        "-24..-12h",
+        "-12..0h",
+        "0..12h",
+        "12..24h",
+        "24..36h",
+        "36..48h"
+      ],
+      "excess_in_units_of_the_creators_mean_rate": [
+        0.0751,
+        -0.1157,
+        0.0234,
+        0.0173,
+        0.0697,
+        -0.1165,
+        -0.0031,
+        -0.054
+      ],
+      "placebo_mean": [
+        0.043,
+        -0.0452,
+        0.0479,
+        -0.0457,
+        0.0469,
+        -0.0482,
+        0.0452,
+        -0.0452
+      ],
+      "p_one_sided": [
+        0.1628,
+        0.9834,
+        0.7575,
+        0.0498,
+        0.309,
+        0.9369,
+        0.8671,
+        0.5847
+      ],
+      "smallest_p_after_event": 0.309,
+      "window_of_smallest_p": "0..12h",
+      "bonferroni_threshold_for_4_after_windows": 0.0125,
+      "detected_after_correction": false,
+      "note": "positive control: the sponsored creator itself"
+    }
+  ],
+  "limits": "about three weeks of readings; units sharing an event are not independent (p optimistic; see random_pairs); attention not sales; only creators with readings can respond"
+}

@@ -1,7 +1,7 @@
 --- a/scripts/train_prod_model.py
 +++ b/scripts/train_prod_model.py
-@@ -223,6 +223,24 @@
-                 "robust_lift": None,
+@@ -291,6 +291,24 @@
+                 "log_lift": None,
              })
  
 +    # PATCH (26 Oct 2026, opt-in): add shared-brand (event, neighbour) rows built by scripts/make_shared_brand_targets.py. Collaboration pairs alone give about 20
@@ -25,7 +25,7 @@
      # E2: cluster rows that measure the SAME engagement change before averaging.
      # Previously `target[creator] = mean(all that creator's lifts)`, which let one
      # engagement change recorded N times dominate that creator's own target, and
-@@ -538,6 +556,15 @@
+@@ -606,6 +624,24 @@
              pair = tuple(sorted((str(cid), str(target))))
              pair_weights[pair] += 1
  
@@ -38,10 +38,19 @@
 +                a, b = str(e["source_creator_id"]), str(e["target_creator_id"])
 +                if a < b:
 +                    pair_weights[(a, b)] += float(e["weight"])
++    audience_path = os.environ.get("AUDIENCE_EDGES")
++    if audience_path:
++        # 29 Oct 2026, opt-in: audience overlap (scripts/build_audience_overlap.py): two creators the same people comment on. The file is already pruned to each
++        # creator's strongest few, so every kept pair counts 1.0 (the cosine weight in the file is small and would vanish next to collaboration counts).
++        with open(audience_path, encoding="utf-8") as fh:
++            for e in json.load(fh):
++                a, b = str(e["source_creator_id"]), str(e["target_creator_id"])
++                if a < b:
++                    pair_weights[(a, b)] += 1.0
      src, dst, w = [], [], []
      for (a, b), weight in pair_weights.items():
          if a in id_to_index and b in id_to_index:
-@@ -565,6 +592,16 @@
+@@ -633,6 +669,16 @@
              continue
          for a, b in itertools.combinations(sorted(cids), 2):
              pair_weights[(a, b)] += 1

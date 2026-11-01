@@ -35,7 +35,7 @@ cd backend
 ## Architecture
 - Entrypoint `backend/app/main.py:12` — `CORSMiddleware` allowlist from `CORS_ALLOW_ORIGINS` (default `localhost:3000,127.0.0.1:3000`, `allow_credentials=False`). Curl does not enforce CORS — only a real browser test catches missing middleware (8-week incident, `API_CONTRACTS.md:16`).
 - Custom `validation_exception_handler` (`backend/app/main.py:48`) sanitizes `NaN`/`Infinity` via `_sanitize_non_finite` — without it `budget: NaN` returns 500 not 422. Fields `budget`/`spillover_score`/`sentiment_risk_score`/`creator_feature_score` have `allow_inf_nan=False`.
-- Config `backend/app/config.py:6` via `pydantic-settings` from `.env`. Fusion weights `0.4/0.3/0.3` (`FUSION_WEIGHT_*`), `backend/app/fusion.py:18` margin `8.0`, risk `0.3` -> `-10pts` — all placeholder until Track B calibration.
+- Config `backend/app/config.py:6` via `pydantic-settings` from `.env`. Fusion weights `0.2/0.4/0.4` (`FUSION_WEIGHT_*`; spillover lowered from 0.4/0.3/0.3 on 30 Oct 2026), `backend/app/fusion.py:18` margin `8.0`, risk `0.3` -> `-10pts` — all placeholder until Track B calibration.
 - Auth `backend/app/auth.py:14` — single `X-API-Key` header, **off when `API_KEY` unset** (local dev). Only `/ingestion/*`, `POST /scores/compute`, `POST /alerts`, `POST /labeling/run` require it; all `GET` and `POST /recommendations` never do.
 
 ## Feature store — read-only, live recomputed

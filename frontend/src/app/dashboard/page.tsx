@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SpilloverBadge from "@/components/SpilloverBadge";
-import { getAlerts } from "@/lib/api";
+import EvidenceBadge from "@/components/EvidenceBadge";
+import { getAlerts, getClash, getPassportStrip, getSpilloverScenario } from "@/lib/api";
 import { useStoredRecommendationResult } from "@/lib/useStoredRecommendationResult";
-import type { AlertResponse, SpilloverBasis } from "@/types";
+import type { AlertResponse, ClashResult, PassportStrip, SpilloverBasis, SpilloverScenario } from "@/types";
+import NoveltyStrip from "@/components/NoveltyStrip";
 import PlatformProfileCard from "@/components/PlatformProfileCard";
 
 // Reads the /recommendations response left in sessionStorage by the
@@ -16,6 +18,60 @@ import PlatformProfileCard from "@/components/PlatformProfileCard";
 export default function DashboardPage() {
   const result = useStoredRecommendationResult();
   const [alertsByCreator, setAlertsByCreator] = useState<Map<string, AlertResponse[]>>(new Map());
+  // What-if spillover (31 Oct 2026): the real graph and real current sponsorships with an assumed strength the user picks. Never changes a score.
+  const [assumed, setAssumed] = useState(0);
+  const [loaded, setLoaded] = useState<SpilloverScenario | null>(null);
+  const [scenarioError, setScenarioError] = useState(false);
+  // Competitor clash (1 Nov 2026): creators who recently promoted a rival brand in the brief's category. A warning only; never changes a score.
+  const [clash, setClash] = useState<ClashResult | null>(null);
+  const product = result?.query.product_category;
+  // Creator Passport facts for the cards (1 Nov 2026): mood gap, day-1 views, ad load, sponsored response, links. Facts only; no score changes.
+  const [strips, setStrips] = useState<Record<string, PassportStrip>>({});
+  const idKey = result?.results.map((r) => r.creator_id).join(",") ?? "";
+
+  useEffect(() => {
+    if (!idKey) return;
+    let cancelled = false;
+    getPassportStrip(idKey.split(","))
+      .then((m) => !cancelled && setStrips(m))
+      .catch(() => {
+        // The strip is supplementary; a failed fetch just shows none.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [idKey]);
+
+  useEffect(() => {
+    if (!product) return;
+    let cancelled = false;
+    getClash(product)
+      .then((c) => !cancelled && setClash(c))
+      .catch(() => {
+        // The clash warning is supplementary; a failed fetch just shows none.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [product]);
+
+  useEffect(() => {
+    if (assumed === 0) return;
+    let cancelled = false;
+    getSpilloverScenario(assumed)
+      .then((s) => {
+        if (cancelled) return;
+        setLoaded(s);
+        setScenarioError(false);
+      })
+      .catch(() => !cancelled && setScenarioError(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [assumed]);
+  // Only show a scenario that belongs to the strength now selected (a stale one is hidden while the next loads).
+  const scenario = assumed !== 0 && loaded && loaded.assumed_effect_log === assumed ? loaded : null;
+  const scenarioByCreator = new Map((scenario?.rows ?? []).map((r) => [r.creator_id, r]));
 
   useEffect(() => {
     getAlerts()
@@ -62,6 +118,36 @@ export default function DashboardPage() {
         </p>
       )}
 
+      <div className="rounded-lg border border-zinc-200 p-4 text-sm dark:border-zinc-800">
+        <div className="flex flex-wrap items-center gap-3">
+          <label htmlFor="spillover-what-if" className="font-medium">
+            Spillover what-if
+          </label>
+          <select
+            id="spillover-what-if"
+            value={assumed}
+            onChange={(e) => setAssumed(Number(e.target.value))}
+            className="rounded-md border border-zinc-300 bg-transparent px-2 py-1 text-xs focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-zinc-700"
+          >
+            <option value={0}>Off</option>
+            <option value={0.25}>If spillover were +28% (mild)</option>
+            <option value={0.5}>If spillover were +65% (moderate)</option>
+            <option value={1}>If spillover were +172% (strong)</option>
+          </select>
+          {scenario && (
+            <span className="text-xs text-zinc-500">
+              {scenario.creators_exposed} of {scenario.creators_with_links} linked creators have a collaborator sponsored in the last {scenario.window_days} days
+            </span>
+          )}
+        </div>
+        <p className="mt-2 text-xs text-zinc-500">
+          {scenario
+            ? scenario.note
+            : "The real data shows no detectable spillover, so no creator has a measured spillover. This switch shows who spillover would reach if it had the strength you pick. It is an assumption and never changes a score."}
+        </p>
+        {scenarioError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">Couldn&apos;t load the scenario. Is the backend running?</p>}
+      </div>
+
       <ul className="flex flex-col gap-4">
         {result.results.map((influencer, index) => {
           const alerts = alertsByCreator.get(influencer.creator_id) ?? [];
@@ -88,6 +174,7 @@ export default function DashboardPage() {
                   )}
                   <div className="mt-2 flex items-center gap-2">
                     <SpilloverBadge basis={basis} />
+                    {influencer.evidence_grade && <EvidenceBadge grade={influencer.evidence_grade} />}
                     {influencer.data_coverage === "none" && (
                       <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                         no data collected yet — score rests on category and graph only
@@ -99,11 +186,46 @@ export default function DashboardPage() {
                       </span>
                     )}
                   </div>
+                  <NoveltyStrip s={strips[influencer.creator_id]} />
+                  {influencer.evidence_notes && influencer.evidence_notes.length > 0 && (
+                    <details className="mt-1 text-xs text-zinc-500">
+                      <summary className="cursor-pointer">Why evidence grade {influencer.evidence_grade}</summary>
+                      <ul className="mt-1 list-disc pl-5">
+                        {influencer.evidence_notes.map((n) => (
+                          <li key={n}>{n}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                  {(() => {
+                    const c = clash?.creators[influencer.creator_id];
+                    if (!c) return null;
+                    return (
+                      <p className="mt-1 rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+                        <span className="font-medium">Possible brand clash: </span>
+                        promoted {c.brands.slice(0, 2).map((b) => `${b.brand} (${b.last_seen})`).join(", ")}
+                        {c.total_brands > 2 ? ` and ${c.total_brands - 2} more` : ""} in the last {clash?.window_days} days (same category: {clash?.category}). Check exclusivity before booking.
+                      </p>
+                    );
+                  })()}
                   {basis === "isolated" && (
                     <p className="mt-1 text-xs text-zinc-500">
                       no graph signal — degree 0 on collaborates_with + co_occurs_with; placeholder 0.5, never inferred.
                     </p>
                   )}
+                  {scenario && (() => {
+                    const row = scenarioByCreator.get(influencer.creator_id);
+                    return (
+                      <p className="mt-1 rounded-md bg-violet-50 px-2 py-1 text-xs text-violet-800 dark:bg-violet-950/30 dark:text-violet-300">
+                        <span className="font-medium">What-if, not measured: </span>
+                        {!row
+                          ? "no linked collaborators, so a spillover scenario does not reach this creator."
+                          : row.sponsored_collaborators === 0
+                            ? `${row.linked_collaborators} linked collaborator${row.linked_collaborators === 1 ? "" : "s"}, none sponsored in the last ${scenario.window_days} days: no spillover reaches this creator.`
+                            : `${row.sponsored_collaborators} of ${row.linked_collaborators} linked collaborators sponsored recently (${row.sponsored_names.join(", ")}${row.sponsored_collaborators > row.sponsored_names.length ? " and more" : ""}): ${row.projected_change_pct >= 0 ? "+" : ""}${row.projected_change_pct.toFixed(0)}% expected engagement if spillover were that strong.`}
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-semibold">{influencer.final_score.toFixed(0)}</div>
@@ -120,10 +242,10 @@ export default function DashboardPage() {
                   value={spilloverRaw.toFixed(2)}
                   sublabel={
                     basis === "trained"
-                      ? "percentile · trained, N=10"
+                      ? "percentile · trained, very small N · context, not scored"
                       : basis === "inferred"
-                        ? "percentile · inferred, wide"
-                        : "no graph signal · neutral"
+                        ? "percentile · inferred, wide · context, not scored"
+                        : "no graph signal · context, not scored"
                   }
                 />
                 <ScorePart
@@ -140,7 +262,7 @@ export default function DashboardPage() {
 
               <PlatformProfileCard creatorId={influencer.creator_id} />
 
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex items-center gap-2">
                 {alerts.length === 0 ? (
                   <span className="rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-500 dark:border-zinc-700">
                     no active alerts
@@ -150,6 +272,9 @@ export default function DashboardPage() {
                     {alerts.length} alert{alerts.length > 1 ? "s" : ""}
                   </span>
                 )}
+                <Link href={`/passport?creator=${influencer.creator_id}`} className="ml-auto text-xs font-medium text-accent underline">
+                  Creator Passport
+                </Link>
               </div>
             </li>
           );

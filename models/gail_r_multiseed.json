@@ -1,0 +1,70 @@
+{
+ "as_of": "2026-11-01T06:07:01+00:00",
+ "device": "cpu",
+ "observations": 324,
+ "creators": 97,
+ "windows": 68,
+ "seeds": 10,
+ "runs": {
+  "without placebo penalty": {
+   "n_exposed": 74,
+   "att_by_seed": [
+    -0.0579,
+    0.0574,
+    -0.0324,
+    0.1742,
+    -0.0132,
+    0.0025,
+    -0.1074,
+    -0.0114,
+    0.0427,
+    0.0204
+   ],
+   "att_mean": 0.0075,
+   "att_sd_over_seeds": 0.0718,
+   "bootstrap_ci95": [
+    -0.5881,
+    0.3657
+   ],
+   "bootstrap_B": 200,
+   "slopes_mean": {
+    "collaborates_with": -0.1113,
+    "co_occurs_with": 0.1802
+   },
+   "slopes_sd_over_seeds": {
+    "collaborates_with": 0.1329,
+    "co_occurs_with": 0.1322
+   }
+  },
+  "with placebo penalty (30)": {
+   "n_exposed": 74,
+   "att_by_seed": [
+    -0.0515,
+    0.0528,
+    -0.0273,
+    0.1578,
+    -0.0113,
+    0.0042,
+    -0.0953,
+    -0.0108,
+    0.0393,
+    0.02
+   ],
+   "att_mean": 0.0078,
+   "att_sd_over_seeds": 0.0646,
+   "bootstrap_ci95": [
+    -0.5509,
+    0.3261
+   ],
+   "bootstrap_B": 200,
+   "slopes_mean": {
+    "collaborates_with": -0.1116,
+    "co_occurs_with": 0.1814
+   },
+   "slopes_sd_over_seeds": {
+    "collaborates_with": 0.1252,
+    "co_occurs_with": 0.1314
+   }
+  }
+ }
+}

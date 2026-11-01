@@ -10,7 +10,7 @@ Answers two questions with data, and says plainly what the data cannot answer.
    script checks whether sentiment or feature carry any association with it.
 2. Does the choice of weights matter? For each brief it re-ranks all creators
    under every weight combination on a 0.1 grid and measures how far the top-10
-   and the full ranking move from the current 0.4 / 0.3 / 0.3.
+   and the full ranking move from the current 0.2 / 0.4 / 0.4. Also shows how far that is from the old 0.4 / 0.3 / 0.3.
 
 Also prints the width of the new three-branch confidence interval. The results are
 saved to models/fusion_calibration.json. Takes about a minute (loads CLIP and BERT).
@@ -35,7 +35,8 @@ DEFAULT_BRIEFS = [
     "fitness", "cricket bat and gear", "chess coaching",
     "makeup and skincare", "smartphone reviews", "yoga and wellness classes",
 ]
-BASELINE = (0.4, 0.3, 0.3)
+BASELINE = (0.2, 0.4, 0.4)  # lowered from 0.4 / 0.3 / 0.3 on 30 Oct 2026: the spillover branch has no held-out support yet (null real-data result, held-out MSE does not beat baselines)
+OLD_BASELINE = (0.4, 0.3, 0.3)
 STEP = 0.1
 
 
@@ -125,7 +126,7 @@ def main() -> None:
     print("   => no held-out outcome exists for sentiment or feature, and 10 points cannot fit 3 weights.")
 
     # ---- 2. how much does the choice of weights matter? ----------------------------------
-    print("\n2. WEIGHT SENSITIVITY (baseline 0.4 / 0.3 / 0.3, 0.1 grid, " + str(len(weight_grid())) + " combinations)")
+    print("\n2. WEIGHT SENSITIVITY (baseline 0.2 / 0.4 / 0.4, 0.1 grid, " + str(len(weight_grid())) + " combinations)")
     print("   'near' = every weight within 0.1 of the baseline; 'all' = the whole grid.")
     emb = QueryEmbedder.from_extractor(FeatureExtractor(max_thumbnails=5))
     grid = weight_grid()
@@ -145,6 +146,9 @@ def main() -> None:
             rho = [spearman(base, final_scores(B, w)) for w in ws]
             out[tag] = {"top10_overlap_median": float(np.median(ov)), "top10_overlap_min": float(np.min(ov)),
                         "spearman_median": float(np.median(rho)), "spearman_min": float(np.min(rho))}
+        # what the 30 Oct change from 0.4 / 0.3 / 0.3 does to this brief's ranking
+        old = final_scores(B, OLD_BASELINE)
+        out["vs_old_weights"] = {"top10_overlap": top_overlap(base, old), "spearman": spearman(base, old)}
         # how the three branches rank relative to each other
         out["branch_spearman"] = {"spillover~sentiment": spearman(spill, sent), "spillover~feature": spearman(spill, feat),
                                   "sentiment~feature": spearman(sent, feat)}
@@ -176,10 +180,11 @@ def main() -> None:
     nearmed = float(np.median([v["near"]["top10_overlap_median"] for v in per_brief.values()]))
     print("\n4. READING")
     print(f"   Moving each weight by up to 0.1 keeps a median {nearmed * 10:.0f} of the top 10; the full grid moves the rank correlation as low as {allmin:.2f}.")
-    print("   Weights stay 0.4 / 0.3 / 0.3 as documented priors. They are NOT fitted: no outcome exists to fit them to.")
+    print("   Versus the old 0.4 / 0.3 / 0.3: " + "; ".join(f"{b!r} top-10 overlap {v['vs_old_weights']['top10_overlap']:.1f}, rank corr {v['vs_old_weights']['spearman']:.2f}" for b, v in per_brief.items()))
+    print("   Weights 0.2 / 0.4 / 0.4 are documented priors. They are NOT fitted: no outcome exists to fit them to.")
 
     report = {
-        "labelled_outcomes": len(lab), "association_with_lift": assoc, "baseline_weights": BASELINE,
+        "labelled_outcomes": len(lab), "association_with_lift": assoc, "baseline_weights": BASELINE, "previous_weights": OLD_BASELINE,
         "per_brief": per_brief, "ci_width_points": {"min": float(widths.min()), "median": float(np.median(widths)), "max": float(widths.max())},
         "ci_spans_whole_range": int(covers_all), "creators": n,
     }

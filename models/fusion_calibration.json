@@ -1,16 +1,21 @@
 {
-  "labelled_outcomes": 10,
+  "labelled_outcomes": 6,
   "association_with_lift": {
     "spillover (in-sample, GAIL was fitted on these)": {
-      "spearman": 0.8510677611520905,
-      "perm_p": 0.0026498675066246686
+      "spearman": 0.942857142857143,
+      "perm_p": 0.017149142542872857
     },
     "sentiment": {
-      "spearman": -0.05454545454545454,
-      "perm_p": 0.8940052997350133
+      "spearman": 0.8857142857142858,
+      "perm_p": 0.03334833258337083
     }
   },
   "baseline_weights": [
+    0.2,
+    0.4,
+    0.4
+  ],
+  "previous_weights": [
     0.4,
     0.3,
     0.3
@@ -20,122 +25,146 @@
       "near": {
         "top10_overlap_median": 0.8,
         "top10_overlap_min": 0.7,
-        "spearman_median": 0.9855928055899112,
-        "spearman_min": 0.9782444940333824
+        "spearman_median": 0.9646382918204758,
+        "spearman_min": 0.9534153455118229
       },
       "all": {
-        "top10_overlap_median": 0.5,
+        "top10_overlap_median": 0.45,
         "top10_overlap_min": 0.1,
-        "spearman_median": 0.8883606488867184,
-        "spearman_min": 0.10702494337839404
+        "spearman_median": 0.8104689437996944,
+        "spearman_min": 0.43067011074196004
+      },
+      "vs_old_weights": {
+        "top10_overlap": 0.9,
+        "spearman": 0.9268999311563807
       },
       "branch_spearman": {
-        "spillover~sentiment": -0.0326148819656318,
-        "spillover~feature": 0.16140569818979575,
-        "sentiment~feature": -0.23512120741063625
+        "spillover~sentiment": 0.14693702100357914,
+        "spillover~feature": 0.1076009961441788,
+        "sentiment~feature": -0.17209205974675518
       }
     },
     "cricket bat and gear": {
       "near": {
-        "top10_overlap_median": 0.9,
-        "top10_overlap_min": 0.7,
-        "spearman_median": 0.9862234700429203,
-        "spearman_min": 0.9792405708583977
+        "top10_overlap_median": 0.7,
+        "top10_overlap_min": 0.6,
+        "spearman_median": 0.9709402241959325,
+        "spearman_min": 0.9509741584560418
       },
       "all": {
-        "top10_overlap_median": 0.6,
-        "top10_overlap_min": 0.1,
-        "spearman_median": 0.899932599949256,
-        "spearman_min": 0.13309146633367322
+        "top10_overlap_median": 0.4,
+        "top10_overlap_min": 0.0,
+        "spearman_median": 0.818962219358065,
+        "spearman_min": 0.49925970744677894
+      },
+      "vs_old_weights": {
+        "top10_overlap": 0.7,
+        "spearman": 0.9252724056849494
       },
       "branch_spearman": {
-        "spillover~sentiment": -0.0326148819656318,
-        "spillover~feature": 0.18055837558480548,
-        "sentiment~feature": -0.17370736268191875
+        "spillover~sentiment": 0.14693702100357914,
+        "spillover~feature": 0.0865812490245905,
+        "sentiment~feature": -0.13320791392848322
       }
     },
     "chess coaching": {
       "near": {
-        "top10_overlap_median": 0.9,
-        "top10_overlap_min": 0.8,
-        "spearman_median": 0.9825921414235678,
-        "spearman_min": 0.9766750858874494
-      },
-      "all": {
-        "top10_overlap_median": 0.5,
-        "top10_overlap_min": 0.1,
-        "spearman_median": 0.8801452933652988,
-        "spearman_min": 0.10639255387532175
-      },
-      "branch_spearman": {
-        "spillover~sentiment": -0.0326148819656318,
-        "spillover~feature": 0.14559302482294728,
-        "sentiment~feature": -0.24160084284447664
-      }
-    },
-    "makeup and skincare": {
-      "near": {
-        "top10_overlap_median": 1.0,
-        "top10_overlap_min": 0.8,
-        "spearman_median": 0.9866828258602818,
-        "spearman_min": 0.9786720748618737
-      },
-      "all": {
-        "top10_overlap_median": 0.6,
-        "top10_overlap_min": 0.1,
-        "spearman_median": 0.8987114772719595,
-        "spearman_min": 0.13856484634287997
-      },
-      "branch_spearman": {
-        "spillover~sentiment": -0.0326148819656318,
-        "spillover~feature": 0.18079802102611467,
-        "sentiment~feature": -0.12330715460219377
-      }
-    },
-    "smartphone reviews": {
-      "near": {
-        "top10_overlap_median": 0.9,
-        "top10_overlap_min": 0.7,
-        "spearman_median": 0.9849614503762745,
-        "spearman_min": 0.9766598891536421
+        "top10_overlap_median": 0.7,
+        "top10_overlap_min": 0.5,
+        "spearman_median": 0.9649271801204388,
+        "spearman_min": 0.9445433592408954
       },
       "all": {
         "top10_overlap_median": 0.4,
         "top10_overlap_min": 0.1,
-        "spearman_median": 0.8824698422544492,
-        "spearman_min": 0.11345598166377649
+        "spearman_median": 0.8089053650404243,
+        "spearman_min": 0.41211163319839444
+      },
+      "vs_old_weights": {
+        "top10_overlap": 0.7,
+        "spearman": 0.9269844936979665
       },
       "branch_spearman": {
-        "spillover~sentiment": -0.0326148819656318,
-        "spillover~feature": 0.16149427058945648,
-        "sentiment~feature": -0.22346928148951886
+        "spillover~sentiment": 0.14693702100357914,
+        "spillover~feature": 0.05216259069113662,
+        "sentiment~feature": -0.28036697054387333
+      }
+    },
+    "makeup and skincare": {
+      "near": {
+        "top10_overlap_median": 0.9,
+        "top10_overlap_min": 0.6,
+        "spearman_median": 0.9692805325902619,
+        "spearman_min": 0.9514487606631241
+      },
+      "all": {
+        "top10_overlap_median": 0.5,
+        "top10_overlap_min": 0.1,
+        "spearman_median": 0.8251833998852199,
+        "spearman_min": 0.44656373341978123
+      },
+      "vs_old_weights": {
+        "top10_overlap": 0.8,
+        "spearman": 0.9287297593588784
+      },
+      "branch_spearman": {
+        "spillover~sentiment": 0.14693702100357914,
+        "spillover~feature": 0.1221592939914502,
+        "sentiment~feature": -0.15400866483755907
+      }
+    },
+    "smartphone reviews": {
+      "near": {
+        "top10_overlap_median": 0.8,
+        "top10_overlap_min": 0.6,
+        "spearman_median": 0.9596070188130432,
+        "spearman_min": 0.9424371796852027
+      },
+      "all": {
+        "top10_overlap_median": 0.4,
+        "top10_overlap_min": 0.0,
+        "spearman_median": 0.7947392787886678,
+        "spearman_min": 0.39670904763336234
+      },
+      "vs_old_weights": {
+        "top10_overlap": 0.7,
+        "spearman": 0.91965485532167
+      },
+      "branch_spearman": {
+        "spillover~sentiment": 0.14693702100357914,
+        "spillover~feature": 0.05319798865631431,
+        "sentiment~feature": -0.2666439934309132
       }
     },
     "yoga and wellness classes": {
       "near": {
-        "top10_overlap_median": 1.0,
-        "top10_overlap_min": 0.8,
-        "spearman_median": 0.9867139100885244,
-        "spearman_min": 0.9784655374342178
+        "top10_overlap_median": 0.8,
+        "top10_overlap_min": 0.6,
+        "spearman_median": 0.9733500543283984,
+        "spearman_min": 0.9588386771262574
       },
       "all": {
-        "top10_overlap_median": 0.6,
+        "top10_overlap_median": 0.5,
         "top10_overlap_min": 0.0,
-        "spearman_median": 0.8983979813724334,
-        "spearman_min": 0.14174249889556936
+        "spearman_median": 0.8362967384928757,
+        "spearman_min": 0.4771465016865084
+      },
+      "vs_old_weights": {
+        "top10_overlap": 0.5,
+        "spearman": 0.9367625939013413
       },
       "branch_spearman": {
-        "spillover~sentiment": -0.0326148819656318,
-        "spillover~feature": 0.17306082597418274,
-        "sentiment~feature": -0.1964257237562004
+        "spillover~sentiment": 0.14693702100357914,
+        "spillover~feature": 0.1637150888225924,
+        "sentiment~feature": -0.07285229034645037
       }
     }
   },
   "ci_width_points": {
-    "min": 26.174348696123758,
-    "median": 48.54528167555428,
-    "max": 50.89471851733643
+    "min": 36.18621979893918,
+    "median": 40.50308301022693,
+    "max": 48.068284762408574
   },
   "ci_spans_whole_range": 0,
-  "creators": 259
+  "creators": 390
 }

@@ -151,3 +151,44 @@ def test_recommendation_ci_is_never_the_whole_range_and_scores_stay_in_range(mon
     assert r.score_breakdown.spillover_score == pytest.approx(0.99)  # the percentile, not the raw 22
     assert r.final_score < 100.0
     assert not (r.confidence_low == 0.0 and r.confidence_high == 100.0)
+
+
+# ---- fusion: a branch that knows nothing is left out (30 Oct 2026) ---------------------------
+
+def test_no_graph_signal_drops_spillover_and_rescales_the_other_weights():
+    from app.fusion import effective_weights
+
+    w1, w2, w3 = effective_weights("isolated")
+    assert w1 == 0.0
+    assert w1 + w2 + w3 == pytest.approx(settings.fusion_weight_spillover + settings.fusion_weight_sentiment_risk + settings.fusion_weight_creator_feature)
+    assert w2 / w3 == pytest.approx(settings.fusion_weight_sentiment_risk / settings.fusion_weight_creator_feature)
+    assert effective_weights("trained") == effective_weights("inferred") == effective_weights(None) == (
+        settings.fusion_weight_spillover, settings.fusion_weight_sentiment_risk, settings.fusion_weight_creator_feature)
+
+
+def test_an_isolated_creator_is_not_credited_a_neutral_spillover_score():
+    final_iso, *_ = compute_fusion_score(0.5, 0.8, 0.8, spillover_basis="isolated")
+    final_linked, *_ = compute_fusion_score(0.5, 0.8, 0.8, spillover_basis="inferred")
+    assert final_iso == pytest.approx(80.0)          # only what is known: sentiment 0.8, feature 0.8
+    # a linked creator with a weak neutral spillover is not lifted by it: lower when spillover carries weight, equal when it is context only (weight 0 since 1 Nov 2026)
+    assert final_linked < final_iso if settings.fusion_weight_spillover > 0 else final_linked == pytest.approx(final_iso)
+    _, _, _, _, b = compute_fusion_score(0.5, 0.8, 0.8, spillover_basis="isolated")
+    assert b.weight_spillover == 0.0 and b.weight_sentiment_risk + b.weight_creator_feature == pytest.approx(1.0)
+
+
+def test_unscored_sentiment_and_neutral_feature_are_left_out_too_and_all_unknown_keeps_the_base_weights():
+    from app.fusion import FEATURE_NEUTRAL_HALF_WIDTH, SENTIMENT_NO_DATA_HALF_WIDTH, effective_weights
+
+    w = effective_weights("inferred", sentiment_half_width=SENTIMENT_NO_DATA_HALF_WIDTH, feature_half_width=0.2)
+    assert w[1] == 0.0 and w[0] + w[2] == pytest.approx(1.0)
+    base = (settings.fusion_weight_spillover, settings.fusion_weight_sentiment_risk, settings.fusion_weight_creator_feature)
+    assert effective_weights("placeholder", SENTIMENT_NO_DATA_HALF_WIDTH, FEATURE_NEUTRAL_HALF_WIDTH) == base
+
+
+def test_spillover_is_context_only_and_cannot_move_the_score():
+    """1 Nov 2026: the spillover branch has weight 0 (real-data spillover is a bounded null). Its score is still computed and returned, but the final score ignores it."""
+    low = compute_fusion_score(0.1, 0.7, 0.6, spillover_basis="trained", sentiment_half_width=0.1, feature_half_width=0.1)
+    high = compute_fusion_score(0.9, 0.7, 0.6, spillover_basis="trained", sentiment_half_width=0.1, feature_half_width=0.1)
+    assert low[0] == pytest.approx(high[0])
+    assert low[4].weight_spillover == 0.0 and low[4].spillover_score == 0.1 and high[4].spillover_score == 0.9
+    assert low[4].weight_sentiment_risk + low[4].weight_creator_feature == pytest.approx(1.0)

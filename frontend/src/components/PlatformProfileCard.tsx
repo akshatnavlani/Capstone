@@ -103,6 +103,21 @@ export default function PlatformProfileCard({ creatorId }: { creatorId: string }
   return (
     <div className="mt-3 text-xs">
       <p className="mb-2 font-medium">{profile.summary}</p>
+      {profile.paired && (
+        <p className="mb-2 rounded bg-zinc-50 p-2 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+          <span className="font-medium">Same-moment check:</span> {profile.paired.text}
+        </p>
+      )}
+      {profile.promotion?.disclosure && (
+        <p className="mb-2 rounded bg-zinc-50 p-2 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+          <span className="font-medium">Disclosure:</span> {profile.promotion.disclosure.text}
+        </p>
+      )}
+      {profile.promotion?.response && (
+        <p className="mb-2 rounded bg-zinc-50 p-2 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+          <span className="font-medium">Audience response to sponsorship:</span> {profile.promotion.response.text}
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <Side side={profile.youtube} />
         <Side side={profile.instagram} />

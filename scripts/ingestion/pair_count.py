@@ -60,11 +60,12 @@ EVENTS = """
        and creator_id is not null
 """
 
-# Clause 2.
+# Clause 2. (31 Oct 2026: a related account on platform 'youtube' also resolves against youtube_handle, so creators added from YouTube mentions can be neighbours.)
 PAIRS = """
     select distinct x.creator_id as a, c2.creator_id as b
       from creator_related_accounts x
-      join creators c2 on lower(c2.instagram_handle) = lower(x.handle)
+      join creators c2 on (lower(c2.instagram_handle) = lower(x.handle)
+                           or (x.platform = 'youtube' and lower(c2.youtube_handle) = lower(x.handle)))
                       and c2.creator_id <> x.creator_id
 """
 

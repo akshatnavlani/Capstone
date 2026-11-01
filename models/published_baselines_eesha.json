@@ -1,0 +1,16 @@
+{
+  "source": "Eesha's alignment note for Shimona, 1 Nov 2026 (GAIL alignment note); published models run from the authors' code on our planted-effect benchmark",
+  "graph": "390-creator checkpoint graph",
+  "replicates": 3,
+  "true_mean_effect": 0.25,
+  "metric": "per-creator error PEHE, lower is better",
+  "caveat": "Different replicate count and graph from the 10-replicate benchmark; keep separate until the baselines are re-run on the 404-creator graph after the 1 Nov label fix.",
+  "rows": [
+    {"method": "Doubly-robust, no graph", "no_trend": 0.330, "pre_trend": 0.382},
+    {"method": "DeepInf (KDD 2018)", "no_trend": 0.443, "pre_trend": 0.442},
+    {"method": "INFLECT-DGNN (IEEE Access 2024)", "no_trend": 0.444, "pre_trend": 0.441},
+    {"method": "TNet (ICML 2024)", "no_trend": 0.446, "pre_trend": 0.582},
+    {"method": "GAIL-R", "no_trend": 0.068, "pre_trend": 0.307},
+    {"method": "GAIL-R + placebo", "no_trend": 0.131, "pre_trend": 0.101}
+  ]
+}

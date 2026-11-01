@@ -1,0 +1,80 @@
+{
+ "source_log": "gail_train_1nov_run8.log",
+ "windows": [
+  "30",
+  "30"
+ ],
+ "target": "log_lift: log((after+1)/(before+1)) of a neighbour's engagement around each sponsorship window, median-based, clipped to +/-5",
+ "training": {
+  "epochs": 100,
+  "loss_by_epoch": [
+   {
+    "epoch": 1,
+    "total": 1.3149,
+    "prediction": 0.5568
+   },
+   {
+    "epoch": 20,
+    "total": 0.9338,
+    "prediction": 0.2873
+   },
+   {
+    "epoch": 40,
+    "total": 0.805,
+    "prediction": 0.1971
+   },
+   {
+    "epoch": 60,
+    "total": 0.7687,
+    "prediction": 0.1841
+   },
+   {
+    "epoch": 80,
+    "total": 0.743,
+    "prediction": 0.1718
+   },
+   {
+    "epoch": 100,
+    "total": 0.7218,
+    "prediction": 0.1581
+   }
+  ],
+  "observations": 323,
+  "mse_trained": 0.3826,
+  "mse_baseline_always_zero": 0.4203,
+  "improvement_percent": 9.0,
+  "mse_controls": 0.4245,
+  "learned_relation_shares": {
+   "collaborates_with": 0.525,
+   "co_occurs_with": 0.475
+  },
+  "placebo_penalty_on_trained_model": 0.0
+ },
+ "exposed_observations": 74,
+ "control_observations": 249,
+ "matched_did": {
+  "estimate": -0.1509,
+  "se": 0.1092,
+  "exposed": 48,
+  "controls": 249
+ },
+ "category_matched_did": {
+  "estimate": -0.0895,
+  "se": 0.116
+ },
+ "placebo_pre_trend_did": {
+  "estimate": -0.3624,
+  "se": 0.1199,
+  "note": "should be about 0; a clear non-zero value means a plain DiD is confounded by pre-existing trends"
+ },
+ "gail_r": {
+  "effect_on_exposed": -0.0475,
+  "ci95": [
+   -0.5521,
+   0.331
+  ],
+  "bootstrap": "creator-level, B=200",
+  "creators": 97
+ },
+ "note": "run of 1 Nov 2026 (run 8) on the corrected labels, after the standing-affiliate-code fix; 74 exposed and 249 comparison observations"
+}

@@ -1,0 +1,54 @@
+{
+  "as_of": "2026-10-30T20:17:12+00:00",
+  "brief": "fitness",
+  "creators_used": 76,
+  "min_comments": 3000,
+  "proxy": "buying-looking comments per 1,000 YouTube comments (not sales)",
+  "branches": {
+    "spillover": {
+      "spearman_with_proxy": -0.306,
+      "permutation_p": 0.006,
+      "sd": 0.0944,
+      "distinct_values": 9
+    },
+    "sentiment": {
+      "spearman_with_proxy": -0.323,
+      "permutation_p": 0.0052,
+      "sd": 0.0915,
+      "distinct_values": 75
+    },
+    "feature": {
+      "spearman_with_proxy": 0.155,
+      "permutation_p": 0.1768,
+      "sd": 0.1121,
+      "distinct_values": 76
+    }
+  },
+  "sentiment_vs_feature_spearman": 0.035,
+  "in_sample": {
+    "baseline_spearman": -0.16,
+    "best_weights": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "best_spearman": 0.155
+  },
+  "held_out": {
+    "folds_scored": 989,
+    "mean_gain_spearman_vs_current": 0.2988,
+    "share_folds_fitted_beats_current": 0.958,
+    "ci95_gain": [
+      -0.028,
+      0.703
+    ],
+    "mean_chosen_weights": [
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "verdict": "fitted weights beat the current ones on held-out creators in most folds",
+  "interpretation": "Do NOT adopt automatically. spillover, sentiment correlate NEGATIVELY with the buying-comment proxy, so the fit would switch them off. The sentiment branch exists as a brand-safety guard, not as a predictor of buying interest, and the proxy shares its comments with it; the spillover branch takes only a few distinct values. A proxy fit that drops brand safety and spillover is a sign the proxy is the wrong target for those branches, not that they carry no value. Keep the documented priors unless a real outcome becomes available.",
+  "limits": "proxy, not sales; sentiment and the proxy come from the same comments; spillover varies little (see distinct_values), so its weight is barely identifiable; one brief"
+}

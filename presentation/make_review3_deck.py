@@ -23,7 +23,7 @@ from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "presentation" / "template_review3.pptx"
-OUT = ROOT / "presentation" / "Review3_Presentation.pptx"
+OUT = ROOT / "presentation" / "Review3_Presentation_v2.pptx"
 ASSETS = ROOT / "presentation" / "assets"
 M = ROOT / "models"
 
@@ -358,34 +358,23 @@ notes(s3, "Keep this to one minute. The key sentence is the last one: we apply k
 s4 = at(S[3], 4)
 clear_body(s4, {"Suggestions from Review – 1 & 2"})
 rows = [["Open item from Review 1 / 2", "Feasibility and progress now"],
-        ["GAIL was trained on only 10 labelled examples", "159 independent examples, 95 of 150 creators linked; retraining is the next step (Eesha)"],
+        ["GAIL was trained on only 10 labelled examples", "557 independent examples, 74 exposed; refitted on corrected labels: no spillover detected (see Results)"],
         ["Sentiment and CLIP/BERT scores were 0.5 placeholders", "Real for 149 and 150 of 150 creators; Hindi-script comments use a multilingual model"],
-        ["Fusion weights not calibrated", "Cannot be fitted (only 10 labelled outcomes): fixed prior 0.4/0.3/0.3, calibration report written"],
-        ["No evaluation, baselines or error analysis", "Placebo tests, simulated validation and a held-out ranking test built; GAIL row pending"],
-        ["Graph view and Granger insight missing", "Graph view exists; Granger causality not done (planned)"],
+        ["Fusion weights not calibrated", "Cannot be fitted (10 labelled outcomes): fixed prior 0/0.5/0.5; spillover is shown but not scored, as its real test found nothing"],
+        ["No evaluation, baselines or error analysis", "Placebo tests, simulated validation and a held-out tests built; GAIL result: no spillover detected (74 exposed, interval -0.55 to +0.33)"],
+        ["Graph view and Granger insight missing", "Graph view exists; Granger tests run on 82 creators: each platform helps predict the other (prediction, not cause)"],
         ["Cost model is a flat heuristic", "Still a heuristic (category rate); no rate-card table yet"],
         ["Integration, performance, Docker", "390 automated tests pass, build passes; load test and Docker run still to do"]]
 table(s4, 0.7, 1.95, 11.9, rows, [4.6, 7.3], size=12, row_h=0.56, name="review table")
 add_text(s4, 0.7, 6.55, 11.9, 0.4, "Items are the open points listed after Review 1 and in the team's Pending Work list. [to fill: add the panel's own remarks if different]", size=11, color=GRAY, name="source note")
-notes(s4, "These are the open items we carried out of Review 1 and 2. Be ready to say which are done (the first four), which are partly done, and which are not done: Granger, the rate card, the load test and Docker.")
+notes(s4, "These are the open items we carried out of Review 1 and 2. Be ready to say which are done (the first four), which are partly done, and which are not done: the rate card, the load test and Docker. Granger is done (82 creators; Instagram posts help predict YouTube comments, F 1.49, p 0.004, and the reverse, F 2.02, p 0.002; prediction, not cause).")
 
 # ------------------------------------------------------------------------------------------------------------------------------ 5 architecture 1
 s5 = at(S[4], 5)
 clear_body(s5, {"Complete pipeline/Architecture of Project"})
 set_title(s5, "Complete pipeline/Architecture of Project", "Complete pipeline / Architecture of Project (1 of 2)")
 picture(s5, ASSETS / "architecture_modules.png", 3.0, 1.9, h=5.0)
-notes(s5, "Walk the five modules top to bottom: collection, feature staging, the GNN dual framework, fusion, and the API. The next slide lists what changed in each module since this diagram was drawn.")
-
-# ------------------------------------------------------------------------------------------------------------------------------ 6 architecture 2
-s6 = at(clone_frame(s5, "Architecture: what changed since the diagram (2 of 2)"), 6)
-rows = [["Module", "Diagram says", "Now (27 Oct 2026)"],
-        ["1 Data collection", "YouTube, Instagram, Reddit; historical partnerships", "24 months of YouTube (59,300 videos), growth readings every 2 h, daily Instagram with owner checks"],
-        ["2 Feature staging", "raw records to feature vectors, is_stub flag", "CLIP/BERT features real for 150 of 150; sponsorship events with evidence tiers and a score table"],
-        ["3 GNN / dual framework", "340 collaboration + 1,414 co-occurrence edges; sentiment 0.5", "adds shared-brand (1,226) and @mention (154) links: 95 of 150 linked; sentiment real; lag test built"],
-        ["4 Fusion", "0.4 spillover + 0.3 sentiment + 0.3 features", "same formula; all inputs real except spillover until GAIL is retrained"],
-        ["5 API layer", "/recommendations, /alerts", "adds /platform-profiles and /feature-store/edges/mentions; creators with data rank first"]]
-table(s6, 0.7, 2.0, 11.9, rows, [2.2, 3.9, 5.8], size=12, row_h=0.78, name="architecture changes")
-notes(s6, "This slide keeps the architecture diagram honest: the structure is unchanged, the content of each module is much richer.")
+notes(s5, "Walk the five modules top to bottom: collection (YouTube, Instagram and Reddit), feature staging, the GNN dual framework, fusion, and the API. The structure is the one we built; the module-by-module implementation follows on the next slides.")
 
 # ------------------------------------------------------------------------------------------------------------------------------ 7-10 implementation
 s7 = at(S[5], 7)
@@ -402,13 +391,14 @@ notes(s7, "Modules 1 and 2. The point to land: the data is collected automatical
 
 s8 = at(clone_frame(s7, "Implementation: Module 3, graph and GAIL"), 8)
 add_text(s8, 0.7, 2.0, 6.3, 4.9, [
-    [("Technology: ", {"bold": True}), ("PyTorch Geometric: a graph-attention (GAT) backbone, an exposure module, a propensity model and a spillover head (Eesha's GAIL).", {})],
+    [("Technology: ", {"bold": True}), ("GAIL-R: a two-stage, cross-fitted R-learner with one effect slope per relation, attention kept close to uniform, a placebo penalty on the pre-period lift, and creator-level bootstrap intervals. It builds on Wu & Yuan (2025); the placebo penalty and the validation are ours.", {})],
     [("Graph: ", {"bold": True}), ("creators are nodes; links are collaboration, Reddit co-mention, shared brand (1,226) and @mention (154); 95 of 150 creators linked.", {})],
-    [("Targets: ", {"bold": True}), ("a neighbour's engagement lift around each sponsored post, lift = (after - before) / (before + 1), median-based, clipped to +/-5, clustered by 30-day windows into 159 independent examples.", {})],
-    [("Honesty tests: ", {"bold": True}), ("within-neighbour placebo test, dose-response, direct effect, simulated validation.", {})]],
-    size=14, bullets=True, space=9, name="module 3 text")
+    [("Targets: ", {"bold": True}), ("a neighbour's engagement lift around each sponsored post, lift = (after - before) / (before + 1), median-based, clipped to +/-5, clustered by 30-day windows into 557 independent examples (74 exposed to a sponsored collaborator).", {})],
+    [("Honesty tests: ", {"bold": True}), ("within-neighbour placebo test, dose-response, direct effect, simulated validation.", {})],
+    [("Extensions (tested in simulation): ", {"bold": True}), ("attention trained on the causal loss (E4) and a correction for sponsored posts our rules miss (E5).", {})]],
+    size=13, bullets=True, space=8, name="module 3 text")
 code_box(s8, 7.2, 2.0, 5.5, 4.55, ["emb  = GAT(features, edges)", "w_ij = softmax(sim(emb_i, emb_j))", "exposure_j = sum_i treated_i * w_ij", "", "e_j  = propensity(features_j)", "y_j  = head(emb_j, exposure_j)", "", "loss = mse(y_hat, lift)", "     + lambda * propensity_regulariser", "", "evaluate on held-out creators only;", "never quote the in-sample effect"], size=13)
-notes(s8, "Module 3. GAIL is Eesha's model. Our contribution is the data that feeds it and the tests that check it. Say that the training retrain is next, and that we judge it only on held-out creators.")
+notes(s8, "Module 3. GAIL is Eesha's model. Our contribution is the data that feeds it and the tests that check it. Say that the training retrain is next, and that we judge it only on held-out creators. Wu and Yuan (2025) is the closest prior method: two-stage orthogonal learning with attention interference. Their paper has no placebo or pre-trend check; that is our addition. E4 and E5 are our two extensions: in simulation the causal loss, not the attention itself, is what recovers the effect (error 0.06 against 0.39 for plain training), and the missed-label correction cuts the error at 70% detection from 0.107 to 0.026. On real data it leaves the result at about zero.")
 
 s9 = at(clone_frame(s7, "Implementation: temporal branch and features"), 9)
 add_text(s9, 0.7, 2.0, 6.3, 4.9, [
@@ -422,12 +412,12 @@ notes(s9, "The temporal branch. Sentiment is tested per language. Lag uses a pla
 
 s10 = at(clone_frame(s7, "Implementation: Modules 4-5, fusion and app"), 10)
 add_text(s10, 0.7, 2.0, 6.3, 4.9, [
-    [("Fusion: ", {"bold": True}), ("final = 100 x (0.4 spillover + 0.3 sentiment + 0.3 features), minus 10 when sentiment is below 0.3; the confidence range combines each branch's uncertainty in quadrature.", {})],
+    [("Fusion: ", {"bold": True}), ("final = 100 x (0.5 sentiment + 0.5 features), minus 10 when sentiment is below 0.3; spillover is shown as context, not scored; the confidence range combines each branch's uncertainty in quadrature.", {})],
     [("Backend: ", {"bold": True}), ("FastAPI + SQLModel on Supabase; /recommendations, /alerts, /feature-store, /platform-profiles.", {})],
     [("Frontend: ", {"bold": True}), ("Next.js 16 and TypeScript: brief form, ranked dashboard with basis badges, per-platform status, explainability graph, monitoring, analysis tab.", {})],
     [("New: ", {"bold": True}), ("YouTube vs Instagram status per creator; creators with no data rank below those with data.", {})]],
     size=14, bullets=True, space=9, name="module 4-5 text")
-code_box(s10, 7.2, 2.0, 5.5, 4.55, ["final = 100 * (0.4*spillover", "               + 0.3*sentiment", "               + 0.3*features)", "if sentiment < 0.3: final -= 10", "", "half_width = sqrt(sum(w_i * u_i)^2)", "range = final +/- half_width", "", "rank by (has_posts, final)", "show basis: trained | inferred |", "            isolated"], size=13)
+code_box(s10, 7.2, 2.0, 5.5, 4.55, ["final = 100 * (0.5*sentiment", "               + 0.5*features)", "if sentiment < 0.3: final -= 10", "spillover: shown, weight 0", "", "half_width = sqrt(sum(w_i * u_i)^2)", "range = final +/- half_width", "", "rank by (has_posts, final)", "show basis: trained | inferred |", "            isolated"], size=13)
 notes(s10, "Fusion and the app. The weights are a stated prior because there are not enough labelled outcomes to fit them, and the app shows each score with its basis and range.")
 
 # ------------------------------------------------------------------------------------------------------------------------------ 11 demo
@@ -440,7 +430,8 @@ add_text(s11, 0.7, 2.0, 3.6, 4.9, [
     "3. 'YouTube vs Instagram status' for a creator",
     "4. Explainability: how the score is built",
     "5. Monitoring alerts with creator names",
-    "6. Analysis tab: real result next to the simulated check"],
+    "6. Creator Passport: mood gap, speed, sponsored response, clash flag",
+    "7. Analysis tab: real result next to the simulated check"],
     size=13, bullets=False, space=6, name="demo flow")
 add_text(s11, 0.7, 6.3, 6.0, 0.6, "[to fill: demo video recorded and checked]", size=12, color=RED, name="demo video note")
 picture(s11, ASSETS / "dashboard_platform_status.jpg", 4.5, 2.0, w=4.1)
@@ -495,7 +486,7 @@ bar_chart(s14, 7.1, 1.9, 5.6, 3.6, ["Before", "+ shared brand", "+ @mentions"], 
 add_text(s14, 0.7, 5.6, 12.0, 1.35, [
     "Strong evidence tiers are almost always right (73 of 75 checked one by one, 91 to 99%), but that is only 4% of events; a text-only reading of weak tiers finds 61%, so their precision lies between about 60% and 95%.",
     "Graph links grew from 17 to 95 of 150 creators; most are 'same brand' links (only 7 real collaboration pairs), so we call the graph exploratory.",
-    "Data: 59,300 YouTube videos, 270,357 growth readings, 1,857 sponsorship events."], size=12, bullets=True, space=4, name="results text 1")
+    "Data (150 verified creators): 103,055 YouTube videos, 361,331 growth readings, 3,074 sponsorship events."], size=12, bullets=True, space=4, name="results text 1")
 notes(s14, "Expected: reliable labels. Observed: strong tiers yes, weak tiers uncertain. The deviation is honest and we corrected an earlier 91% figure that mixed assumed rows with checked ones.")
 
 s15 = at(clone_frame(s14, "Results and Discussion (2 of 2): spillover, lag, baselines"), 15)
@@ -509,14 +500,15 @@ rows = [["Real-data test", "Result"],
         ["Within-neighbour placebo (65)", f"{PLACEBO['median_of_means']:+.2f} ({ci[0]:+.2f} to {ci[1]:+.2f})"],
         ["Stronger tie, more spillover?", f"trend {DOSE['trend']['spearman_tie_strength_vs_paired_difference']:+.2f}"],
         ["Sponsored vs usual video", f"views x{DIRECT['median_ratio_vs_own_typical_post']:.2f}"],
-        ["Lag, Instagram to YouTube", "p = 0.043, not confirmed"],
+        ["Lag, Instagram to YouTube", "p = 0.041, not confirmed"],
         ["Ranking vs random (37 creators)", "no baseline beats random"]]
 table(s15, 6.8, 1.95, 5.9, rows, [3.4, 2.5], size=12, row_h=0.5, name="real results")
 add_text(s15, 0.7, 5.55, 12.0, 1.4, [
-    "Expected a measurable spillover; observed none broad. The simulated check shows the test would catch an effect of 0.25 or more every time and the naive method raises false alarms, so the null is informative.",
-    "Reasons for the deviation: small labelled set (159 examples), graph mostly 'same brand', 17 days of growth readings; a localised effect (about 20% of neighbours) would be missed.",
-    "Compared with simple baselines (follower count, engagement rate, past effect) none beat random; GAIL's row follows the retrain."], size=12, bullets=True, space=4, name="results text 2")
-notes(s15, "Read the left chart as a SIMULATED check: a planted effect on the real network. The right table is real data only. The honest summary is that we find no broad spillover and we can show our test would have found one.")
+    "Large spillover is ruled out; small spillover cannot be seen with 74 exposed observations (our test could see about a 1.5 times rise).",
+    "Reasons: 74 exposed observations from 20 creators, many @mention-linked; small effects would be missed.",
+    "Simple baselines (followers, engagement rate, past effect) did not beat random, and GAIL did not beat them on held-out creators.",
+    "Published models run by Eesha (TNet, DeepInf, INFLECT-DGNN) did not beat a no-graph baseline on our benchmark; GAIL-R with the placebo penalty did (3 replicates, 390-creator graph)."], size=11, bullets=True, space=3, name="results text 2")
+notes(s15, "Read the left chart as a SIMULATED check: a planted effect on the real network. The right table is real data only. The honest summary is that we find no broad spillover, and the power check says our test could only have seen a large one.")
 
 # ------------------------------------------------------------------------------------------------------------------------------ 16 timeline
 s16 = at(S[9], 16)
@@ -533,13 +525,32 @@ table(s16, 0.7, 1.95, 11.9, rows, [1.9, 8.1, 1.9], size=12, row_h=0.56, name="ti
 add_text(s16, 0.7, 6.55, 11.9, 0.4, "Dates are monthly milestones from the project plan and the repository history.", size=11, color=GRAY, name="timeline note")
 notes(s16, "The project is complete as a pipeline. The open items are the final GAIL retraining and the hardening tasks that come after.")
 
+# ------------------------------------------------------------------------------------------------------------------------------ team contributions
+s16b = at(clone_frame(s16, "Team Contributions"), 17)
+team_cards = [
+    ("Shimona Sinha", "PES2UG23CS547", "Data, temporal branch and spillover analysis",
+     ["Daily YouTube, Instagram and Reddit collection; 24-month history", "Owner checks, sponsorship labels, brand cleanup", "Spillover: graph links (shared brand, @mention), placebo and simulated tests", "Temporal branch: comment sentiment and lag detection"]),
+    ("Eesha Shah", "PES2UG23AM034", "GAIL model",
+     ["Graph-attention model, exposure and propensity modules", "Causal regularisation and training targets", "Training and held-out evaluation"]),
+    ("Akshat Navlani", "PES2UG23AM009", "Backend and infrastructure",
+     ["Supabase schema, migrations, ingestion orchestrator", "REST API, fusion layer, graph feature store", "Docker and test gate scripts"]),
+    ("Abhyudyay Agrawal", "PES2UG23AM003", "Web app, testing and demo  [to fill: confirm]",
+     ["Web app views and explainability", "Test plan and validation experiments", "Demo and report"])]
+for i, (nm, srn, role, items) in enumerate(team_cards):
+    x, y = 0.7 + (i % 2) * 6.05, 1.95 + (i // 2) * 2.5
+    add_box(s16b, x, y, 5.85, 2.3, fill=TINT, name="team card")
+    add_text(s16b, x + 0.2, y + 0.12, 5.45, 0.3, [[(nm, {"bold": True, "color": RED, "size": 15}), ("   " + srn, {"size": 11, "color": GRAY})]], size=15, name="team name")
+    add_text(s16b, x + 0.2, y + 0.5, 5.45, 0.3, role, size=13, bold=True, name="team role")
+    add_text(s16b, x + 0.2, y + 0.9, 5.45, 1.4, items, size=12, bullets=True, space=3, name="team items")
+notes(s16b, "Four areas of roughly equal weight: data and temporal, the GAIL model, backend and infrastructure, and the web app with testing and demo. The git history shows the backend, ingestion and frontend work mostly under Akshat; Abhyudyay's part must be confirmed by the team before presenting.")
+
 # ------------------------------------------------------------------------------------------------------------------------------ 17 conclusion
 s17 = at(S[10], 17)
 clear_body(s17, {"Conclusion and Future work"})
 add_text(s17, 0.7, 2.0, 5.9, 4.9, [
     [("Conclusion", {"bold": True, "color": RED})],
     "A complete pipeline from daily data collection to a web app with ranked, explained scores.",
-    "Better data: 59,300 videos, 1,857 labelled events, 95 of 150 creators linked, 159 training examples.",
+    "Better data: 113,731 videos, 3,031 dated sponsorship events (after removing standing affiliate codes), 557 independent training examples, 74 of them exposed to a sponsored collaborator.",
     "Honest validation: the real data shows no broad spillover and simulations show our tests would have found one.",
     "Known limits are stated, not hidden."], size=13, bullets=True, space=7, name="conclusion")
 add_text(s17, 6.9, 2.0, 5.8, 4.9, [
@@ -547,7 +558,7 @@ add_text(s17, 6.9, 2.0, 5.8, 4.9, [
     "Retrain GAIL, then held-out scoring, acceptance check and fusion refresh.",
     "Train also on the direct effect of sponsored posts (about 1,400 more events).",
     "Per-platform normalisation, five random seeds, cross-fitting.",
-    "More Instagram counts and human label checks; Granger causality; rate card.",
+    "More Instagram counts and human label checks; rate card; Granger on more days of readings.",
     "Docker, load test and security pass; thesis."], size=13, bullets=True, space=7, name="future work")
 notes(s17, "Close with the takeaway: a complete, honest pipeline, a clearer graph, and a clear plan.")
 
@@ -566,8 +577,9 @@ refs = [
     "[9] A. Radford et al., \"Learning transferable visual models from natural language supervision,\" in Proc. ICML, PMLR 139, 2021, pp. 8748-8763.",
     "[10] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, \"BERT: Pre-training of deep bidirectional transformers for language understanding,\" in Proc. NAACL-HLT, 2019, pp. 4171-4186.",
     "[11] A. Conneau et al., \"Unsupervised cross-lingual representation learning at scale,\" in Proc. ACL, 2020, pp. 8440-8451.",
-    "[12] C. W. J. Granger, \"Investigating causal relations by econometric models and cross-spectral methods,\" Econometrica, vol. 37, no. 3, pp. 424-438, 1969."]
-add_text(s18, 0.7, 1.95, 11.9, 5.0, refs, size=11, color=INK, space=5, name="references")
+    "[12] C. W. J. Granger, \"Investigating causal relations by econometric models and cross-spectral methods,\" Econometrica, vol. 37, no. 3, pp. 424-438, 1969.",
+    "[13] Y. Wu and Y. Yuan, \"Estimating heterogeneous causal effect on networks via orthogonal learning,\" arXiv:2509.18484, 2025."]
+add_text(s18, 0.7, 1.95, 11.9, 5.0, refs, size=10, color=INK, space=4, name="references")
 notes(s18, "References are in IEEE style. Page numbers are omitted where we were not certain of them.")
 
 # ------------------------------------------------------------------------------------------------------------------------------ 19 thank you
@@ -584,6 +596,10 @@ for sid in final_ids:
     lst.append(by_id[sid])
 
 # slide numbers for the footer of added slides are not used by the template; nothing else to do
-prs.save(OUT)
+try:
+    prs.save(OUT)
+except PermissionError:                      # the file is open in PowerPoint: write the next version instead
+    OUT = OUT.with_name(OUT.stem + "_b" + OUT.suffix)
+    prs.save(OUT)
 print("saved", OUT, "slides:", len(prs.slides))
 print("\n".join(WARN) if WARN else "no overflow warnings")

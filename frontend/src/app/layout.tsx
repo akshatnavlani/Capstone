@@ -1,32 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Nav from "@/components/Nav";
+import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import Sidebar from "@/components/Sidebar";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Fonts (1 Nov 2026 redesign): a characterful grotesque for headings, a clean humanist sans for text, a monospace for numbers.
+const display = Bricolage_Grotesque({ variable: "--font-display", subsets: ["latin"], weight: ["500", "600", "700"] });
+const body = Instrument_Sans({ variable: "--font-body", subsets: ["latin"] });
+const data = JetBrains_Mono({ variable: "--font-data", subsets: ["latin"], weight: ["400", "500", "600"] });
 
 export const metadata: Metadata = {
-  title: "Influencer-Brand Matching",
-  description: "ROI/spillover-based influencer recommendation system",
+  title: "Spillover Studio · Influencer-Brand Matching",
+  description: "Influencer recommendation with graph spillover, cross-platform evidence and honest uncertainty",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-        <Nav />
-        {children}
+    <html lang="en" className={`${display.variable} ${body.variable} ${data.variable} dark h-full antialiased`}>
+      <body className="min-h-full">
+        <Sidebar />
+        <div className="flex min-h-screen flex-col lg:pl-64">{children}</div>
       </body>
     </html>
   );

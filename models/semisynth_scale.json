@@ -1,0 +1,98 @@
+{
+ "planted_effect": 0.5,
+ "noise": 0.9,
+ "controls": 300,
+ "results": {
+  "clean, placebo penalty 0": {
+   "19": {
+    "reps": 5,
+    "mean_abs_error": 0.142,
+    "sd_error": 0.0932,
+    "mean_bias": -0.103,
+    "exposed_used": 19
+   },
+   "40": {
+    "reps": 5,
+    "mean_abs_error": 0.121,
+    "sd_error": 0.0611,
+    "mean_bias": 0.0231,
+    "exposed_used": 40
+   },
+   "80": {
+    "reps": 5,
+    "mean_abs_error": 0.0846,
+    "sd_error": 0.0792,
+    "mean_bias": 0.0575,
+    "exposed_used": 80
+   },
+   "160": {
+    "reps": 0,
+    "mean_abs_error": null,
+    "sd_error": null,
+    "mean_bias": null,
+    "exposed_used": null
+   }
+  },
+  "pretrend, placebo penalty 0": {
+   "19": {
+    "reps": 5,
+    "mean_abs_error": 0.1215,
+    "sd_error": 0.1038,
+    "mean_bias": 0.1039,
+    "exposed_used": 19
+   },
+   "40": {
+    "reps": 5,
+    "mean_abs_error": 0.2305,
+    "sd_error": 0.1098,
+    "mean_bias": 0.2305,
+    "exposed_used": 40
+   },
+   "80": {
+    "reps": 5,
+    "mean_abs_error": 0.2476,
+    "sd_error": 0.0918,
+    "mean_bias": 0.2476,
+    "exposed_used": 80
+   },
+   "160": {
+    "reps": 0,
+    "mean_abs_error": null,
+    "sd_error": null,
+    "mean_bias": null,
+    "exposed_used": null
+   }
+  },
+  "pretrend, placebo penalty 30": {
+   "19": {
+    "reps": 5,
+    "mean_abs_error": 0.101,
+    "sd_error": 0.0843,
+    "mean_bias": -0.0779,
+    "exposed_used": 19
+   },
+   "40": {
+    "reps": 5,
+    "mean_abs_error": 0.2031,
+    "sd_error": 0.0746,
+    "mean_bias": 0.0825,
+    "exposed_used": 40
+   },
+   "80": {
+    "reps": 5,
+    "mean_abs_error": 0.132,
+    "sd_error": 0.067,
+    "mean_bias": 0.0651,
+    "exposed_used": 80
+   },
+   "160": {
+    "reps": 0,
+    "mean_abs_error": null,
+    "sd_error": null,
+    "mean_bias": null,
+    "exposed_used": null
+   }
+  }
+ },
+ "note": "SIMULATED: real graph and features, simulated treatment and outcomes; error = |estimated - true effect on the exposed|, on the log-lift scale"
+}

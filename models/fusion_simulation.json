@@ -1,0 +1,143 @@
+{
+ "as_of": "2026-11-01T07:56:46+00:00",
+ "simulated": true,
+ "creators": 400,
+ "reps": 300,
+ "assumptions": {
+  "sentiment_informativeness": 0.25,
+  "feature_informativeness": 0.42,
+  "scored_sentiment_share": 0.7,
+  "real_feature_share": 0.7
+ },
+ "scenarios": {
+  "spillover carries no information (what the real data shows), 5% of creators linked": {
+   "before 30 Oct: 0.4/0.3/0.3, neutral fill": {
+    "spearman": 0.355,
+    "top20_of_20": 3.61
+   },
+   "30 Oct priors: 0.2/0.4/0.4, neutral fill": {
+    "spearman": 0.361,
+    "top20_of_20": 3.74
+   },
+   "current: 0.2/0.4/0.4, uninformed branch left out": {
+    "spearman": 0.354,
+    "top20_of_20": 3.37
+   },
+   "proposed: spillover out of the score, 0/0.5/0.5, uninformed left out": {
+    "spearman": 0.356,
+    "top20_of_20": 3.41
+   }
+  },
+  "spillover carries no information, 30% of creators linked": {
+   "before 30 Oct: 0.4/0.3/0.3, neutral fill": {
+    "spearman": 0.318,
+    "top20_of_20": 2.97
+   },
+   "30 Oct priors: 0.2/0.4/0.4, neutral fill": {
+    "spearman": 0.353,
+    "top20_of_20": 3.55
+   },
+   "current: 0.2/0.4/0.4, uninformed branch left out": {
+    "spearman": 0.342,
+    "top20_of_20": 3.36
+   },
+   "proposed: spillover out of the score, 0/0.5/0.5, uninformed left out": {
+    "spearman": 0.354,
+    "top20_of_20": 3.4
+   }
+  },
+  "spillover weakly informative (0.2), 30% linked": {
+   "before 30 Oct: 0.4/0.3/0.3, neutral fill": {
+    "spearman": 0.365,
+    "top20_of_20": 3.48
+   },
+   "30 Oct priors: 0.2/0.4/0.4, neutral fill": {
+    "spearman": 0.376,
+    "top20_of_20": 3.72
+   },
+   "current: 0.2/0.4/0.4, uninformed branch left out": {
+    "spearman": 0.367,
+    "top20_of_20": 3.39
+   },
+   "proposed: spillover out of the score, 0/0.5/0.5, uninformed left out": {
+    "spearman": 0.357,
+    "top20_of_20": 3.25
+   }
+  },
+  "spillover informative (0.5), 30% linked": {
+   "before 30 Oct: 0.4/0.3/0.3, neutral fill": {
+    "spearman": 0.429,
+    "top20_of_20": 4.33
+   },
+   "30 Oct priors: 0.2/0.4/0.4, neutral fill": {
+    "spearman": 0.407,
+    "top20_of_20": 4.02
+   },
+   "current: 0.2/0.4/0.4, uninformed branch left out": {
+    "spearman": 0.401,
+    "top20_of_20": 3.86
+   },
+   "proposed: spillover out of the score, 0/0.5/0.5, uninformed left out": {
+    "spearman": 0.358,
+    "top20_of_20": 3.56
+   }
+  }
+ },
+ "sensitivity_to_sentiment_informativeness_no_spillover_signal": {
+  "0.0": {
+   "before 30 Oct: 0.4/0.3/0.3, neutral fill": {
+    "spearman": 0.229,
+    "top20_of_20": 2.51
+   },
+   "30 Oct priors: 0.2/0.4/0.4, neutral fill": {
+    "spearman": 0.233,
+    "top20_of_20": 2.59
+   },
+   "current: 0.2/0.4/0.4, uninformed branch left out": {
+    "spearman": 0.226,
+    "top20_of_20": 2.48
+   },
+   "proposed: spillover out of the score, 0/0.5/0.5, uninformed left out": {
+    "spearman": 0.227,
+    "top20_of_20": 2.48
+   }
+  },
+  "0.25": {
+   "before 30 Oct: 0.4/0.3/0.3, neutral fill": {
+    "spearman": 0.356,
+    "top20_of_20": 3.52
+   },
+   "30 Oct priors: 0.2/0.4/0.4, neutral fill": {
+    "spearman": 0.361,
+    "top20_of_20": 3.65
+   },
+   "current: 0.2/0.4/0.4, uninformed branch left out": {
+    "spearman": 0.353,
+    "top20_of_20": 3.5
+   },
+   "proposed: spillover out of the score, 0/0.5/0.5, uninformed left out": {
+    "spearman": 0.355,
+    "top20_of_20": 3.55
+   }
+  },
+  "0.5": {
+   "before 30 Oct: 0.4/0.3/0.3, neutral fill": {
+    "spearman": 0.477,
+    "top20_of_20": 4.74
+   },
+   "30 Oct priors: 0.2/0.4/0.4, neutral fill": {
+    "spearman": 0.485,
+    "top20_of_20": 4.9
+   },
+   "current: 0.2/0.4/0.4, uninformed branch left out": {
+    "spearman": 0.477,
+    "top20_of_20": 4.79
+   },
+   "proposed: spillover out of the score, 0/0.5/0.5, uninformed left out": {
+    "spearman": 0.479,
+    "top20_of_20": 4.86
+   }
+  }
+ },
+ "limits": "tests the fusion logic under assumed informativeness; says nothing about real brand outcomes, which no data covers"
+}

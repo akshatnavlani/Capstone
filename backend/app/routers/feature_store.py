@@ -19,6 +19,16 @@ def get_creator_features(session: Session = Depends(get_session)) -> list[Creato
     return feature_store.build_creator_features(session)
 
 
+@router.get("/creators/summary")
+def get_creator_summaries(session: Session = Depends(get_session)) -> list[dict]:
+    """creator_id, name and category only: the graph view needs nothing else, and /creators (text, thumbnails) takes about 20 s."""
+    from sqlmodel import select
+
+    from app.models import Creator
+
+    return [{"creator_id": str(c.creator_id), "name": c.name, "category": c.category} for c in session.exec(select(Creator)).all()]
+
+
 @router.get("/edges/collaborations", response_model=list[CollaborationEdge])
 def get_collaboration_edges(session: Session = Depends(get_session)) -> list[CollaborationEdge]:
     return feature_store.build_collaboration_edges(session)

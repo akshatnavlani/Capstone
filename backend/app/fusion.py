@@ -10,10 +10,13 @@ engagement lift, which is unbounded (-1 to +23) and used to saturate the score
 at 100. Sentiment (app/temporal.py) and feature (app/creator_features.py) are 0-1
 already.
 
-Weights w1=0.4 w2=0.3 w3=0.3 are documented priors, not fitted values: the only
+Weights w1=0.0 w2=0.5 w3=0.5 (spillover taken out of the score on 1 Nov 2026, from 0.2 / 0.4 / 0.4 on 30 Oct and 0.4 / 0.3 / 0.3 before; see config.py) are documented priors, not fitted values: the only
 labelled outcome is the 10-creator engagement lift GAIL was trained on, and
 sentiment and feature have no outcome to fit against. scripts/calibrate_fusion.py
 measures how much the ranking moves if the weights change.
+
+Evidence-weighted (30 Oct 2026): a branch with no information for this creator (no graph link, no scored comments, no feature evidence) is left out and the other
+weights are rescaled (`effective_weights`), so a creator is never credited with a neutral score that no data supports. The breakdown reports the weights actually used.
 
 Confidence interval (PendingWork S3: all three branches, not just spillover).
 Each branch gets a 95% half-width on its own 0-1 scale and they are combined in
@@ -74,6 +77,32 @@ def feature_uncertainty(basis: str | None) -> float:
     return FEATURE_SCORED_HALF_WIDTH if basis == "scored" else FEATURE_NEUTRAL_HALF_WIDTH
 
 
+def effective_weights(
+    spillover_basis: str | None = None,
+    sentiment_half_width: float | None = None,
+    feature_half_width: float | None = None,
+) -> tuple[float, float, float]:
+    """The weights actually used for one creator (30 Oct 2026).
+
+    A branch that knows nothing about this creator is left out and the other weights are rescaled to sum to the same total. Before, such a branch contributed a
+    neutral 0.5 (worth 10 points at weight 0.2) to every creator that had no information, as if it were a real signal; creators with and without network
+    information were then scored on different footing. Uninformative means: spillover basis "isolated" or "placeholder" (no link in the graph, so the score is the
+    neutral default); sentiment with no scored comments; feature with no CLIP/BERT evidence. Callers that do not pass a basis or a half-width (legacy callers,
+    tests) keep the plain configured weights. If every branch is uninformative the configured weights are kept.
+    """
+    base = (settings.fusion_weight_spillover, settings.fusion_weight_sentiment_risk, settings.fusion_weight_creator_feature)
+    informative = (
+        spillover_basis not in ("isolated", "placeholder"),
+        sentiment_half_width is None or not math.isclose(sentiment_half_width, SENTIMENT_NO_DATA_HALF_WIDTH),
+        feature_half_width is None or not math.isclose(feature_half_width, FEATURE_NEUTRAL_HALF_WIDTH),
+    )
+    kept = sum(w for w, ok in zip(base, informative) if ok)
+    if not any(informative) or kept <= 0:
+        return base
+    scale = sum(base) / kept
+    return tuple(w * scale if ok else 0.0 for w, ok in zip(base, informative))
+
+
 def compute_fusion_score(
     spillover_score: float,
     sentiment_risk_score: float,
@@ -89,9 +118,7 @@ def compute_fusion_score(
     are 95% half-widths on the same 0-1 scale as their score; a half-width that is
     not given contributes no uncertainty (legacy callers pass only spillover's).
     """
-    w1 = settings.fusion_weight_spillover
-    w2 = settings.fusion_weight_sentiment_risk
-    w3 = settings.fusion_weight_creator_feature
+    w1, w2, w3 = effective_weights(spillover_basis, sentiment_half_width, feature_half_width)
 
     raw_score = w1 * spillover_score + w2 * sentiment_risk_score + w3 * creator_feature_score
     base_score = raw_score * 100

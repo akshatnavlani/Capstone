@@ -1,10 +1,26 @@
-# Keep secrets and local-only bulk out of the smoke image context.
-backend/.venv
-backend/__pycache__
-backend/**/__pycache__
-backend/.pytest_cache
-backend/.env
-backend/models
-frontend/node_modules
-frontend/.next
+# Keep secrets and local-only bulk out of the build context (the backend image copies only backend/ and five small files from models/).
+.env
+.env.*
+**/.env
 .git
+.claude
+venv
+exports
+presentation
+data
+scripts
+ml
+tests
+frontend
+**/__pycache__
+**/.pytest_cache
+backend/.venv
+backend/*.db
+backend/.env
+# models/: only the result files the API serves
+models/*
+!models/analysis_dashboard.json
+!models/creator_passport.json
+!models/platform_pairs.json
+!models/promotion_behaviour.json
+!models/temporal_sentiment.json

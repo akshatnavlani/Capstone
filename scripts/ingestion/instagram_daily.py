@@ -31,9 +31,9 @@ LOADS_PER_REFRESH = 3.5     # one profile page plus about 2-3 young posts
 LOADS_PER_NEW_CREATOR = 10  # one profile page plus the newest NEW_CREATOR_POSTS posts (comments come with the post pages)
 NEW_CREATOR_POSTS = 8       # older posts do not help the lag analysis; fewer posts means more creators per day
 DEFAULT_DAILY_CAP = 130     # page loads per UTC day; 100-135 a day was measured safe (no block in about 700 loads over 6 days)
-REFRESH_SHARE = 0.6
+REFRESH_SHARE = 0.3        # 30 Oct 2026: was 0.6. The lag analysis already has enough readings; the page loads now go to creators that block training pairs (exposure_targets)
 PAUSE_BETWEEN_NEW_CREATORS = 45
-BACKFILL_LOADS_PER_DAY = 60  # page loads kept each day for filling in the counts of old posts (and checking who really owns them); see instagram_backfill_counts.py
+BACKFILL_LOADS_PER_DAY = 30  # 30 Oct 2026: was 60, so that about 7 new creators a day (was 4) go to the 41 that block training pairs; raise it again after about 6 Nov. # page loads kept each day for filling in the counts of old posts (and checking who really owns them); see instagram_backfill_counts.py
                              # 27 Oct 2026: raised from 25 to clear the backlog (403 posts of the 150 had no counts) in about a week; put it back to 25 once the backlog is below about 50
 LOCK_HOURS = 3
 LOG_DIR = Path(os.environ.get("LOCALAPPDATA", ".")) / "CapstoneInstagram"
@@ -95,7 +95,9 @@ def refresh_handles(cur, n: int) -> list[str]:
               and (select count(*) from post_snapshots s where s.post_id = ip.post_id and s.platform = 'instagram') < 2) as urgent,
           (select count(*) from instagram_posts ip
             where ip.creator_id = p.creator_id and ip.thumbnail_url is not null and ip.posted_at > now() - interval '14 days') / 14.0
-            * extract(epoch from now() - p.fetched_at) / 86400.0 as expected_new
+            * extract(epoch from now() - p.fetched_at) / 86400.0
+            -- 31 Oct 2026: the lag and cross-platform analyses need creators active on BOTH platforms; a creator with no YouTube upload in 60 days counts a quarter
+            * case when exists (select 1 from youtube_videos v where v.creator_id = p.creator_id and v.published_at > now() - interval '60 days') then 1.0 else 0.25 end as expected_new
         from instagram_profiles p
         where p.creator_id in (select creator_id from instagram_posts where thumbnail_url is not null)) t
       order by (urgent > 0) desc, expected_new desc, fetched_at asc limit %s""", (n,))
@@ -119,8 +121,26 @@ def record_failure(conn, creator_id, handle: str, reason: str) -> None:
     conn.commit()
 
 
+def exposure_targets(cur, n: int) -> list[tuple]:
+    """(creator_id, handle) of creators that have no dated Instagram post and block at least one (event, neighbour) training pair, most blocked checks first
+    (30 Oct 2026: 41 such creators, mostly athletes, blocked 83 of 133 failed checks, and the verified-creator list below never reaches them).
+    Same skip rules as new_creators: a failure in the last 14 days or a profile read in the last 30 days is not tried again."""
+    from pair_count import CANDIDATES
+    cur.execute(f"""select c.creator_id, c.instagram_handle, t.blocked
+                   from (select b, count(*) blocked from ({CANDIDATES}) x where not (x.n_before > 0 and x.n_after > 0) group by b) t
+                   join creators c on c.creator_id = t.b
+                   where c.instagram_handle is not null and c.instagram_handle <> ''
+                     and not exists (select 1 from instagram_posts p where p.creator_id = c.creator_id and p.posted_at is not null)
+                     and not exists (select 1 from instagram_collect_failures f where f.creator_id = c.creator_id and f.failed_at > now() - interval '14 days')
+                     and not exists (select 1 from instagram_profiles ip where lower(ip.username) = lower(c.instagram_handle) and ip.fetched_at > now() - interval '30 days')
+                   order by t.blocked desc limit %s""", (n,))
+    return [(r[0], r[1]) for r in cur.fetchall()]
+
+
 def new_creators(cur, n: int) -> list[tuple]:
-    """(creator_id, handle) of verified creators with no new-style Instagram data. Fitness creators come first (the project's scope),
+    """Creators that block training pairs come first (exposure_targets), then the next verified creators (below).
+
+    (creator_id, handle) of verified creators with no new-style Instagram data. Fitness creators come first (the project's scope),
     then those whose bio shows brand codes (sponsor group A), then confirmed links, then most sponsored events.
     A creator whose profile page was read within the last 30 days is not tried again: an account with no recent posts (for example
     only posts older than a year) would otherwise come up again every day and use up page loads for nothing."""
@@ -134,9 +154,31 @@ def new_creators(cur, n: int) -> list[tuple]:
                                      and f.failed_at > now() - interval '14 days')
                      and not exists (select 1 from instagram_profiles ip where lower(ip.username) = lower(cv.ig_handle)
                                      and ip.fetched_at > now() - interval '30 days')
-                   order by (cv.content_type = 'fitness') desc, (cv.sponsor_group = 'A') desc, (cv.link_level = 'confirmed') desc,
+                   order by (cv.content_type = 'fitness') desc,
+                            -- 31 Oct 2026: a YouTube upload is what an Instagram post can pair with (the YouTube-vs-Instagram comparison and the lag units), so creators with
+                            -- at least 4 uploads in the last 60 days come before those that barely upload, and more uploads (up to 12) before fewer
+                            least((select count(*) from youtube_videos v where v.creator_id = cv.creator_id and v.published_at > now() - interval '60 days'), 12) >= 4 desc,
+                            least((select count(*) from youtube_videos v where v.creator_id = cv.creator_id and v.published_at > now() - interval '60 days'), 12) desc,
+                            (cv.sponsor_group = 'A') desc, (cv.link_level = 'confirmed') desc,
                             sponsored desc limit %s""", (n,))
-    return [(r[0], r[1]) for r in cur.fetchall()]
+    verified = [(r[0], r[1]) for r in cur.fetchall()]
+    try:  # a problem in the targeting must never stop the day's collection
+        targets = exposure_targets(cur, n)
+    except Exception:
+        cur.connection.rollback()
+        log.exception("could not look up creators that block training pairs")
+        targets = []
+    seen = {cid for cid, _ in targets}
+    # 31 Oct 2026: alternate the two goals so both advance every day: a creator that blocks training pairs (spillover) and a verified creator with no Instagram data
+    # yet (more YouTube-vs-Instagram pairs and lag units). Before, the blocking creators took every slot until they were all done.
+    rest = [v for v in verified if v[0] not in seen]
+    mixed = []
+    for i in range(max(len(targets), len(rest))):
+        if i < len(targets):
+            mixed.append(targets[i])
+        if i < len(rest):
+            mixed.append(rest[i])
+    return mixed[:n]
 
 
 def take_lock() -> bool:

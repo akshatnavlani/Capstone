@@ -39,6 +39,7 @@ from sqlmodel import Session, select
 from app.config import settings
 from app.creator_features import get_feature_scores
 from app.database import get_session
+from app.evidence import grade_evidence
 from app.fusion import compute_fusion_score, feature_uncertainty, sentiment_uncertainty
 from app.models import Creator, FusionScore, InstagramPost, InstagramProfile, YouTubeChannel, YouTubeVideo
 from app.schemas import (
@@ -303,6 +304,7 @@ def get_recommendations(
             creator, score, youtube_channel, instagram_profile, spillover_info, temporal_info, feature_info, product_match
         )
         rec.data_coverage = coverage_of(creator.creator_id)  # type: ignore[assignment]
+        rec.evidence_grade, rec.evidence_notes = grade_evidence(rec.spillover_basis, temporal_info, feature_info, rec.data_coverage)
         return rec
 
     eligible: list[InfluencerRecommendation] = []

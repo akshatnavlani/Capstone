@@ -28,9 +28,14 @@ class Settings(BaseSettings):
     # Fusion Layer weights (PROJECT_PLAN.md Section 4):
     # final_score = w1*spillover + w2*sentiment_risk + w3*creator_feature
     # Placeholder values until calibrated against held-out historical outcomes.
-    fusion_weight_spillover: float = 0.4
-    fusion_weight_sentiment_risk: float = 0.3
-    fusion_weight_creator_feature: float = 0.3
+    # 30 Oct 2026: spillover lowered 0.4 -> 0.2 (sentiment and feature 0.3 -> 0.4 each): the real-data spillover test found nothing and the held-out check did not beat
+    # simple baselines, so the branch gets less say until it is validated. scripts/calibrate_fusion.py shows how far the ranking moves.
+    # 1 Nov 2026: spillover taken OUT of the score (0.0; sentiment and feature 0.5 each). The real-data spillover estimate is a bounded null (+0.01, 95% -0.55 to +0.33 on 74 exposed observations), so the branch should not
+    # move a ranking. It is still computed and shown on every card as context. scripts/simulate_fusion.py: with no spillover signal the ranking is unchanged (Spearman 0.356 vs 0.354); if spillover DID carry signal
+    # (0.5) keeping it would help (0.401 vs 0.358), which the real data does not support. Set FUSION_WEIGHT_SPILLOVER=0.2, FUSION_WEIGHT_SENTIMENT_RISK=0.4, FUSION_WEIGHT_CREATOR_FEATURE=0.4 in .env to restore the 30 Oct priors.
+    fusion_weight_spillover: float = 0.0
+    fusion_weight_sentiment_risk: float = 0.5
+    fusion_weight_creator_feature: float = 0.5
 
     api_title: str = "Capstone Fusion Backend"
     api_version: str = "0.1.0"

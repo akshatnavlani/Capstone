@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import init_db
-from app.routers import alerts, analysis, feature_store, health, influencers, ingestion, labeling, platform_profiles, scores
+from app.routers import alerts, analysis, feature_store, health, influencers, ingestion, labeling, passport, platform_profiles, scores, spillover_scenario
 
 app = FastAPI(title=settings.api_title, version=settings.api_version)
 
@@ -69,3 +69,5 @@ app.include_router(feature_store.router)
 app.include_router(labeling.router)
 app.include_router(analysis.router)
 app.include_router(platform_profiles.router)
+app.include_router(spillover_scenario.router)
+app.include_router(passport.router)

@@ -342,8 +342,12 @@ def build_mention_edges(session: Session) -> list[CollaborationEdge]:
                 pair = tuple(sorted((str(creator_id), str(target))))
                 posts[pair].add(content_id)
 
-    for cid, vid, title, desc in session.exec(select(YouTubeVideo.creator_id, YouTubeVideo.video_id, YouTubeVideo.title, YouTubeVideo.description)).all():
-        scan(cid, vid, f"{title or ''} {desc or ''}")
+    # Read the videos a few creators at a time: all 105,000 titles and descriptions in one query (about 80 MB) made the database connection drop (30 Oct 2026).
+    creator_ids = list({c.creator_id for c in session.exec(select(Creator)).all()})
+    for i in range(0, len(creator_ids), 20):
+        for cid, vid, title, desc in session.exec(select(YouTubeVideo.creator_id, YouTubeVideo.video_id, YouTubeVideo.title, YouTubeVideo.description)
+                                                   .where(YouTubeVideo.creator_id.in_(creator_ids[i:i + 20]))).all():
+            scan(cid, vid, f"{title or ''} {desc or ''}")
     for cid, pid, caption in session.exec(select(InstagramPost.creator_id, InstagramPost.post_id, InstagramPost.caption)).all():
         scan(cid, pid, caption)
 

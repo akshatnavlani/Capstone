@@ -45,6 +45,7 @@ class BrandRecommendationRequest(BaseModel):
 SpilloverBasis = Literal["trained", "inferred", "placeholder", "isolated"]
 ProductMatch = Literal["exact", "broader"]
 DataCoverage = Literal["youtube+instagram", "youtube", "instagram", "none"]
+EvidenceGrade = Literal["A", "B", "C", "D"]
 
 
 class InfluencerRecommendation(BaseModel):
@@ -63,6 +64,8 @@ class InfluencerRecommendation(BaseModel):
     data_coverage: DataCoverage = Field(default="none", description="Which platforms have collected posts for this creator; creators with none are ranked below creators with data (the score for them rests on category and graph only)")
     product_match: ProductMatch = Field(default="exact", description="exact=the brief's product words appear in the creator's category/description/bio; broader=filled in because too few creators matched exactly (only when include_broader_matches is set)")
     score_breakdown: ScoreBreakdown
+    evidence_grade: EvidenceGrade = Field(default="D", description="A-D: how much real data stands behind the score (A most). Says how well we know the creator, not how good they are; see app/evidence.py")
+    evidence_notes: list[str] = Field(default_factory=list, description="The reasons behind the evidence grade, in plain words")
 
 
 class BrandRecommendationResponse(BaseModel):
@@ -280,6 +283,24 @@ class CollaborationEdge(BaseModel):
     weight: float = Field(description="Count of matched frequent_collaborator relations between this pair")
 
 
+class SpilloverScenarioRow(BaseModel):
+    creator_id: uuid.UUID
+    linked_collaborators: int
+    sponsored_collaborators: int = Field(description="Linked collaborators with a sponsored post in the window")
+    sponsored_names: list[str] = Field(description="Up to three of them")
+    exposure: float = Field(description="sponsored_collaborators / linked_collaborators, 0-1")
+    projected_change_pct: float = Field(description="Expected change in engagement IF spillover had the assumed strength; an assumption, not an estimate")
+
+
+class SpilloverScenario(BaseModel):
+    assumed_effect_log: float
+    window_days: int
+    creators_with_links: int
+    creators_exposed: int
+    note: str
+    rows: list[SpilloverScenarioRow]
+
+
 class SponsorshipEdge(BaseModel):
     creator_id: uuid.UUID
     brand_id: uuid.UUID
@@ -324,8 +345,46 @@ class PlatformSide(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class PairedEvidence(BaseModel):
+    """Same creator, a YouTube video and an Instagram post within 24 h of each other, each measured against the creator's own usual on its platform (scripts/run_platform_pairs.py)."""
+    pairs: int = Field(description="Matched YouTube/Instagram posts within 24 h")
+    pairs_with_baseline: int = Field(description="Pairs where the creator also has at least 3 unpaired posts on each platform, so the promotion lift can be removed")
+    stronger_platform: Literal["YouTube", "Instagram", "balanced", "not enough pairs"]
+    median_difference_adjusted: Optional[float] = Field(default=None, description="Instagram minus YouTube, log scale, after removing the promotion lift; 0.25 is about 28% better")
+    text: str
+    as_of: Optional[str] = None
+
+
+class DisclosureEvidence(BaseModel):
+    """Share of the creator's detected sponsored YouTube videos that carry an explicit disclosure (scripts/run_promotion_behaviour.py). A floor: a disclosure made somewhere the detector does not read counts as none."""
+    sponsored_videos: int
+    disclosed: int
+    share: float = Field(description="0-1")
+    text: str
+
+
+class ResponseEvidence(BaseModel):
+    """Buying-looking comments per 1,000 comments on the creator's sponsored vs other long YouTube videos. A proxy for audience reaction, not sales."""
+    sponsored_videos: int
+    other_videos: int
+    intent_per_1000_sponsored: float
+    intent_per_1000_other: float
+    ratio: float = Field(description="sponsored rate / other rate")
+    ci95: list[float]
+    verdict: str
+    text: str
+
+
+class PromotionBehaviour(BaseModel):
+    disclosure: Optional[DisclosureEvidence] = None
+    response: Optional[ResponseEvidence] = None
+    as_of: Optional[str] = None
+
+
 class PlatformProfile(BaseModel):
     creator_id: uuid.UUID
     summary: str
     youtube: PlatformSide
     instagram: PlatformSide
+    paired: Optional[PairedEvidence] = Field(default=None, description="Matched-post comparison; None when the creator has no pair")
+    promotion: Optional[PromotionBehaviour] = Field(default=None, description="How openly the creator discloses sponsorship and how the audience reacts to it; None when the creator has too few sponsored videos for either")

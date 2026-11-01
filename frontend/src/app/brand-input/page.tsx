@@ -45,13 +45,13 @@ export default function BrandInputPage() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Brand Input</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Brand Input</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Tell us about the product and target audience for this sponsorship.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-2xl border border-zinc-200 p-6 shadow-sm dark:border-zinc-800">
         <Field
           label="Product / Category"
           placeholder="e.g. Running shoes — fitness"
@@ -85,7 +85,7 @@ export default function BrandInputPage() {
         <button
           type="submit"
           disabled={isSubmitting || !productCategory || !budget}
-          className="mt-2 w-fit rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background transition-opacity disabled:opacity-50"
+          className="mt-2 w-fit rounded-full bg-accent px-5 py-3 text-sm font-medium text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? "Getting recommendations…" : "Get Recommendations"}
         </button>
@@ -120,7 +120,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 dark:border-zinc-700"
+        className="rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm transition-colors placeholder:text-zinc-400 hover:border-zinc-400 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-zinc-700 dark:hover:border-zinc-600"
       />
     </label>
   );

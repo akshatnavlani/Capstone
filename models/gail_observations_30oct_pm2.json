@@ -1,0 +1,3665 @@
+[
+ {
+  "neighbour": "c735498a-821c-4718-a4e1-56cf49a90408",
+  "value": -0.047769477559946025,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": true,
+  "cluster": "c735498a-821c-4718-a4e1-56cf49a90408#0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c735498a-821c-4718-a4e1-56cf49a90408",
+  "value": 0.5065403085884024,
+  "span": [
+   "2024-10-25",
+   "2024-12-24"
+  ],
+  "exposed": true,
+  "cluster": "c735498a-821c-4718-a4e1-56cf49a90408#1",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011",
+  "value": 0.14350530250773935,
+  "span": [
+   "2024-11-11",
+   "2025-01-10"
+  ],
+  "exposed": true,
+  "cluster": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011#0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c735498a-821c-4718-a4e1-56cf49a90408",
+  "value": -0.10523460310234427,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": true,
+  "cluster": "c735498a-821c-4718-a4e1-56cf49a90408#2",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "d2ca48fa-7989-44f7-982c-17465768c5b2",
+  "value": -0.18267871893690346,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": true,
+  "cluster": "d2ca48fa-7989-44f7-982c-17465768c5b2#0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f03eda33-c21c-42b0-9b4d-a418104207d4",
+  "value": -0.12998433672089413,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": true,
+  "cluster": "f03eda33-c21c-42b0-9b4d-a418104207d4#0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "767cd996-1733-4563-a1d2-500f47532e6d",
+  "value": 0.03627602874418248,
+  "span": [
+   "2025-06-19",
+   "2025-08-18"
+  ],
+  "exposed": true,
+  "cluster": "767cd996-1733-4563-a1d2-500f47532e6d#0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "d2ca48fa-7989-44f7-982c-17465768c5b2",
+  "value": 0.3497213003090502,
+  "span": [
+   "2025-06-25",
+   "2025-08-24"
+  ],
+  "exposed": true,
+  "cluster": "d2ca48fa-7989-44f7-982c-17465768c5b2#1",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f03eda33-c21c-42b0-9b4d-a418104207d4",
+  "value": 0.018452710708618578,
+  "span": [
+   "2025-06-25",
+   "2025-08-24"
+  ],
+  "exposed": true,
+  "cluster": "f03eda33-c21c-42b0-9b4d-a418104207d4#1",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "767cd996-1733-4563-a1d2-500f47532e6d",
+  "value": 0.36274452003152724,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": true,
+  "cluster": "767cd996-1733-4563-a1d2-500f47532e6d#1",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "d2ca48fa-7989-44f7-982c-17465768c5b2",
+  "value": 0.17738319192099608,
+  "span": [
+   "2025-08-15",
+   "2025-10-14"
+  ],
+  "exposed": true,
+  "cluster": "d2ca48fa-7989-44f7-982c-17465768c5b2#2",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f03eda33-c21c-42b0-9b4d-a418104207d4",
+  "value": 0.3209926657728266,
+  "span": [
+   "2025-08-15",
+   "2025-10-14"
+  ],
+  "exposed": true,
+  "cluster": "f03eda33-c21c-42b0-9b4d-a418104207d4#2",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011",
+  "value": -0.262069080211961,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": true,
+  "cluster": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011#1",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011",
+  "value": -0.44589066939894073,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": true,
+  "cluster": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011#2",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "5ff7c9f5-0ead-4c62-a72b-31ba08c18daa",
+  "value": 1.3111979934485407,
+  "span": [
+   "2026-03-30",
+   "2026-05-29"
+  ],
+  "exposed": true,
+  "cluster": "5ff7c9f5-0ead-4c62-a72b-31ba08c18daa#0",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "c735498a-821c-4718-a4e1-56cf49a90408",
+  "value": -0.21435457371531944,
+  "span": [
+   "2026-04-29",
+   "2026-06-28"
+  ],
+  "exposed": true,
+  "cluster": "c735498a-821c-4718-a4e1-56cf49a90408#3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3c3d1fb8-722c-4f6c-a47e-89b438f4a066",
+  "value": -1.5686159179138452,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": true,
+  "cluster": "3c3d1fb8-722c-4f6c-a47e-89b438f4a066#0",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "c4b20dc1-14f2-48e9-8bd5-7131af29049f",
+  "value": -0.5232481437645479,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": true,
+  "cluster": "c4b20dc1-14f2-48e9-8bd5-7131af29049f#0",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011",
+  "value": -0.6499850691734558,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": true,
+  "cluster": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011#3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0d4ad509-ec6b-44e5-8f42-b3465af526c0",
+  "value": 0.03511085844725509,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "0d4ad509-ec6b-44e5-8f42-b3465af526c0#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "10fc26c1-5eba-4763-855c-c870142841f9",
+  "value": 0.11972134994220268,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "10fc26c1-5eba-4763-855c-c870142841f9#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6",
+  "value": 2.9644618171026176,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2b609b0d-0606-4afb-a94a-51857a3f396f",
+  "value": -0.15585237531418855,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "2b609b0d-0606-4afb-a94a-51857a3f396f#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "337d0279-b5f6-490e-b5ee-cddea1963b5c",
+  "value": 0.5767424746616294,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "337d0279-b5f6-490e-b5ee-cddea1963b5c#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3809f7fc-6ef8-4b4b-bc23-84271da27661",
+  "value": 0.1594829491151195,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "3809f7fc-6ef8-4b4b-bc23-84271da27661#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "4f892fd3-92d3-4fdd-b99b-65c953d1f526",
+  "value": -0.26277140693167905,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "4f892fd3-92d3-4fdd-b99b-65c953d1f526#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81",
+  "value": -1.0644675230072695,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2",
+  "value": -0.22800864220118128,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "567a2a00-4630-4ffd-a8a1-1115a5374fe0",
+  "value": 0.16258434500754854,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "567a2a00-4630-4ffd-a8a1-1115a5374fe0#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "596bddf2-390f-4630-b2f5-7d53ec0f5301",
+  "value": -0.0026431769117434,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "596bddf2-390f-4630-b2f5-7d53ec0f5301#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "659e5fe3-4428-4897-abef-225b2dac0b78",
+  "value": 0.24395839482229104,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "659e5fe3-4428-4897-abef-225b2dac0b78#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "66c62c24-78cb-48e8-823b-57e468a9cea6",
+  "value": -0.1788002207298376,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "66c62c24-78cb-48e8-823b-57e468a9cea6#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "72a48826-3d67-4eaa-a383-ec4556f3ed00",
+  "value": -0.270541255032113,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "72a48826-3d67-4eaa-a383-ec4556f3ed00#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "75613414-6674-4945-a500-2ef7b6bca997",
+  "value": 0.626718408250457,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "75613414-6674-4945-a500-2ef7b6bca997#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e0ca02e-864e-421c-af44-91b0f5441149",
+  "value": -0.5598312792364026,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "7e0ca02e-864e-421c-af44-91b0f5441149#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e647fdb-789f-4f2d-aab5-79e19445e07b",
+  "value": -0.0433287075620581,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "7e647fdb-789f-4f2d-aab5-79e19445e07b#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3",
+  "value": 0.15993956621994002,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8ac767c5-64b2-40a8-90f7-0524942d0ab2",
+  "value": 0.22212360408151566,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "8ac767c5-64b2-40a8-90f7-0524942d0ab2#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8beae8a1-7378-48ae-80de-670e9abf5794",
+  "value": 0.9805478533589864,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "8beae8a1-7378-48ae-80de-670e9abf5794#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8e9dd511-087b-428d-8bb3-37880a5a05e9",
+  "value": 0.12807047809127037,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "8e9dd511-087b-428d-8bb3-37880a5a05e9#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e",
+  "value": -0.15533867754583575,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a",
+  "value": 0.06942254093007166,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "bb923986-9865-481e-9d3f-6ada589f31b9",
+  "value": -0.025008862222029138,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "bb923986-9865-481e-9d3f-6ada589f31b9#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e",
+  "value": -0.20298134966231873,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "d2ca48fa-7989-44f7-982c-17465768c5b2",
+  "value": -0.19501412309471394,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "d2ca48fa-7989-44f7-982c-17465768c5b2#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de053d15-860a-412a-a338-6c1087808367",
+  "value": -0.021987704855581547,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "de053d15-860a-412a-a338-6c1087808367#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de9f194a-7ae7-4053-83e5-a1e81ab50d42",
+  "value": 0.3898921395554207,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "de9f194a-7ae7-4053-83e5-a1e81ab50d42#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd",
+  "value": -0.23942561147443342,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e19da6a6-e1b2-498f-93be-710e359297aa",
+  "value": -0.26421221994399874,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "e19da6a6-e1b2-498f-93be-710e359297aa#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "ec32fcd8-2ce9-476d-9033-f3536cb8d590",
+  "value": 0.18777685168393798,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "ec32fcd8-2ce9-476d-9033-f3536cb8d590#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f03eda33-c21c-42b0-9b4d-a418104207d4",
+  "value": -0.31872578403216945,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "f03eda33-c21c-42b0-9b4d-a418104207d4#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec",
+  "value": -0.7459123758093629,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261",
+  "value": -0.5986826095531763,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fab5e263-56c7-43df-b0b9-345a659ac005",
+  "value": 0.09541391134886618,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "fab5e263-56c7-43df-b0b9-345a659ac005#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fbf5e167-4cff-412d-aae7-185a38bd3366",
+  "value": 0.3198362945953836,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "fbf5e167-4cff-412d-aae7-185a38bd3366#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7",
+  "value": 0.2998533677285043,
+  "span": [
+   "2024-08-23",
+   "2024-11-19"
+  ],
+  "exposed": false,
+  "cluster": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7#ctrl0",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "389244d8-3cd7-44bc-a54a-d17649032ede",
+  "value": 3.6128884632198583,
+  "span": [
+   "2024-10-25",
+   "2024-12-24"
+  ],
+  "exposed": false,
+  "cluster": "389244d8-3cd7-44bc-a54a-d17649032ede#ctrl1",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "5b827790-ceb1-44b5-933a-e16acab93c34",
+  "value": 1.2088328086580364,
+  "span": [
+   "2024-10-25",
+   "2024-12-24"
+  ],
+  "exposed": false,
+  "cluster": "5b827790-ceb1-44b5-933a-e16acab93c34#ctrl1",
+  "category": "team"
+ },
+ {
+  "neighbour": "10fc26c1-5eba-4763-855c-c870142841f9",
+  "value": 0.8784134673548682,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "10fc26c1-5eba-4763-855c-c870142841f9#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6",
+  "value": 1.8598613190907223,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2b609b0d-0606-4afb-a94a-51857a3f396f",
+  "value": -0.08517834874230559,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "2b609b0d-0606-4afb-a94a-51857a3f396f#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "337d0279-b5f6-490e-b5ee-cddea1963b5c",
+  "value": 0.19730759115451185,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "337d0279-b5f6-490e-b5ee-cddea1963b5c#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3809f7fc-6ef8-4b4b-bc23-84271da27661",
+  "value": -0.0028015519649050857,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "3809f7fc-6ef8-4b4b-bc23-84271da27661#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "4f892fd3-92d3-4fdd-b99b-65c953d1f526",
+  "value": -0.17639772774247647,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "4f892fd3-92d3-4fdd-b99b-65c953d1f526#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81",
+  "value": -0.15390087209607453,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2",
+  "value": -0.33857124120908655,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "596bddf2-390f-4630-b2f5-7d53ec0f5301",
+  "value": -0.18018450167326527,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "596bddf2-390f-4630-b2f5-7d53ec0f5301#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "659e5fe3-4428-4897-abef-225b2dac0b78",
+  "value": -0.13605387832833424,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "659e5fe3-4428-4897-abef-225b2dac0b78#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "66c62c24-78cb-48e8-823b-57e468a9cea6",
+  "value": -0.5386586867689063,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "66c62c24-78cb-48e8-823b-57e468a9cea6#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "72a48826-3d67-4eaa-a383-ec4556f3ed00",
+  "value": -0.04171772463891471,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "72a48826-3d67-4eaa-a383-ec4556f3ed00#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "75613414-6674-4945-a500-2ef7b6bca997",
+  "value": 0.617237749928027,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "75613414-6674-4945-a500-2ef7b6bca997#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e0ca02e-864e-421c-af44-91b0f5441149",
+  "value": 0.5052593838346777,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "7e0ca02e-864e-421c-af44-91b0f5441149#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e647fdb-789f-4f2d-aab5-79e19445e07b",
+  "value": -0.1645691414719128,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "7e647fdb-789f-4f2d-aab5-79e19445e07b#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3",
+  "value": 0.020766601246116928,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8ac767c5-64b2-40a8-90f7-0524942d0ab2",
+  "value": -0.18795981091126648,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "8ac767c5-64b2-40a8-90f7-0524942d0ab2#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8beae8a1-7378-48ae-80de-670e9abf5794",
+  "value": -1.4007680200757666,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "8beae8a1-7378-48ae-80de-670e9abf5794#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8e9dd511-087b-428d-8bb3-37880a5a05e9",
+  "value": 0.27476771489672214,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "8e9dd511-087b-428d-8bb3-37880a5a05e9#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e",
+  "value": 0.16793169433863414,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a",
+  "value": 0.6883063062641293,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "b9d55b96-f664-417e-ba22-7f10fb250af3",
+  "value": 0.05580119420881813,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "b9d55b96-f664-417e-ba22-7f10fb250af3#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "bb923986-9865-481e-9d3f-6ada589f31b9",
+  "value": 0.2777352054633985,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "bb923986-9865-481e-9d3f-6ada589f31b9#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e",
+  "value": 0.1817575038956145,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "d10bf000-2bc2-4fc8-8e23-9a4bf9d0201a",
+  "value": 0.03712661510245235,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "d10bf000-2bc2-4fc8-8e23-9a4bf9d0201a#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de053d15-860a-412a-a338-6c1087808367",
+  "value": -0.7591377385993276,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "de053d15-860a-412a-a338-6c1087808367#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de9f194a-7ae7-4053-83e5-a1e81ab50d42",
+  "value": 0.28619153829135535,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "de9f194a-7ae7-4053-83e5-a1e81ab50d42#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd",
+  "value": 0.0214645585162338,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e19da6a6-e1b2-498f-93be-710e359297aa",
+  "value": 0.37724195134240374,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "e19da6a6-e1b2-498f-93be-710e359297aa#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "ec32fcd8-2ce9-476d-9033-f3536cb8d590",
+  "value": -0.05472896065378721,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "ec32fcd8-2ce9-476d-9033-f3536cb8d590#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f03eda33-c21c-42b0-9b4d-a418104207d4",
+  "value": 0.4112027009803372,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "f03eda33-c21c-42b0-9b4d-a418104207d4#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec",
+  "value": -0.2885884124682231,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261",
+  "value": 0.15869221358720875,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fab5e263-56c7-43df-b0b9-345a659ac005",
+  "value": -0.6669249034470595,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "fab5e263-56c7-43df-b0b9-345a659ac005#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fbf5e167-4cff-412d-aae7-185a38bd3366",
+  "value": -0.04906853884535563,
+  "span": [
+   "2024-12-24",
+   "2025-03-18"
+  ],
+  "exposed": false,
+  "cluster": "fbf5e167-4cff-412d-aae7-185a38bd3366#ctrl3",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53",
+  "value": 1.6210567091204913,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "10fc26c1-5eba-4763-855c-c870142841f9",
+  "value": -0.5019443055926982,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "10fc26c1-5eba-4763-855c-c870142841f9#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6",
+  "value": -0.6262240893931096,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2b609b0d-0606-4afb-a94a-51857a3f396f",
+  "value": -0.32380259669362355,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "2b609b0d-0606-4afb-a94a-51857a3f396f#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "337d0279-b5f6-490e-b5ee-cddea1963b5c",
+  "value": 0.22600226683994348,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "337d0279-b5f6-490e-b5ee-cddea1963b5c#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3809f7fc-6ef8-4b4b-bc23-84271da27661",
+  "value": -1.0866899012258346,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "3809f7fc-6ef8-4b4b-bc23-84271da27661#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3b207193-98a9-4a4e-b145-60334083f3d1",
+  "value": 1.7703946467303582,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "3b207193-98a9-4a4e-b145-60334083f3d1#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "4f892fd3-92d3-4fdd-b99b-65c953d1f526",
+  "value": -0.3588202515252784,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "4f892fd3-92d3-4fdd-b99b-65c953d1f526#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81",
+  "value": -0.059203859590744715,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2",
+  "value": 1.4890468163141515,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "596bddf2-390f-4630-b2f5-7d53ec0f5301",
+  "value": -0.19482044816406635,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "596bddf2-390f-4630-b2f5-7d53ec0f5301#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "66c62c24-78cb-48e8-823b-57e468a9cea6",
+  "value": -1.421967990386851,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "66c62c24-78cb-48e8-823b-57e468a9cea6#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1",
+  "value": 0.1985862328995501,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "72a48826-3d67-4eaa-a383-ec4556f3ed00",
+  "value": 0.643073147385992,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "72a48826-3d67-4eaa-a383-ec4556f3ed00#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "75613414-6674-4945-a500-2ef7b6bca997",
+  "value": 0.2841321127676426,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "75613414-6674-4945-a500-2ef7b6bca997#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e0ca02e-864e-421c-af44-91b0f5441149",
+  "value": -0.6731533046788706,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "7e0ca02e-864e-421c-af44-91b0f5441149#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e647fdb-789f-4f2d-aab5-79e19445e07b",
+  "value": -0.19861719568623154,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "7e647fdb-789f-4f2d-aab5-79e19445e07b#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3",
+  "value": -0.25225936608003885,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8ac767c5-64b2-40a8-90f7-0524942d0ab2",
+  "value": -0.016917150877510286,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "8ac767c5-64b2-40a8-90f7-0524942d0ab2#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8beae8a1-7378-48ae-80de-670e9abf5794",
+  "value": 0.5863942799505529,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "8beae8a1-7378-48ae-80de-670e9abf5794#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8e9dd511-087b-428d-8bb3-37880a5a05e9",
+  "value": 1.0576292126044067,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "8e9dd511-087b-428d-8bb3-37880a5a05e9#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e",
+  "value": -1.0620048396860473,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a",
+  "value": -2.005340896437003,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "b9d55b96-f664-417e-ba22-7f10fb250af3",
+  "value": 1.0542279585362084,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "b9d55b96-f664-417e-ba22-7f10fb250af3#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "bb923986-9865-481e-9d3f-6ada589f31b9",
+  "value": -0.8096395812061663,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "bb923986-9865-481e-9d3f-6ada589f31b9#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c735498a-821c-4718-a4e1-56cf49a90408",
+  "value": -0.9763281861779897,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "c735498a-821c-4718-a4e1-56cf49a90408#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e",
+  "value": 0.1129424190718951,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de053d15-860a-412a-a338-6c1087808367",
+  "value": 0.06339135868829862,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "de053d15-860a-412a-a338-6c1087808367#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd",
+  "value": -0.4548947186141055,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e19da6a6-e1b2-498f-93be-710e359297aa",
+  "value": -0.5990893344827074,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "e19da6a6-e1b2-498f-93be-710e359297aa#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "ec32fcd8-2ce9-476d-9033-f3536cb8d590",
+  "value": -0.7570806413377673,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "ec32fcd8-2ce9-476d-9033-f3536cb8d590#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec",
+  "value": -0.6235059333400998,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261",
+  "value": 0.12667363441720383,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fab5e263-56c7-43df-b0b9-345a659ac005",
+  "value": -0.17854966049100116,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "fab5e263-56c7-43df-b0b9-345a659ac005#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fbf5e167-4cff-412d-aae7-185a38bd3366",
+  "value": -0.2153057979595398,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "fbf5e167-4cff-412d-aae7-185a38bd3366#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7",
+  "value": -0.7878884699040988,
+  "span": [
+   "2025-05-07",
+   "2025-07-06"
+  ],
+  "exposed": false,
+  "cluster": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7#ctrl4",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "659e5fe3-4428-4897-abef-225b2dac0b78",
+  "value": 0.1398255981248857,
+  "span": [
+   "2025-06-19",
+   "2025-08-18"
+  ],
+  "exposed": false,
+  "cluster": "659e5fe3-4428-4897-abef-225b2dac0b78#ctrl5",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de9f194a-7ae7-4053-83e5-a1e81ab50d42",
+  "value": -0.1874619589766593,
+  "span": [
+   "2025-06-19",
+   "2025-08-18"
+  ],
+  "exposed": false,
+  "cluster": "de9f194a-7ae7-4053-83e5-a1e81ab50d42#ctrl5",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "efcbc2b0-6f55-4113-86ce-61e9d4964727",
+  "value": -0.6120926567288436,
+  "span": [
+   "2025-06-19",
+   "2025-08-18"
+  ],
+  "exposed": false,
+  "cluster": "efcbc2b0-6f55-4113-86ce-61e9d4964727#ctrl5",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53",
+  "value": -0.2355768236778921,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0d4ad509-ec6b-44e5-8f42-b3465af526c0",
+  "value": -0.8063303590383155,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "0d4ad509-ec6b-44e5-8f42-b3465af526c0#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "10fc26c1-5eba-4763-855c-c870142841f9",
+  "value": -0.3301168039481542,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "10fc26c1-5eba-4763-855c-c870142841f9#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6",
+  "value": 0.35884096908762875,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2b609b0d-0606-4afb-a94a-51857a3f396f",
+  "value": 0.04252605878320429,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "2b609b0d-0606-4afb-a94a-51857a3f396f#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "337d0279-b5f6-490e-b5ee-cddea1963b5c",
+  "value": -0.10266027225130131,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "337d0279-b5f6-490e-b5ee-cddea1963b5c#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3809f7fc-6ef8-4b4b-bc23-84271da27661",
+  "value": -0.39975080684472575,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "3809f7fc-6ef8-4b4b-bc23-84271da27661#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3b207193-98a9-4a4e-b145-60334083f3d1",
+  "value": 0.07205879110878641,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "3b207193-98a9-4a4e-b145-60334083f3d1#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "4f892fd3-92d3-4fdd-b99b-65c953d1f526",
+  "value": -0.4449315516963963,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "4f892fd3-92d3-4fdd-b99b-65c953d1f526#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81",
+  "value": 1.4342577312046265,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2",
+  "value": -0.6056793413757817,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "596bddf2-390f-4630-b2f5-7d53ec0f5301",
+  "value": -0.533685935179465,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "596bddf2-390f-4630-b2f5-7d53ec0f5301#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "5b827790-ceb1-44b5-933a-e16acab93c34",
+  "value": -0.03309717822430013,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "5b827790-ceb1-44b5-933a-e16acab93c34#ctrl7",
+  "category": "team"
+ },
+ {
+  "neighbour": "66c62c24-78cb-48e8-823b-57e468a9cea6",
+  "value": -0.043367229115129836,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "66c62c24-78cb-48e8-823b-57e468a9cea6#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1",
+  "value": -0.2591105899131729,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "72a48826-3d67-4eaa-a383-ec4556f3ed00",
+  "value": -0.8477687680010635,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "72a48826-3d67-4eaa-a383-ec4556f3ed00#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "75613414-6674-4945-a500-2ef7b6bca997",
+  "value": -0.0831355957403926,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "75613414-6674-4945-a500-2ef7b6bca997#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e0ca02e-864e-421c-af44-91b0f5441149",
+  "value": 1.3878176709493732,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "7e0ca02e-864e-421c-af44-91b0f5441149#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e647fdb-789f-4f2d-aab5-79e19445e07b",
+  "value": -0.3594267453122934,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "7e647fdb-789f-4f2d-aab5-79e19445e07b#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3",
+  "value": 1.256080467833365,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8ac767c5-64b2-40a8-90f7-0524942d0ab2",
+  "value": -0.004999987182467749,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "8ac767c5-64b2-40a8-90f7-0524942d0ab2#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8beae8a1-7378-48ae-80de-670e9abf5794",
+  "value": -2.8358626750829368,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "8beae8a1-7378-48ae-80de-670e9abf5794#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8e9dd511-087b-428d-8bb3-37880a5a05e9",
+  "value": 0.07088044455398028,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "8e9dd511-087b-428d-8bb3-37880a5a05e9#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e",
+  "value": -1.0898323101256322,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a",
+  "value": 0.34409161331051563,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "b9d55b96-f664-417e-ba22-7f10fb250af3",
+  "value": -0.2743020748120685,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "b9d55b96-f664-417e-ba22-7f10fb250af3#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e",
+  "value": -0.49962064789205296,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de053d15-860a-412a-a338-6c1087808367",
+  "value": 2.0243905524994275,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "de053d15-860a-412a-a338-6c1087808367#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd",
+  "value": 0.25834419906651407,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e19da6a6-e1b2-498f-93be-710e359297aa",
+  "value": -0.42003776364826423,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "e19da6a6-e1b2-498f-93be-710e359297aa#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "ec32fcd8-2ce9-476d-9033-f3536cb8d590",
+  "value": -0.04378579599823218,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "ec32fcd8-2ce9-476d-9033-f3536cb8d590#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec",
+  "value": 0.33646581980401835,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261",
+  "value": 1.1000520256506596,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fab5e263-56c7-43df-b0b9-345a659ac005",
+  "value": 1.406165774273725,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "fab5e263-56c7-43df-b0b9-345a659ac005#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fbf5e167-4cff-412d-aae7-185a38bd3366",
+  "value": -0.18048643487860858,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "fbf5e167-4cff-412d-aae7-185a38bd3366#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7",
+  "value": -1.1783414872316387,
+  "span": [
+   "2025-07-30",
+   "2025-09-28"
+  ],
+  "exposed": false,
+  "cluster": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7#ctrl7",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "10c1c2e4-97f4-45f8-ab4a-3a1b17716f1f",
+  "value": -1.9601758632593196,
+  "span": [
+   "2025-08-15",
+   "2025-10-14"
+  ],
+  "exposed": false,
+  "cluster": "10c1c2e4-97f4-45f8-ab4a-3a1b17716f1f#ctrl8",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "02e53947-43e1-459b-a1e2-acc6cef92058",
+  "value": 0.5266001180572822,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "02e53947-43e1-459b-a1e2-acc6cef92058#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53",
+  "value": -0.34664938987516064,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0d4ad509-ec6b-44e5-8f42-b3465af526c0",
+  "value": -0.42916247622022263,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "0d4ad509-ec6b-44e5-8f42-b3465af526c0#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "10fc26c1-5eba-4763-855c-c870142841f9",
+  "value": -0.3769233636845581,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "10fc26c1-5eba-4763-855c-c870142841f9#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6",
+  "value": -0.284322833931708,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2b609b0d-0606-4afb-a94a-51857a3f396f",
+  "value": 0.11615623621266236,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "2b609b0d-0606-4afb-a94a-51857a3f396f#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "337d0279-b5f6-490e-b5ee-cddea1963b5c",
+  "value": 0.29365648287605683,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "337d0279-b5f6-490e-b5ee-cddea1963b5c#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3809f7fc-6ef8-4b4b-bc23-84271da27661",
+  "value": -0.33622200159241933,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "3809f7fc-6ef8-4b4b-bc23-84271da27661#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3b207193-98a9-4a4e-b145-60334083f3d1",
+  "value": -0.1147002317148999,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "3b207193-98a9-4a4e-b145-60334083f3d1#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "4f892fd3-92d3-4fdd-b99b-65c953d1f526",
+  "value": -0.09888969257070185,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "4f892fd3-92d3-4fdd-b99b-65c953d1f526#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2",
+  "value": -0.3760826311098498,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "567a2a00-4630-4ffd-a8a1-1115a5374fe0",
+  "value": -0.08335447638626824,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "567a2a00-4630-4ffd-a8a1-1115a5374fe0#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "596bddf2-390f-4630-b2f5-7d53ec0f5301",
+  "value": -0.4810728061989864,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "596bddf2-390f-4630-b2f5-7d53ec0f5301#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "5b827790-ceb1-44b5-933a-e16acab93c34",
+  "value": 0.4525762818028199,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "5b827790-ceb1-44b5-933a-e16acab93c34#ctrl9",
+  "category": "team"
+ },
+ {
+  "neighbour": "659e5fe3-4428-4897-abef-225b2dac0b78",
+  "value": 0.018836982089038824,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "659e5fe3-4428-4897-abef-225b2dac0b78#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "66c62c24-78cb-48e8-823b-57e468a9cea6",
+  "value": 0.010989003118410763,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "66c62c24-78cb-48e8-823b-57e468a9cea6#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1",
+  "value": -0.02623861781950652,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "72a48826-3d67-4eaa-a383-ec4556f3ed00",
+  "value": -0.09880228188095873,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "72a48826-3d67-4eaa-a383-ec4556f3ed00#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "75613414-6674-4945-a500-2ef7b6bca997",
+  "value": 0.9502508575809857,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "75613414-6674-4945-a500-2ef7b6bca997#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e0ca02e-864e-421c-af44-91b0f5441149",
+  "value": -0.5501569680138211,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "7e0ca02e-864e-421c-af44-91b0f5441149#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e647fdb-789f-4f2d-aab5-79e19445e07b",
+  "value": -0.1993116597285968,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "7e647fdb-789f-4f2d-aab5-79e19445e07b#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3",
+  "value": -0.1248446953979127,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8854519a-7d53-4089-a869-ea9acf774957",
+  "value": 1.4553467326486969,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "8854519a-7d53-4089-a869-ea9acf774957#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8ac767c5-64b2-40a8-90f7-0524942d0ab2",
+  "value": 0.52222300147399,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "8ac767c5-64b2-40a8-90f7-0524942d0ab2#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8beae8a1-7378-48ae-80de-670e9abf5794",
+  "value": 0.25827765187289775,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "8beae8a1-7378-48ae-80de-670e9abf5794#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8e9dd511-087b-428d-8bb3-37880a5a05e9",
+  "value": -0.18910574190022833,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "8e9dd511-087b-428d-8bb3-37880a5a05e9#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e",
+  "value": 0.5466448048184388,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a",
+  "value": 0.19443921650874896,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "af21247e-101a-4629-bf98-7f54aed041de",
+  "value": -1.0933120840067294,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "af21247e-101a-4629-bf98-7f54aed041de#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "b9d55b96-f664-417e-ba22-7f10fb250af3",
+  "value": -0.2967679032360833,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "b9d55b96-f664-417e-ba22-7f10fb250af3#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "bb923986-9865-481e-9d3f-6ada589f31b9",
+  "value": 0.34664988523895346,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "bb923986-9865-481e-9d3f-6ada589f31b9#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e",
+  "value": 0.11967067484668632,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de053d15-860a-412a-a338-6c1087808367",
+  "value": 0.09533637465942935,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "de053d15-860a-412a-a338-6c1087808367#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de9f194a-7ae7-4053-83e5-a1e81ab50d42",
+  "value": 0.2163959172270449,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "de9f194a-7ae7-4053-83e5-a1e81ab50d42#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd",
+  "value": -0.137071036429694,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e19da6a6-e1b2-498f-93be-710e359297aa",
+  "value": 1.022790449851953,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "e19da6a6-e1b2-498f-93be-710e359297aa#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "ec32fcd8-2ce9-476d-9033-f3536cb8d590",
+  "value": -0.026326914952528407,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "ec32fcd8-2ce9-476d-9033-f3536cb8d590#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec",
+  "value": -0.22577262161873934,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261",
+  "value": 0.1481136559535957,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fbf5e167-4cff-412d-aae7-185a38bd3366",
+  "value": 0.11413168320882362,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "fbf5e167-4cff-412d-aae7-185a38bd3366#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7",
+  "value": -0.08380371606764198,
+  "span": [
+   "2025-10-08",
+   "2025-12-28"
+  ],
+  "exposed": false,
+  "cluster": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7#ctrl9",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "02e53947-43e1-459b-a1e2-acc6cef92058",
+  "value": 0.9957792646894316,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "02e53947-43e1-459b-a1e2-acc6cef92058#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53",
+  "value": 0.17718887440514194,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0d4ad509-ec6b-44e5-8f42-b3465af526c0",
+  "value": 0.028499990176027685,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "0d4ad509-ec6b-44e5-8f42-b3465af526c0#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "10c1c2e4-97f4-45f8-ab4a-3a1b17716f1f",
+  "value": -0.000718046943249888,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "10c1c2e4-97f4-45f8-ab4a-3a1b17716f1f#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "10fc26c1-5eba-4763-855c-c870142841f9",
+  "value": 0.21068812005081428,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "10fc26c1-5eba-4763-855c-c870142841f9#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6",
+  "value": -0.7797704722313955,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2b609b0d-0606-4afb-a94a-51857a3f396f",
+  "value": -0.09054726748619277,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "2b609b0d-0606-4afb-a94a-51857a3f396f#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3226423d-e312-4ee9-8775-d7c5cac3f38c",
+  "value": 0.09754315430863729,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "3226423d-e312-4ee9-8775-d7c5cac3f38c#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "337d0279-b5f6-490e-b5ee-cddea1963b5c",
+  "value": 0.21760636382599743,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "337d0279-b5f6-490e-b5ee-cddea1963b5c#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3809f7fc-6ef8-4b4b-bc23-84271da27661",
+  "value": 1.0014242733763083,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "3809f7fc-6ef8-4b4b-bc23-84271da27661#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "389244d8-3cd7-44bc-a54a-d17649032ede",
+  "value": -0.08638764964831763,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "389244d8-3cd7-44bc-a54a-d17649032ede#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3b207193-98a9-4a4e-b145-60334083f3d1",
+  "value": 1.4261520354111268,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "3b207193-98a9-4a4e-b145-60334083f3d1#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "4f892fd3-92d3-4fdd-b99b-65c953d1f526",
+  "value": -0.1708741709536038,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "4f892fd3-92d3-4fdd-b99b-65c953d1f526#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81",
+  "value": 2.0293019374533596,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2",
+  "value": -0.07040626706259959,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "567a2a00-4630-4ffd-a8a1-1115a5374fe0",
+  "value": -0.14503075164518192,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "567a2a00-4630-4ffd-a8a1-1115a5374fe0#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "596bddf2-390f-4630-b2f5-7d53ec0f5301",
+  "value": -0.015781386814940557,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "596bddf2-390f-4630-b2f5-7d53ec0f5301#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "659e5fe3-4428-4897-abef-225b2dac0b78",
+  "value": -0.27802016154004405,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "659e5fe3-4428-4897-abef-225b2dac0b78#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "66c62c24-78cb-48e8-823b-57e468a9cea6",
+  "value": -0.5753917505295902,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "66c62c24-78cb-48e8-823b-57e468a9cea6#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "6906e655-1337-415a-b06c-e9f105a211e3",
+  "value": 0.873386983489443,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "6906e655-1337-415a-b06c-e9f105a211e3#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1",
+  "value": 0.4859736387995625,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "72a48826-3d67-4eaa-a383-ec4556f3ed00",
+  "value": -0.09268652544856586,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "72a48826-3d67-4eaa-a383-ec4556f3ed00#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "75613414-6674-4945-a500-2ef7b6bca997",
+  "value": 0.9241035506926454,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "75613414-6674-4945-a500-2ef7b6bca997#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e0ca02e-864e-421c-af44-91b0f5441149",
+  "value": -0.346744755626556,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "7e0ca02e-864e-421c-af44-91b0f5441149#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e647fdb-789f-4f2d-aab5-79e19445e07b",
+  "value": -0.08352943328176593,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "7e647fdb-789f-4f2d-aab5-79e19445e07b#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3",
+  "value": 0.35872356052506277,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8854519a-7d53-4089-a869-ea9acf774957",
+  "value": -0.1610845747623624,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "8854519a-7d53-4089-a869-ea9acf774957#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8ac767c5-64b2-40a8-90f7-0524942d0ab2",
+  "value": 0.36945709883021316,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "8ac767c5-64b2-40a8-90f7-0524942d0ab2#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8beae8a1-7378-48ae-80de-670e9abf5794",
+  "value": -0.5630309212389688,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "8beae8a1-7378-48ae-80de-670e9abf5794#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8e9dd511-087b-428d-8bb3-37880a5a05e9",
+  "value": -1.0169131971096372,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "8e9dd511-087b-428d-8bb3-37880a5a05e9#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "93e302fa-dc76-44a8-ba51-7ce2b7472ce0",
+  "value": -1.0834911401566532,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "93e302fa-dc76-44a8-ba51-7ce2b7472ce0#ctrl10",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e",
+  "value": 1.0858150390666392,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a",
+  "value": 0.31263100805739397,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "af21247e-101a-4629-bf98-7f54aed041de",
+  "value": 0.5182371634384038,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "af21247e-101a-4629-bf98-7f54aed041de#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "b12dd553-81d3-4324-ac59-2ffbf5527da4",
+  "value": 1.7130574612306195,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "b12dd553-81d3-4324-ac59-2ffbf5527da4#ctrl10",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "bb923986-9865-481e-9d3f-6ada589f31b9",
+  "value": 1.0193484578935172,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "bb923986-9865-481e-9d3f-6ada589f31b9#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e",
+  "value": -0.03446487357249196,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "d2ca48fa-7989-44f7-982c-17465768c5b2",
+  "value": 0.2666312251526229,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "d2ca48fa-7989-44f7-982c-17465768c5b2#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de053d15-860a-412a-a338-6c1087808367",
+  "value": 0.24333928389075357,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "de053d15-860a-412a-a338-6c1087808367#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de9f194a-7ae7-4053-83e5-a1e81ab50d42",
+  "value": 0.6948503767047219,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "de9f194a-7ae7-4053-83e5-a1e81ab50d42#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd",
+  "value": 0.28515621684590503,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e19da6a6-e1b2-498f-93be-710e359297aa",
+  "value": -0.5294169128981354,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "e19da6a6-e1b2-498f-93be-710e359297aa#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e40a2961-c232-4a68-8eae-1bf81e414107",
+  "value": 0.5424296211237194,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "e40a2961-c232-4a68-8eae-1bf81e414107#ctrl10",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "ec32fcd8-2ce9-476d-9033-f3536cb8d590",
+  "value": -0.24382494298910848,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "ec32fcd8-2ce9-476d-9033-f3536cb8d590#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f03eda33-c21c-42b0-9b4d-a418104207d4",
+  "value": 0.3307415619122278,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "f03eda33-c21c-42b0-9b4d-a418104207d4#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec",
+  "value": 0.07736593271289965,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261",
+  "value": -0.13198445874824036,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f99e5e41-0d9b-4589-8d0a-42eb7a68b5fa",
+  "value": 0.06728403892948545,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "f99e5e41-0d9b-4589-8d0a-42eb7a68b5fa#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fab5e263-56c7-43df-b0b9-345a659ac005",
+  "value": 0.6817895241076951,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "fab5e263-56c7-43df-b0b9-345a659ac005#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fbf5e167-4cff-412d-aae7-185a38bd3366",
+  "value": -0.961549403262116,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "fbf5e167-4cff-412d-aae7-185a38bd3366#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7",
+  "value": 1.042478150242919,
+  "span": [
+   "2026-03-09",
+   "2026-05-08"
+  ],
+  "exposed": false,
+  "cluster": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7#ctrl10",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "150cbebd-d7f6-439c-8009-fbb9145730b0",
+  "value": 1.3044643428722584,
+  "span": [
+   "2026-03-30",
+   "2026-05-29"
+  ],
+  "exposed": false,
+  "cluster": "150cbebd-d7f6-439c-8009-fbb9145730b0#ctrl11",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "28c2f1dd-412e-4e0e-bb20-ca4f4efc5589",
+  "value": 0.4690908039883759,
+  "span": [
+   "2026-03-30",
+   "2026-05-29"
+  ],
+  "exposed": false,
+  "cluster": "28c2f1dd-412e-4e0e-bb20-ca4f4efc5589#ctrl11",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "b9d55b96-f664-417e-ba22-7f10fb250af3",
+  "value": -1.127036172549631,
+  "span": [
+   "2026-04-29",
+   "2026-06-28"
+  ],
+  "exposed": false,
+  "cluster": "b9d55b96-f664-417e-ba22-7f10fb250af3#ctrl12",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "efcbc2b0-6f55-4113-86ce-61e9d4964727",
+  "value": 0.42509069125817084,
+  "span": [
+   "2026-04-29",
+   "2026-06-28"
+  ],
+  "exposed": false,
+  "cluster": "efcbc2b0-6f55-4113-86ce-61e9d4964727#ctrl12",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "02e53947-43e1-459b-a1e2-acc6cef92058",
+  "value": -0.27036282780489557,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "02e53947-43e1-459b-a1e2-acc6cef92058#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0b2dea19-07ad-49dd-b32a-4e1d4d4575e6",
+  "value": 0.784988255000242,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "0b2dea19-07ad-49dd-b32a-4e1d4d4575e6#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53",
+  "value": -0.3875699371252656,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "0c6cd016-2cd0-4352-bcaf-ca7b09c18f53#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "0d4ad509-ec6b-44e5-8f42-b3465af526c0",
+  "value": -0.32169231049752217,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "0d4ad509-ec6b-44e5-8f42-b3465af526c0#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "10fc26c1-5eba-4763-855c-c870142841f9",
+  "value": 0.5224748937345935,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "10fc26c1-5eba-4763-855c-c870142841f9#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6",
+  "value": -0.7072686738608374,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "24424ca0-e72b-43ff-b6b1-f4ea636a67b6#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "28c2f1dd-412e-4e0e-bb20-ca4f4efc5589",
+  "value": 0.6301884385818927,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "28c2f1dd-412e-4e0e-bb20-ca4f4efc5589#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "2b609b0d-0606-4afb-a94a-51857a3f396f",
+  "value": 0.11056511186998733,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "2b609b0d-0606-4afb-a94a-51857a3f396f#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3226423d-e312-4ee9-8775-d7c5cac3f38c",
+  "value": -0.615522018529409,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "3226423d-e312-4ee9-8775-d7c5cac3f38c#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "337d0279-b5f6-490e-b5ee-cddea1963b5c",
+  "value": -0.22900230735874832,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "337d0279-b5f6-490e-b5ee-cddea1963b5c#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3809f7fc-6ef8-4b4b-bc23-84271da27661",
+  "value": 0.16468543279015618,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "3809f7fc-6ef8-4b4b-bc23-84271da27661#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "389244d8-3cd7-44bc-a54a-d17649032ede",
+  "value": -0.3787037670475647,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "389244d8-3cd7-44bc-a54a-d17649032ede#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3b207193-98a9-4a4e-b145-60334083f3d1",
+  "value": -0.2777810014690693,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "3b207193-98a9-4a4e-b145-60334083f3d1#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "3ca64ce3-bed3-40a4-a351-bbccaa21da99",
+  "value": -0.17431432388181836,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "3ca64ce3-bed3-40a4-a351-bbccaa21da99#ctrl13",
+  "category": "team"
+ },
+ {
+  "neighbour": "4f892fd3-92d3-4fdd-b99b-65c953d1f526",
+  "value": -0.5453716338887367,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "4f892fd3-92d3-4fdd-b99b-65c953d1f526#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81",
+  "value": 0.29598667931152356,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "54a31fbd-39ea-4a7c-bbd0-bf448fd67a81#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2",
+  "value": 1.2181106672193518,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "54f3e523-f778-4fe3-ad05-1ebcc6a08be2#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "596bddf2-390f-4630-b2f5-7d53ec0f5301",
+  "value": 0.6301937014492363,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "596bddf2-390f-4630-b2f5-7d53ec0f5301#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "5cbb34fa-f3fe-4be9-a766-fdc81f830711",
+  "value": -0.7112433228003668,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "5cbb34fa-f3fe-4be9-a766-fdc81f830711#ctrl13",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "5ff7c9f5-0ead-4c62-a72b-31ba08c18daa",
+  "value": -0.6915125215639331,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "5ff7c9f5-0ead-4c62-a72b-31ba08c18daa#ctrl13",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "66c62c24-78cb-48e8-823b-57e468a9cea6",
+  "value": 1.2688663760619467,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "66c62c24-78cb-48e8-823b-57e468a9cea6#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "6906e655-1337-415a-b06c-e9f105a211e3",
+  "value": -0.8885569389834765,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "6906e655-1337-415a-b06c-e9f105a211e3#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1",
+  "value": 0.5489189410839638,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "6b1e3a64-c66b-4f35-84e2-abe9f02e1fd1#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "72a48826-3d67-4eaa-a383-ec4556f3ed00",
+  "value": 0.19188129949639088,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "72a48826-3d67-4eaa-a383-ec4556f3ed00#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "75613414-6674-4945-a500-2ef7b6bca997",
+  "value": -0.354079542733842,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "75613414-6674-4945-a500-2ef7b6bca997#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e0ca02e-864e-421c-af44-91b0f5441149",
+  "value": 0.06055555530903456,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "7e0ca02e-864e-421c-af44-91b0f5441149#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "7e647fdb-789f-4f2d-aab5-79e19445e07b",
+  "value": 0.38400711906098123,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "7e647fdb-789f-4f2d-aab5-79e19445e07b#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3",
+  "value": 0.20660280096884298,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "879b65f9-833b-48bc-9b3f-b1831ce9e0b3#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8854519a-7d53-4089-a869-ea9acf774957",
+  "value": 0.5491942229057695,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "8854519a-7d53-4089-a869-ea9acf774957#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8a7a6460-fdfd-4aca-be27-7a09e6201c03",
+  "value": -0.15502244346018568,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "8a7a6460-fdfd-4aca-be27-7a09e6201c03#ctrl13",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "8ac767c5-64b2-40a8-90f7-0524942d0ab2",
+  "value": 0.07853885706377081,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "8ac767c5-64b2-40a8-90f7-0524942d0ab2#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "8e9dd511-087b-428d-8bb3-37880a5a05e9",
+  "value": 0.7486247850471015,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "8e9dd511-087b-428d-8bb3-37880a5a05e9#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e",
+  "value": 0.1669841839221898,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "a3ddcb47-51c8-4f15-8eac-fa69edad3d7e#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a",
+  "value": -0.5417605555670312,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "a7eaf4e4-2922-445b-aaf6-3685b9ce324a#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "af21247e-101a-4629-bf98-7f54aed041de",
+  "value": 0.6698493791556325,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "af21247e-101a-4629-bf98-7f54aed041de#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "b9d55b96-f664-417e-ba22-7f10fb250af3",
+  "value": 0.10961881411817884,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "b9d55b96-f664-417e-ba22-7f10fb250af3#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "bb923986-9865-481e-9d3f-6ada589f31b9",
+  "value": 1.2546514589338746,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "bb923986-9865-481e-9d3f-6ada589f31b9#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c735498a-821c-4718-a4e1-56cf49a90408",
+  "value": 0.6428365451336195,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "c735498a-821c-4718-a4e1-56cf49a90408#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e",
+  "value": 0.32290271911695756,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "c95199f2-bd0c-44cc-9ba6-8586fec2a91e#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "d2ca48fa-7989-44f7-982c-17465768c5b2",
+  "value": -0.026349197095775507,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "d2ca48fa-7989-44f7-982c-17465768c5b2#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "d7880c9a-0e56-4d93-b4b7-87f6d8625bd0",
+  "value": -0.6936961355986301,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "d7880c9a-0e56-4d93-b4b7-87f6d8625bd0#ctrl13",
+  "category": "team"
+ },
+ {
+  "neighbour": "de053d15-860a-412a-a338-6c1087808367",
+  "value": 1.0506747792579736,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "de053d15-860a-412a-a338-6c1087808367#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "de9f194a-7ae7-4053-83e5-a1e81ab50d42",
+  "value": 0.3224990687489079,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "de9f194a-7ae7-4053-83e5-a1e81ab50d42#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd",
+  "value": 0.0842322391252349,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "dfd12020-a69f-4e03-81b4-cbe35c7bb7cd#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e19da6a6-e1b2-498f-93be-710e359297aa",
+  "value": 0.46227757988805435,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "e19da6a6-e1b2-498f-93be-710e359297aa#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "e40a2961-c232-4a68-8eae-1bf81e414107",
+  "value": 1.3356683844156148,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "e40a2961-c232-4a68-8eae-1bf81e414107#ctrl13",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "ec32fcd8-2ce9-476d-9033-f3536cb8d590",
+  "value": 1.1251663113906598,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "ec32fcd8-2ce9-476d-9033-f3536cb8d590#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f03eda33-c21c-42b0-9b4d-a418104207d4",
+  "value": 0.7143245900059372,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "f03eda33-c21c-42b0-9b4d-a418104207d4#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec",
+  "value": 0.2480361502219735,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "f21e94d7-0481-47fe-8843-1ecdcc3b7bec#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261",
+  "value": -1.5374919602110746,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "f2324ef3-1fdd-4ad3-9d20-070d2ff39261#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f4750bc0-1e62-43c3-a0a9-9d719a2a6242",
+  "value": 1.1799942224692215,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "f4750bc0-1e62-43c3-a0a9-9d719a2a6242#ctrl13",
+  "category": "team"
+ },
+ {
+  "neighbour": "f99e5e41-0d9b-4589-8d0a-42eb7a68b5fa",
+  "value": 0.7280760099116456,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "f99e5e41-0d9b-4589-8d0a-42eb7a68b5fa#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fab5e263-56c7-43df-b0b9-345a659ac005",
+  "value": -0.10894801609056463,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "fab5e263-56c7-43df-b0b9-345a659ac005#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fbf5e167-4cff-412d-aae7-185a38bd3366",
+  "value": -0.5062066779096962,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "fbf5e167-4cff-412d-aae7-185a38bd3366#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7",
+  "value": -0.05696682460667747,
+  "span": [
+   "2026-07-15",
+   "2026-09-13"
+  ],
+  "exposed": false,
+  "cluster": "fd0d30f9-a628-49e0-a7ce-fc7a509c6dc7#ctrl13",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "42ce532e-3467-4721-8416-8a240c9ece8f",
+  "value": -0.6094940596286735,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "42ce532e-3467-4721-8416-8a240c9ece8f#ctrl14",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "567a2a00-4630-4ffd-a8a1-1115a5374fe0",
+  "value": -0.019892124177213838,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "567a2a00-4630-4ffd-a8a1-1115a5374fe0#ctrl14",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "5b827790-ceb1-44b5-933a-e16acab93c34",
+  "value": 0.023842196076071145,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "5b827790-ceb1-44b5-933a-e16acab93c34#ctrl14",
+  "category": "team"
+ },
+ {
+  "neighbour": "614aeca6-a861-4f0a-a870-663584f88e9e",
+  "value": -2.565516543626909,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "614aeca6-a861-4f0a-a870-663584f88e9e#ctrl14",
+  "category": "league"
+ },
+ {
+  "neighbour": "659e5fe3-4428-4897-abef-225b2dac0b78",
+  "value": -0.2647440038193555,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "659e5fe3-4428-4897-abef-225b2dac0b78#ctrl14",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "80e4b2cf-81d5-453f-bd5a-d4c2f6ca1f92",
+  "value": -0.03550843709492879,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "80e4b2cf-81d5-453f-bd5a-d4c2f6ca1f92#ctrl14",
+  "category": "team"
+ },
+ {
+  "neighbour": "8beae8a1-7378-48ae-80de-670e9abf5794",
+  "value": 0.5382262325559442,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "8beae8a1-7378-48ae-80de-670e9abf5794#ctrl14",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "b12dd553-81d3-4324-ac59-2ffbf5527da4",
+  "value": 1.9668005179685635,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "b12dd553-81d3-4324-ac59-2ffbf5527da4#ctrl14",
+  "category": "athlete"
+ },
+ {
+  "neighbour": "c14c444f-4358-4cbe-a4f2-0c359b84729d",
+  "value": -0.42956869857615987,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "c14c444f-4358-4cbe-a4f2-0c359b84729d#ctrl14",
+  "category": "team"
+ },
+ {
+  "neighbour": "d10bf000-2bc2-4fc8-8e23-9a4bf9d0201a",
+  "value": 0.31497293268768456,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "d10bf000-2bc2-4fc8-8e23-9a4bf9d0201a#ctrl14",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "efcbc2b0-6f55-4113-86ce-61e9d4964727",
+  "value": -0.6378328676757479,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "efcbc2b0-6f55-4113-86ce-61e9d4964727#ctrl14",
+  "category": "fitness_influencer"
+ },
+ {
+  "neighbour": "f284d317-627a-476c-8ab2-63f03d8098b9",
+  "value": -1.064379897181834,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "f284d317-627a-476c-8ab2-63f03d8098b9#ctrl14",
+  "category": "team"
+ },
+ {
+  "neighbour": "f978a269-e787-4dfc-a90d-b31eb3081f9d",
+  "value": -0.6275607389684246,
+  "span": [
+   "2026-08-31",
+   "2026-11-10"
+  ],
+  "exposed": false,
+  "cluster": "f978a269-e787-4dfc-a90d-b31eb3081f9d#ctrl14",
+  "category": "team"
+ }
+]

@@ -58,6 +58,16 @@ def rnd(a, n=3):
     return [None if x is None or (isinstance(x, float) and np.isnan(x)) else round(float(x), n) for x in a]
 
 
+def gail_scaling():
+    p = ROOT / "models" / "semisynth_scale.json"
+    if not p.exists():
+        return None
+    d = json.loads(p.read_text(encoding="utf-8"))
+    rows = [{"scenario": k, "exposed": int(n), "mean_abs_error": v["mean_abs_error"], "reps": v["reps"]}
+            for k, per in d["results"].items() for n, v in per.items() if v.get("mean_abs_error") is not None]
+    return {"planted_effect": d["planted_effect"], "noise": d["noise"], "rows": rows}
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     env = (ROOT / "backend" / ".env").read_text(encoding="utf-8")
@@ -200,24 +210,49 @@ def main() -> None:
         "semisynthetic": load("sim_semisynthetic_benchmark.json"),
         "sim_lag_power": load("sim_lag_power.json"),
         "label_quality": {k: v for k, v in load("sponsorship_quality.json").items() if k not in ("suggested_to_label",)},
-        # SIMULATED detection curve: scripts/sim_power_curve.py (300 studies per cell, heavy-tailed lifts, unexposed group = 5 x exposed)
+        # Detection curve on REAL outcomes with a planted effect: scripts/run_power_analysis.py (real structure: the 11 real exposed rows against the real controls).
+        # Each share list follows the script's DELTAS: [0 (false alarm), 0.25, 0.50, 0.75, 1.00, 1.50].
         "power_curve": [
-            {"exposed": 16, "effect_0.25": 17, "effect_0.50": 34, "effect_0.75": 61, "effect_1.00": 79, "false_alarm": 9},
-            {"exposed": 19, "effect_0.25": 16, "effect_0.50": 39, "effect_0.75": 69, "effect_1.00": 86, "false_alarm": 8},
-            {"exposed": 40, "effect_0.25": 25, "effect_0.50": 61, "effect_0.75": 91, "effect_1.00": 100, "false_alarm": 7},
-            {"exposed": 81, "effect_0.25": 36, "effect_0.50": 90, "effect_0.75": 99, "effect_1.00": 100, "false_alarm": 5},
-            {"exposed": 160, "effect_0.25": 61, "effect_0.50": 99, "effect_0.75": 100, "effect_1.00": 100, "false_alarm": 7},
-            {"exposed": 320, "effect_0.25": 90, "effect_0.50": 100, "effect_0.75": 100, "effect_1.00": 100, "false_alarm": 5},
+            {"exposed": int(n), "effect_0.25": round(100 * s[1]), "effect_0.50": round(100 * s[2]), "effect_0.75": round(100 * s[3]), "effect_1.00": round(100 * s[4]), "false_alarm": round(100 * s[0])}
+            for n, s in load("power_analysis.json")["real_structure"]["share_detected"].items()
         ],
+        # Hybrid what-if (31 Oct 2026): extra exposed creators are SIMULATED by picking real creators at random and planting the effect on their real outcomes (the "stand_ins" variant:
+        # false alarms stay near 3%). It shows how many exposed cases would be needed; it is never used in a score or reported as a finding.
+        "power_curve_simulated": [
+            {"exposed": int(n), "effect_0.25": round(100 * s[1]), "effect_0.50": round(100 * s[2]), "effect_0.75": round(100 * s[3]), "effect_1.00": round(100 * s[4]), "false_alarm": round(100 * s[0])}
+            for n, s in load("power_analysis.json")["stand_ins"]["share_detected"].items()
+        ],
+        "power_real_exposed": int(load("power_analysis.json")["real_exposed"]),
+        # SIMULATED accuracy of GAIL-R as the number of exposed creators grows (run_semisynth_scale.py, real graph and features, planted effect); absent until that run has been copied to models/
+        "gail_scaling": gail_scaling(),
+        "label_noise": load("label_noise_sensitivity.json") if (ROOT / "models" / "label_noise_sensitivity.json").exists() else None,
+        "spillover_cases": load("spillover_cases.json") if (ROOT / "models" / "spillover_cases.json").exists() else None,
+        # E4 and E5 (31 Oct 2026, scripts/run_e4_e5.py): SIMULATED benchmark plus the real-data E5 sensitivity
+        "e4_e5": load("e4_e5_results.json") if (ROOT / "models" / "e4_e5_results.json").exists() else None,
+    }
+
+    # S10 (30 Oct 2026): the YouTube-vs-Instagram comparison, Granger, ad fatigue, long lag, promotion behaviour and the GAIL real-data results, each from its own results file
+    pairs, fat, ll, promo = load("platform_pairs.json"), load("ad_fatigue.json"), load("long_lag.json"), load("promotion_behaviour.json")
+    s10 = {
+        "pairs": {k: pairs[k] for k in ("window_hours", "pairs", "creators_with_pairs", "median_difference", "median_difference_adjusted", "share_pairs_instagram_better_adjusted",
+                                         "pairs_with_text_overlap", "median_difference_with_overlap", "placebo", "calibration_subtracted", "granger", "limits")}
+                 | {"stronger_platform_counts": {k: sum(c["stronger_platform"] == k for c in pairs["creators"]) for k in ("Instagram", "YouTube", "balanced", "not enough pairs")}},
+        "ad_fatigue": {k: fat[k] for k in ("window_days", "creators", "organic_videos", "results", "limits")},
+        "long_lag": {"method_check_passed": ll["method_check_passed"], "limits": ll["limits"],
+                     "results": [{k: r.get(k) for k in ("name", "n_units", "n_creators", "smallest_p_after_event", "window_of_smallest_p", "detected_after_correction")} for r in ll["results"]]},
+        "promotion": {"disclosure": promo["disclosure"], "response": promo["response"], "limits": promo["limits"]},
+        "gail": load("gail_real_results.json"),
+        "power": {k: v for k, v in load("power_analysis.json").items() if k in ("real_exposed", "real_controls", "real_estimate", "real_se", "deltas", "reps", "real_structure", "limits")},
     }
 
     out = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "s10": s10,
         "s9": s9,
         "s1": {"sentiment": sentiment, "alerts": alert_rows, "lag_posting": load("temporal_lag.json"), "lag_event": load("event_lag.json"),
                "lag_same_creator": load("same_creator_lag.json"), "curves": curves},
         "s2": s2,
-        "s3": {"calibration": load("fusion_calibration.json"), "baseline_weights": [0.4, 0.3, 0.3], "creators": meta, "briefs": briefs},
+        "s3": {"calibration": load("fusion_calibration.json"), "baseline_weights": [0.2, 0.4, 0.4], "creators": meta, "briefs": briefs},
         "s7": {**load("filter_cost_audit.json"), "hand_review": HAND_REVIEW_S7},
         "s8": {**load("link_audit.json"), "hand_review": HAND_REVIEW_S8},
     }

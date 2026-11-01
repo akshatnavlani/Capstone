@@ -1,9 +1,12 @@
-# Backend + frontend together. NOT TESTED on the laptop it was written on (no Docker installed there, 26 Oct 2026): build it once with
+# Backend + frontend together. Build and start with
 #     docker compose up --build
-# and open http://localhost:3000. The database password is read from your shell or from a .env file next to this file (DATABASE_URL), never from the image.
+# then open http://localhost:3000. The database address is read from your shell or from a .env file next to this file (DATABASE_URL), never baked into an image.
 #
-# The backend image is the existing "smoke" image (backend/Dockerfile): it does NOT include ml/ or models/, so inside Docker the GAIL spillover score and the
-# CLIP/BERT creator-feature score fall back to the neutral 0.5 by design (see the comments in backend/Dockerfile). The full models run when the backend is started
+# STATUS (1 Nov 2026): RUN AND TESTED on Docker Desktop 4.97 (engine 29.9.2, WSL 2): both images build, the backend reports healthy, every API endpoint tested answers 200 (health, passport,
+# analysis, alerts, scenario, creators, a real /recommendations request in about 4 s) and all 7 frontend pages answer 200. Needs DATABASE_URL (from the shell or a .env next to this file).
+#
+# The backend image has no ml/ and no checkpoint, so inside Docker the GAIL spillover score and the CLIP/BERT creator-feature score fall back to the neutral 0.5 by design.
+# It does serve the passport, the analysis tab, the platform comparison and the sentiment result files (copied from models/). The full models run when the backend is started
 # outside Docker (python -m uvicorn app.main:app --app-dir backend) from the repository root.
 services:
   backend:
@@ -18,7 +21,10 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://127.0.0.1:8000}
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy

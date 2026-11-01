@@ -112,7 +112,7 @@ export function S3Fusion({ data }: { data: AnalysisData }) {
     <div className="flex flex-col gap-4">
       <Verdict tone="warn" label="Fusion layer: fixed and calibrated as far as the data allows. The weights are documented priors, not fitted.">
         A scale bug was found and fixed: spillover (an engagement lift from -1 to +23) was multiplied straight into a 0-100 score, so 20 creators sat at exactly 100 and every interval spanned the whole range. Spillover is now a percentile, and the interval covers all three branches. There is no
-        outcome data to fit the weights to, so they stay 0.4 / 0.3 / 0.3.
+        outcome data to fit the weights to. On 30 Oct the spillover weight was lowered from 0.4 to 0.2 (sentiment and feature 0.4 each) because the spillover test found nothing and its held-out check did not beat simple baselines; the ranking barely moves (rank correlation about 0.93 with the old weights).
       </Verdict>
 
       <div className="grid gap-3 sm:grid-cols-4">
@@ -191,8 +191,8 @@ export function S3Fusion({ data }: { data: AnalysisData }) {
           format={(v) => `${v.toFixed(1)}/10`}
         />
         <Note>
-          Moving each weight by up to 0.1 keeps a median 9 of the top 10. Only extreme weightings (nearly all weight on one branch) change the ranking a lot. That makes 0.4 / 0.3 / 0.3 a reasonable prior, but it is not fitted: only {cal.labelled_outcomes} creators have an observed outcome, they are what the model was trained on, and
-          sentiment shows no link to that outcome.
+          Moving each weight by up to 0.1 keeps a median 8 of the top 10. Only extreme weightings (nearly all weight on one branch) change the ranking a lot. That makes 0.2 / 0.4 / 0.4 a reasonable prior, but it is not fitted: only {cal.labelled_outcomes} creators have an observed outcome, they are what the model was trained on, and
+          six points cannot support fitting three weights (the apparent links in the table above are in-sample and not evidence).
         </Note>
       </Card>
     </div>

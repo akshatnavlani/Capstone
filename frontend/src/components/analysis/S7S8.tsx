@@ -49,7 +49,7 @@ export function S7Filters({ data }: { data: AnalysisData }) {
       <Card title="Where the 259 creators go" subtitle="The standing demo query. A creator is counted under the first filter that drops it.">
         <div className="mb-2 flex gap-1" role="group" aria-label="before or after the fix">
           {(["before", "after"] as const).map((p) => (
-            <button key={p} type="button" onClick={() => setPhase(p)} className={`rounded-md border px-3 py-1 text-xs font-medium ${p === phase ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900" : "border-zinc-300 dark:border-zinc-700"}`}>
+            <button key={p} type="button" onClick={() => setPhase(p)} className={`rounded-md border px-3 py-1 text-xs font-medium ${p === phase ? "border-accent bg-accent text-background" : "border-zinc-300 dark:border-zinc-700"}`}>
               {p === "before" ? "Before the fix" : "After the fix"}
             </button>
           ))}

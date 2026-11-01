@@ -32,6 +32,9 @@ export default function S9Results({ data }: { data: AnalysisData }) {
   const s9 = data.s9;
   if (!s9) return <Note>This tab needs scripts/export_analysis_dashboard.py to be re-run (the live-results block is missing).</Note>;
   const inv = s9.inventory;
+  const realExposed = s9.power_real_exposed ?? 11;
+  const curveRows = s9.power_curve.map((r) => r.exposed);
+  const nearestRow = curveRows.filter((n) => n <= realExposed).pop() ?? curveRows[0];
   const sp = s9.spillover_restricted_150.shared_brand;
   const coll = s9.spillover_restricted_150.collaboration;
   const real = sp.real;
@@ -301,8 +304,8 @@ export default function S9Results({ data }: { data: AnalysisData }) {
       </Card>
 
       <Card
-        title="How much data would see a smaller effect? (SIMULATED)"
-        subtitle="Share of 300 simulated studies that detect the effect, by number of exposed creators. Engagement changes are heavy-tailed like the real ones."
+        title="How much data would see a smaller effect? (SIMULATED effect on real outcomes)"
+        subtitle="Share of 400 runs that detect a planted effect, by number of exposed creators. Only the effect is made up: the outcomes, windows and categories are the real ones."
       >
         <table className="w-full text-left text-xs">
           <thead className="text-zinc-500">
@@ -317,7 +320,7 @@ export default function S9Results({ data }: { data: AnalysisData }) {
           </thead>
           <tbody>
             {s9.power_curve.map((r) => (
-              <tr key={r.exposed} className={`border-t border-zinc-200 dark:border-zinc-800 ${r.exposed === 19 ? "bg-amber-50 dark:bg-amber-950/20" : ""}`}>
+              <tr key={r.exposed} className={`border-t border-zinc-200 dark:border-zinc-800 ${r.exposed === nearestRow ? "bg-amber-50 dark:bg-amber-950/20" : ""}`}>
                 <td className="py-1.5 pr-3 tabular-nums">{r.exposed}</td>
                 <td className="py-1.5 pr-3 tabular-nums">{r["effect_0.25"]}%</td>
                 <td className="py-1.5 pr-3 tabular-nums">{r["effect_0.50"]}%</td>
@@ -329,10 +332,199 @@ export default function S9Results({ data }: { data: AnalysisData }) {
           </tbody>
         </table>
         <Note>
-          An effect of +0.5 means a creator&apos;s engagement rises by about half. About 81 exposed creators are needed to catch it 90% of the time. The highlighted row is roughly the earlier
-          collaboration-only sample size.
+          Effects are in log units: +0.5 is about a 65% rise in a creator&apos;s median engagement, +1.0 about 2.7 times. The highlighted row is the closest to today&apos;s {realExposed} real exposed observations; rows below
+          it repeat those same real observations (a rough guide, not independent data). So the real-data result of about zero rules out only large spillover. The false-alarm column should stay near 5%.
         </Note>
       </Card>
+
+      {s9.power_curve_simulated && (
+        <Card
+          title="Hybrid what-if: how many collaboration cases would we need? (SIMULATED cases on real outcomes)"
+          subtitle="Extra exposed creators are stood in for by randomly chosen REAL creators whose real outcomes get the planted effect. False alarms stay near 3%, so this table is well calibrated."
+        >
+          <table className="w-full text-left text-xs">
+            <thead className="text-zinc-500">
+              <tr>
+                <th className="pr-3 font-medium">Exposed creators</th>
+                <th className="pr-3 font-medium">+0.25 (1.3x)</th>
+                <th className="pr-3 font-medium">+0.50 (1.65x)</th>
+                <th className="pr-3 font-medium">+0.75 (2.1x)</th>
+                <th className="pr-3 font-medium">+1.00 (2.7x)</th>
+                <th className="font-medium">False alarm</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s9.power_curve_simulated.map((r) => (
+                <tr key={r.exposed} className="border-t border-zinc-200 dark:border-zinc-800">
+                  <td className="py-1.5 pr-3 tabular-nums">{r.exposed}</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{r["effect_0.25"]}%</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{r["effect_0.50"]}%</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{r["effect_0.75"]}%</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{r["effect_1.00"]}%</td>
+                  <td className="py-1.5 tabular-nums">{r.false_alarm}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Note>
+            Read it as a requirement, not a result: about 20 exposed creators are enough to see a 1.65x effect, about 50 for a 1.4x effect, and about 100 or more for a 1.3x effect.
+            The simulated cases are never used in a score and never reported as a finding; the real answer is the one above.
+          </Note>
+        </Card>
+      )}
+
+      {s9.gail_scaling && s9.gail_scaling.rows.length > 0 && (
+        <Card
+          title="How accurate is GAIL-R as exposed creators grow? (SIMULATED)"
+          subtitle={`Real creator graph and features; treatment and outcomes simulated with a planted effect of ${s9.gail_scaling.planted_effect}. Error = how far the estimated effect on the exposed is from the true one (log scale; smaller is better).`}
+        >
+          <table className="w-full text-left text-xs">
+            <thead className="text-zinc-500">
+              <tr>
+                <th className="pr-3 font-medium">Scenario</th>
+                <th className="pr-3 font-medium">Exposed creators</th>
+                <th className="pr-3 font-medium">Average error</th>
+                <th className="font-medium">Repeats</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s9.gail_scaling.rows.map((r) => (
+                <tr key={`${r.scenario}-${r.exposed}`} className="border-t border-zinc-200 dark:border-zinc-800">
+                  <td className="py-1.5 pr-3">{r.scenario}</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{r.exposed}</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{r.mean_abs_error.toFixed(2)}</td>
+                  <td className="py-1.5 tabular-nums">{r.reps}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Note>
+            With clean data the error shrinks as exposed creators grow. With a pre-existing trend it does not, because the bias from the trend dominates, unless the placebo penalty is on (it cuts the error clearly at 80 exposed creators, less so at 40). Only 5 repeats per row, so read the pattern, not the decimals. These numbers come from simulated worlds and are not a finding about real creators.
+          </Note>
+        </Card>
+      )}
+
+      {s9.spillover_cases && (
+        <Card
+          title="Real cases: a linked collaborator posted a sponsored video"
+          subtitle={`The ${s9.spillover_cases.summary.exposed} exposed cases behind the spillover test, best first, next to the ${s9.spillover_cases.summary.unexposed} unexposed ones. Lift is the change in the creator's engagement after versus before (log scale; 0.5 is about +65%).`}
+        >
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            Median lift: exposed {s9.spillover_cases.summary.median_lift_exposed.toFixed(2)}, unexposed {s9.spillover_cases.summary.median_lift_unexposed.toFixed(2)}. Share with a rise above +0.5:
+            exposed {Math.round(100 * s9.spillover_cases.summary.share_above_0_5_exposed)}%, unexposed {Math.round(100 * s9.spillover_cases.summary.share_above_0_5_unexposed)}%.
+          </p>
+          <table className="mt-2 w-full text-left text-xs">
+            <thead className="text-zinc-500">
+              <tr>
+                <th className="pr-3 font-medium">Creator</th>
+                <th className="pr-3 font-medium">Window</th>
+                <th className="pr-3 font-medium">Lift</th>
+                <th className="font-medium">Linked collaborator&apos;s sponsored video</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s9.spillover_cases.top_cases.slice(0, 8).map((c, i) => (
+                <tr key={i} className="border-t border-zinc-200 align-top dark:border-zinc-800">
+                  <td className="py-1.5 pr-3">{c.creator}</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{c.window[0]} to {c.window[1]}</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{c.lift >= 0 ? "+" : ""}{c.lift.toFixed(2)}</td>
+                  <td className="py-1.5">{c.sponsoring_collaborator ? `${c.sponsoring_collaborator}, ${c.sponsored_on}: ${c.sponsored_video}` : "linked through an Instagram sponsored post"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Note>
+            {s9.spillover_cases.reading} For example, one creator who tops this list had 13 exposed windows whose average lift was close to zero: the best cases are the best of many, not a pattern.
+          </Note>
+        </Card>
+      )}
+
+      {s9.label_noise && (
+        <Card
+          title="Could missed sponsorship labels hide an effect? (sensitivity)"
+          subtitle="Our 'organic' means 'not detected as sponsored'. If some comparison creators were really exposed, the contrast shrinks toward zero. This table undoes that shrinkage."
+        >
+          <table className="w-full text-left text-xs">
+            <thead className="text-zinc-500">
+              <tr>
+                <th className="pr-3 font-medium">Comparison group truly exposed</th>
+                <th className="pr-3 font-medium">Corrected estimate</th>
+                <th className="pr-3 font-medium">95% interval</th>
+                <th className="font-medium">Upper end</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s9.label_noise.rows.map((r) => (
+                <tr key={r.share_of_comparison_group_truly_exposed} className="border-t border-zinc-200 dark:border-zinc-800">
+                  <td className="py-1.5 pr-3 tabular-nums">{Math.round(100 * r.share_of_comparison_group_truly_exposed)}%</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{r.corrected_estimate.toFixed(2)}</td>
+                  <td className="py-1.5 pr-3 tabular-nums">
+                    {r.ci95[0].toFixed(2)} to {r.ci95[1].toFixed(2)}
+                  </td>
+                  <td className="py-1.5 tabular-nums">{r.upper_bound_as_engagement_ratio.toFixed(2)}x</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Note>
+            {s9.label_noise.reading} Assumes the effect is the same for everyone exposed and the missed labels are random; this is a sensitivity table, not the full correction for mislabelled treatment.
+          </Note>
+        </Card>
+      )}
+
+      {s9.e4_e5 && (
+        <Card
+          title="Two model extensions, tested where the truth is known (SIMULATED)"
+          subtitle={`Real graph and creator features, planted effect, ${s9.e4_e5.reps} repeats. Nothing here is a real-data finding and nothing feeds a score.`}
+        >
+          <div className="mb-1 text-xs font-medium">E4: what should train the attention? (error of each creator&apos;s effect, lower is better)</div>
+          <table className="w-full text-left text-xs">
+            <thead className="text-zinc-500">
+              <tr>
+                <th className="pr-3 font-medium">Setting</th>
+                <th className="pr-3 font-medium">Error of the per-creator effect</th>
+                <th className="font-medium">Error of the average effect</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(s9.e4_e5.e4_simulated)
+                .filter(([k]) => !k.includes("shrink 10,") && !k.endsWith("shrink 10"))
+                .map(([k, v]) => (
+                  <tr key={k} className="border-t border-zinc-200 dark:border-zinc-800">
+                    <td className="py-1.5 pr-3">{k.replace(", shrink 100", "")}</td>
+                    <td className="py-1.5 pr-3 tabular-nums">{v.pehe.mean.toFixed(2)}</td>
+                    <td className="py-1.5 tabular-nums">{v.abs_error_of_mean_effect.mean.toFixed(2)}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+          <Note>
+            Training the attention on the causal loss recovers each creator&apos;s effect far better than training it on plain outcome error. Learned attention does no better than uniform neighbour weights, so the protection comes from the causal loss, not from the attention itself. With a pre-existing trend the average effect stays off by about 0.18 here because the placebo penalty is switched off in this test; that penalty is what removes that bias.
+          </Note>
+          <div className="mb-1 mt-4 text-xs font-medium">E5: correcting for sponsored posts our rules missed (average-effect estimate; the planted truth is {Object.values(s9.e4_e5.e5_simulated)[0]?.true_ate.toFixed(2)})</div>
+          <table className="w-full text-left text-xs">
+            <thead className="text-zinc-500">
+              <tr>
+                <th className="pr-3 font-medium">Share of sponsored labels we detect</th>
+                <th className="pr-3 font-medium">Uncorrected</th>
+                <th className="font-medium">Corrected (MC-SIMEX)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(s9.e4_e5.e5_simulated).map(([rec, v]) => (
+                <tr key={rec} className="border-t border-zinc-200 dark:border-zinc-800">
+                  <td className="py-1.5 pr-3 tabular-nums">{Math.round(100 * Number(rec))}%</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{v.naive_ate.mean.toFixed(2)}</td>
+                  <td className="py-1.5 tabular-nums">{v.simex_ate.mean.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Note>
+            On our real data, correcting for 90% or 80% detection leaves the average effect at about zero ({s9.e4_e5.e5_real["0.9"]?.corrected.ate.toFixed(2)} and {s9.e4_e5.e5_real["0.8"]?.corrected.ate.toFixed(2)}). The true detection rate is unknown, so this is a range, not a measurement. Below 70% the estimate becomes unstable and is not quoted.
+          </Note>
+        </Card>
+      )}
 
       <Card title="Graph links behind the spillover score" subtitle="Creators of the 150 that have at least one link to another creator">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

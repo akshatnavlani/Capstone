@@ -1,0 +1,235 @@
+{
+ "as_of": "2026-11-01T06:29:24+00:00",
+ "planted_effect": 1.0,
+ "noise": 0.5,
+ "reps": 6,
+ "e4_simulated": {
+  "clean, causal supervision, shrink 100": {
+   "pehe": {
+    "mean": 0.0615,
+    "sd": 0.0129
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.0216,
+    "sd": 0.0123
+   },
+   "reps": 6
+  },
+  "clean, plain supervision, shrink 100": {
+   "pehe": {
+    "mean": 0.3925,
+    "sd": 0.1747
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.0783,
+    "sd": 0.0582
+   },
+   "reps": 6
+  },
+  "clean, uniform weights": {
+   "pehe": {
+    "mean": 0.0619,
+    "sd": 0.0127
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.0213,
+    "sd": 0.0121
+   },
+   "reps": 6
+  },
+  "clean, causal supervision, shrink 10": {
+   "pehe": {
+    "mean": 0.0652,
+    "sd": 0.0181
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.0237,
+    "sd": 0.0173
+   },
+   "reps": 6
+  },
+  "clean, plain supervision, shrink 10": {
+   "pehe": {
+    "mean": 0.4772,
+    "sd": 0.1887
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.0819,
+    "sd": 0.0364
+   },
+   "reps": 6
+  },
+  "pretrend, causal supervision, shrink 100": {
+   "pehe": {
+    "mean": 0.3163,
+    "sd": 0.051
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.1847,
+    "sd": 0.0431
+   },
+   "reps": 6
+  },
+  "pretrend, plain supervision, shrink 100": {
+   "pehe": {
+    "mean": 0.4972,
+    "sd": 0.1165
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.0779,
+    "sd": 0.0582
+   },
+   "reps": 6
+  },
+  "pretrend, uniform weights": {
+   "pehe": {
+    "mean": 0.314,
+    "sd": 0.051
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.1827,
+    "sd": 0.0432
+   },
+   "reps": 6
+  },
+  "pretrend, causal supervision, shrink 10": {
+   "pehe": {
+    "mean": 0.3455,
+    "sd": 0.0545
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.206,
+    "sd": 0.0441
+   },
+   "reps": 6
+  },
+  "pretrend, plain supervision, shrink 10": {
+   "pehe": {
+    "mean": 0.582,
+    "sd": 0.1157
+   },
+   "abs_error_of_mean_effect": {
+    "mean": 0.121,
+    "sd": 0.0602
+   },
+   "reps": 6
+  }
+ },
+ "e5_simulated": {
+  "0.9": {
+   "true_ate": 0.2722,
+   "naive_ate": {
+    "mean": 0.2216,
+    "sd": 0.0363
+   },
+   "simex_ate": {
+    "mean": 0.2651,
+    "sd": 0.0577
+   },
+   "naive_abs_error": 0.0506,
+   "simex_abs_error": 0.0496,
+   "reps": 6
+  },
+  "0.7": {
+   "true_ate": 0.2722,
+   "naive_ate": {
+    "mean": 0.1653,
+    "sd": 0.0236
+   },
+   "simex_ate": {
+    "mean": 0.2499,
+    "sd": 0.0441
+   },
+   "naive_abs_error": 0.107,
+   "simex_abs_error": 0.0262,
+   "reps": 6
+  },
+  "0.5": {
+   "true_ate": 0.2722,
+   "naive_ate": {
+    "mean": 0.1146,
+    "sd": 0.0292
+   },
+   "simex_ate": {
+    "mean": 0.2123,
+    "sd": 0.0404
+   },
+   "naive_abs_error": 0.1576,
+   "simex_abs_error": 0.0628,
+   "reps": 6
+  }
+ },
+ "e5_real": {
+  "1.0": {
+   "naive": {
+    "ate": -0.0117,
+    "att": -0.0513,
+    "slope_collaborates_with": -0.2559,
+    "slope_co_occurs_with": 0.2632
+   },
+   "corrected": {
+    "ate": -0.0117,
+    "att": -0.0513,
+    "slope_collaborates_with": -0.2559,
+    "slope_co_occurs_with": 0.2632
+   }
+  },
+  "0.9": {
+   "naive": {
+    "ate": -0.0117,
+    "att": -0.0513,
+    "slope_collaborates_with": -0.2559,
+    "slope_co_occurs_with": 0.2632
+   },
+   "corrected": {
+    "ate": -0.0021,
+    "att": 0.01,
+    "slope_collaborates_with": -0.0008,
+    "slope_co_occurs_with": 0.0326
+   }
+  },
+  "0.8": {
+   "naive": {
+    "ate": -0.0117,
+    "att": -0.0513,
+    "slope_collaborates_with": -0.2559,
+    "slope_co_occurs_with": 0.2632
+   },
+   "corrected": {
+    "ate": -0.0004,
+    "att": 0.0524,
+    "slope_collaborates_with": 0.1455,
+    "slope_co_occurs_with": -0.0819
+   }
+  },
+  "0.7": {
+   "naive": {
+    "ate": -0.0117,
+    "att": -0.0513,
+    "slope_collaborates_with": -0.2559,
+    "slope_co_occurs_with": 0.2632
+   },
+   "corrected": {
+    "ate": 0.0006,
+    "att": 0.1079,
+    "slope_collaborates_with": 0.3355,
+    "slope_co_occurs_with": -0.2454
+   }
+  },
+  "0.6": {
+   "naive": {
+    "ate": -0.0117,
+    "att": -0.0513,
+    "slope_collaborates_with": -0.2559,
+    "slope_co_occurs_with": 0.2632
+   },
+   "corrected": {
+    "ate": -0.0021,
+    "att": 0.1265,
+    "slope_collaborates_with": 0.315,
+    "slope_co_occurs_with": -0.1255
+   }
+  }
+ },
+ "limits": "E4 and E5-simulated use real graph and features with SIMULATED treatment and outcomes; E5-real assumes a recall (unknown) and a homogeneous effect; nothing here changes a score"
+}

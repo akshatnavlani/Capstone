@@ -43,6 +43,9 @@ export interface InfluencerRecommendation {
   // "exact": the brief's product words appear in the creator's profile text; "broader": added to fill a short list.
   product_match?: "exact" | "broader";
   data_coverage?: "youtube+instagram" | "youtube" | "instagram" | "none";
+  // A-D: how much real data stands behind the score (backend/app/evidence.py). Optional for stale sessionStorage.
+  evidence_grade?: "A" | "B" | "C" | "D";
+  evidence_notes?: string[];
   score_breakdown: ScoreBreakdown;
 }
 
@@ -57,6 +60,7 @@ export interface BrandRecommendationResponse {
 export interface CreatorSummary {
   creator_id: string; // uuid
   name: string;
+  category?: string | null; // the endpoint returns it; the graph colours nodes by it
 }
 
 // GET /feature-store/edges/collaborations and /edges/co-occurrence (same shape).
@@ -118,9 +122,173 @@ export interface PlatformSide {
   notes: string[];
 }
 
+/** Same creator on both platforms within 24 h, each measured against the creator's own usual (scripts/run_platform_pairs.py). */
+export interface PairedEvidence {
+  pairs: number;
+  pairs_with_baseline: number;
+  stronger_platform: "YouTube" | "Instagram" | "balanced" | "not enough pairs";
+  median_difference_adjusted: number | null;
+  text: string;
+  as_of: string | null;
+}
+
+export interface PromotionBehaviour {
+  disclosure: { sponsored_videos: number; disclosed: number; share: number; text: string } | null;
+  response: {
+    sponsored_videos: number;
+    other_videos: number;
+    intent_per_1000_sponsored: number;
+    intent_per_1000_other: number;
+    ratio: number;
+    ci95: number[];
+    verdict: string;
+    text: string;
+  } | null;
+  as_of: string | null;
+}
+
 export interface PlatformProfile {
   creator_id: string;
   summary: string;
   youtube: PlatformSide;
   instagram: PlatformSide;
+  paired: PairedEvidence | null;
+  promotion?: PromotionBehaviour | null;
+}
+
+// GET /scenario/spillover (31 Oct 2026): the real graph and real current sponsorships with an ASSUMED spillover strength. An assumption, never an estimate; changes no score.
+export interface SpilloverScenarioRow {
+  creator_id: string;
+  linked_collaborators: number;
+  sponsored_collaborators: number;
+  sponsored_names: string[];
+  exposure: number; // 0-1
+  projected_change_pct: number;
+}
+
+export interface SpilloverScenario {
+  assumed_effect_log: number;
+  window_days: number;
+  creators_with_links: number;
+  creators_exposed: number;
+  note: string;
+  rows: SpilloverScenarioRow[];
+}
+
+// GET /passport/* (1 Nov 2026): one record per creator gathering every analysis, each part with its own sample size. Read-only; changes no score.
+export interface PassportCreatorLite {
+  creator_id: string;
+  name: string;
+  category: string;
+  platforms: string;
+  grade: "A" | "B" | "C" | "D";
+  mood_gap_flag: boolean;
+  has_recent_brand_posts: boolean;
+  sections_filled: number;
+}
+
+export interface PassportPenalty {
+  sponsored_posts: number;
+  matched: number;
+  median_log_difference: number;
+  approx_percent: number;
+  enough: boolean;
+}
+
+export interface PassportBrandPost {
+  brand: string;
+  category: string;
+  last_seen: string;
+  tier: string | null;
+  posts: number;
+}
+
+export interface PassportRecord {
+  creator_id: string;
+  name: string;
+  category: string;
+  coverage: { platforms: string; youtube_videos: number; instagram_posts: number; growth_readings: number };
+  platform_strength: { pairs: number; stronger_platform: string; youtube_vs_usual_median: number; instagram_vs_usual_median: number; basis: string[] } | null;
+  mood: {
+    youtube?: { score: number; n: number };
+    instagram?: { score: number; n: number };
+    gap?: number;
+    z?: number;
+    significant?: boolean;
+    label: string;
+  } | null;
+  speed: { videos: number; share_first_24h: number } | null;
+  sponsored: {
+    youtube_views: PassportPenalty | null;
+    youtube_likes: PassportPenalty | null;
+    instagram_likes: PassportPenalty | null;
+    buying_signals: { sponsored_videos: number; other_videos: number; intent_per_1000_sponsored: number; intent_per_1000_other: number; ratio: number | null; ci95: [number, number] | null; verdict: string } | null;
+    disclosure: { sponsored_videos: number; disclosed: number; share: number; ci95: [number, number]; label: string } | null;
+  };
+  fatigue: { sponsored_last_30d: number; usual_per_30d: number; above_usual: boolean } | null;
+  network: { linked_creators: number; linked_sponsored_last_30d: number; shared_brand_creators: number };
+  clash_events: PassportBrandPost[];
+  predicted_instagram: { typical_likes: number; range_80: [number, number]; reliable: boolean } | null;
+  evidence: { grade: "A" | "B" | "C" | "D"; notes: string[] };
+}
+
+export interface PassportPooled {
+  creators: number;
+  mean: number | null;
+  ci95: [number, number] | null;
+  approx_percent?: number;
+  ci95_percent?: [number, number];
+  placebo: { runs: number; mean: number | null; ci95: [number, number] | null };
+}
+
+export interface PassportSummary {
+  as_of: string;
+  summary: {
+    creators: number;
+    mood_gap: { creators_with_both: number; flagged: number; warmer_on_instagram: number; warmer_on_youtube: number; median_gap: number | null; note: string };
+    sponsored_response: { youtube_views: PassportPooled; youtube_likes: PassportPooled; instagram_likes: PassportPooled; note: string };
+    speed: { videos: number; creators: number; median_share_first_24h: number | null; note: string };
+    prediction: { n: number; mae_average?: number; mae_size_only?: number; mae_full?: number; spearman_size_only?: number; spearman_full?: number; beats_size_only?: boolean; residual_p10_p90?: [number, number] };
+    fatigue: { creators_above_usual: number; global_test: { median_slope: number; ci95: [number, number]; creators: number }; note: string };
+    clash: { creators_with_recent_brand_posts: number; window_days: number };
+  };
+  limits: string[];
+}
+
+export interface ClashResult {
+  category: string | null;
+  window_days: number | null;
+  creators: Record<string, { brands: PassportBrandPost[]; total_brands: number }>;
+}
+
+// GET /passport/insights (1 Nov 2026): the numbers behind the Insights charts, all read from result files. Blocks marked simulated must be labelled so on screen.
+export interface InsightsData {
+  spillover_journey: { source: string; rows: { label: string; exposed: number; effect: number; lo: number; hi: number }[] };
+  benchmark: { source: string; simulated: boolean; metric: string; methods: string[]; settings: { setting: string; errors: Record<string, number | null> }[] };
+  published_baselines: {
+    source: string; graph: string; replicates: number; true_mean_effect: number; metric: string; caveat: string;
+    rows: { method: string; no_trend: number; pre_trend: number }[];
+  } | null;
+  power: { source: string; simulated: boolean; effects: number[]; real_exposed: number | null; series: { n: number; share: number[] }[] };
+  passport: {
+    source: string; as_of: string | null; creators: number;
+    mood_gaps: { gap: number; flagged: boolean }[]; speed_shares: number[]; grades: Record<"A" | "B" | "C" | "D", number>;
+    sponsored_response: Record<"youtube_views" | "youtube_likes" | "instagram_likes", { creators: number; mean: number | null; ci95: [number, number] | null; approx_percent?: number; ci95_percent?: [number, number] }> | null;
+    prediction: { n: number; spearman_full?: number; spearman_size_only?: number; mae_full?: number; mae_size_only?: number } | null;
+    mood_gap_summary: { creators_with_both: number; flagged: number; warmer_on_instagram: number; warmer_on_youtube: number } | null;
+    clash: { creators_with_recent_brand_posts: number; window_days: number } | null;
+  };
+  fusion_simulation: { source: string; simulated: boolean; scenarios: Record<string, Record<string, { spearman: number; top20_of_20: number }>> };
+  extensions: { source: string; simulated: boolean; e4: Record<string, { pehe: { mean: number } }> | null; e5: Record<string, { true_ate: number; naive_ate: { mean: number }; simex_ate: { mean: number } }> | null };
+}
+
+// GET /passport/strip: compact Passport facts for the dashboard cards. A missing part is null, never guessed.
+export interface PassportStrip {
+  grade: "A" | "B" | "C" | "D";
+  mood: { gap: number | null; significant: boolean; label: string | null } | null;
+  speed_first_24h: number | null;
+  ad_load: { sponsored_last_30d: number; usual_per_30d: number; above_usual: boolean } | null;
+  sponsored_views_percent: number | null;
+  linked_creators: number;
+  recent_brands: number;
 }

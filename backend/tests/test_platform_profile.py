@@ -108,3 +108,61 @@ def test_a_first_day_share_above_one_is_not_reported():
         side = pp.instagram_side(s, c.creator_id)
     assert side.first_day.items_with_a_first_day_reading == 1 and side.first_day.median_value_at_24h == 500
     assert side.first_day.median_share_of_current_total is None   # 500 likes at 24 h against a stored total of 10: the counts disagree, so no share is reported
+
+
+def test_matched_posts_block_says_which_platform_only_with_a_fair_baseline(tmp_path):
+    import json
+    cid = uuid.uuid4()
+    other = uuid.uuid4()
+    third = uuid.uuid4()
+    f = tmp_path / "pairs.json"
+    f.write_text(json.dumps({"as_of": "2026-10-29T00:00:00+00:00", "creators": [
+        {"creator_id": str(cid), "pairs": 9, "pairs_with_adjustment": 6, "median_difference_adjusted": 0.8, "stronger_platform": "Instagram"},
+        {"creator_id": str(other), "pairs": 4, "pairs_with_adjustment": 0, "median_difference_adjusted": None, "stronger_platform": "not enough pairs"}]}))
+    old = pp.PAIRS_PATH
+    pp.PAIRS_PATH = f
+    try:
+        a, b = pp.paired_evidence(cid), pp.paired_evidence(other)
+        assert pp.paired_evidence(third) is None
+    finally:
+        pp.PAIRS_PATH = old
+    assert a.stronger_platform == "Instagram" and a.pairs == 9 and "6 matched posts" in a.text and "Instagram did better" in a.text
+    assert b.stronger_platform == "not enough pairs" and "too few" in b.text and b.median_difference_adjusted is None
+
+
+def test_matched_posts_block_is_absent_when_the_results_file_is_missing(tmp_path):
+    old = pp.PAIRS_PATH
+    pp.PAIRS_PATH = tmp_path / "nope.json"
+    try:
+        assert pp.paired_evidence(uuid.uuid4()) is None
+    finally:
+        pp.PAIRS_PATH = old
+
+
+def test_promotion_block_has_disclosure_and_response_only_where_the_results_file_has_them(tmp_path):
+    import json
+    both, only_disc, none = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    f = tmp_path / "promo.json"
+    f.write_text(json.dumps({"as_of": "2026-10-30T00:00:00+00:00", "creators": [
+        {"creator_id": str(both), "disclosure": {"sponsored_videos": 20, "disclosed": 3, "share": 0.15},
+         "response": {"sponsored_videos": 8, "other_videos": 40, "intent_per_1000_sponsored": 9.1, "intent_per_1000_other": 4.0, "ratio": 2.3, "ci95": [1.2, 4.1], "verdict": "more buying signals on sponsored videos"}},
+        {"creator_id": str(only_disc), "disclosure": {"sponsored_videos": 6, "disclosed": 6, "share": 1.0}}]}))
+    old = pp.PROMO_PATH
+    pp.PROMO_PATH = f
+    try:
+        a, b, c = pp.promotion_behaviour(both), pp.promotion_behaviour(only_disc), pp.promotion_behaviour(none)
+    finally:
+        pp.PROMO_PATH = old
+    assert c is None
+    assert a.disclosure.disclosed == 3 and "3 of 20" in a.disclosure.text and "floor" in a.disclosure.text
+    assert a.response.ratio == 2.3 and "9.1" in a.response.text and "not sales" in a.response.text
+    assert b.disclosure.share == 1.0 and b.response is None
+
+
+def test_promotion_block_is_absent_when_the_results_file_is_missing(tmp_path):
+    old = pp.PROMO_PATH
+    pp.PROMO_PATH = tmp_path / "nope.json"
+    try:
+        assert pp.promotion_behaviour(uuid.uuid4()) is None
+    finally:
+        pp.PROMO_PATH = old

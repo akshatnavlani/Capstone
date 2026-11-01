@@ -5,7 +5,10 @@ from app.models import TRACK_C_OWNED_TABLES
 
 IS_SQLITE = settings.database_url.startswith("sqlite")
 connect_args = {"check_same_thread": False} if IS_SQLITE else {}
-engine = create_engine(settings.database_url, connect_args=connect_args)
+# Supabase's pooler closes idle connections; without a check the first request after a quiet period failed with "server closed the connection unexpectedly" (seen 1 Nov 2026).
+# pool_pre_ping tests a pooled connection before use and replaces a dead one; pool_recycle retires connections after 5 minutes. Postgres only.
+pool_kwargs = {} if IS_SQLITE else {"pool_pre_ping": True, "pool_recycle": 300}
+engine = create_engine(settings.database_url, connect_args=connect_args, **pool_kwargs)
 
 
 def init_db() -> None:

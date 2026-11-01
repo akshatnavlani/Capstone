@@ -2,6 +2,7 @@
 
     python comment_sponsor_pass.py --dry-run     # list what it would label, write nothing
     python comment_sponsor_pass.py               # label them (backup rows go to youtube_videos_sponsor_backup_20261012)
+    python comment_sponsor_pass.py --single-brand-only   # skip comments that list several brands (a "my codes" list says nothing about THIS video)
 
 A video is labelled only when (a) the comment is written by the channel's own account, (b) it names a KNOWN brand together
 with a code or @mention (known_brands.all_strong_brands), and (c) the video is not already marked sponsored. The label gets
@@ -42,6 +43,7 @@ def standing_keys(owner_comments: list[tuple]) -> set[tuple]:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--single-brand-only", action="store_true", help="label only videos whose creator comment names exactly one known brand")
     args = ap.parse_args()
     from orchestrator import get_connection, log
     conn = get_connection()
@@ -63,6 +65,9 @@ def main() -> None:
             if ev:
                 found[video_id] = (ev, creator_id, brand_id)
         log.info("%d videos would be labelled from the creator's own comment", len(found))
+        if args.single_brand_only:
+            found = {v: x for v, x in found.items() if len(x[0]) == 1}
+            log.info("%d of them name exactly one brand (the rest list several and are skipped)", len(found))
         if args.dry_run:
             for vid, (ev, _c, _b) in list(found.items())[:15]:
                 log.info("  %s %s", vid, ev)

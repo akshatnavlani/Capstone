@@ -1,0 +1,1203 @@
+{
+ "as_of": "2026-11-01T05:49:41+00:00",
+ "disclosure": {
+  "creators": 65,
+  "sponsored_videos": 2787,
+  "share_disclosed_overall": 0.168,
+  "median_creator_share": 0.043,
+  "creators_most": 10,
+  "creators_some": 7,
+  "creators_few": 48
+ },
+ "response": {
+  "creators": 22,
+  "median_ratio": 1.5,
+  "ci95_ratio": [
+   1.01,
+   2.87
+  ],
+  "placebo_median_ratio": 1.03,
+  "p_one_sided_more_on_sponsored": 0.0133,
+  "creators_more": 6,
+  "creators_fewer": 1,
+  "creators_same": 15
+ },
+ "creators": [
+  {
+   "creator_id": "9162e777-b5f9-4cf4-a856-64b337b052f4",
+   "name": "Abhinav Mahajan",
+   "disclosure": {
+    "sponsored_videos": 49,
+    "disclosed": 6,
+    "share": 0.122,
+    "ci95": [
+     0.057,
+     0.242
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 8,
+    "other_videos": 75,
+    "intent_per_1000_sponsored": 8.71,
+    "intent_per_1000_other": 1.28,
+    "ratio": 6.96,
+    "ci95": [
+     2.8,
+     22.04
+    ],
+    "verdict": "more buying signals on sponsored videos"
+   }
+  },
+  {
+   "creator_id": "4462a97c-99f0-4afe-9372-399b68336a34",
+   "name": "Abhishek Yadav",
+   "disclosure": {
+    "sponsored_videos": 39,
+    "disclosed": 3,
+    "share": 0.077,
+    "ci95": [
+     0.027,
+     0.203
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 17,
+    "other_videos": 58,
+    "intent_per_1000_sponsored": 1.76,
+    "intent_per_1000_other": 1.28,
+    "ratio": 1.5,
+    "ci95": [
+     0.39,
+     7.98
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "3234a78c-dd16-4f51-a99d-0e84ef5e57bf",
+   "name": "Ankit Baiyanpuria",
+   "disclosure": {
+    "sponsored_videos": 16,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.194
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "21677f1d-8035-4343-b3c7-4b40250dcc1e",
+   "name": "Ankit Yadav (The Complete Men)",
+   "disclosure": {
+    "sponsored_videos": 482,
+    "disclosed": 8,
+    "share": 0.017,
+    "ci95": [
+     0.008,
+     0.032
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 15,
+    "other_videos": 9,
+    "intent_per_1000_sponsored": 23.42,
+    "intent_per_1000_other": 12.38,
+    "ratio": 1.77,
+    "ci95": [
+     0.46,
+     9.03
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "15c9c3e1-d6ab-4774-9501-c996ac458955",
+   "name": "Ankur Warikoo",
+   "disclosure": {
+    "sponsored_videos": 5,
+    "disclosed": 5,
+    "share": 1.0,
+    "ci95": [
+     0.566,
+     1.0
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "5ac59097-7c8d-4f3e-b99d-4aaaa946a10a",
+   "name": "Ankush Raina",
+   "disclosure": {
+    "sponsored_videos": 5,
+    "disclosed": 3,
+    "share": 0.6,
+    "ci95": [
+     0.231,
+     0.882
+    ],
+    "label": "explicit disclosure on some detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "96171908-7b00-499c-bedb-930ce31bbea4",
+   "name": "Aryan Kandari (Aryan Fit Vlogs)",
+   "disclosure": {
+    "sponsored_videos": 133,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.028
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 24,
+    "other_videos": 26,
+    "intent_per_1000_sponsored": 5.36,
+    "intent_per_1000_other": 1.72,
+    "ratio": 2.89,
+    "ci95": [
+     0.92,
+     13.38
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "2b463335-0196-4cbf-b776-8abef2170b5c",
+   "name": "COREFITLAB",
+   "disclosure": {
+    "sponsored_videos": 559,
+    "disclosed": 15,
+    "share": 0.027,
+    "ci95": [
+     0.016,
+     0.044
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 118,
+    "other_videos": 157,
+    "intent_per_1000_sponsored": 31.49,
+    "intent_per_1000_other": 10.04,
+    "ratio": 3.12,
+    "ci95": [
+     2.17,
+     4.64
+    ],
+    "verdict": "more buying signals on sponsored videos"
+   }
+  },
+  {
+   "creator_id": "86e4dea9-af2e-4ad6-bbc1-8540d3a59dbc",
+   "name": "D_Loki",
+   "disclosure": {
+    "sponsored_videos": 49,
+    "disclosed": 5,
+    "share": 0.102,
+    "ci95": [
+     0.044,
+     0.218
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 27,
+    "other_videos": 385,
+    "intent_per_1000_sponsored": 0.0,
+    "intent_per_1000_other": 2.33,
+    "ratio": 0.19,
+    "ci95": [
+     0.13,
+     0.29
+    ],
+    "verdict": "fewer buying signals on sponsored videos"
+   }
+  },
+  {
+   "creator_id": "26e4ed15-b78c-43ab-9c50-18c4c84c3759",
+   "name": "Daman Singh (SIKHSPACK)",
+   "disclosure": {
+    "sponsored_videos": 9,
+    "disclosed": 1,
+    "share": 0.111,
+    "ci95": [
+     0.02,
+     0.435
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "d7ae4645-7393-468d-9726-1078c9e99e28",
+   "name": "Desi Gym Reviews (Raha)",
+   "disclosure": {
+    "sponsored_videos": 136,
+    "disclosed": 2,
+    "share": 0.015,
+    "ci95": [
+     0.004,
+     0.052
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 40,
+    "other_videos": 50,
+    "intent_per_1000_sponsored": 9.91,
+    "intent_per_1000_other": 10.27,
+    "ratio": 0.97,
+    "ci95": [
+     0.41,
+     2.46
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "6545f33d-98d6-4daf-b2da-f9e675931bfd",
+   "name": "Deva Khule",
+   "disclosure": {
+    "sponsored_videos": 5,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.434
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "c08a6c71-dc7b-415d-bb69-30ddc7ba10e1",
+   "name": "Dhanush Amin",
+   "disclosure": {
+    "sponsored_videos": 9,
+    "disclosed": 1,
+    "share": 0.111,
+    "ci95": [
+     0.02,
+     0.435
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "0737b09f-c0a4-4387-afe3-7878a6e4dc03",
+   "name": "Disha Manjunath",
+   "disclosure": {
+    "sponsored_videos": 15,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.204
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "eb1a7d74-bd10-4bae-9193-64596de1a0ec",
+   "name": "Dr Ambika Dutt",
+   "disclosure": {
+    "sponsored_videos": 7,
+    "disclosed": 7,
+    "share": 1.0,
+    "ci95": [
+     0.646,
+     1.0
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "2a97d069-b683-4d84-892b-413902e7fec4",
+   "name": "Dr Umesh Wadhavani",
+   "disclosure": {
+    "sponsored_videos": 11,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.259
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "a9281a1c-a308-4a49-8ef7-7adce4eae7af",
+   "name": "Ekansh Taneja",
+   "disclosure": {
+    "sponsored_videos": 22,
+    "disclosed": 16,
+    "share": 0.727,
+    "ci95": [
+     0.518,
+     0.868
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "cdd6b6bc-fdd9-4c1e-b07d-c69a49de42c5",
+   "name": "Eshwar Bolegar",
+   "disclosure": {
+    "sponsored_videos": 32,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.107
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "70c97835-54db-4d14-a730-cbc72c61c792",
+   "name": "Fit Minds",
+   "disclosure": {
+    "sponsored_videos": 47,
+    "disclosed": 2,
+    "share": 0.043,
+    "ci95": [
+     0.012,
+     0.142
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 10,
+    "other_videos": 45,
+    "intent_per_1000_sponsored": 0.0,
+    "intent_per_1000_other": 1.25,
+    "ratio": 0.36,
+    "ci95": [
+     0.18,
+     1.35
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "60777f41-3f59-4f2f-a28f-5c57d94b1241",
+   "name": "Fit Saida",
+   "disclosure": {
+    "sponsored_videos": 27,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.125
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "9ba249cd-03db-4ea8-bb24-98b70aea3125",
+   "name": "Gaurav Taneja",
+   "disclosure": {
+    "sponsored_videos": 9,
+    "disclosed": 4,
+    "share": 0.444,
+    "ci95": [
+     0.189,
+     0.733
+    ],
+    "label": "explicit disclosure on some detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "7447ca92-968b-4775-b466-f9adb87bc912",
+   "name": "Gokul Bijuraj",
+   "disclosure": {
+    "sponsored_videos": 29,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.117
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 9,
+    "other_videos": 38,
+    "intent_per_1000_sponsored": 0.0,
+    "intent_per_1000_other": 1.87,
+    "ratio": 0.59,
+    "ci95": [
+     0.28,
+     2.25
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "767cd996-1733-4563-a1d2-500f47532e6d",
+   "name": "Gunjan Taneja (GunjanShouts)",
+   "disclosure": {
+    "sponsored_videos": 9,
+    "disclosed": 2,
+    "share": 0.222,
+    "ci95": [
+     0.063,
+     0.547
+    ],
+    "label": "explicit disclosure on some detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "5b8dca81-9949-44c4-9e42-41aed89be6be",
+   "name": "Harsh Katkade",
+   "disclosure": {
+    "sponsored_videos": 23,
+    "disclosed": 5,
+    "share": 0.217,
+    "ci95": [
+     0.097,
+     0.419
+    ],
+    "label": "explicit disclosure on some detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "1d517de9-3863-445e-904e-757d73f9c29b",
+   "name": "Healthy Syrus",
+   "disclosure": {
+    "sponsored_videos": 7,
+    "disclosed": 1,
+    "share": 0.143,
+    "ci95": [
+     0.026,
+     0.513
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "e7c4f136-20f1-492c-9bc6-cb9866bac8db",
+   "name": "Hypertroph (Siddharth Tiwari)",
+   "disclosure": {
+    "sponsored_videos": 14,
+    "disclosed": 2,
+    "share": 0.143,
+    "ci95": [
+     0.04,
+     0.399
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 10,
+    "other_videos": 17,
+    "intent_per_1000_sponsored": 6.11,
+    "intent_per_1000_other": 1.01,
+    "ratio": 4.42,
+    "ci95": [
+     1.11,
+     21.23
+    ],
+    "verdict": "more buying signals on sponsored videos"
+   }
+  },
+  {
+   "creator_id": "a1a2f5bc-ea15-43bf-ab6c-df75a1634e24",
+   "name": "Indian Rock -  Rupal Nanda",
+   "disclosure": {
+    "sponsored_videos": 7,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.354
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "a5e3da70-937a-408c-9ab4-9a6c42524dfa",
+   "name": "Koushik Lee",
+   "disclosure": {
+    "sponsored_videos": 5,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.434
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "530bea04-0069-4686-8355-98fc857aa3a7",
+   "name": "Krish (Chaitanya Krishna)",
+   "disclosure": {
+    "sponsored_videos": 7,
+    "disclosed": 3,
+    "share": 0.429,
+    "ci95": [
+     0.158,
+     0.75
+    ],
+    "label": "explicit disclosure on some detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "2f4999bb-3b24-47d0-84d7-3ed118f09c6b",
+   "name": "Liril Soni (Muscle Adventure)",
+   "disclosure": {
+    "sponsored_videos": 8,
+    "disclosed": 2,
+    "share": 0.25,
+    "ci95": [
+     0.071,
+     0.591
+    ],
+    "label": "explicit disclosure on some detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "6943ada8-7be9-4829-8b77-70731ee5d65e",
+   "name": "Manju Malik (FoodFitness and Fun)",
+   "disclosure": {
+    "sponsored_videos": 6,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.39
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "c1334276-df1a-4fde-86f8-8c467cd21b36",
+   "name": "Mohit Sharma (okaymohit)",
+   "disclosure": {
+    "sponsored_videos": 33,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.104
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 8,
+    "other_videos": 7,
+    "intent_per_1000_sponsored": 0.0,
+    "intent_per_1000_other": 0.0,
+    "ratio": 0.79,
+    "ci95": [
+     0.61,
+     1.07
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "4334d2e6-0ce4-4817-8bcc-2f7ecb1f9414",
+   "name": "MortaL (Naman Mathur)",
+   "disclosure": {
+    "sponsored_videos": 11,
+    "disclosed": 11,
+    "share": 1.0,
+    "ci95": [
+     0.741,
+     1.0
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "6a53033d-5673-4c2a-8d7a-157ef3eb9c8a",
+   "name": "Mumbiker Nikhil",
+   "disclosure": {
+    "sponsored_videos": 13,
+    "disclosed": 12,
+    "share": 0.923,
+    "ci95": [
+     0.667,
+     0.986
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "8db69efe-b849-4f7e-8042-35b8632225d6",
+   "name": "Nirbhay",
+   "disclosure": {
+    "sponsored_videos": 8,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.324
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 7,
+    "other_videos": 223,
+    "intent_per_1000_sponsored": 2.48,
+    "intent_per_1000_other": 5.83,
+    "ratio": 0.63,
+    "ci95": [
+     0.12,
+     3.72
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "2f2f30c6-6d2b-41f2-b6ca-30c3b757d011",
+   "name": "Nitin Chandila",
+   "disclosure": {
+    "sponsored_videos": 7,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.354
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "143384db-82d7-406b-ad98-98812c8c8b82",
+   "name": "NotSoFit (Yatharth)",
+   "disclosure": {
+    "sponsored_videos": 30,
+    "disclosed": 1,
+    "share": 0.033,
+    "ci95": [
+     0.006,
+     0.167
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 11,
+    "other_videos": 123,
+    "intent_per_1000_sponsored": 14.13,
+    "intent_per_1000_other": 14.28,
+    "ratio": 1.05,
+    "ci95": [
+     0.57,
+     1.63
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "b810ba6e-0627-4d3f-b6e9-d8177b570651",
+   "name": "ONE CHANCE",
+   "disclosure": {
+    "sponsored_videos": 179,
+    "disclosed": 142,
+    "share": 0.793,
+    "ci95": [
+     0.728,
+     0.846
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 77,
+    "other_videos": 258,
+    "intent_per_1000_sponsored": 19.13,
+    "intent_per_1000_other": 23.6,
+    "ratio": 0.81,
+    "ci95": [
+     0.58,
+     1.12
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "0e775324-ed94-4fe9-8721-77fa906289ea",
+   "name": "Prem Joshi",
+   "disclosure": {
+    "sponsored_videos": 17,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.184
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 6,
+    "other_videos": 217,
+    "intent_per_1000_sponsored": 4.27,
+    "intent_per_1000_other": 3.94,
+    "ratio": 1.34,
+    "ci95": [
+     0.15,
+     7.85
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "7e5792fb-daf3-4639-a32b-61b5b95574f5",
+   "name": "Rahul (Rahulfitness IFBB)",
+   "disclosure": {
+    "sponsored_videos": 5,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.434
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "ce92e91d-3bb8-439e-9210-f6fa96a2527b",
+   "name": "Raj Shamani",
+   "disclosure": {
+    "sponsored_videos": 6,
+    "disclosed": 5,
+    "share": 0.833,
+    "ci95": [
+     0.436,
+     0.97
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "8d0221b2-d3d4-4075-9d37-39b3d11e79b1",
+   "name": "Rajveer Shishodia",
+   "disclosure": {
+    "sponsored_videos": 13,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.228
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 10,
+    "other_videos": 115,
+    "intent_per_1000_sponsored": 3.54,
+    "intent_per_1000_other": 1.72,
+    "ratio": 2.3,
+    "ci95": [
+     0.57,
+     6.64
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "85f459b3-3abb-4acf-9e58-e5cfcc4c5e0e",
+   "name": "Rishiraj Shekhawat",
+   "disclosure": {
+    "sponsored_videos": 27,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.125
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "6897d480-1925-464f-bd0c-1a4ef665b9da",
+   "name": "Ritik Mahajan",
+   "disclosure": {
+    "sponsored_videos": 9,
+    "disclosed": 1,
+    "share": 0.111,
+    "ci95": [
+     0.02,
+     0.435
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "c1259532-6a63-47be-aab4-2f18d15e793b",
+   "name": "Rohit Khatri",
+   "disclosure": {
+    "sponsored_videos": 9,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.299
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 8,
+    "other_videos": 31,
+    "intent_per_1000_sponsored": 2.3,
+    "intent_per_1000_other": 2.09,
+    "ratio": 1.5,
+    "ci95": [
+     0.29,
+     7.76
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "6775256c-d0f4-4f18-a982-e67324a4a6fd",
+   "name": "Rubal Dhankar",
+   "disclosure": {
+    "sponsored_videos": 55,
+    "disclosed": 43,
+    "share": 0.782,
+    "ci95": [
+     0.656,
+     0.871
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "e22fb576-3f71-4f22-a42a-1e77d738158d",
+   "name": "Sai Vatsav (FitVatsav)",
+   "disclosure": {
+    "sponsored_videos": 11,
+    "disclosed": 1,
+    "share": 0.091,
+    "ci95": [
+     0.016,
+     0.377
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "c64f9417-303e-4b30-bf47-ed4610554398",
+   "name": "Satvik Pandey",
+   "disclosure": {
+    "sponsored_videos": 15,
+    "disclosed": 1,
+    "share": 0.067,
+    "ci95": [
+     0.012,
+     0.298
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "336d784f-2d38-4f84-a8ef-9017a35661f6",
+   "name": "Shivaji Fitness (Shivam Yadav)",
+   "disclosure": {
+    "sponsored_videos": 45,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.079
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "e4fedc9f-46de-40d4-a4eb-91f391d63508",
+   "name": "Shivam Dubey (YourFitnessTories)",
+   "disclosure": {
+    "sponsored_videos": 23,
+    "disclosed": 1,
+    "share": 0.043,
+    "ci95": [
+     0.008,
+     0.21
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "6e615841-ddc4-491c-b8c6-a1537ee97738",
+   "name": "Shivam Verma (Be Your Beast)",
+   "disclosure": {
+    "sponsored_videos": 32,
+    "disclosed": 1,
+    "share": 0.031,
+    "ci95": [
+     0.006,
+     0.157
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "b30b2ae3-583c-4a6e-b55b-6b027c35ec46",
+   "name": "Shivam mishra",
+   "disclosure": {
+    "sponsored_videos": 8,
+    "disclosed": 1,
+    "share": 0.125,
+    "ci95": [
+     0.022,
+     0.471
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "465a7583-7b18-4d42-b04a-88dce58eec56",
+   "name": "Shivank Bhalla",
+   "disclosure": {
+    "sponsored_videos": 39,
+    "disclosed": 1,
+    "share": 0.026,
+    "ci95": [
+     0.005,
+     0.132
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "e26d61f4-2fd0-4ec8-a483-46ebe7e4fa9a",
+   "name": "Shreyas Kamath (Coach Kamath)",
+   "disclosure": {
+    "sponsored_videos": 6,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.39
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "4a8bf242-b7a1-4ad3-8c5b-fbdbcba21dad",
+   "name": "Shubhang Jaiswal (Shubhang Lifts)",
+   "disclosure": {
+    "sponsored_videos": 10,
+    "disclosed": 2,
+    "share": 0.2,
+    "ci95": [
+     0.057,
+     0.51
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 6,
+    "other_videos": 570,
+    "intent_per_1000_sponsored": 6.44,
+    "intent_per_1000_other": 2.13,
+    "ratio": 3.5,
+    "ci95": [
+     1.04,
+     8.95
+    ],
+    "verdict": "more buying signals on sponsored videos"
+   }
+  },
+  {
+   "creator_id": "8f88e04f-e17b-4587-8cfe-da6d0d302527",
+   "name": "Sivaguru (Get Fit with SiGo)",
+   "disclosure": {
+    "sponsored_videos": 49,
+    "disclosed": 6,
+    "share": 0.122,
+    "ci95": [
+     0.057,
+     0.242
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 19,
+    "other_videos": 260,
+    "intent_per_1000_sponsored": 2.34,
+    "intent_per_1000_other": 1.93,
+    "ratio": 1.4,
+    "ci95": [
+     0.23,
+     3.41
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "1b8a7d9e-5a5c-4cc3-930e-92c230c38061",
+   "name": "Somya Luhadia (The Glow Girl Tales)",
+   "disclosure": {
+    "sponsored_videos": 6,
+    "disclosed": 3,
+    "share": 0.5,
+    "ci95": [
+     0.188,
+     0.812
+    ],
+    "label": "explicit disclosure on some detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "21667252-b83c-4c8b-b029-9518981d5573",
+   "name": "Sourav Joshi Vlogs",
+   "disclosure": {
+    "sponsored_videos": 8,
+    "disclosed": 8,
+    "share": 1.0,
+    "ci95": [
+     0.676,
+     1.0
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 4,
+    "other_videos": 536,
+    "intent_per_1000_sponsored": 2.5,
+    "intent_per_1000_other": 0.49,
+    "ratio": 7.58,
+    "ci95": [
+     1.97,
+     19.93
+    ],
+    "verdict": "more buying signals on sponsored videos"
+   }
+  },
+  {
+   "creator_id": "e83503cc-5f70-485e-92eb-6d514cdbb732",
+   "name": "The Fit / shivam jadaun",
+   "disclosure": {
+    "sponsored_videos": 10,
+    "disclosed": 1,
+    "share": 0.1,
+    "ci95": [
+     0.018,
+     0.404
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "1c0f7779-58b2-458a-aaad-1643ceb1bd73",
+   "name": "Yash Anand",
+   "disclosure": {
+    "sponsored_videos": 122,
+    "disclosed": 103,
+    "share": 0.844,
+    "ci95": [
+     0.77,
+     0.898
+    ],
+    "label": "explicit disclosure on most detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 24,
+    "other_videos": 33,
+    "intent_per_1000_sponsored": 5.83,
+    "intent_per_1000_other": 1.89,
+    "ratio": 2.93,
+    "ci95": [
+     1.08,
+     12.45
+    ],
+    "verdict": "more buying signals on sponsored videos"
+   }
+  },
+  {
+   "creator_id": "80001def-4b41-41da-9de2-fc2b875965d8",
+   "name": "Yash Sharma Fitness",
+   "disclosure": {
+    "sponsored_videos": 24,
+    "disclosed": 1,
+    "share": 0.042,
+    "ci95": [
+     0.007,
+     0.202
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "2bdcf3c5-1939-46fb-a594-84005d779caf",
+   "name": "Yatinder Singh",
+   "disclosure": {
+    "sponsored_videos": 9,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.299
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   },
+   "response": {
+    "sponsored_videos": 7,
+    "other_videos": 34,
+    "intent_per_1000_sponsored": 1.43,
+    "intent_per_1000_other": 0.6,
+    "ratio": 2.85,
+    "ci95": [
+     0.54,
+     23.83
+    ],
+    "verdict": "about the same"
+   }
+  },
+  {
+   "creator_id": "d3104f28-c8ec-4533-9d21-188a80f7e58a",
+   "name": "Yuvraj LOY",
+   "disclosure": {
+    "sponsored_videos": 53,
+    "disclosed": 2,
+    "share": 0.038,
+    "ci95": [
+     0.01,
+     0.128
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "134ebc37-1bce-4094-b086-4c36f139ae6f",
+   "name": "Yuvraj Singh Fitness",
+   "disclosure": {
+    "sponsored_videos": 21,
+    "disclosed": 0,
+    "share": 0.0,
+    "ci95": [
+     0.0,
+     0.155
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  },
+  {
+   "creator_id": "ce4e4fde-3ea1-41c2-9877-a814aea3d60d",
+   "name": "santhosh prem",
+   "disclosure": {
+    "sponsored_videos": 29,
+    "disclosed": 2,
+    "share": 0.069,
+    "ci95": [
+     0.019,
+     0.22
+    ],
+    "label": "explicit disclosure on few detected sponsored videos"
+   }
+  }
+ ],
+ "placebo_runs": 300,
+ "limits": "disclosure is read from descriptions, a pinned creator comment and a spoken scan of some Shorts, so it is a floor; response is a proxy (buying-looking comments), not sales; YouTube only"
+}
