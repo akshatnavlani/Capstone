@@ -4,16 +4,17 @@
 # younger than 7 days (scripts/ingestion/snapshot_youtube.py). About 130-160 YouTube quota units per run,
 # so about 1,800 a day against the free 10,000.
 #
-# GitHub's free plan gives a private repo 2,000 Actions minutes a month. A run takes a few minutes, so every
-# 2 hours stays inside it; check Settings > Billing > Usage after the first week, and go to every 3 hours
-# ("7 */3 * * *") if it is on track to run out.
+# The repo is public, so GitHub Actions minutes are free and unlimited.
 #
 # Needs two repository secrets (Settings > Secrets and variables > Actions):
-#   DATABASE_URL     the Supabase connection string, starting with postgresql:// (NOT postgresql+psycopg2://)
+#   DATABASE_URL     the Azure connection string, starting with postgresql:// (NOT postgresql+psycopg2://)
+#                    and ending with ?sslmode=require
 #   YOUTUBE_API_KEY  the YouTube Data API key
+# The Azure server's firewall must allow GitHub's runners ("Allow public access from any Azure service").
 #
-# GitHub only runs scheduled workflows from the repository's default branch, and may start a run a few
-# minutes late. A late run is fine: a video's age is stored as fetched_at minus its exact published time.
+# GitHub only runs scheduled workflows from the repository's default branch (main), and may start a run a
+# few minutes late. A late run is fine: a video's age is stored as fetched_at minus its exact published time.
+# main holds only documents, so the job checks out the code branch below.
 
 name: YouTube snapshots
 
@@ -33,6 +34,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: review2-shimona-temporal
 
       - uses: actions/setup-python@v5
         with:
