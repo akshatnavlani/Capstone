@@ -47,3 +47,22 @@ def test_cluster_bootstrap_interval_contains_estimate():
     est = fit_gail_r(world.data, [world.treatment], obs, uniform=True)["ate"]
     ci = cluster_bootstrap(world.data, [world.treatment], obs, B=20)
     assert ci["lo"] <= est <= ci["hi"]
+
+
+def test_own_sponsorship_input_removes_its_confounding():
+    # No spillover at all. Creators who ran their own sponsorship gain +1, and own
+    # sponsorship is far more common among exposed creators, so ignoring it reads
+    # the gain as spillover; giving it to the nuisance models removes the bias.
+    world = make_world(fake_graph(), "clean", seed=0)
+    n = len(world.y)
+    g = torch.Generator().manual_seed(0)
+    u = uniform_share(world.data["creator", "collaborates_with", "creator"].edge_index, world.treatment, n)
+    own = (torch.rand(n, generator=g) < torch.where(u > 0, 0.8, 0.1)).float()
+    y = own + 0.1 * torch.randn(n, generator=g)
+    base = Observations(torch.arange(n), torch.zeros(n, dtype=torch.long), y, torch.full((n,), float("nan")))
+    adj = Observations(base.node, base.window, base.y, base.pre, own)
+    off = fit_gail_r(world.data, [world.treatment], base, placebo_weight=0.0, uniform=True)
+    on = fit_gail_r(world.data, [world.treatment], adj, placebo_weight=0.0, uniform=True)
+    assert off["slopes"]["collaborates_with"] > 0.3
+    assert abs(on["slopes"]["collaborates_with"]) < 0.1
+    assert adj.subset(torch.tensor([0, 2])).own.tolist() == own[[0, 2]].tolist()

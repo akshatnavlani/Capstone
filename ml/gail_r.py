@@ -54,9 +54,14 @@ class Observations:
     window: torch.Tensor  # (M,) index into the list of treatment vectors
     y: torch.Tensor       # (M,) outcome lift
     pre: torch.Tensor     # (M,) pre-period lift, NaN where unavailable
+    # (M,) 1 if the creator ran their OWN sponsorship in the observation's window.
+    # When given, it is an input to both nuisance models, so the creator's own
+    # sponsorship is removed with the baseline instead of being read as spillover.
+    own: torch.Tensor | None = None
 
     def subset(self, idx: torch.Tensor) -> "Observations":
-        return Observations(self.node[idx], self.window[idx], self.y[idx], self.pre[idx])
+        return Observations(self.node[idx], self.window[idx], self.y[idx], self.pre[idx],
+                            None if self.own is None else self.own[idx])
 
 
 def nuisance_features(x: torch.Tensor, k: int = 16) -> torch.Tensor:
@@ -150,6 +155,8 @@ def fit_gail_r(data, treatments: list[torch.Tensor], obs: Observations, placebo_
     neighbours sponsored}, and `placebo` (final penalty value)."""
     n = data["creator"].x.size(0)
     X = nuisance_features(data["creator"].x, k_pcs)[obs.node]
+    if obs.own is not None:
+        X = torch.cat([X, obs.own.to(X.dtype).unsqueeze(1)], dim=1)
     m_hat = oof_ridge(X, obs.y, obs.node, lam=ridge_lam, seed=seed)
     U_win = [torch.stack([uniform_share(data["creator", r, "creator"].edge_index, t, n)
                           if ("creator", r, "creator") in data.edge_types else torch.zeros(n)

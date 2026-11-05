@@ -199,6 +199,12 @@ PLACEBO_WEIGHT = float(os.environ.get("GAIL_PLACEBO", "0"))
 # (ml/semi_synthetic.py, 10 replicates).
 R_PLACEBO = float(os.environ.get("GAIL_R_PLACEBO", "30"))
 R_BOOT = int(os.environ.get("GAIL_R_BOOT", "200"))
+# P2b alternative (5 Nov 2026). By default (0) rows whose neighbour ran their own
+# sponsorship within the window are dropped, and such creators cannot be controls;
+# on the 27 Oct run that dropped 10,656 of 15,988 lift rows. GAIL_KEEP_SELF_SPONSORED=1
+# keeps them on both sides and gives GAIL-R's nuisance models an own-sponsorship
+# input instead. Report both runs.
+KEEP_SELF_SPONSORED = os.environ.get("GAIL_KEEP_SELF_SPONSORED", "0") == "1"
 LR = 1e-2
 SEED = 0
 
@@ -935,6 +941,10 @@ def main() -> int:
         print(f"Creator rule: ALL creators (GAIL_CREATORS={CREATOR_RULE})")
 
     kept_rows, self_sponsored = drop_self_sponsored(lift_rows, spons_dates, DEFAULT_WINDOW_DAYS)
+    if KEEP_SELF_SPONSORED:
+        print(f"\nP2b: KEPT {len(self_sponsored)}/{len(lift_rows)} lift rows whose neighbour ran their own "
+              f"sponsorship within +/-{DEFAULT_WINDOW_DAYS}d (GAIL_KEEP_SELF_SPONSORED=1; GAIL-R adjusts for it)")
+        kept_rows, self_sponsored = list(lift_rows), []
     for d in self_sponsored:
         d["excluded"] = "neighbour_own_sponsorship_in_window"
     print(f"\nP2b: dropped {len(self_sponsored)}/{len(lift_rows)} lift rows -- the neighbour "
@@ -1057,7 +1067,8 @@ def main() -> int:
         for p in passes:
             eligible = [
                 index_to_id[j] for j in range(num_creators_t)
-                if j in index_to_id and not bool(p["has_sponsored"][j]) and not bool(p["treatment"][j])
+                if j in index_to_id and not bool(p["has_sponsored"][j])
+                and (KEEP_SELF_SPONSORED or not bool(p["treatment"][j]))
                 and in_scope(index_to_id[j])
             ]
             dates = sorted({d for o in p["obs"] for d in o.event_dates})
@@ -1354,14 +1365,24 @@ def main() -> int:
     # the estimate above; the checkpoint and inference are unchanged.
     from ml.gail_r import Observations, cluster_bootstrap, fit_gail_r
     r_rows = [(w, id_to_index[o.neighbour_id], o.value,
-               pre_of.get((o.neighbour_id, f"{o.start}..{o.end}"), float("nan")))
+               pre_of.get((o.neighbour_id, f"{o.start}..{o.end}"), float("nan")),
+               float(p["treatment"][id_to_index[o.neighbour_id]]))
               for w, p in enumerate(passes) for o in p["obs"]]
     r_obs = Observations(
         node=torch.tensor([r[1] for r in r_rows], dtype=torch.long),
         window=torch.tensor([r[0] for r in r_rows], dtype=torch.long),
         y=torch.tensor([r[2] for r in r_rows], dtype=torch.float32),
         pre=torch.tensor([r[3] for r in r_rows], dtype=torch.float32),
+        own=torch.tensor([r[4] for r in r_rows], dtype=torch.float32) if KEEP_SELF_SPONSORED else None,
     )
+    if KEEP_SELF_SPONSORED:
+        own = r_obs.own.bool()
+        exp = torch.tensor([bool(p["has_sponsored"][id_to_index[o.neighbour_id]])
+                            for p in passes for o in p["obs"]])
+        print(f"\nGAIL-R rows with own sponsorship in window: {int(own.sum())}/{len(own)} "
+              f"(exposed {int((own & exp).sum())}/{int(exp.sum())}, "
+              f"controls {int((own & ~exp).sum())}/{int((~exp).sum())}); exposed creators: "
+              f"{len(set(r_obs.node[exp].tolist()))}")
     print(f"\n=== GAIL-R spillover estimate (R-learner, creator-level bootstrap B={R_BOOT}) ===")
     gail_r_report = {}
     for label, w_pl in (("with placebo penalty", R_PLACEBO), ("without placebo penalty", 0.0)):
