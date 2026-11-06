@@ -56,3 +56,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python scripts/ingestion/snapshot_youtube.py
+
+      # Subscriber, video and view counts per verified channel (profile_snapshots), about 3 quota units a run.
+      # Subscriber growth in the first 0-2 days after a collaboration is how Koch et al. (2018) measured spillover.
+      - name: Snapshot channel subscriber counts
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python scripts/ingestion/snapshot_youtube_profiles.py

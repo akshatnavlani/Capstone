@@ -49,6 +49,7 @@ KNOWN_BRANDS: list[tuple[str, str, str | None, tuple[str, ...], bool]] = [
     ("Rasayanam", "wellness", "rasayanam", (), False),
     ("BeWellness", "wellness", "bewellnessindia", ("be wellness",), False),
     ("Fast&Up", "supplement", "fastandup_india", ("fast and up", "fastandup"), False),
+    ("Liquid I.V.", "supplement", None, ("liquid iv", "liquid i.v", "liquidiv"), False),  # hydration; Eesha's list 6 Nov 2026
     ("Grind Gear", "equipment", "grindgear_powerlifting", ("grindgear",), False),
     ("Fuaark", "apparel", "fuaarkofficial", (), False),
     ("Layerzz", "apparel", "layerzzindia", (), False),
