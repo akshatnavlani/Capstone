@@ -33,6 +33,13 @@ FITNESS_CATS = set(os.environ.get("GAIL_FITNESS_CATEGORIES",
 WINDOW = int(os.environ.get("GAIL_DIRECT_WINDOW", "30"))
 RECENT_DAYS = int(os.environ.get("GAIL_RECENT_DAYS", "90"))  # window for "typical engagement now"
 DEFAULT_FMT = {"youtube": "long", "instagram": "video"}
+# Ranking adjustment for a sponsored post, on the log scale (Track A, 6 Nov 2026):
+# out of time, sponsored fitness posts landed 0.34 below the creator's recent
+# normal while ordinary posts landed 0.11 below (general drift), so the
+# sponsorship itself costs about 0.23 (~20%). Per-creator direct-effect scores did
+# not improve those predictions, so the ranking uses this one population value
+# and the creator's own score is shown as context only.
+SPONSORED_ADJ = float(os.environ.get("GAIL_SPONSORED_ADJ", "-0.23"))
 FITNESS_CREATOR_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}  # as in train_prod_model.py
 PEOPLE_CATEGORIES = {"athlete", "fitness_influencer", "lifestyle_influencer"}
 
@@ -210,12 +217,18 @@ def main() -> int:
           f"(collaborate with an Indian creator/athlete/celebrity), {len(eligible) - len(overseas_kept)} dropped")
     for c, why in sorted(overseas_kept.items(), key=lambda kv: creators[kv[0]][0] or ""):
         print(f"  kept {creators[c][0][:30]:30s} {why[:110]}")
+    followers = {}
+    cur.execute("select creator_id::text, subscriber_count from youtube_channels where subscriber_count is not null")
+    followers.update({(c, "youtube"): float(n) for c, n in cur.fetchall()})
+    cur.execute("select creator_id::text, follower_count from instagram_profiles where follower_count is not null")
+    followers.update({(c, "instagram"): float(n) for c, n in cur.fetchall()})
     write_creator_value(posts_rank, sponsored_rank, shrink(eff_rank), prior(eff_rank), creators, today, models,
-                        overseas_kept)
+                        overseas_kept, followers)
     return 0
 
 
-def write_creator_value(posts, sponsored, scores, prior_score, creators, today, models, overseas_kept=None) -> None:
+def write_creator_value(posts, sponsored, scores, prior_score, creators, today, models, overseas_kept=None,
+                        followers=None) -> None:
     """Per creator and platform: expected engagement of ONE sponsored post now.
 
     expected = exp(typical recent log engagement + direct-effect score) - 1, where
@@ -228,6 +241,8 @@ def write_creator_value(posts, sponsored, scores, prior_score, creators, today, 
     import math
     from collections import Counter
     from datetime import timedelta
+    from ml.cost_estimate import estimate, load_rate_card
+    card = load_rate_card(ROOT / "data" / "cost_rate_card.csv")
     start = today - timedelta(days=14 + RECENT_DAYS)
     by_cp: dict[tuple[str, str], list] = {}
     for p in posts:
@@ -257,6 +272,21 @@ def write_creator_value(posts, sponsored, scores, prior_score, creators, today, 
             "overseas": "yes" if c in (overseas_kept or {}) else "no",
             "india_link": (overseas_kept or {}).get(c, ""),
         })
+        # Ranking inputs (Track A): normal engagement x one population sponsored
+        # adjustment, divided by an ESTIMATED cost from the rate card.
+        fol = (followers or {}).get((c, k))
+        cost = estimate(card, k, fmt_used, fol)
+        rank_eng = math.exp(log_typ + SPONSORED_ADJ) - 1
+        rows[-1].update({
+            "followers": int(fol) if fol else "",
+            "ranking_expected_engagement": rank_eng,
+            "cost_tier": cost["tier"] if cost else "",
+            "cost_low_inr": cost["low"] if cost else "", "cost_mid_inr": cost["mid"] if cost else "",
+            "cost_high_inr": cost["high"] if cost else "",
+            "engagement_per_1000_inr": 1000 * rank_eng / cost["mid"] if cost else "",
+            "engagement_per_1000_inr_lo": 1000 * rank_eng / cost["high"] if cost else "",
+            "engagement_per_1000_inr_hi": 1000 * rank_eng / cost["low"] if cost else "",
+        })
     rows.sort(key=lambda r: (r["platform"], -r["expected_sponsored_engagement"]))
     path = models / "creator_value.csv"
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -277,6 +307,15 @@ def write_creator_value(posts, sponsored, scores, prior_score, creators, today, 
             print(f"    {r['name'][:30]:30s} {r['expected_sponsored_engagement']:>12,.0f}  "
                   f"[{r['expected_lo']:,.0f} - {r['expected_hi']:,.0f}]  "
                   f"typical {r['typical_engagement']:,.0f}, score {r['direct_score']:+.2f} ({r['direct_basis']})")
+    costed = [r for r in rows if r["engagement_per_1000_inr"] != ""]
+    print(f"Cost estimates (rate card, ESTIMATED): {len(costed)}/{len(rows)} rows; ranking uses normal engagement "
+          f"x exp({SPONSORED_ADJ:+.2f}) per estimated rupee")
+    for k in ("youtube", "instagram"):
+        top = sorted((r for r in costed if r["platform"] == k), key=lambda r: -r["engagement_per_1000_inr"])[:5]
+        for r in top:
+            print(f"    {k:9s} {r['name'][:28]:28s} {r['engagement_per_1000_inr']:>9,.0f} per Rs 1,000  "
+                  f"[{r['engagement_per_1000_inr_lo']:,.0f} - {r['engagement_per_1000_inr_hi']:,.0f}]  "
+                  f"({r['cost_tier']}, est. Rs {r['cost_mid_inr']:,.0f})")
     print(f"Saved {path}")
 
 
