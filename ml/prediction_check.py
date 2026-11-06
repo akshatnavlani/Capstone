@@ -97,6 +97,7 @@ def score(rows: list[dict], method: str, min_creator_posts: int = 3) -> dict:
         by_c.setdefault(r["creator"], []).append(r)
     cs = [v for v in by_c.values() if len(v) >= min_creator_posts]
     return {"n_posts": len(use), "n_creators": len(by_c), "mae_log": statistics.mean(err),
+            "mean_bias_log": statistics.mean(r["actual"] - r[method] for r in use),
             "median_abs_err_log": statistics.median(err),
             "spearman_posts": spearman([r[method] for r in use], [r["actual"] for r in use]),
             "spearman_creators": spearman([statistics.mean(r[method] for r in v) for v in cs],

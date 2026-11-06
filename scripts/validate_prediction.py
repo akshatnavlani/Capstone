@@ -95,12 +95,12 @@ def main() -> int:
     a1 = [r for r in a1 if "ours" in r]                          # same posts for every method
     res = {"test_period": [start.isoformat(), end.isoformat()], "recent_days": args.recent_days, "A1": {}, "A2": {}}
     print(f"=== A1: normal engagement, ordinary posts {start}..{end} (log scale) ===")
-    print(f"  {'method':11s} {'posts':>6s} {'MAE':>6s} {'median':>7s} {'rank corr (posts)':>18s} {'rank corr (creators)':>21s}")
+    print(f"  {'method':11s} {'posts':>6s} {'MAE':>6s} {'median':>7s} {'bias':>7s} {'rank corr (posts)':>18s} {'rank corr (creators)':>21s}")
     for m in METHODS:
         s = score(a1, m)
         res["A1"][m] = s
         if s["n_posts"]:
-            print(f"  {m:11s} {s['n_posts']:6d} {s['mae_log']:6.3f} {s['median_abs_err_log']:7.3f} "
+            print(f"  {m:11s} {s['n_posts']:6d} {s['mae_log']:6.3f} {s['median_abs_err_log']:7.3f} {s['mean_bias_log']:+7.3f} "
                   f"{s['spearman_posts']:18.3f} {s['spearman_creators']:15.3f} (n={s['n_creators_ranked']})")
     for k in ("youtube", "instagram"):
         s = score([r for r in a1 if r["platform"] == k], "ours")
@@ -133,7 +133,7 @@ def main() -> int:
         s = score(a2, m)
         res["A2"][m] = s
         if s["n_posts"]:
-            print(f"  {m:11s} MAE {s['mae_log']:.3f}  rank corr posts {s['spearman_posts']:.3f}  "
+            print(f"  {m:11s} MAE {s['mae_log']:.3f}  bias {s['mean_bias_log']:+.3f}  rank corr posts {s['spearman_posts']:.3f}  "
                   f"creators {s['spearman_creators']:.3f} (n={s['n_creators_ranked']})")
     if a2 and sd == sd:
         z = 1.2816
