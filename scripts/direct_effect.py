@@ -287,6 +287,17 @@ def write_creator_value(posts, sponsored, scores, prior_score, creators, today, 
             "engagement_per_1000_inr_lo": 1000 * rank_eng / cost["high"] if cost else "",
             "engagement_per_1000_inr_hi": 1000 * rank_eng / cost["low"] if cost else "",
         })
+    # Value part of the final score (7 Nov 2026): 0.4 x value + 0.3 x mood + 0.3 x fit,
+    # -10 if mood < 0.3, budget as a filter. Value = percentile of engagement per
+    # Rs 1,000 among costed creators on the same platform (engagement units differ
+    # by platform). Blank without a cost estimate.
+    from ml.cost_estimate import percentiles
+    for k in {r["platform"] for r in rows}:
+        costed_k = [r for r in rows if r["platform"] == k and r["engagement_per_1000_inr"] != ""]
+        for r, q in zip(costed_k, percentiles([r["engagement_per_1000_inr"] for r in costed_k]) if costed_k else []):
+            r["value_percentile"] = q
+    for r in rows:
+        r.setdefault("value_percentile", "")
     rows.sort(key=lambda r: (r["platform"], -r["expected_sponsored_engagement"]))
     path = models / "creator_value.csv"
     with open(path, "w", newline="", encoding="utf-8") as f:

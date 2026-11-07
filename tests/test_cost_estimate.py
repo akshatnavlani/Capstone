@@ -23,3 +23,10 @@ def test_card_has_no_gaps():
         rows = sorted((r for r in CARD if r["platform"] == platform and r["format"] == fmt), key=lambda r: r["min"])
         assert rows[0]["min"] == 0 and rows[-1]["max"] is None
         assert all(a["max"] == b["min"] for a, b in zip(rows, rows[1:]))
+
+
+def test_percentiles():
+    from ml.cost_estimate import percentiles
+    assert percentiles([10, 30, 20]) == [0.0, 1.0, 0.5]
+    assert percentiles([5, 5, 9]) == [0.25, 0.25, 1.0]
+    assert percentiles([7]) == [0.5]
