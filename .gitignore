@@ -31,3 +31,7 @@ __pycache__/
 training_pair_deltas.json
 
 models/feature_cache.pt
+
+# External replication data (download yourself; never commit)
+data/external/
+*.dta
