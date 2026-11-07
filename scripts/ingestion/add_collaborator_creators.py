@@ -15,7 +15,11 @@ WHAT IT DOES (all idempotent):
 No brand accounts are added (standing rule). No Instagram handle is guessed: a wrong handle would attach a stranger's posts to a real creator.
 """
 import argparse
+import json
 import re
+import time
+
+import psycopg2
 from datetime import datetime, timedelta, timezone
 
 from orchestrator import get_connection, get_or_create_creator, log, upsert_youtube_video, youtube_api_get
@@ -66,8 +70,16 @@ def main() -> None:
     ap.add_argument("--max-videos", type=int, default=600)
     ap.add_argument("--quota-budget", type=int, default=1500)
     ap.add_argument("--only", nargs="+", help="only these handles from the shortlist (a re-run for new entries)")
+    ap.add_argument("--shortlist", help="JSON file whose 'shortlist' maps handle -> category, used instead of SHORTLIST "
+                                        "(e.g. models/collaborator_shortlist_6nov.json); alias links are then skipped")
     args = ap.parse_args()
-    shortlist = {h: c for h, c in SHORTLIST.items() if not args.only or h in args.only}
+    if args.shortlist:
+        with open(args.shortlist, encoding="utf-8") as f:
+            source = json.load(f)["shortlist"]
+        args.only = args.only or list(source)  # --only also switches the alias pass off
+    else:
+        source = SHORTLIST
+    shortlist = {h: c for h, c in source.items() if not args.only or h in args.only}
     conn = get_connection()
     with conn.cursor() as cur:
         who = mentioners(cur, set(shortlist) | (set(ALIASES) if not args.only else set()))
@@ -80,16 +92,15 @@ def main() -> None:
     cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
     budget = [args.quota_budget]
     new_links = added_videos = 0
-    for handle, category in shortlist.items():
-        if not who[handle]:
-            log.info("@%s: no sponsoring creator mentions it any more; skipped", handle)
-            continue
+    def add_one(conn, handle: str, category: str) -> tuple[int, int]:
+        """One shortlisted handle: channel, videos, links. Returns (videos added, new link rows)."""
+        links = 0
         resp = youtube_api_get("channels", forHandle="@" + handle, part="snippet,statistics,contentDetails")
         budget[0] -= 1
         items = resp.get("items", [])
         if not items:
             log.warning("@%s: no YouTube channel under this handle; skipped", handle)
-            continue
+            return 0, 0
         ch = items[0]
         channel_id, snip, stats = ch["id"], ch["snippet"], ch["statistics"]
         creator = get_or_create_creator(conn, snip.get("title") or handle, category, youtube_handle=handle)
@@ -113,12 +124,27 @@ def main() -> None:
                     upsert_youtube_video(cur, v, channel_id, creator.creator_id, None)
                 n += 1
             conn.commit()
-        added_videos += n
         with conn.cursor() as cur:
             for sponsoring in who[handle]:
-                new_links += add_link(cur, sponsoring, "youtube", handle)
+                links += add_link(cur, sponsoring, "youtube", handle)
         conn.commit()
         log.info("@%s -> %s (%s): %d videos added, %d links, %d quota units left", handle, snip.get("title"), category, n, len(who[handle]), budget[0])
+        return n, links
+
+    for handle, category in shortlist.items():
+        if not who[handle]:
+            log.info("@%s: no sponsoring creator mentions it any more; skipped", handle)
+            continue
+        for attempt in range(3):  # 7 Nov: a dropped Azure connection stopped the run after 77 of 118
+            try:
+                n, links = add_one(conn, handle, category)
+                added_videos += n
+                new_links += links
+                break
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                log.warning("@%s: database connection lost (%s); reconnecting, attempt %d", handle, str(e).splitlines()[0][:80], attempt + 1)
+                time.sleep(10 * (attempt + 1))
+                conn = get_connection()
 
     with conn.cursor() as cur:
         for alias, held_ig in ({} if args.only else ALIASES).items():

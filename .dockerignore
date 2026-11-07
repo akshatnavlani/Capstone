@@ -21,6 +21,15 @@ backend/.env
 models/*
 !models/analysis_dashboard.json
 !models/creator_passport.json
+!models/published_baselines_eesha.json
+!models/e4_e5_results.json
+!models/fusion_simulation.json
+!models/power_analysis.json
+!models/semisynth_new_graph_effect1.json
+!models/semisynth_new_graph_effect0.json
+!models/gail_real_results.json
+!models/creator_photos.json
 !models/platform_pairs.json
 !models/promotion_behaviour.json
 !models/temporal_sentiment.json
+!models/creator_value.csv

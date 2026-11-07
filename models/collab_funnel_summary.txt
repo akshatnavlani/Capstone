@@ -1,0 +1,19 @@
+all links                                        4891
+B is a creator we hold                           670
+B has >= 20 posts                                512
+A has a dated sponsorship                        396
+B straddles one of A's sponsorships (windows)    14383
+  distinct B creators with a window              187
+
+Link rule (pairs that reach a window)             pairs  distinct B
+  frequent_collaborator only (current pipeline)      189    133
+  any related-accounts row                           189    133
+  mutual (both mention each other)                    92     66
+  mentioned in >= 2 posts                            122     85
+  mentioned in a sponsored post                       53     39
+  strong = frequent OR mutual OR >= 2 mentions       265    170
+  any link (upper bound)                             339    187
+
+missing B handles: 3650 (2170 mentioned by a sponsored A)
+thin B creators:   143 (72 linked to a sponsored A)
+(missing B on YouTube can be back-filled ~24 months; Instagram is capped)

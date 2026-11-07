@@ -55,18 +55,24 @@ def main() -> None:
     ap.add_argument("--limit-creators", type=int, default=0, help="pilot: only the first N channels")
     ap.add_argument("--quota-budget", type=int, default=3000, help="stop after this many API units")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--only-names", nargs="+", help="these creators (exact creators.name) instead of the verified set; for channels added "
+                                                    "later by hand-checked lists (teams, leagues, collaborators), 6 Nov 2026")
     args = ap.parse_args()
 
     conn = get_connection()
     cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
     with conn.cursor() as cur:
-        cur.execute("""select c.channel_id, c.creator_id, c.title, c.video_count,
+        if args.only_names:
+            who, params = "c.creator_id in (select creator_id from creators where name = any(%s))", (args.only_names,)
+        else:
+            who, params = """c.creator_id in (select creator_id from creator_verification
+                             where creator_id is not null and link_level in ('confirmed', 'probable'))""", ()
+        cur.execute(f"""select c.channel_id, c.creator_id, c.title, c.video_count,
                               (select count(*) from youtube_videos v where v.channel_id = c.channel_id),
                               (select min(published_at) from youtube_videos v where v.channel_id = c.channel_id)
                        from youtube_channels c
-                       where c.channel_id like 'UC%%' and c.creator_id in (select creator_id from creator_verification
-                             where creator_id is not null and link_level in ('confirmed', 'probable'))
-                       order by c.title""")
+                       where c.channel_id like 'UC%%' and {who}
+                       order by c.title""", params)
         channels = cur.fetchall()
     if args.limit_creators:
         channels = channels[: args.limit_creators]

@@ -48,6 +48,24 @@ DataCoverage = Literal["youtube+instagram", "youtube", "instagram", "none"]
 EvidenceGrade = Literal["A", "B", "C", "D"]
 
 
+class CreatorValue(BaseModel):
+    platform: str = Field(description="The creator's best allowed platform for engagement per rupee")
+    unit: str = Field(description="What engagement counts on this platform (YouTube views + likes, Instagram likes + comments)")
+    expected_engagement: float = Field(description="Expected engagement of one sponsored post: normal recent engagement x the average sponsored-post change")
+    cost_tier: Optional[str] = None
+    cost_low_inr: float
+    cost_mid_inr: float = Field(description="ESTIMATED price of one post from the published rate card; used for the budget filter")
+    cost_high_inr: float
+    engagement_per_1000_inr: float
+    engagement_per_1000_inr_low: float
+    engagement_per_1000_inr_high: float
+    platform_percentile: float = Field(description="0-100: share of creators on the same platform with lower engagement per rupee; the ranking key")
+    direct_basis: str = Field(description="measured = this creator's own sponsored posts were measured; prior = population average")
+    overseas: bool = False
+    india_link: Optional[str] = None
+    why: list[str] = Field(default_factory=list, description="Plain-words reasons for the rank")
+
+
 class InfluencerRecommendation(BaseModel):
     creator_id: uuid.UUID
     name: str
@@ -60,12 +78,13 @@ class InfluencerRecommendation(BaseModel):
     confidence_high: float
     spillover_basis: SpilloverBasis = Field(description="trained=in labeled GAIL pair, inferred=graph-connected unlabeled (GAT inductive), placeholder=checkpoint missing/fallback, isolated=degree 0")
     estimated_reach: Optional[int] = Field(default=None, description="Engagement-per-rupee proxy, not sales/conversion")
-    estimated_cost: Optional[float] = Field(default=None, description="Placeholder cost heuristic used for budget filtering, see API_CONTRACTS.md")
+    estimated_cost: Optional[float] = Field(default=None, description="ESTIMATED cost of one post used for the budget filter: the rate-card mid estimate (value.cost_mid_inr) when available, else the old placeholder heuristic, see API_CONTRACTS.md")
     data_coverage: DataCoverage = Field(default="none", description="Which platforms have collected posts for this creator; creators with none are ranked below creators with data (the score for them rests on category and graph only)")
     product_match: ProductMatch = Field(default="exact", description="exact=the brief's product words appear in the creator's category/description/bio; broader=filled in because too few creators matched exactly (only when include_broader_matches is set)")
     score_breakdown: ScoreBreakdown
     evidence_grade: EvidenceGrade = Field(default="D", description="A-D: how much real data stands behind the score (A most). Says how well we know the creator, not how good they are; see app/evidence.py")
     evidence_notes: list[str] = Field(default_factory=list, description="The reasons behind the evidence grade, in plain words")
+    value: Optional[CreatorValue] = Field(default=None, description="Engagement per rupee (Track A4), the ranking key; None when the creator has no recent posts or no follower count")
 
 
 class BrandRecommendationResponse(BaseModel):

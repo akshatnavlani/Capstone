@@ -18,7 +18,13 @@ def main() -> int:
     args = ap.parse_args()
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("select creator_id::text, yt_channel_id from creator_verification where creator_id is not null and link_level in ('confirmed','probable') and yt_channel_id is not null")
+    # Verified channels plus every other held channel (7 Nov 2026): the collaboration study needs subscriber counts for
+    # every creator who can be tagged, including the 130 collaborators added on 6-7 Nov. About 8 quota units a run.
+    cur.execute("""select creator_id::text, yt_channel_id from creator_verification
+                    where creator_id is not null and link_level in ('confirmed','probable') and yt_channel_id is not null
+                   union
+                   select creator_id::text, channel_id from youtube_channels
+                    where creator_id is not null and channel_id like 'UC%%'""")
     rows = cur.fetchall()
     owner = {ch: cid for cid, ch in rows}
     saved = 0

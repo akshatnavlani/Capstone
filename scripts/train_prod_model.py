@@ -346,6 +346,35 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
     return target, lifts_by_neighbour, summary, detailed, sample_weight
 
 
+class _ResilientCursor:
+    """Reconnect and retry a query when the server drops a long-busy connection. Changes no result.
+
+    The engagement loop runs thousands of small queries in one connection; on 7 Nov 2026 Azure dropped it
+    mid-loop (as the Supabase pooler did on 31 Oct, where the same wrapper was used for run 8)."""
+
+    def __init__(self, url: str, cur):
+        self.url, self.cur = url, cur
+
+    def execute(self, sql, params=None):
+        import time
+
+        for attempt in range(5):
+            try:
+                return self.cur.execute(sql, params)
+            except (psycopg2.OperationalError, psycopg2.InterfaceError):
+                if attempt == 4:
+                    raise
+                time.sleep(2 * attempt + 1)
+                try:
+                    self.cur.connection.close()
+                except Exception:
+                    pass
+                self.cur = psycopg2.connect(self.url).cursor()
+
+    def __getattr__(self, name):
+        return getattr(self.cur, name)
+
+
 def _reconnect(conn, database_url: str):
     """Replace a connection that may have gone stale. Returns (conn, cur).
 
@@ -867,8 +896,9 @@ def main() -> int:
     # Targets from canonical pair_count + platform_engagement (both-engagement-cols fix).
     # The per-creator target it returns is superseded by observations below.
     _, lifts_by_neighbour, pair_summary, detailed, _ = build_targets_from_canonical(
-        cur, id_to_index, num_creators
+        _ResilientCursor(database_url, cur), id_to_index, num_creators
     )
+    conn, cur = _reconnect(conn, database_url)  # the loop above may have outlived the original connection
 
     # P2b. Drop rows where the NEIGHBOUR ran their own sponsorship inside the
     # window: their lift mixes their own direct effect into the "spillover".

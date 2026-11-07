@@ -1,5 +1,6 @@
 "use client";
 
+import Avatar from "@/components/Avatar";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SpilloverBadge from "@/components/SpilloverBadge";
@@ -103,6 +104,10 @@ export default function DashboardPage() {
     );
   }
 
+  // Creators whose profile text contains the brief's words; the rest were added as "broader" matches to fill the list.
+  const exactCount = result.results.filter((r) => r.product_match !== "broader").length;
+  const weakMatch = !result.is_mock_data && result.results.length > 0 && exactCount < Math.min(3, result.results.length);
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-16">
       <div>
@@ -115,6 +120,13 @@ export default function DashboardPage() {
       {result.is_mock_data && (
         <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
           Showing demo data — the creator table was empty when queried, so built-in example creators are shown.
+        </p>
+      )}
+
+      {weakMatch && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+          No strong match in our data: only {exactCount} of the {result.results.length} creators below mention &quot;{result.query.product_category}&quot; in their profile. The rest are broader matches added to fill the list, so use this ranking as a rough guide. Our data is strongest
+          for fitness, sport and lifestyle creators.
         </p>
       )}
 
@@ -161,16 +173,41 @@ export default function DashboardPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <span className="text-xs font-medium text-zinc-500">#{index + 1}</span>
-                  <h2 className="text-lg font-medium">{influencer.name}</h2>
+                  <h2 className="flex items-center gap-2.5 text-lg font-medium"><Avatar creatorId={influencer.creator_id} name={influencer.name} size={36} />{influencer.name}</h2>
                   <p className="text-xs text-zinc-500">
                     {[influencer.youtube_handle, influencer.instagram_handle, ...influencer.reddit_handles]
                       .filter(Boolean)
                       .join(" · ") || "no linked handles"}
                   </p>
-                  {influencer.estimated_cost != null && (
-                    <p className="mt-1 text-xs text-zinc-500">
-                      est. cost ₹{influencer.estimated_cost.toLocaleString()} (placeholder rate)
-                    </p>
+                  {influencer.value ? (
+                    <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      <p>
+                        <span className="font-medium">
+                          {Math.round(influencer.value.engagement_per_1000_inr).toLocaleString("en-IN")} {influencer.value.unit} per ₹1,000
+                        </span>{" "}
+                        on {influencer.value.platform} (range {Math.round(influencer.value.engagement_per_1000_inr_low).toLocaleString("en-IN")}–
+                        {Math.round(influencer.value.engagement_per_1000_inr_high).toLocaleString("en-IN")}) · better than{" "}
+                        {influencer.value.platform_percentile.toFixed(0)}% of {influencer.value.platform} creators
+                      </p>
+                      <p className="text-zinc-500">
+                        est. cost ₹{Math.round(influencer.value.cost_mid_inr).toLocaleString("en-IN")} (estimate from a published rate card, range ₹
+                        {Math.round(influencer.value.cost_low_inr).toLocaleString("en-IN")}–₹{Math.round(influencer.value.cost_high_inr).toLocaleString("en-IN")})
+                      </p>
+                      <details className="mt-0.5 text-zinc-500">
+                        <summary className="cursor-pointer">Why this rank</summary>
+                        <ul className="mt-1 list-disc pl-5">
+                          {influencer.value.why.map((w) => (
+                            <li key={w}>{w}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    </div>
+                  ) : (
+                    influencer.estimated_cost != null && (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        est. cost ₹{influencer.estimated_cost.toLocaleString()} (placeholder rate; no recent posts to rank by engagement per rupee)
+                      </p>
+                    )
                   )}
                   <div className="mt-2 flex items-center gap-2">
                     <SpilloverBadge basis={basis} />
