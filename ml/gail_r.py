@@ -143,8 +143,14 @@ def _gather(per_window: list[torch.Tensor], obs: Observations) -> torch.Tensor:
 
 def fit_gail_r(data, treatments: list[torch.Tensor], obs: Observations, placebo_weight: float = 30.0,
                shrink: float = 100.0, epochs: int = 200, lr: float = 1e-2, k_pcs: int = 16,
-               ridge_lam: float = 1.0, seed: int = 0, uniform: bool = False) -> dict:
+               ridge_lam: float = 1.0, seed: int = 0, uniform: bool = False, window_fe: bool = True) -> dict:
     """Fit GAIL-R and return the effect estimate.
+
+    `window_fe=True` (default, 7 Nov 2026 audit) adds one indicator per observation
+    window to both nuisance models, so shocks shared by every creator in a window
+    (platform-wide view changes, seasonality, recent posts still collecting views)
+    are removed with the baseline instead of being read as spillover whenever
+    sponsorship prevalence differs between windows. No effect with one window.
 
     `uniform=True` replaces learned attention with uniform neighbour weights (no
     GNN pass), about 100x faster; used for the bootstrap, since the default
@@ -157,6 +163,11 @@ def fit_gail_r(data, treatments: list[torch.Tensor], obs: Observations, placebo_
     X = nuisance_features(data["creator"].x, k_pcs)[obs.node]
     if obs.own is not None:
         X = torch.cat([X, obs.own.to(X.dtype).unsqueeze(1)], dim=1)
+    if window_fe:
+        wins = torch.unique(obs.window)
+        if wins.numel() > 1:
+            dummies = (obs.window.unsqueeze(1) == wins[1:].unsqueeze(0)).to(X.dtype)
+            X = torch.cat([X, dummies], dim=1)
     m_hat = oof_ridge(X, obs.y, obs.node, lam=ridge_lam, seed=seed)
     U_win = [torch.stack([uniform_share(data["creator", r, "creator"].edge_index, t, n)
                           if ("creator", r, "creator") in data.edge_types else torch.zeros(n)
