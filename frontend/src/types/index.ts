@@ -25,6 +25,24 @@ export interface BrandRecommendationRequest {
   include_broader_matches?: boolean;
 }
 
+export interface CreatorValue {
+  platform: string;
+  unit: string; // "views + likes" (YouTube) or "likes + comments" (Instagram)
+  expected_engagement: number; // one sponsored post
+  cost_tier: string | null;
+  cost_low_inr: number;
+  cost_mid_inr: number; // ESTIMATED, published rate card
+  cost_high_inr: number;
+  engagement_per_1000_inr: number;
+  engagement_per_1000_inr_low: number;
+  engagement_per_1000_inr_high: number;
+  platform_percentile: number; // 0-100 within the same platform: the ranking key
+  direct_basis: string; // "measured" | "prior"
+  overseas: boolean;
+  india_link: string | null;
+  why: string[];
+}
+
 export interface InfluencerRecommendation {
   creator_id: string; // uuid
   name: string;
@@ -39,7 +57,9 @@ export interface InfluencerRecommendation {
   // Optional for stale sessionStorage (old cache lacks field) — render fallback ?? "placeholder".
   spillover_basis?: SpilloverBasis;
   estimated_reach: number | null;
-  estimated_cost: number | null; // placeholder cost heuristic used for budget filtering
+  estimated_cost: number | null; // ESTIMATED cost used for the budget filter: rate-card mid when value is set, else placeholder
+  // Track A4: engagement per rupee, the ranking key (backend/app/creator_value.py). Optional for stale sessionStorage.
+  value?: CreatorValue | null;
   // "exact": the brief's product words appear in the creator's profile text; "broader": added to fill a short list.
   product_match?: "exact" | "broader";
   data_coverage?: "youtube+instagram" | "youtube" | "instagram" | "none";

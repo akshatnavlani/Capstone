@@ -8,6 +8,9 @@ The confidence interval combines all three (app/fusion.py). Track D must read
 spillover_basis to tell trained / inferred / placeholder / isolated apart.
 
 What changed 2026-08-09 (was previously a no-op stub, see API_CONTRACTS.md):
+- 7 Nov 2026 (Track A4): creators are ranked by engagement per rupee (within-platform percentile,
+  app/creator_value.py, from models/creator_value.csv) and the budget filter uses the rate-card mid
+  cost estimate; the placeholder below remains only for creators without a value row.
 - budget: hard filter via `estimated_cost` (a placeholder followers/subscribers
   * flat-rate heuristic -- no real rate-card data exists yet). Candidates with
   unknown reach data aren't excluded (can't compute a cost for them).
@@ -38,6 +41,7 @@ from sqlmodel import Session, select
 
 from app.config import settings
 from app.creator_features import get_feature_scores
+from app.creator_value import UNITS, best_value, explain, load_values
 from app.database import get_session
 from app.evidence import grade_evidence
 from app.fusion import compute_fusion_score, feature_uncertainty, sentiment_uncertainty
@@ -45,6 +49,7 @@ from app.models import Creator, FusionScore, InstagramPost, InstagramProfile, Yo
 from app.schemas import (
     BrandRecommendationRequest,
     BrandRecommendationResponse,
+    CreatorValue,
     InfluencerRecommendation,
     ScoreBreakdown,
 )
@@ -288,6 +293,11 @@ def get_recommendations(
     temporal_map = get_temporal_batch(session) if not using_mock_creators else {}
     # Creator feature score for this brief; None until the models have loaded.
     feature_map = get_feature_scores(request.product_category) if not using_mock_creators else None
+    # Track A4: engagement per rupee per creator (models/creator_value.csv), the ranking key.
+    value_rows = load_values() if not using_mock_creators else {}
+
+    def value_of(creator) -> dict | None:
+        return best_value(value_rows.get(str(creator.creator_id)), request.platform_preference)
 
     def _build(creator, youtube_channel, instagram_profile, product_match: str = "exact") -> InfluencerRecommendation:
         score = None
@@ -305,6 +315,19 @@ def get_recommendations(
         )
         rec.data_coverage = coverage_of(creator.creator_id)  # type: ignore[assignment]
         rec.evidence_grade, rec.evidence_notes = grade_evidence(rec.spillover_basis, temporal_info, feature_info, rec.data_coverage)
+        v = value_of(creator)
+        if v:
+            rec.estimated_cost = v["cost_mid_inr"]
+            rec.value = CreatorValue(
+                platform=v["platform"], unit=UNITS.get(v["platform"], "engagement"),
+                expected_engagement=v["ranking_expected_engagement"], cost_tier=v.get("cost_tier") or None,
+                cost_low_inr=v["cost_low_inr"], cost_mid_inr=v["cost_mid_inr"], cost_high_inr=v["cost_high_inr"],
+                engagement_per_1000_inr=v["engagement_per_1000_inr"],
+                engagement_per_1000_inr_low=v["engagement_per_1000_inr_lo"],
+                engagement_per_1000_inr_high=v["engagement_per_1000_inr_hi"],
+                platform_percentile=v["percentile"], direct_basis=v.get("direct_basis") or "prior",
+                overseas=v.get("overseas") == "yes", india_link=v.get("india_link") or None, why=explain(v),
+            )
         return rec
 
     eligible: list[InfluencerRecommendation] = []
@@ -314,9 +337,11 @@ def get_recommendations(
         instagram_profile = instagram_profiles.get(creator.creator_id)
 
         # --- budget filter (hard, only when cost is computable) ---
+        # Rate-card mid estimate when the creator has a value row (A4); the old placeholder otherwise.
+        v = value_of(creator)
         reach = max((youtube_channel.subscriber_count if youtube_channel else 0) or 0,
                     (instagram_profile.follower_count if instagram_profile else 0) or 0)
-        estimated_cost = reach * COST_PER_FOLLOWER_INR if reach else None
+        estimated_cost = v["cost_mid_inr"] if v else (reach * COST_PER_FOLLOWER_INR if reach else None)
         if estimated_cost is not None and estimated_cost > request.budget:
             continue
 
@@ -361,7 +386,12 @@ def get_recommendations(
 
         eligible.append(_build(creator, youtube_channel, instagram_profile))
 
-    eligible.sort(key=lambda r: (r.data_coverage != "none", r.final_score), reverse=True)
+    # A4: within the creators that have collected posts, rank by engagement per rupee (within-platform percentile);
+    # creators with no value row (no recent posts or no follower count) follow, by the fused score.
+    def rank_key(r):
+        return (r.data_coverage != "none", r.value is not None, r.value.platform_percentile if r.value else 0.0, r.final_score)
+
+    eligible.sort(key=rank_key, reverse=True)
 
     # Too few exact matches: top the list up from the creators that failed ONLY the product words, ranked first by
     # the brief's creator-feature relevance (already in memory), and score just the few that are needed.
@@ -372,7 +402,7 @@ def get_recommendations(
             return info["score"] if info else 0.0
         broader_candidates.sort(key=_relevance, reverse=True)
         extra = [_build(c, yc, ip, "broader") for c, yc, ip in broader_candidates[: shortfall * 2]]
-        extra.sort(key=lambda r: (r.data_coverage != "none", r.final_score), reverse=True)
+        extra.sort(key=rank_key, reverse=True)
         eligible = eligible + extra[:shortfall]
 
     results = eligible[: request.max_results]
