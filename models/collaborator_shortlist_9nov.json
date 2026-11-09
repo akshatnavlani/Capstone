@@ -1,0 +1,23 @@
+{
+ "made": "2026-11-09",
+ "source": "models/spillover_target_channels_9nov.json: channels our in-scope creators @tagged in the last 730 days that we did not hold (220)",
+ "rule": "Kept only Indian individual fitness / health / healthy-food / sport creators (hand-sorted from title + description); dropped brands and shops, media and broadcasters, news, podcasts, overseas, beauty/skin, spiritual, non-fitness. Health doctors get scope override yes.",
+ "shortlist": {
+  "ikkonsfit": "fitness_influencer",
+  "sumansunshinesecrets": "fitness_influencer",
+  "imwow.youtube": "fitness_influencer",
+  "feastlyfit": "fitness_influencer",
+  "knockoutfightclub": "fitness_influencer",
+  "aarushbhola17": "fitness_influencer",
+  "auraartofhealthyliving": "fitness_influencer",
+  "aadharmalhotra": "fitness_influencer",
+  "finefettlecookerys": "fitness_influencer",
+  "meghnasfoodmagic": "fitness_influencer",
+  "ravikapoorirs": "fitness_influencer",
+  "drpalpodcast": "lifestyle_influencer",
+  "drbhagyeshkulkarniindia": "lifestyle_influencer",
+  "drpriyakalyani.official": "lifestyle_influencer",
+  "painflameclinic": "lifestyle_influencer",
+  "cricitwithbadri": "athlete"
+ }
+}

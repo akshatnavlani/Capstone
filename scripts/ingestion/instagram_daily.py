@@ -31,7 +31,7 @@ LOADS_PER_REFRESH = 3.5     # one profile page plus about 2-3 young posts
 LOADS_PER_NEW_CREATOR = 10  # one profile page plus the newest NEW_CREATOR_POSTS posts (comments come with the post pages)
 NEW_CREATOR_POSTS = 8       # older posts do not help the lag analysis; fewer posts means more creators per day
 DEFAULT_DAILY_CAP = 130     # page loads per UTC day; 100-135 a day was measured safe (no block in about 700 loads over 6 days)
-REFRESH_SHARE = 0.3        # 30 Oct 2026: was 0.6. The lag analysis already has enough readings; the page loads now go to creators that block training pairs (exposure_targets)
+REFRESH_SHARE = 0.4        # 9 Nov 2026: was 0.15; re-reading known creators catches their NEW posts, which carry the @tags the forward subscriber study (COLLAB_SPILLOVER_PLAN_7NOV.md) needs (only 2 tags in its first 2.5 days). 8 Nov 2026: was 0.3; the lag analysis has 1,074 pairs, so more loads go to the 166 in-scope creators with no Instagram data. 30 Oct 2026: was 0.6. The lag analysis already has enough readings; the page loads now go to creators that block training pairs (exposure_targets)
 PAUSE_BETWEEN_NEW_CREATORS = 45
 BACKFILL_LOADS_PER_DAY = 30  # 30 Oct 2026: was 60, so that about 7 new creators a day (was 4) go to the 41 that block training pairs; raise it again after about 6 Nov. # page loads kept each day for filling in the counts of old posts (and checking who really owns them); see instagram_backfill_counts.py
                              # 27 Oct 2026: raised from 25 to clear the backlog (403 posts of the 150 had no counts) in about a week; put it back to 25 once the backlog is below about 50
@@ -66,13 +66,22 @@ def chrome_connected() -> bool:
     return "Extension: connected" in out
 
 
+def own_loads_filter(cur) -> str:
+    """9 Nov 2026: ' and loaded_by = current_user' once scripts/admin/add_loaded_by_column.py has run, so each teammate's
+    login has its own daily cap; '' (the shared count, as before) while the column is missing."""
+    cur.execute("""select count(*) from information_schema.columns
+                   where table_name in ('post_snapshots', 'instagram_extra_loads') and column_name = 'loaded_by'""")
+    return " and loaded_by = current_user" if cur.fetchone()[0] == 2 else ""
+
+
 def done_today(cur) -> int:
-    """Page loads made today (UTC day): one per snapshot row, plus loads that left no snapshot row (audits) logged in instagram_extra_loads."""
-    cur.execute("""select count(*) from post_snapshots where platform='instagram'
-                   and fetched_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'""")
+    """Page loads made today (UTC day) by this login: one per snapshot row, plus loads that left no snapshot row (audits) logged in instagram_extra_loads."""
+    own = own_loads_filter(cur)
+    cur.execute(f"""select count(*) from post_snapshots where platform='instagram'
+                    and fetched_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'{own}""")
     snapshots = cur.fetchone()[0]
-    cur.execute("""select coalesce(sum(loads), 0) from instagram_extra_loads
-                   where logged_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'""")
+    cur.execute(f"""select coalesce(sum(loads), 0) from instagram_extra_loads
+                    where logged_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'{own}""")
     return snapshots + int(cur.fetchone()[0])
 
 
@@ -137,6 +146,48 @@ def exposure_targets(cur, n: int) -> list[tuple]:
     return [(r[0], r[1]) for r in cur.fetchall()]
 
 
+SCOPE_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}  # as train_prod_model.FITNESS_CREATOR_CATEGORIES
+OVERRIDES = Path(__file__).resolve().parents[2] / "data" / "creator_scope_overrides.csv"
+PRIORITY_HANDLES = ("swaamiramdev",)  # 8 Nov 2026: the guide asked for Baba Ramdev (Swami Ramdev) on both platforms
+
+
+def in_scope_ids(cur) -> set:
+    """creator_ids in scope: override yes, or a sport/fitness category not overridden no/overseas (same rule as scope_targets)."""
+    import csv
+    with open(OVERRIDES, encoding="utf-8") as f:
+        include = {r["name"].strip().lower(): r["include"].strip().lower() for r in csv.DictReader(f) if r.get("name")}
+    cur.execute("select creator_id, name, category from creators")
+    return {cid for cid, name, cat in cur.fetchall()
+            if (o := include.get((name or "").strip().lower())) == "yes" or (cat in SCOPE_CATEGORIES and o not in ("no", "overseas"))}
+
+
+def scope_targets(cur, n: int) -> list[tuple]:
+    """8 Nov 2026 (user: collect Instagram for every in-scope creator: fitness, sport, yoga, meditation, health).
+    (creator_id, handle) of in-scope creators with an Instagram handle and no dated Instagram post, most links first
+    (more links = more possible spillover cases). Same skip rules as exposure_targets."""
+    import csv
+    include = {}
+    if OVERRIDES.exists():
+        with open(OVERRIDES, encoding="utf-8") as f:
+            include = {r["name"].strip().lower(): r["include"].strip().lower() for r in csv.DictReader(f) if r.get("name")}
+    cur.execute("""select c.creator_id, c.instagram_handle, c.name, c.category,
+                          (select count(*) from creator_related_accounts r where r.creator_id = c.creator_id
+                              or lower(r.handle) in (lower(c.instagram_handle), lower(coalesce(c.youtube_handle, '')))) links
+                   from creators c
+                   where c.instagram_handle is not null and c.instagram_handle <> ''
+                     and not exists (select 1 from instagram_posts p where p.creator_id = c.creator_id and p.posted_at is not null)
+                     and not exists (select 1 from instagram_collect_failures f where f.creator_id = c.creator_id and f.failed_at > now() - interval '14 days')
+                     and not exists (select 1 from instagram_profiles ip where lower(ip.username) = lower(c.instagram_handle) and ip.fetched_at > now() - interval '30 days')
+                   order by links desc""")
+    out = []
+    for cid, handle, name, cat, _links in cur.fetchall():
+        o = include.get((name or "").strip().lower())
+        if o == "yes" or (cat in SCOPE_CATEGORIES and o not in ("no", "overseas")):
+            out.append((cid, handle))
+    out.sort(key=lambda t: (t[1] or "").lower() not in PRIORITY_HANDLES)  # stable: the rest keep the most-links order
+    return out[:n]
+
+
 def new_creators(cur, n: int) -> list[tuple]:
     """Creators that block training pairs come first (exposure_targets), then the next verified creators (below).
 
@@ -168,6 +219,21 @@ def new_creators(cur, n: int) -> list[tuple]:
         cur.connection.rollback()
         log.exception("could not look up creators that block training pairs")
         targets = []
+    try:  # 8 Nov 2026: in-scope creators with no Instagram data (Swami Ramdev, Luke Coutinho, teams, athletes ...) go first
+        scope = scope_targets(cur, n)
+    except Exception:
+        cur.connection.rollback()
+        log.exception("could not look up in-scope creators")
+        scope = []
+    seen_scope = {cid for cid, _ in scope}
+    targets = scope + [t for t in targets if t[0] not in seen_scope]
+    try:  # 9 Nov 2026: the two older lists ignored the scope rule (Philadelphia 76ers, Grace Harris = overseas, Ankur Warikoo = not fitness were collected on 9 Nov)
+        ok = in_scope_ids(cur)
+        targets = [t for t in targets if t[0] in ok]
+        verified = [v for v in verified if v[0] in ok]
+    except Exception:
+        cur.connection.rollback()
+        log.exception("could not apply the scope rule")
     seen = {cid for cid, _ in targets}
     # 31 Oct 2026: alternate the two goals so both advance every day: a creator that blocks training pairs (spillover) and a verified creator with no Instagram data
     # yet (more YouTube-vs-Instagram pairs and lag units). Before, the blocking creators took every slot until they were all done.

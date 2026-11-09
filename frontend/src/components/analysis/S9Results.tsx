@@ -78,15 +78,15 @@ export default function S9Results({ data }: { data: AnalysisData }) {
             </tr>
             <tr className="border-t border-zinc-100 align-top">
               <td className="py-1.5 pr-3">Lag</td>
-              <td className="py-1.5 pr-3">{pure ? `smallest p ${pure.smallest_p_after_event} in the ${pure.window_of_smallest_p} window, ${pure.detected_after_correction ? "confirmed" : "not confirmed"}` : "see below"}</td>
+              <td className="py-1.5 pr-3">{pure ? `smallest p ${pure.smallest_p_after_event} in the ${pure.window_of_smallest_p} window, ${pure.detected_after_correction ? "detected" : "no lag detected yet"}` : "see below"}</td>
               <td className="py-1.5 pr-3">{simLag ? "finds +10% (all posts) to +25% (strict test) extra attention, no false alarms" : "not run"}</td>
               <td className="py-1.5">No large delayed effect in {lag.days_of_readings} days of readings.</td>
             </tr>
             <tr className="border-t border-zinc-100 align-top">
               <td className="py-1.5 pr-3">GAIL</td>
               <td className="py-1.5 pr-3">{`real spillover score for ${scored} of ${s9.graph_links.of} creators today`}</td>
-              <td className="py-1.5 pr-3">acceptance check on simulated worlds: old model failed 0 of 4; to be re-run after retraining</td>
-              <td className="py-1.5">Pending the retrain; about {s9.graph_links.with_shared_brand_and_mentions ?? s9.graph_links.with_shared_brand} of {s9.graph_links.of} creators can be linked.</td>
+              <td className="py-1.5 pr-3">planted-effect benchmark: GAIL-R with the placebo penalty keeps its error at 0.054 or less in all four settings</td>
+              <td className="py-1.5">Retrained on the corrected labels (run 8): -0.05 (-0.55 to +0.33); about {s9.graph_links.with_shared_brand_and_mentions ?? s9.graph_links.with_shared_brand} of {s9.graph_links.of} creators can be linked.</td>
             </tr>
           </tbody>
         </table>
@@ -112,7 +112,7 @@ export default function S9Results({ data }: { data: AnalysisData }) {
 
       {s9.label_quality ? (
         <Card title="How reliable are the sponsorship labels?" subtitle={`${s9.label_quality.pooled_precision_checked_flagged_events.checked} flagged events checked one by one by a person`}>
-          <Verdict tone="warn" label="Strong tiers look reliable; the weak tiers are not settled">
+          <Verdict tone="warn" label="Strong tiers look reliable; the weak tiers are still being checked">
             Of {s9.label_quality.pooled_precision_checked_flagged_events.checked} flagged events checked one by one, {s9.label_quality.pooled_precision_checked_flagged_events.real_ads} were real ads (95% interval{" "}
             {Math.round(s9.label_quality.pooled_precision_checked_flagged_events.wilson95[0] * 100)}% to {Math.round(s9.label_quality.pooled_precision_checked_flagged_events.wilson95[1] * 100)}%), but that is only about 4% of{" "}
             {s9.inventory.sponsorship_events.toLocaleString()} events. {s9.label_quality.claude_text_only_readings ? (

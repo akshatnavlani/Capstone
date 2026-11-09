@@ -73,7 +73,9 @@ def caption_from_og(og: str | None) -> str | None:
 
 def looks_blocked(text: str) -> bool:
     low = (text or "").lower()
-    return "429" in low or "rate limit" in low or "chromewebdata" in low or "try again later" in low
+    # 9 Nov 2026: "429" only as an HTTP code, not a count: "122K likes, 429 comments" on a beerbiceps post stopped the run on 6 and 9 Nov
+    http_429 = re.search(r"(?<![\d,.])429(?![\d,.])(?!\s*(?:k\b|m\b)?\s*(?:comment|like|view|follower|post|share|repl))", low)
+    return bool(http_429) or "rate limit" in low or "chromewebdata" in low or "try again later" in low
 
 
 def main() -> None:
@@ -86,8 +88,9 @@ def main() -> None:
 
     conn = get_connection()
     with conn.cursor() as cur:
-        cur.execute("""select count(*) from post_snapshots where platform='instagram'
-                       and fetched_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'""")
+        from instagram_daily import own_loads_filter  # 9 Nov 2026: per-login cap once the loaded_by column exists
+        cur.execute(f"""select count(*) from post_snapshots where platform='instagram'
+                        and fetched_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'{own_loads_filter(cur)}""")
         done_today = cur.fetchone()[0]
     budget = args.daily_cap - done_today
     log.info("%d handle(s); %d snapshot rows written today; budget left about %d page loads", len(args.handles), done_today, budget)

@@ -1,0 +1,35 @@
+{
+ "plan": "CROSS_PLATFORM_SPILLOVER_PLAN_8NOV.md",
+ "unit": "log engagement vs the creator's own median, 7 days after minus 30 days before",
+ "effect": {
+  "mean": 0.009132791762782987,
+  "lo": -0.25452200129319963,
+  "hi": 0.2589467139176786,
+  "n": 34,
+  "pairs": 23
+ },
+ "placebo": {
+  "mean": 0.0031468614377324986,
+  "lo": -0.10444455109176189,
+  "hi": 0.13005109329500894,
+  "n": 79,
+  "pairs": 18
+ },
+ "verdict": "NOT detected",
+ "by_direction": {
+  "youtube->instagram": {
+   "mean": -0.08737271720651806,
+   "lo": -0.5922174729423961,
+   "hi": 0.4073911967518189,
+   "n": 11,
+   "pairs": 11
+  },
+  "instagram->youtube": {
+   "mean": 0.05528760040027479,
+   "lo": -0.23032315357036906,
+   "hi": 0.31655729336322863,
+   "n": 23,
+   "pairs": 19
+  }
+ }
+}

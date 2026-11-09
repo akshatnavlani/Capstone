@@ -47,6 +47,12 @@ def get_clash(product: str = Query(..., min_length=1, max_length=200), brand: Op
     return passport.clash(product, brand)
 
 
+@router.get("/photos")
+def get_photos() -> dict[str, str]:
+    """creator_id -> channel photo address, for the creators that have a YouTube channel. Creators without one are absent (the app shows initials)."""
+    return passport.photos()
+
+
 @router.get("/{creator_id}")
 def get_passport(creator_id: str) -> dict:
     _need(passport.summary(), "the passport file")

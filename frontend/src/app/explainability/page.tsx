@@ -48,7 +48,8 @@ export default function ExplainabilityPage() {
             const spilloverContribution = b.weight_spillover * b.spillover_score * 100;
             const sentimentContribution = b.weight_sentiment_risk * b.sentiment_risk_score * 100;
             const featureContribution = b.weight_creator_feature * b.creator_feature_score * 100;
-            const weightedSum = spilloverContribution + sentimentContribution + featureContribution;
+            const valueContribution = (b.weight_value ?? 0) * (b.value_score ?? 0) * 100;
+            const weightedSum = spilloverContribution + sentimentContribution + featureContribution + valueContribution;
             const derivedRiskAdjustment = influencer.final_score - weightedSum;
 
             return (
@@ -66,7 +67,9 @@ export default function ExplainabilityPage() {
                   </p>
                 )}
                 <p className="mt-2 font-mono text-xs text-zinc-500">
-                  {influencer.final_score.toFixed(1)} = ({b.weight_spillover}×{b.spillover_score.toFixed(2)}
+                  {influencer.final_score.toFixed(1)} = (
+                  {b.value_score != null && `${b.weight_value}×${b.value_score.toFixed(2)} value + `}
+                  {b.weight_spillover}×{b.spillover_score.toFixed(2)}
                   {" + "}
                   {b.weight_sentiment_risk}×{b.sentiment_risk_score.toFixed(2)}
                   {" + "}
@@ -74,7 +77,12 @@ export default function ExplainabilityPage() {
                   {derivedRiskAdjustment !== 0 && ` + ~${derivedRiskAdjustment.toFixed(1)} risk adjustment (derived, approximate)`}
                 </p>
 
-                <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
+                <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                  <Contribution
+                    label="Value for money"
+                    points={valueContribution}
+                    hint={b.value_score != null ? "percentile of engagement per ₹1,000 on its platform" : "no cost estimate: not used"}
+                  />
                   <Contribution
                     label="Spillover (GAIL)"
                     points={spilloverContribution}

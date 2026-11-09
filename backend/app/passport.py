@@ -37,6 +37,24 @@ def _data() -> Optional[dict]:
     return _cache["data"]
 
 
+PHOTOS_PATH = PASSPORT_PATH.parent / "creator_photos.json"
+_photo_cache: dict = {"mtime": None, "photos": {}}
+
+
+def photos() -> dict[str, str]:
+    """creator_id -> public YouTube channel photo address (models/creator_photos.json, from scripts/fetch_creator_photos.py). Empty when the file is missing; the app then shows initials."""
+    try:
+        mtime = PHOTOS_PATH.stat().st_mtime
+    except OSError:
+        return {}
+    if _photo_cache["mtime"] != mtime:
+        try:
+            _photo_cache.update(mtime=mtime, photos=json.loads(PHOTOS_PATH.read_text(encoding="utf-8")).get("photos", {}))
+        except (OSError, ValueError):
+            return {}
+    return _photo_cache["photos"]
+
+
 def infer_category(product: str) -> Optional[str]:
     text = (product or "").lower()
     best, best_hits = None, 0

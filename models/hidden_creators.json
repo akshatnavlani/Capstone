@@ -1,0 +1,351 @@
+{
+ "made": "2026-11-08",
+ "rule": "out-of-scope creators (not fitness/sport/yoga/health, not overseas) who never promoted a fitness or health brand; hidden from the app and analyses (user 2026-11-08), rows kept in the database; kept: sport/fitness/health organisations and people even without a promotion (Inspire Institute of Sport, Neeraj Chopra Foundation, Bengaluru FC coaches, BK Shivani ...); Cadbury (junk food) does not count as a fitness promotion",
+ "creators": [
+  {
+   "creator_id": "ace04454-558e-4371-926d-b39369a32fb9",
+   "name": "Gaurav Chaudhary",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "84213bd3-64f2-4a76-bb3a-7b1551991693",
+   "name": "Dishant Yagnik",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "57d98637-c922-4403-8fd7-4484f12a9971",
+   "name": "Piyush Meghwanshi",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "d14bf7b1-5af4-48db-ad70-8dc5f8243378",
+   "name": "Karan Aujla",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "7bc9c22c-9bd7-4d9c-9dd9-cdf5a3828aae",
+   "name": "Etaki",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "234c868f-86ef-4531-925d-fcf6c50ba5f4",
+   "name": "arnavbhasin",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "f689e7a9-7f1e-4223-b6a3-1203bd763ccc",
+   "name": "Abhi Sharma",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "f123b544-c1fe-42b7-a4ec-1f33a9ddfd73",
+   "name": "Boman Irani",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "ab486b0f-7677-47cc-ba3c-dd625d141879",
+   "name": "Abhinav Sharma",
+   "category": "other"
+  },
+  {
+   "creator_id": "b0173fb6-a769-46cf-92e6-588fc608f1c6",
+   "name": "karanjohar",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "c15b8b47-3780-4573-bbb0-43ab37265924",
+   "name": "Parikshit Balochi",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "21667252-b83c-4c8b-b029-9518981d5573",
+   "name": "Sourav Joshi Vlogs",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "3f5fad5d-d1b6-46c3-9b7a-a13239d0a208",
+   "name": "Shaan Mukherji",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "cf573f33-639e-4299-8776-835ee68f641b",
+   "name": "Tanmay Bhat",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "e1562e0a-f0a8-4e53-ada1-5cf3059c3e34",
+   "name": "Triggered Insaan",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "a6aca5fe-c410-407b-b90a-f02b03c69869",
+   "name": "Ashish Chanchlani",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "15c9c3e1-d6ab-4774-9501-c996ac458955",
+   "name": "Ankur Warikoo",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "1bdcc7c8-85fa-4247-b83c-a1a9d2fcf7d9",
+   "name": "ashwani__42",
+   "category": "other"
+  },
+  {
+   "creator_id": "80da8bf0-86b2-4290-b2b1-d19f3eab6133",
+   "name": "Elvish Yadav",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "91531b7a-67ed-46a9-be20-0a0c9529f3b2",
+   "name": "Aditi Rao Hydari",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "da011426-1625-4d0f-b18c-6ba05100fb4b",
+   "name": "Bhavishya Sindwani",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "ce4c0aa7-78ea-4b7d-ba93-9ff1e4494daf",
+   "name": "Fukra Insaan",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "97be98d9-bc97-4bd8-b69c-d1887bb332cd",
+   "name": "Kartik Saini",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "66b152f8-aefe-43c2-b5b9-62caa1f3a2b2",
+   "name": "Mamta Rawat",
+   "category": "other"
+  },
+  {
+   "creator_id": "8220d4b7-29ca-46fb-81ee-967eae761b59",
+   "name": "Gurfateh Singh Pirzada",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "8d1f2ff2-8f40-4f94-966f-b239af73a579",
+   "name": "Hiteshi Dutta",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "90b638db-3f80-4103-ba82-8f785521d6d6",
+   "name": "Genelia Deshmukh",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "12fc8607-10d7-455b-9e0b-bd895bba4dad",
+   "name": "Jimmy Shergill",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "bcc287f4-6e80-42ed-91cc-18858f684958",
+   "name": "Juhi Bhatt",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "a88f56d7-cd67-4342-a097-2b27db21e579",
+   "name": "Pratibha Ranta",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "449a8766-71fa-409a-bb0e-01b47cad8096",
+   "name": "Mihir Ahuja",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "eb137801-5eec-4c96-9e0e-8ebd618e3bda",
+   "name": "Mohitt Vaaru",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "f0410f86-cef5-494a-b095-562edffd83cd",
+   "name": "Muskkaan Jaferi",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "f05e8ee5-34f5-43f7-bcbf-eb9e65929507",
+   "name": "Nasima Mirza",
+   "category": "other"
+  },
+  {
+   "creator_id": "ec1c7ebf-9928-435e-98c2-b0f3427404e4",
+   "name": "Nikkhil Advani",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "4334d2e6-0ce4-4817-8bcc-2f7ecb1f9414",
+   "name": "MortaL (Naman Mathur)",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "c6bd26ba-c383-4635-bdb3-818c5e615428",
+   "name": "Ranjeet Tiwari",
+   "category": "other"
+  },
+  {
+   "creator_id": "2adf4d96-0538-40bc-b242-e21170a571ca",
+   "name": "Sandro S",
+   "category": "other"
+  },
+  {
+   "creator_id": "5df6eaa4-cf99-4dfb-be8c-f7654210437b",
+   "name": "Wamiqa Gabbi",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "cee51bfe-4a6b-4f39-8cdb-70e3c4748b99",
+   "name": "Vihaan Samat",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "2d25abbb-6816-4232-a529-8b5774a806ce",
+   "name": "Taaruk Raina",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "c086bf2e-80f8-4902-b155-bbec78610798",
+   "name": "CarryMinati",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "32a18166-12b7-4c54-a103-a972dfaa3f4b",
+   "name": "Masala Lab",
+   "category": "other"
+  },
+  {
+   "creator_id": "cb6e1534-116a-46a6-8efe-ea645bbcd194",
+   "name": "Dr. Niranjan Hiranandani",
+   "category": "other"
+  },
+  {
+   "creator_id": "466664bf-e49c-4b5a-bb11-0ea11ead8361",
+   "name": "Dr Rashmi Shetty",
+   "category": "other"
+  },
+  {
+   "creator_id": "3fca34a0-084f-4ec5-83c7-97e908d370b2",
+   "name": "Gaur Gopal Das",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "64f30b5f-b352-4b38-9bd6-3de96dd16ec8",
+   "name": "Perfume Gyaan",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "8dfcbb70-9c38-4d08-82cc-e24317163c01",
+   "name": "Perfume Guru",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "fd9373b8-a9f1-4ff8-b15b-15f5a889a6e3",
+   "name": "Thakurrr.sniffstories",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "efd8657f-79a8-4b34-b144-1fbbf3cf2fc5",
+   "name": "SCENTIMENTAL",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "46abb16b-0b1c-4171-8c70-08bc3011d4cb",
+   "name": "The Perfume Reviewer ",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "9c73f5ab-88b4-4d7f-aa24-f2abc05556cf",
+   "name": "Techno Gamerz",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "fb1c2583-2650-4974-87b0-988f6e426017",
+   "name": "Dynamo Gaming",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "ecb6b8cd-63a0-417b-b403-7d44bbd8c3cc",
+   "name": "Mythpat",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "f62b2230-afb3-4b35-a794-0a19aeac4e66",
+   "name": "LOKESH GAMER",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "daadfdaa-fb3d-43d5-82fd-4d187da70718",
+   "name": "Total Gaming",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "21bd60d8-6a65-4f13-b550-f7ddf5acf5a0",
+   "name": "Trakin Tech",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "4b5e5e15-a6f1-4072-af9f-bb87d1de7274",
+   "name": "Geekyranjit",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "2d768a88-b2b4-4fca-a104-d293e2ee09a6",
+   "name": "TechWiser",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "e4579c46-bdb7-48c8-9dcf-1e7bb79b4854",
+   "name": "GadgetsToUse",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "1a0a2b25-bd81-4bcf-aa4a-88d5d6227cbf",
+   "name": "Makeup by Parul Garg",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "d002e771-e62d-4291-9f6e-99802c3c5648",
+   "name": "Kaushal",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "bc644883-5afb-478e-84f7-52fe892c8930",
+   "name": "Ankita Chaturvedi (Corallista)",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "d1027469-9e20-4174-b45e-f29d5e4d281f",
+   "name": "Dr. Aanchal MD",
+   "category": "other"
+  },
+  {
+   "creator_id": "16c6eead-41ee-434f-8099-b7d56301bc9a",
+   "name": "Dr. Vanita Rattan ",
+   "category": "other"
+  },
+  {
+   "creator_id": "d6c7c3d0-a053-4352-a401-a8889e0c40df",
+   "name": "Debasree Banerjee",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "99990900-1e50-4e93-9742-a9d5a9b98671",
+   "name": "PK Makeup Studio",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "f7ea4e9e-5d8e-4b94-97e2-1506f9655146",
+   "name": "Skin Diaries",
+   "category": "lifestyle_influencer"
+  },
+  {
+   "creator_id": "0916015c-e822-45a9-8056-8d9cb2dc5a2d",
+   "name": "Bhuvan Bam",
+   "category": "lifestyle_influencer"
+  }
+ ]
+}

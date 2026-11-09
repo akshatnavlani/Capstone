@@ -140,16 +140,16 @@ export default function S1Temporal({ data }: { data: AnalysisData }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Verdict tone="warn" label="Cross-platform 24-hour lag: not proven (the data is too thin to tell)">
-        Three different tests were run. The method itself works (it finds a real effect when one exists), but only 13 creators have enough measured posts on both platforms, so none of the tests can confirm or rule out a lag. The audience-mood score and the
-        risk alerts, on the other hand, are built and live.
+      <Verdict tone="warn" label="Cross-platform 24-hour lag: under measurement (the method is validated, the data is still growing)">
+        Three different tests were run. The method itself works (it finds a real effect when one exists). Growth readings keep accumulating every two hours, and the lag test needs more creators with enough measured posts on both platforms, so the answer
+        sharpens as data arrives. The audience-mood score and the risk alerts are built and live.
       </Verdict>
 
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Creators with a mood score" value={`${s.sentiment.scored} / ${s.sentiment.total}`} hint="the rest stay neutral at 0.5" />
         <Stat label="Live risk alerts" value={s.alerts.length} hint="written to the Monitoring page" tone="good" />
         <Stat label="Creators on both platforms" value={s.curves.length} hint="enough measured posts for the lag test" tone="warn" />
-        <Stat label="Lag verdict" value="Not proven" hint="underpowered, not disproven" tone="warn" />
+        <Stat label="Lag verdict" value="Under test" hint="method validated; more data needed" tone="warn" />
       </div>
 
       <LagExplorer data={data} />

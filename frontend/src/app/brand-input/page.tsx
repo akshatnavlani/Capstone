@@ -9,9 +9,32 @@ import { postRecommendations } from "@/lib/api";
 // and hands the response to /dashboard via sessionStorage (no shared state
 // layer needed for a single-hop flow).
 
+// Product categories to pick from. `value` is what is sent as product_category: plain keywords, because the backend matches each word against the
+// creator's profile text and the CLIP/BERT feature score embeds the same words. Avoid filler words such as "and" (they would match almost every profile).
+// 8 Nov 2026 (guide's request, user-friendly dropdown): the fitness and health products listed first, one option per kind of product.
+const CATEGORIES = [
+  { label: "Fitness and gym", value: "fitness gym workout" },
+  { label: "Protein and supplements", value: "protein supplement whey nutrition" },
+  { label: "Protein bars and healthy snacks", value: "protein healthy snack nutrition diet" },
+  { label: "Energy and sports drinks", value: "energy drink hydration electrolyte" },
+  { label: "Running and sports shoes", value: "shoes running sneakers footwear marathon" },
+  { label: "Sportswear and gymwear", value: "sportswear activewear gymwear athleisure" },
+  { label: "Gym and home workout equipment", value: "equipment dumbbell gym workout" },
+  { label: "Yoga, meditation and wellness", value: "yoga meditation wellness" },
+  { label: "Health, diet and physiotherapy", value: "health diet nutrition physiotherapy doctor" },
+  { label: "Cricket and sports gear", value: "cricket sports gear" },
+  { label: "Badminton, football and other sports", value: "badminton football tennis kabaddi athlete sports" },
+  { label: "Healthy food and nutrition", value: "healthy food nutrition diet protein recipe" },
+  { label: "Running, cycling and marathons", value: "running marathon cycling endurance" },
+  // Fitness and health only (user, 8 Nov 2026): no perfume, gadgets, travel, gaming, finance, entertainment, makeup or fashion.
+];
+const OTHER = "__other";
+
 export default function BrandInputPage() {
   const router = useRouter();
-  const [productCategory, setProductCategory] = useState("");
+  const [categoryChoice, setCategoryChoice] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
+  const productCategory = categoryChoice === OTHER ? customCategory.trim() : categoryChoice;
   const [budget, setBudget] = useState("");
   const [targetRegion, setTargetRegion] = useState("");
   const [targetDemographic, setTargetDemographic] = useState("");
@@ -52,13 +75,33 @@ export default function BrandInputPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-2xl border border-zinc-200 p-6 shadow-sm dark:border-zinc-800">
-        <Field
-          label="Product / Category"
-          placeholder="e.g. Running shoes — fitness"
-          value={productCategory}
-          onChange={setProductCategory}
-          required
-        />
+        <label className="flex flex-col gap-2 text-sm">
+          <span className="font-medium">
+            Product / Category<span className="text-red-500"> *</span>
+          </span>
+          <select
+            value={categoryChoice}
+            onChange={(e) => setCategoryChoice(e.target.value)}
+            required
+            className="rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm transition-colors hover:border-zinc-400 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-zinc-700 dark:hover:border-zinc-600"
+          >
+            <option value="" disabled>
+              Choose a category
+            </option>
+            {CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+            <option value={OTHER}>Other (type your own)</option>
+          </select>
+          {categoryChoice && categoryChoice !== OTHER && (
+            <span className="text-xs text-zinc-500">Searches creators for: {categoryChoice.split(" ").join(", ")}</span>
+          )}
+        </label>
+        {categoryChoice === OTHER && (
+          <Field label="Your product" placeholder="e.g. running shoes" value={customCategory} onChange={setCustomCategory} required />
+        )}
         <Field
           label="Budget (INR)"
           placeholder="e.g. 200000"

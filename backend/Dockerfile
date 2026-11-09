@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./backend/
 # The result files the API reads (small JSON, no torch needed). Paths match backend/app: Path(__file__).parents[2] / "models" = /srv/models.
 # Without them the passport, the Insights page, the influencer photos, analysis tab, platform comparison, promotion and sentiment blocks would be empty inside Docker.
-COPY models/analysis_dashboard.json models/creator_passport.json models/platform_pairs.json models/promotion_behaviour.json models/temporal_sentiment.json models/creator_photos.json models/gail_real_results.json models/semisynth_new_graph_effect0.json models/semisynth_new_graph_effect1.json models/power_analysis.json models/fusion_simulation.json models/e4_e5_results.json models/published_baselines_eesha.json models/creator_value.csv ./models/
+COPY models/analysis_dashboard.json models/creator_passport.json models/platform_pairs.json models/promotion_behaviour.json models/temporal_sentiment.json models/creator_photos.json models/gail_real_results.json models/semisynth_new_graph_effect0.json models/semisynth_new_graph_effect1.json models/power_analysis.json models/fusion_simulation.json models/e4_e5_results.json models/published_baselines_eesha.json models/creator_value.csv models/hidden_creators.json ./models/
 WORKDIR /srv/backend
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5   CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"

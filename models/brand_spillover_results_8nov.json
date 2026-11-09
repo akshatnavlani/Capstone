@@ -1,0 +1,20 @@
+{
+ "plan": "BRAND_SPILLOVER_PLAN_8NOV.md",
+ "unit": "comments mentioning the brand per 1,000 of B's comments, after minus before",
+ "events": 6555,
+ "effect": {
+  "mean": 0.08780208315946894,
+  "lo": -0.11516665507439,
+  "hi": 0.4065345283682596,
+  "n": 3985,
+  "pairs": 188
+ },
+ "placebo": {
+  "mean": -0.31434056569501484,
+  "lo": -0.7112187597471594,
+  "hi": -0.019361876352970476,
+  "n": 14461,
+  "pairs": 200
+ },
+ "verdict": "NOT detected"
+}

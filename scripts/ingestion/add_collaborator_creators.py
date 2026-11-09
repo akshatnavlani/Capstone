@@ -38,9 +38,12 @@ ALIASES = {"ranveerallahbadia": "beerbiceps", "thesocialfactory": "elvish_yadav"
 MENTION = re.compile(r"@([a-z0-9_.]{4,30})", re.I)
 
 
-def mentioners(cur, wanted: set[str]) -> dict[str, dict[str, int]]:
-    """handle -> {sponsoring creator_id: number of posts that mention it}."""
-    cur.execute("""select creator_id::text from youtube_videos where is_sponsored and creator_id is not null
+def mentioners(cur, wanted: set[str], any_creator: bool = False) -> dict[str, dict[str, int]]:
+    """handle -> {sponsoring creator_id (or any creator with any_creator): number of posts that mention it}."""
+    if any_creator:  # 8 Nov 2026: the collaboration tests count a tag by any held creator
+        cur.execute("select creator_id::text from creators")
+    else:
+        cur.execute("""select creator_id::text from youtube_videos where is_sponsored and creator_id is not null
                    union select creator_id::text from instagram_posts where (is_sponsored or has_paid_partnership_label) and creator_id is not null""")
     sponsoring = [r[0] for r in cur.fetchall()]
     found: dict[str, dict[str, int]] = {h: {} for h in wanted}
@@ -70,6 +73,7 @@ def main() -> None:
     ap.add_argument("--max-videos", type=int, default=600)
     ap.add_argument("--quota-budget", type=int, default=1500)
     ap.add_argument("--only", nargs="+", help="only these handles from the shortlist (a re-run for new entries)")
+    ap.add_argument("--any-mentioner", action="store_true", help="link from any held creator that mentions the handle, not only sponsoring ones")
     ap.add_argument("--shortlist", help="JSON file whose 'shortlist' maps handle -> category, used instead of SHORTLIST "
                                         "(e.g. models/collaborator_shortlist_6nov.json); alias links are then skipped")
     args = ap.parse_args()
@@ -82,7 +86,7 @@ def main() -> None:
     shortlist = {h: c for h, c in source.items() if not args.only or h in args.only}
     conn = get_connection()
     with conn.cursor() as cur:
-        who = mentioners(cur, set(shortlist) | (set(ALIASES) if not args.only else set()))
+        who = mentioners(cur, set(shortlist) | (set(ALIASES) if not args.only else set()), args.any_mentioner)
     for h, d in who.items():
         log.info("@%s: mentioned by %d sponsoring creators (%d posts)", h, len(d), sum(d.values()))
     if args.dry_run:

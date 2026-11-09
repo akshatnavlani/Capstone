@@ -25,6 +25,8 @@ class ScoreBreakdown(BaseModel):
     weight_spillover: float
     weight_sentiment_risk: float
     weight_creator_feature: float
+    value_score: Optional[float] = Field(default=None, description="Value-for-money percentile within the platform, 0-1 (engagement per Rs 1,000); None when the creator has no cost estimate")
+    weight_value: float = Field(default=0.0, description="Weight of value_score in the final score (0.4 when value_score is set, agreed 7 Nov 2026)")
 
 
 # ---- Brand-input / recommendation endpoint ---------------------------------

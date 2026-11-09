@@ -147,3 +147,20 @@ def compute_fusion_score(
     )
 
     return final_score, confidence_low, confidence_high, risk_adjustment, breakdown
+
+
+# Final score with value for money (agreed with Eesha, 7 Nov 2026; temporary, until spillover is detectable):
+# 100 x (0.4 x value + 0.3 x mood + 0.3 x fit), minus 10 if mood < 0.3; budget stays a filter (routers/influencers.py).
+# value = percentile (0-1) of engagement per Rs 1,000 among costed creators on the same platform (models/creator_value.csv).
+VALUE_WEIGHTS = (0.4, 0.3, 0.3)
+
+
+def compute_value_score(value_pct: float, sentiment_risk_score: float, creator_feature_score: float,
+                        old_margin: float) -> tuple[float, float, float, float]:
+    """(final_score, confidence_low, confidence_high, risk_adjustment). The value percentile carries no stated
+    uncertainty, so the mood/fit margin is scaled by their combined weight (0.6)."""
+    wv, wm, wf = VALUE_WEIGHTS
+    risk_adjustment = -RISK_PENALTY_POINTS if sentiment_risk_score < RISK_THRESHOLD else 0.0
+    final = max(0.0, min(100.0, 100 * (wv * value_pct + wm * sentiment_risk_score + wf * creator_feature_score) + risk_adjustment))
+    margin = old_margin * (wm + wf)
+    return final, max(0.0, final - margin), min(100.0, final + margin), risk_adjustment

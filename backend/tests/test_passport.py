@@ -61,3 +61,14 @@ def test_strip_returns_only_known_creators_with_missing_parts_as_none(fake):
     assert out["b"]["mood"] is None and out["b"]["speed_first_24h"] is None and out["b"]["recent_brands"] == 1
     c = TestClient(app)
     assert set(c.get("/passport/strip", params={"ids": ["a", "nope"]}).json()) == {"a"}
+
+
+def test_photos_endpoint_serves_the_file_and_is_empty_when_missing(tmp_path, monkeypatch):
+    f = tmp_path / "creator_photos.json"
+    f.write_text('{"photos": {"a": "https://example.com/a.jpg"}}', encoding="utf-8")
+    monkeypatch.setattr(passport, "PHOTOS_PATH", f)
+    passport._photo_cache.update(mtime=None, photos={})
+    c = TestClient(app)
+    assert c.get("/passport/photos").json() == {"a": "https://example.com/a.jpg"}
+    monkeypatch.setattr(passport, "PHOTOS_PATH", tmp_path / "missing.json")
+    assert c.get("/passport/photos").json() == {}

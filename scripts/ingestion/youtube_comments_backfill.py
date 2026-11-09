@@ -31,6 +31,10 @@ def main() -> int:
     ap.add_argument("--min-comments", type=int, default=20)
     ap.add_argument("--months", type=int, default=18)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--video-ids-file", help="fetch these videos (one id per line) instead of the core-150 selection; e.g. the "
+                                             "videos around collaboration tags for the audience-flow test (7 Nov 2026)")
+    ap.add_argument("--pages", type=int, default=1, help="pages of 100 comments per video (9 Nov 2026: the audience-flow replication takes up "
+                                                         "to 3); with --video-ids-file, videos whose first page was full are topped up")
     args = ap.parse_args()
     disabled = set(json.loads(DISABLED.read_text())) if DISABLED.exists() else set()
     conn = psycopg2.connect(ENV["DATABASE_URL"])
@@ -44,14 +48,33 @@ def main() -> int:
              and not exists (select 1 from youtube_comments c where c.video_id = v.video_id)) t
          order by rk, comment_count desc""", (args.months, args.min_comments))
     todo = [r[0] for r in cur.fetchall() if r[0] not in disabled]
+    if args.video_ids_file:
+        wanted = [l.strip() for l in open(args.video_ids_file, encoding="utf-8") if l.strip()]
+        cur.execute("select distinct video_id from youtube_comments where video_id = any(%s)", (wanted,))
+        have = {r[0] for r in cur.fetchall()}
+        todo = [v for v in dict.fromkeys(wanted) if v not in have and v not in disabled]
+        if args.pages > 1:   # also top up videos whose single stored page was full (90-100 threads) and that have more comments
+            cur.execute("""select v.video_id from youtube_videos v where v.video_id = any(%s) and coalesce(v.comment_count, 0) > 100
+                           and (select count(*) from youtube_comments c where c.video_id = v.video_id) between 90 and 100""", (wanted,))
+            todo += [r[0] for r in cur.fetchall() if r[0] not in disabled]
     print(f"{len(todo)} videos waiting; this run takes at most {args.max_units}")
     if args.dry_run:
         return 0
-    units = saved = off = bad = 0
-    for vid in todo[: args.max_units]:
+    units = saved = off = bad = last_save = 0
+    for vid in todo:
+        if units >= args.max_units:
+            break
         try:
             resp = youtube_api_get("commentThreads", videoId=vid, part="snippet", maxResults=100, order="relevance")
             units += 1
+            items, tok = resp.get("items", []), resp.get("nextPageToken")
+            for _ in range(args.pages - 1):
+                if not tok:
+                    break
+                more = youtube_api_get("commentThreads", videoId=vid, part="snippet", maxResults=100, order="relevance", pageToken=tok)
+                units += 1
+                items, tok = items + more.get("items", []), more.get("nextPageToken")
+            resp = {"items": items}
             bad = 0
         except urllib.error.HTTPError as e:
             body = getattr(e, "body_text", "")
@@ -80,10 +103,23 @@ def main() -> int:
         rows = [(item["id"], vid, c.get("authorDisplayName"), c.get("textDisplay"), c.get("publishedAt"), c.get("likeCount"))
                 for item in resp.get("items", []) for c in [item["snippet"]["topLevelComment"]["snippet"]]]
         if rows:
-            execute_values(cur, "insert into youtube_comments (comment_id, video_id, author_handle, text, published_at, like_count) values %s "
-                                "on conflict (comment_id) do update set like_count=excluded.like_count", rows)
+            for attempt in range(12):   # 8 Nov: Azure / Wi-Fi drops the connection; reconnect and retry (uncommitted rows since the last save are re-fetched next run)
+                try:
+                    execute_values(cur, "insert into youtube_comments (comment_id, video_id, author_handle, text, published_at, like_count) values %s "
+                                        "on conflict (comment_id) do update set like_count=excluded.like_count", rows)
+                    break
+                except (psycopg2.OperationalError, psycopg2.InterfaceError):
+                    if attempt == 11:
+                        raise
+                    time.sleep(min(60, 5 * (attempt + 1)))
+                    try:
+                        conn = psycopg2.connect(ENV["DATABASE_URL"], connect_timeout=20)
+                        cur = conn.cursor()
+                    except psycopg2.OperationalError:
+                        pass
             saved += len(rows)
-        if units % 50 == 0:
+        if units - last_save >= 50:   # 9 Nov: >= rather than % 50, since a video can now cost 2-3 units
+            last_save = units
             conn.commit()
             DISABLED.write_text(json.dumps(sorted(disabled)))
             print(f"  {units} units, {saved} comments, {off} switched off", flush=True)
