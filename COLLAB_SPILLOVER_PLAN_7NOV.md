@@ -31,3 +31,8 @@ Placebo: the same difference at 200 random times per B with no tag of B within 7
 ## Not allowed
 Changing the window, the event rule or the creators after seeing data; running repeatedly until a significant
 result appears; reporting the subgroup as the main result.
+
+## Note added 10 Nov 2026 (no rule changed)
+The expected date above was wrong: with the 30-day first-tag rule the real rate in Sep-Nov 2026 was about 3-7 events a
+week (counted 10 Nov, identity only, no outcome looked at), so 30 events are expected around mid-to-late December 2026.
+The 30-event threshold and every rule stay as written; on 21 Nov the study is reported as running, with its event count.

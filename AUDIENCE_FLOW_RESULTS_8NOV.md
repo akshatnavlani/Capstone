@@ -94,3 +94,17 @@ linked B's older videos in 12-hour windows up to 48 h, placebo keeps the hour of
   52 joint videos with host >= 10x guest, 29 counted: guest's views +0.01, 95% CI [-0.23, +0.29]. Nothing visible.
 - Data gap found and fixed: GitHub started the 2-hourly timer only every 5-7 h on 7-9 Nov (none for 9 h on 9 Nov);
   `.github/workflows/snapshot_subscribers.yml` (subscribers only, every 30 min, ~8 units) must be pushed to main.
+
+## Cross-promotion mechanism for the detected cross-platform link (plan: CROSS_PROMOTION_MECHANISM_PLAN_10NOV.md;
+## models/cross_promotion_mechanism_10nov.json; run once on 10 Nov 2026)
+- Update of the DETECTED test on 10 Nov data (unchanged code, now 105 creators, was 90): Instagram posts -> comments on
+  the same creator's YouTube videos older than 72 h F 1.559 (placebo median 1.016), p 0.002; YouTube comments ->
+  Instagram posts F 1.561, p 0.014. The cross-platform temporal link stays detected on more creators.
+- Primary (Instagram captions mentioning YouTube, median split): only 13 creators ever mention YouTube in captions
+  (median share 0): fewer than 15 in a group, printed, not a result.
+- Secondary (YouTube texts mentioning Instagram, 52 vs 53 creators, YouTube comments -> Instagram posts): F difference
+  -1.01, relabelling p 0.98: NOT supported. The link is, if anything, stronger for creators who do NOT mention Instagram
+  (F 2.08, p 0.014) than for those who do (F 1.07, p 0.33).
+- Reading: the detected link is not explained by explicit cross-promotion in captions or descriptions. It is consistent
+  with audiences following creators across platforms on their own, but equally with a shared rhythm (busy weeks on both
+  platforms); Granger remains prediction, not cause.
