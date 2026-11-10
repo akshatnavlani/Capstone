@@ -108,3 +108,14 @@ linked B's older videos in 12-hour windows up to 48 h, placebo keeps the hour of
 - Reading: the detected link is not explained by explicit cross-promotion in captions or descriptions. It is consistent
   with audiences following creators across platforms on their own, but equally with a shared rhythm (busy weeks on both
   platforms); Granger remains prediction, not cause.
+
+## Between-creator Granger (plan: BETWEEN_CREATOR_GRANGER_PLAN_10NOV.md, pushed 7c1402c before running;
+## models/between_creator_granger_10nov.json; run once on 10 Nov 2026)
+Same method as the detected within-creator test, between creators: does A's posting (YouTube + Instagram per day) predict
+comments on linked B's videos older than 72 h, lags 1-3, 365 days? Needs BOTH placebos below 0.05.
+- PRIMARY, tag pairs: 238 of 257 pairs used. F 1.317; timing placebo median 1.095, **p 0.002**; unlinked placebo (same B,
+  random never-linked A') median 1.179, **p 0.054**. **Verdict: NOT detected** (misses the second check narrowly).
+- SECONDARY, joint-video pairs: 164 of 185 used. F 1.274; timing p 0.034; unlinked p 0.124. **NOT detected.**
+- Reading: linked creators' timing does predict B's old-video comments better than shuffled timing, but most of that is
+  shared calendar rhythm (unlinked pairs also score above the shifted placebo: 1.18 vs 1.10). What is left that is specific
+  to linked pairs is suggestive (p 0.054) but not established. Not re-run; not to be re-run to cross 0.05.
