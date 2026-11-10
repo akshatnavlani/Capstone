@@ -57,6 +57,10 @@ def main() -> int:
             cur.execute("""select v.video_id from youtube_videos v where v.video_id = any(%s) and coalesce(v.comment_count, 0) > 100
                            and (select count(*) from youtube_comments c where c.video_id = v.video_id) between 90 and 100""", (wanted,))
             todo += [r[0] for r in cur.fetchall() if r[0] not in disabled]
+        # 10 Nov 2026: most never-fetched list videos show 0 comments, 1 unit each for nothing; busiest first, 0-comment videos skipped
+        cur.execute("select video_id, coalesce(comment_count, -1) from youtube_videos where video_id = any(%s)", (todo,))
+        cc = dict(cur.fetchall())
+        todo = sorted((v for v in todo if cc.get(v, -1) != 0), key=lambda v: -cc.get(v, -1))
     print(f"{len(todo)} videos waiting; this run takes at most {args.max_units}")
     if args.dry_run:
         return 0
