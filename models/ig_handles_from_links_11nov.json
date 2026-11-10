@@ -1,0 +1,520 @@
+{
+ "rule": "A handle is taken only when it is the creator's own link: it appears in their channel description, or in >= 3 of their\nown video descriptions AND is >= 60% of all instagram.com links in those descriptions (so sponsor / guest links lose).\nHandles already held by another creator are skipped. Only creators in scope with no Instagram handle are touched.",
+ "found": {
+  "38982051-b229-4f7c-921e-06be6f1da1b2": {
+   "name": "Aakash Chopra",
+   "instagram_handle": "cricketaakash",
+   "in_channel_description": false,
+   "videos_with_link": 312
+  },
+  "c6a9ba7a-aaa5-4801-86d0-95ce1ae7d279": {
+   "name": "MIND WITH MUSCLE",
+   "instagram_handle": "mindwithmuscle_",
+   "in_channel_description": false,
+   "videos_with_link": 12
+  },
+  "7597606c-ee98-4698-8505-4b6df49c3ce7": {
+   "name": "Rishabh Pant",
+   "instagram_handle": "rishabpant",
+   "in_channel_description": true,
+   "videos_with_link": 81
+  },
+  "e87a49d0-401e-4cdb-b01d-8116886d6ad9": {
+   "name": "Bhuwan Chauhan",
+   "instagram_handle": "bhuwan_ifbbpro",
+   "in_channel_description": false,
+   "videos_with_link": 86
+  },
+  "7951a36c-b9fd-4596-a87a-3096e07c5e99": {
+   "name": "Tiger Fitness Club",
+   "instagram_handle": "sandy_baisoya_tiger",
+   "in_channel_description": true,
+   "videos_with_link": 33
+  },
+  "e1ea0899-87af-41f8-8489-cc3e418047c8": {
+   "name": "Dr Pal",
+   "instagram_handle": "dr.pal.manickam",
+   "in_channel_description": false,
+   "videos_with_link": 419
+  },
+  "2807e18b-d2bd-46fc-a412-d01198239c82": {
+   "name": "Rajat Dalal",
+   "instagram_handle": "rajat_9629",
+   "in_channel_description": false,
+   "videos_with_link": 59
+  },
+  "82ce1721-400c-4560-9f1a-986b8b836dfe": {
+   "name": "Dr Imran Patel Official",
+   "instagram_handle": "drimranpatelofficial",
+   "in_channel_description": false,
+   "videos_with_link": 6
+  },
+  "725240f5-d1f6-4380-97cf-8c9d7d23b071": {
+   "name": "AskDrJain Dr Sankalp Jain",
+   "instagram_handle": "dr.akjain",
+   "in_channel_description": false,
+   "videos_with_link": 306
+  },
+  "140bd9fd-18df-45c1-a265-3ce238ba99d1": {
+   "name": "Isha Foundation",
+   "instagram_handle": "isha.foundation",
+   "in_channel_description": false,
+   "videos_with_link": 366
+  },
+  "932d96c1-9244-4944-a78c-cc682a9c3d04": {
+   "name": "Gurudev Sri Sri Ravi Shankar",
+   "instagram_handle": "gurudev",
+   "in_channel_description": false,
+   "videos_with_link": 481
+  },
+  "bde71bf3-8fc8-4ff0-9c60-659fb3cbde0f": {
+   "name": "The Art of Living",
+   "instagram_handle": "artofliving",
+   "in_channel_description": true,
+   "videos_with_link": 589
+  },
+  "4d5550d1-90e8-4126-b328-4cf798bcce53": {
+   "name": "heartfulness",
+   "instagram_handle": "heartfulness",
+   "in_channel_description": false,
+   "videos_with_link": 592
+  },
+  "91fac370-fd02-4e7f-a575-e9a864d0bfab": {
+   "name": "Shreans Daga",
+   "instagram_handle": "shreansdagafoundation",
+   "in_channel_description": false,
+   "videos_with_link": 507
+  },
+  "c16824a7-26e6-4bfd-a933-4c2139a9cd57": {
+   "name": "Vipassana Meditation",
+   "instagram_handle": "vipassanaorg",
+   "in_channel_description": false,
+   "videos_with_link": 67
+  },
+  "5d70b6ce-f7d6-43bc-859b-6ce52bca1206": {
+   "name": "Robin Uthappa",
+   "instagram_handle": "robinaiyudauthappa",
+   "in_channel_description": false,
+   "videos_with_link": 302
+  },
+  "76801e7f-3c8f-4f13-b9db-f6b20a92ae5d": {
+   "name": "Sangram Singh Official Channel ",
+   "instagram_handle": "sangramsingh_wrestler",
+   "in_channel_description": false,
+   "videos_with_link": 61
+  },
+  "fd42f863-07ae-4a63-bc39-dfbd5732e317": {
+   "name": "Anand yadav",
+   "instagram_handle": "unbreakable_anand",
+   "in_channel_description": false,
+   "videos_with_link": 53
+  },
+  "8da6dd17-04e1-4e08-b547-68ba880a49f8": {
+   "name": "Get Stronger",
+   "instagram_handle": "get__stronger",
+   "in_channel_description": false,
+   "videos_with_link": 22
+  },
+  "8658d5db-996c-4196-8cc1-e1106ca0aaa5": {
+   "name": "Tamil Nadu Premier League",
+   "instagram_handle": "tnpremierleague",
+   "in_channel_description": false,
+   "videos_with_link": 585
+  },
+  "fa5748e4-01fe-4716-adbc-e6fc1446c672": {
+   "name": "Om Dhumatkar",
+   "instagram_handle": "om.dhumatkar",
+   "in_channel_description": false,
+   "videos_with_link": 236
+  },
+  "393c8e9b-b589-4d34-b183-a1e2822f86f2": {
+   "name": "Yog with Madhu",
+   "instagram_handle": "madhu_sem",
+   "in_channel_description": true,
+   "videos_with_link": 0
+  },
+  "ac31c887-8586-4bb0-bf7d-d68fa40d94a9": {
+   "name": "Dr. Harish Grover",
+   "instagram_handle": "drharishgroverchiropractor",
+   "in_channel_description": true,
+   "videos_with_link": 24
+  },
+  "d568520d-127d-4b78-8622-86166f2f13fa": {
+   "name": "Dr.Education :Simplified Medical Explanations",
+   "instagram_handle": "dr.education_official",
+   "in_channel_description": true,
+   "videos_with_link": 326
+  },
+  "30cce75f-0192-41b6-82b7-8672d0c7fb02": {
+   "name": "Acharya Manish Ji",
+   "instagram_handle": "acharyamanishji",
+   "in_channel_description": false,
+   "videos_with_link": 75
+  },
+  "203b1f27-3a41-48f5-805f-9c2c77447fc2": {
+   "name": "Dr Shubham Vatsya Gastroenterology",
+   "instagram_handle": "dr.shubhamvatsya",
+   "in_channel_description": false,
+   "videos_with_link": 56
+  },
+  "16115e4a-1e80-47c0-a007-45e8ef3e221e": {
+   "name": "Dr. Nene",
+   "instagram_handle": "drneneofficial",
+   "in_channel_description": false,
+   "videos_with_link": 257
+  },
+  "54a7509f-713e-40b4-93e0-4d52719dd41c": {
+   "name": "Dr Sweta Adatia",
+   "instagram_handle": "drsweta.adatia",
+   "in_channel_description": false,
+   "videos_with_link": 138
+  },
+  "8140877b-3538-4985-8839-7895958c1531": {
+   "name": "Dr. Archana Nirula - Apki Apni Gynae",
+   "instagram_handle": "dr_archananirula",
+   "in_channel_description": false,
+   "videos_with_link": 102
+  },
+  "1c04d9de-7d95-4454-896c-de457b5428a3": {
+   "name": "The Fertility Couple ",
+   "instagram_handle": "the_fertility_couple",
+   "in_channel_description": false,
+   "videos_with_link": 10
+  },
+  "bc0ec9cc-f08b-4778-b372-73ea9b70ef49": {
+   "name": "Dr. Mitali Rathod ",
+   "instagram_handle": "dr.uterus",
+   "in_channel_description": false,
+   "videos_with_link": 40
+  },
+  "798a4b2b-ee1c-43b4-acf9-90a8c990718f": {
+   "name": "Dr. Kaberi Banerjee",
+   "instagram_handle": "drkaberibanerji",
+   "in_channel_description": false,
+   "videos_with_link": 51
+  },
+  "25071886-f862-4df9-8cde-ab8c29a1b182": {
+   "name": "Dr Tarang Krishna",
+   "instagram_handle": "drtarangkrishna",
+   "in_channel_description": false,
+   "videos_with_link": 381
+  },
+  "396ff020-8be4-4931-b31c-f064e1bcf0e0": {
+   "name": "The Liver Doc",
+   "instagram_handle": "theliverdr",
+   "in_channel_description": true,
+   "videos_with_link": 27
+  },
+  "5d61e8bd-c902-43c1-88fe-9773c579e49f": {
+   "name": "Kids Pharmer - Healthy Nursery Rhymes",
+   "instagram_handle": "kidspharmer",
+   "in_channel_description": false,
+   "videos_with_link": 37
+  },
+  "c58367c8-4224-4e5f-8d77-c09932d84a8b": {
+   "name": "Dr Sarthak Dave",
+   "instagram_handle": "dr_sarthak_dave",
+   "in_channel_description": false,
+   "videos_with_link": 11
+  },
+  "f8cc3f50-4026-47f4-84f1-c058fdfa49ee": {
+   "name": "Dr. Vishakha Shivdasani ( Doctorvee )",
+   "instagram_handle": "doctorvee",
+   "in_channel_description": false,
+   "videos_with_link": 11
+  },
+  "47660937-69c2-4a31-ab95-ede80e2c7e59": {
+   "name": "Dr. Kedar Upadhyay",
+   "instagram_handle": "dr.kedar",
+   "in_channel_description": true,
+   "videos_with_link": 21
+  },
+  "ef36d411-334e-42b3-b5e0-9eca3133f1fe": {
+   "name": "Dr Mayank | Sports Injuries ",
+   "instagram_handle": "drmayankdaral",
+   "in_channel_description": false,
+   "videos_with_link": 271
+  },
+  "d7bea3f1-868c-4e38-a827-909707488ce6": {
+   "name": "Dr Era Dutta Mental Health Ninja",
+   "instagram_handle": "mindwellness.dr.eradutta",
+   "in_channel_description": false,
+   "videos_with_link": 52
+  },
+  "a7195fe3-8976-4341-be69-990c6b1816d5": {
+   "name": "Sahil Khan",
+   "instagram_handle": "sahilkhan",
+   "in_channel_description": true,
+   "videos_with_link": 3
+  },
+  "d408335f-f228-4094-a02c-262e9ffb95b5": {
+   "name": "The Nitesh Fitness Empire",
+   "instagram_handle": "niteshsoniy",
+   "in_channel_description": true,
+   "videos_with_link": 2
+  },
+  "9e1dd5ca-5a3d-4701-9c67-e6049ac7e57c": {
+   "name": "FitManjeet",
+   "instagram_handle": "fitmanjeet",
+   "in_channel_description": false,
+   "videos_with_link": 31
+  },
+  "f0050a8f-a7ea-4415-b79d-9ffdff95602f": {
+   "name": "Training tips by Dronacharya Bhupender Dhawan and Mr India Mukesh Singh.",
+   "instagram_handle": "ibhupender_dhawan",
+   "in_channel_description": false,
+   "videos_with_link": 181
+  },
+  "8f28b3ea-9be7-4939-8605-d0cad07c226b": {
+   "name": "Iron Man Lifestyle",
+   "instagram_handle": "ironmanlifestyle",
+   "in_channel_description": true,
+   "videos_with_link": 0
+  },
+  "a48c7071-d24d-42d9-ade8-1cde2a1430f3": {
+   "name": "Vidyut Jammwal",
+   "instagram_handle": "mevidyutjammwal",
+   "in_channel_description": false,
+   "videos_with_link": 7
+  },
+  "72d73c1d-d9ad-497b-b92a-a5650c36b2bc": {
+   "name": "jackedaakash",
+   "instagram_handle": "jackedaakash",
+   "in_channel_description": false,
+   "videos_with_link": 3
+  },
+  "c415b8ba-9c9e-4c91-932e-27316e1c7024": {
+   "name": "Sajeev Nair ",
+   "instagram_handle": "iamsajeevnair",
+   "in_channel_description": false,
+   "videos_with_link": 89
+  },
+  "80218668-5b44-45a8-b2e3-21daa325dd0c": {
+   "name": "Abhinav Lifts",
+   "instagram_handle": "abhinav._lifts",
+   "in_channel_description": false,
+   "videos_with_link": 34
+  },
+  "a190fcca-f9d9-47c0-a354-a0da9fda25bb": {
+   "name": "Wasim Khan",
+   "instagram_handle": "wasimkhanofficial",
+   "in_channel_description": false,
+   "videos_with_link": 25
+  },
+  "44064540-9c52-455e-9456-777e41b04e16": {
+   "name": "Insane Fitness",
+   "instagram_handle": "insanefitness13",
+   "in_channel_description": false,
+   "videos_with_link": 7
+  },
+  "38f41ba9-6200-444b-8196-6c79888afee8": {
+   "name": "Max Desi Vlogs ",
+   "instagram_handle": "max.desi.fitness",
+   "in_channel_description": true,
+   "videos_with_link": 1
+  },
+  "71a829fc-f0a8-4e55-b84b-afd36e3cfd13": {
+   "name": "Shilpa Shetty Kundra",
+   "instagram_handle": "theshilpashetty",
+   "in_channel_description": false,
+   "videos_with_link": 322
+  },
+  "3fa2b7a2-4b88-40bc-8883-d38d9752e54e": {
+   "name": "Anshuka Yoga",
+   "instagram_handle": "anshukayoga",
+   "in_channel_description": false,
+   "videos_with_link": 9
+  },
+  "fa447ac2-66b8-4c42-828d-db54d398030a": {
+   "name": "Akshar Yoga",
+   "instagram_handle": "aksharyoga",
+   "in_channel_description": false,
+   "videos_with_link": 62
+  },
+  "1dc1d70e-6424-4ff1-bdcc-1770227cdf46": {
+   "name": "Bodhi School of Yoga",
+   "instagram_handle": "bodhi_school_of",
+   "in_channel_description": false,
+   "videos_with_link": 56
+  },
+  "240ccca6-9eae-40b8-a432-8edee2312ecc": {
+   "name": "Pyramid Valley International",
+   "instagram_handle": "pyramidvalleyinternational",
+   "in_channel_description": false,
+   "videos_with_link": 50
+  },
+  "4ca763c8-e5c1-4f35-b767-a48d9215e1a1": {
+   "name": "Gijo John",
+   "instagram_handle": "johnthelonewolf",
+   "in_channel_description": true,
+   "videos_with_link": 0
+  },
+  "b4715d50-cec9-4c09-b14e-d35ec2dbab21": {
+   "name": "Maha Bodhi Society Bengaluru",
+   "instagram_handle": "mahabodhiblr",
+   "in_channel_description": false,
+   "videos_with_link": 36
+  },
+  "5a8ee5da-8831-4090-8761-cbae6578e789": {
+   "name": "Indian Football",
+   "instagram_handle": "indianfootball",
+   "in_channel_description": false,
+   "videos_with_link": 183
+  },
+  "13796ae7-3ae7-4d27-8835-ab3a825d1542": {
+   "name": "NorthEast United FC",
+   "instagram_handle": "northeastunitedfc",
+   "in_channel_description": false,
+   "videos_with_link": 21
+  },
+  "73e0bca1-c315-4b54-948f-8a27ff199ed1": {
+   "name": "Sporting Club Delhi",
+   "instagram_handle": "scdelhi.official",
+   "in_channel_description": false,
+   "videos_with_link": 131
+  },
+  "2ab59f56-5b5d-409d-b1ff-a055b1681876": {
+   "name": "Satvic Movement",
+   "instagram_handle": "satvicmovement",
+   "in_channel_description": false,
+   "videos_with_link": 20
+  },
+  "5d31693b-aa1f-41eb-8de2-bb7cf37fda9a": {
+   "name": "Dr. Manan Vora",
+   "instagram_handle": "dr.mananvora",
+   "in_channel_description": false,
+   "videos_with_link": 8
+  },
+  "1bff8df1-03ce-4b4d-9f5e-0b275fff0667": {
+   "name": "Indian Weight Loss Diet by Richa",
+   "instagram_handle": "indianweightlossdietbyricha",
+   "in_channel_description": false,
+   "videos_with_link": 122
+  },
+  "18dbf5e3-e2e8-4d10-a738-087138fdc9a7": {
+   "name": "Eat more Lose more",
+   "instagram_handle": "eatmorelosemore",
+   "in_channel_description": false,
+   "videos_with_link": 75
+  },
+  "4666865a-410d-4a00-8e5d-1ed82a4f9211": {
+   "name": "OBAID KHAN",
+   "instagram_handle": "obaidpathankhan",
+   "in_channel_description": false,
+   "videos_with_link": 8
+  },
+  "9dc3f35b-6ba4-4384-85eb-1f9eb311a150": {
+   "name": "Nutritionist Amita Gadre",
+   "instagram_handle": "amitagadre",
+   "in_channel_description": false,
+   "videos_with_link": 6
+  },
+  "4f3d6834-36f6-4f64-949e-3df22baf8fbd": {
+   "name": "Molri Training",
+   "instagram_handle": "gauravmolri",
+   "in_channel_description": false,
+   "videos_with_link": 3
+  },
+  "2e647c12-8403-44bc-be60-0ea7a099607c": {
+   "name": "Sheru Aangrish Official",
+   "instagram_handle": "sheruaangrishofficial",
+   "in_channel_description": false,
+   "videos_with_link": 9
+  },
+  "0bb8ee3a-eff8-48cd-99b9-6703d1cdd4bd": {
+   "name": "Manisha Mehta",
+   "instagram_handle": "dietitianmanisha",
+   "in_channel_description": true,
+   "videos_with_link": 31
+  },
+  "d53adb5d-234a-4452-ab62-a9dc1b21091f": {
+   "name": "Mushahid Khan Fitness",
+   "instagram_handle": "mushahid_khan_fitness",
+   "in_channel_description": false,
+   "videos_with_link": 7
+  },
+  "3fd60589-e308-4be2-8658-bb7899175742": {
+   "name": "Flexanther Mani",
+   "instagram_handle": "flexanther_mani",
+   "in_channel_description": false,
+   "videos_with_link": 11
+  },
+  "d434b400-2aa3-453c-9ae6-22c7e21c77a9": {
+   "name": "Pooja Makhija",
+   "instagram_handle": "poojamakhija",
+   "in_channel_description": false,
+   "videos_with_link": 27
+  },
+  "741056aa-4a7f-4f01-8bc6-acd6fc63a904": {
+   "name": "Akhil reddy",
+   "instagram_handle": "akhil_fitwolf",
+   "in_channel_description": false,
+   "videos_with_link": 12
+  },
+  "96ce31e9-0445-44ab-a431-c43518103012": {
+   "name": "Roshni Sanghvi",
+   "instagram_handle": "roshnisanghvi",
+   "in_channel_description": false,
+   "videos_with_link": 14
+  },
+  "08ee3a3a-5f77-4cd1-8b85-63249fb7b015": {
+   "name": "Dr.Geetika Chopra",
+   "instagram_handle": "dr.geetika_chopra",
+   "in_channel_description": false,
+   "videos_with_link": 15
+  },
+  "52cb175b-e3b6-487f-9598-07580280aa41": {
+   "name": "I'mWOW",
+   "instagram_handle": "imwow.in",
+   "in_channel_description": false,
+   "videos_with_link": 69
+  },
+  "c25e07c7-5a4e-4be7-9fcb-c50183e191d7": {
+   "name": "Knockout Fight Club",
+   "instagram_handle": "knockout_fight_club",
+   "in_channel_description": false,
+   "videos_with_link": 5
+  },
+  "334c46c4-fcf4-4d7b-926d-1111ae3401df": {
+   "name": "Aarush Bhola Fit - Mess",
+   "instagram_handle": "aarushbhola17",
+   "in_channel_description": false,
+   "videos_with_link": 14
+  },
+  "4090123e-64ab-4478-9ec6-ec1cc9fce54a": {
+   "name": "Aadhar Malhotra",
+   "instagram_handle": "aadharmalhotra",
+   "in_channel_description": true,
+   "videos_with_link": 1
+  },
+  "00c1f05d-1b49-4ed3-80b1-c168108dfb6b": {
+   "name": "Meghna's Food Magic",
+   "instagram_handle": "meghnasfoodmagic",
+   "in_channel_description": false,
+   "videos_with_link": 22
+  },
+  "f7478cdb-1ba3-4577-a219-c4ba9a0398e8": {
+   "name": "Ravi Kapoor, IRS",
+   "instagram_handle": "ravikapoorirs",
+   "in_channel_description": false,
+   "videos_with_link": 97
+  },
+  "f804281f-afe3-4164-b607-746120d6c930": {
+   "name": "Dr Bhagyesh Kulkarni",
+   "instagram_handle": "drbhagyeshkulkarni",
+   "in_channel_description": false,
+   "videos_with_link": 35
+  },
+  "575758ea-e1ea-4246-a793-a9421d441abd": {
+   "name": "Painflame Clinic",
+   "instagram_handle": "painflameclinic",
+   "in_channel_description": true,
+   "videos_with_link": 27
+  }
+ },
+ "skipped_already_held": {
+  "FitMuscle TV": "taneja.gaurav",
+  "Suman SunShine Secrets": "suman_sunshine",
+  "Gut Feeling with Dr Pal - Podcast": "dr.pal.manickam"
+ }
+}
