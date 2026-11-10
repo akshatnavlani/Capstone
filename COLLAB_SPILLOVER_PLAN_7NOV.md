@@ -36,3 +36,9 @@ result appears; reporting the subgroup as the main result.
 The expected date above was wrong: with the 30-day first-tag rule the real rate in Sep-Nov 2026 was about 3-7 events a
 week (counted 10 Nov, identity only, no outcome looked at), so 30 events are expected around mid-to-late December 2026.
 The 30-event threshold and every rule stay as written; on 21 Nov the study is reported as running, with its event count.
+
+## Timing change, 10 Nov 2026 ~22:00 IST (decided by Shimona before any outcome was computed; no other rule changed)
+The project ends on 21 Nov 2026, so the study cannot wait for 30 events. The ONE result run is moved to 20 Nov 2026 and
+uses every event with readings on both sides by then (scripts/collab_forward_test.py run). Today (10 Nov) the same
+script is run once as an EARLY LOOK only: it is reported with its event count and never called a result. Pass mark
+unchanged; the project rule also applies to both runs: fewer than 20 counted events = early evidence, not a result.
