@@ -1,4 +1,4 @@
-"""Writes models/ig_handles_final_11nov.json into creators.instagram_handle (only where it is still empty), after a backup
+r"""Writes models/ig_handles_final_11nov.json into creators.instagram_handle (only where it is still empty), after a backup
 table creators_ig_handle_backup_20261111. Undo: update creators c set instagram_handle = b.instagram_handle from that table b
 where c.creator_id = b.creator_id.
 
