@@ -1,6 +1,6 @@
 """Runs the replication comment fetch once a day after the YouTube quota resets (13:30 IST), until nothing is left (10 Nov 2026).
 
-Same two runs as exports/replication_fetch_10nov.cmd: event videos, then placebo videos, 1,750 units each (3,500 a day,
+Same two runs as exports/replication_fetch_10nov.cmd: event videos, then placebo videos, 2,500 units each (5,000 a day; GitHub ~2,400 + subscribers ~900 leave ~1,700 spare;
 leaving room for the GitHub timers on the shared 10,000-unit key). Stops by itself when both lists are done.
 
     python daily_replication_runner.py            # first run tomorrow 13:40 (today's run was started by hand)
@@ -26,7 +26,7 @@ def run_once() -> int:
         log = ROOT / "exports" / f"rep_fetch_{name}_{datetime.now():%d%b}.log".lower()
         with open(log, "w", encoding="utf-8") as fh:
             subprocess.run([sys.executable, "-u", "youtube_comments_backfill.py", "--video-ids-file", str(path),
-                            "--pages", "3", "--max-units", "1750"], cwd=HERE, stdout=fh, stderr=subprocess.STDOUT)
+                            "--pages", "3", "--max-units", "2500"], cwd=HERE, stdout=fh, stderr=subprocess.STDOUT)
         text = log.read_text(encoding="utf-8")
         m = re.search(r"(\d+) videos waiting", text)
         n = int(m.group(1)) if m else -1
