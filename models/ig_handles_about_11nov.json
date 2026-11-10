@@ -1,0 +1,487 @@
+{
+ "rule": "For in-scope creators still without an Instagram handle (and not already found in their descriptions), read\nyoutube.com/channel/<id>/about once (1 s apart) and collect full instagram.com/<handle> link targets. Exactly one distinct\nhandle -> taken; more than one -> listed as ambiguous, not taken. Writes models/ig_handles_about_11nov.json.\n",
+ "found": {
+  "91aa8fd9-5b55-44b3-8fe7-59d6ff65de96": {
+   "name": "KL Rahul",
+   "instagram_handle": "klrahul",
+   "source": "YouTube About page link"
+  },
+  "3b5a1ea2-31bc-4613-912b-7cc0003efa88": {
+   "name": "IFBB Pro Junaid Kaliwala",
+   "instagram_handle": "ifbbpro_jkaliwala",
+   "source": "YouTube About page link"
+  },
+  "d80f6b7e-e5da-4460-9d87-dc12b48d925f": {
+   "name": "Tarun Gill",
+   "instagram_handle": "iamtarungill",
+   "source": "YouTube About page link"
+  },
+  "afc7ae4a-6c53-4822-a007-75780eab994b": {
+   "name": "Siddhant Jaiswal",
+   "instagram_handle": "unstopablesidd",
+   "source": "YouTube About page link"
+  },
+  "3b5d0949-bd33-47dd-9fc9-72583636943a": {
+   "name": "Urbangabru_Official",
+   "instagram_handle": "urbangabru_official",
+   "source": "YouTube About page link"
+  },
+  "e4643135-9d11-4fa9-a508-d7e2daab6b76": {
+   "name": "Ronnie Coleman",
+   "instagram_handle": "ronniecoleman8",
+   "source": "YouTube About page link"
+  },
+  "b7567757-fceb-4d1a-93b6-c11b0a513507": {
+   "name": "Khurai lakpa",
+   "instagram_handle": "unstoppablelakpa",
+   "source": "YouTube About page link"
+  },
+  "effc8eb5-bfc9-44da-a5e5-2ef225c3ab4e": {
+   "name": "Sadhguru",
+   "instagram_handle": "sadhguru",
+   "source": "YouTube About page link"
+  },
+  "49752ee9-8ef3-45a7-80c3-26d2e8874b92": {
+   "name": "Meditations By Gurudev",
+   "instagram_handle": "gurudev",
+   "source": "YouTube About page link"
+  },
+  "f6f11053-ec6f-499c-b9c9-c00c9cd17019": {
+   "name": "Rujutadiwekarofficial",
+   "instagram_handle": "rujuta.diwekar",
+   "source": "YouTube About page link"
+  },
+  "23e28298-e6af-403b-bd47-d04142174c00": {
+   "name": "India Running with Milind Soman",
+   "instagram_handle": "liveonfame",
+   "source": "YouTube About page link"
+  },
+  "f459ea3f-b816-46f9-b91f-cbab70e0d15f": {
+   "name": "Sri Sri School Of Yoga",
+   "instagram_handle": "srisriyoga",
+   "source": "YouTube About page link"
+  },
+  "09f7a3c0-4de8-46a8-8a29-be8c71ec6574": {
+   "name": "DietTube India",
+   "instagram_handle": "diettubeindia",
+   "source": "YouTube About page link"
+  },
+  "d4bcbd6b-6c65-452c-b787-48d40825506d": {
+   "name": "Goyal Sahab ke Nuskhe",
+   "instagram_handle": "goyalsahabkenuskhe",
+   "source": "YouTube About page link"
+  },
+  "387b6f66-2e6c-4714-9971-1c0b71c0f733": {
+   "name": "Dr. Ashwani Maichand",
+   "instagram_handle": "drashwanimaichand",
+   "source": "YouTube About page link"
+  },
+  "ad0bf246-b3ae-4941-be8c-71ff74d327ca": {
+   "name": "Sweetreactions",
+   "instagram_handle": "sweetreactions",
+   "source": "YouTube About page link"
+  },
+  "3fca0ba8-f21f-4623-9e43-8e86d976329a": {
+   "name": "Surakshith Battina",
+   "instagram_handle": "dr_baby_maker",
+   "source": "YouTube About page link"
+  },
+  "4f6a04ef-d792-4fd5-9927-4e43fbfa8358": {
+   "name": "Dr Bhagyesh's DFF Hindi",
+   "instagram_handle": "drbhagyeshkulkarni_hindi",
+   "source": "YouTube About page link"
+  },
+  "eaf8b749-dbe5-4b92-8b4b-45410e88ed33": {
+   "name": "Dr Arpit Gupta",
+   "instagram_handle": "dr.arpitgupta11",
+   "source": "YouTube About page link"
+  },
+  "b3337a44-8275-45ab-b68a-0deda9ae4b83": {
+   "name": "Dr. Vikash Kumar Agarwal",
+   "instagram_handle": "vcarecancercenter",
+   "source": "YouTube About page link"
+  },
+  "f40d125d-d735-4e8a-be81-73e2a90bc810": {
+   "name": "Coach Bhawana Sinha",
+   "instagram_handle": "coachbhawanasinha",
+   "source": "YouTube About page link"
+  },
+  "8d93f845-14d3-4c67-98fb-8d60923de3b7": {
+   "name": "Neha Bhat, ABT, ATR Sex Therapist & Author",
+   "instagram_handle": "indiansextherapist",
+   "source": "YouTube About page link"
+  },
+  "664ed57e-b108-4708-9c60-1204203d8803": {
+   "name": "surgeonflix",
+   "instagram_handle": "surgeonflix",
+   "source": "YouTube About page link"
+  },
+  "1dc4ce35-6dd3-460a-8455-a9bd98a73fc3": {
+   "name": "Dr. Aalap Shah",
+   "instagram_handle": "draalapshah",
+   "source": "YouTube About page link"
+  },
+  "b5f5fb5f-98ae-49a1-a911-3857e84f2caa": {
+   "name": "Doc Arvind Bhateja (Doc AB)",
+   "instagram_handle": "doc.arvind.bhateja",
+   "source": "YouTube About page link"
+  },
+  "6951f605-6d58-41be-8984-4b5dd725d227": {
+   "name": "Dr Shivani Bansal",
+   "instagram_handle": "drshivanibansalofficial",
+   "source": "YouTube About page link"
+  },
+  "a298563c-bf38-48e4-9208-f68d7d39a322": {
+   "name": "Juned Fitness",
+   "instagram_handle": "junedfitness",
+   "source": "YouTube About page link"
+  },
+  "fd5b3274-4a1c-4e9b-8c09-0de44eb40001": {
+   "name": "Saket Gokhale",
+   "instagram_handle": "saketgokhale",
+   "source": "YouTube About page link"
+  },
+  "be474df7-4243-453e-b86a-94e0fe6a00bc": {
+   "name": "Vipin Yadav",
+   "instagram_handle": "vipin_yadav_official",
+   "source": "YouTube About page link"
+  },
+  "30d4b997-5c27-4d58-b935-9dc6df952bcf": {
+   "name": "FitMuscle TV",
+   "instagram_handle": "taneja.gaurav",
+   "source": "YouTube About page link"
+  },
+  "9fe18f47-c626-42e8-b2fb-3b6c3a35dc66": {
+   "name": "Heartfulness Meditation Kannada",
+   "instagram_handle": "practiceheartfulness",
+   "source": "YouTube About page link"
+  },
+  "c2d18eb4-2669-4e10-a78d-1bd7dd7ea167": {
+   "name": "Manish Keshwani Fitness",
+   "instagram_handle": "manishkeshwanifitness",
+   "source": "YouTube About page link"
+  },
+  "d2075e2b-42b7-43d0-b7ae-61312368744f": {
+   "name": "Shifu Kanishka Combatives",
+   "instagram_handle": "shifu_kanishka",
+   "source": "YouTube About page link"
+  },
+  "3cfa3ec4-33e6-419d-ac8a-6ef3540918dc": {
+   "name": "AI GYM FITNESS ",
+   "instagram_handle": "pavan_pawar_5073",
+   "source": "YouTube About page link"
+  },
+  "2dbd74fd-5f95-4f70-90c6-5845d24b8463": {
+   "name": "Vasu Bindra",
+   "instagram_handle": "vasu_bindra",
+   "source": "YouTube About page link"
+  },
+  "8e3b50c2-e96e-410a-a284-f111f351fca0": {
+   "name": "The Gowrav",
+   "instagram_handle": "mr.gowravreddy",
+   "source": "YouTube About page link"
+  },
+  "609357ba-120a-40b0-85f8-8b9e4ca588ad": {
+   "name": "SYRUS VEERA",
+   "instagram_handle": "healthy_syrus",
+   "source": "YouTube About page link"
+  },
+  "67380baa-9d6d-40a7-a304-3746cf33004e": {
+   "name": "Jitendra Chouksey",
+   "instagram_handle": "fittrwithjc",
+   "source": "YouTube About page link"
+  },
+  "364a73ca-a770-478f-b029-ed8f7d0e17e1": {
+   "name": "fitwithpratham ",
+   "instagram_handle": "fitwithpratham",
+   "source": "YouTube About page link"
+  },
+  "d0d1e783-0601-4d49-a2c1-a54d69c3beba": {
+   "name": "Apoorva Alex",
+   "instagram_handle": "apoorvaalex",
+   "source": "YouTube About page link"
+  },
+  "930bce70-5a26-4b62-a349-952972975442": {
+   "name": "Ashwin",
+   "instagram_handle": "rashwin99",
+   "source": "YouTube About page link"
+  },
+  "805e8470-45ca-4be9-abfa-f7f7cf5cfbb5": {
+   "name": "Jamshedpur FC",
+   "instagram_handle": "jamshedpurfc",
+   "source": "YouTube About page link"
+  },
+  "3cdfb397-481e-4d5b-8c59-3b9bea048b50": {
+   "name": "DrAnkitDaral Psychiatrist ",
+   "instagram_handle": "dr.ankitdaral_psychiatrist",
+   "source": "YouTube About page link"
+  },
+  "742359df-c423-403c-89d7-cb3d3287f145": {
+   "name": "Saffron Trail",
+   "instagram_handle": "saffrontrail",
+   "source": "YouTube About page link"
+  },
+  "ddff86ce-fbfa-4bcf-9e65-992490f9db8f": {
+   "name": "Selfcare by Suman",
+   "instagram_handle": "selfcarebysuman",
+   "source": "YouTube About page link"
+  },
+  "5ae2e083-ee28-43aa-9686-1919b60b84c0": {
+   "name": "SIKHSPACK 2.0",
+   "instagram_handle": "sikhspack",
+   "source": "YouTube About page link"
+  },
+  "a0767132-9d6a-488b-ad8a-bc1e53c6b78d": {
+   "name": "Skipper Fit",
+   "instagram_handle": "skipper_ar",
+   "source": "YouTube About page link"
+  },
+  "f10a5c50-4219-416a-92bc-3c53ec605fb6": {
+   "name": "Saarah Fit Chick",
+   "instagram_handle": "saarahfitchick",
+   "source": "YouTube About page link"
+  },
+  "03c316bc-42b6-453a-82fd-8f584c3ff984": {
+   "name": "Shubham Kandu Fitness",
+   "instagram_handle": "mr_aesthetic8",
+   "source": "YouTube About page link"
+  },
+  "a71e0a56-b886-440b-9300-b5c0abb101ed": {
+   "name": "Fit forge Harsha",
+   "instagram_handle": "h_for_harsha_65",
+   "source": "YouTube About page link"
+  },
+  "ff93be35-ebaa-464d-91ef-a31ba3ef097e": {
+   "name": "Always A Beginner",
+   "instagram_handle": "always_a_beginnerr",
+   "source": "YouTube About page link"
+  },
+  "582ca679-2833-4934-bdcd-f88dfab72f39": {
+   "name": "Chaitanya Bhutani",
+   "instagram_handle": "frommind2muscle",
+   "source": "YouTube About page link"
+  },
+  "a68c6d0a-be26-48b2-bf4e-42fbe770772d": {
+   "name": "Pritish Kujur",
+   "instagram_handle": "pritishkujur",
+   "source": "YouTube About page link"
+  },
+  "c8f1681e-800c-46c6-8bb3-56e654576b61": {
+   "name": "MANNU CHAUDHARY ",
+   "instagram_handle": "mannu_chaudhary6",
+   "source": "YouTube About page link"
+  },
+  "ef5cf071-d0ff-4408-b262-8ebccfa047f9": {
+   "name": "SHIVAM LIFTS",
+   "instagram_handle": "shivam_liftss",
+   "source": "YouTube About page link"
+  },
+  "ec2a7de3-f9fd-4f31-81b0-db5dfe635594": {
+   "name": "Habuild Yoga Session",
+   "instagram_handle": "habuild.in",
+   "source": "YouTube About page link"
+  },
+  "84f2cde5-5a7e-4688-b10c-63f383b098b4": {
+   "name": "Bhanumathi Narasimhan",
+   "instagram_handle": "bhanu_narasimhan",
+   "source": "YouTube About page link"
+  },
+  "abc7b87a-ee0b-4ba8-b413-85b77da16e38": {
+   "name": "Dr. Shree Rao",
+   "instagram_handle": "theearsurgeon",
+   "source": "YouTube About page link"
+  },
+  "6a9e7a76-3c67-4757-be31-c45deb1ac6c8": {
+   "name": "Dr. Roshani Sanghani",
+   "instagram_handle": "roshanisanghani_simpletalkdoc",
+   "source": "YouTube About page link"
+  },
+  "a8d5e010-047e-4458-9907-f4d6ce964824": {
+   "name": "drravikgupta",
+   "instagram_handle": "dr.ravikgupta",
+   "source": "YouTube About page link"
+  },
+  "dd1de1a0-060b-41e6-82ef-e1a3c9478407": {
+   "name": "Nutritionist Sonakshi Joshi ",
+   "instagram_handle": "dash.of.delish_17",
+   "source": "YouTube About page link"
+  },
+  "b223a953-ad8e-4b7d-9285-9e50b8ded35d": {
+   "name": "Aathira Sethumadhavan",
+   "instagram_handle": "aathirasethumadhavan",
+   "source": "YouTube About page link"
+  },
+  "03ebc8fa-aefe-439f-a174-b96a2b8cca6a": {
+   "name": "GSKCOOKS ",
+   "instagram_handle": "gskcooks2023",
+   "source": "YouTube About page link"
+  },
+  "0bfb528d-ee4b-46a2-8b6f-13e02e0e586f": {
+   "name": "Megha Dasgupta",
+   "instagram_handle": "megha.dasgupta",
+   "source": "YouTube About page link"
+  },
+  "d337f608-fa26-4cee-9a98-0da5725123a7": {
+   "name": "Nutrition with Khushi",
+   "instagram_handle": "nutritionwith_khushi",
+   "source": "YouTube About page link"
+  },
+  "b9ef74c0-1cd4-439e-8121-612667721e28": {
+   "name": "Suman SunShine Secrets",
+   "instagram_handle": "suman_sunshine",
+   "source": "YouTube About page link"
+  },
+  "bee4cbd2-57cd-49b7-9fbd-6ba6d87ae16f": {
+   "name": "Vavya Chopra",
+   "instagram_handle": "feastlyfit",
+   "source": "YouTube About page link"
+  },
+  "3cedd8e5-fe14-40ca-af00-447dd1fe58d6": {
+   "name": "Adhya Subramanian",
+   "instagram_handle": "auraartofhealthyliving",
+   "source": "YouTube About page link"
+  },
+  "6f419ca3-48ee-4f4c-9c7f-a3288af1833d": {
+   "name": "Cric It with Badri",
+   "instagram_handle": "s_badrinath",
+   "source": "YouTube About page link"
+  }
+ },
+ "ambiguous_not_taken": {
+  "IFBB PRO MANOJ PATIL": [
+   "beingharshmhatre",
+   "believe_the_nutritionshop",
+   "dynaminutrition_",
+   "manojpatil_ifbbpro_official"
+  ],
+  "Jeet Selal Aesthetics": [
+   "hsajeetselal",
+   "jeet_selal"
+  ],
+  "Nawin Goldenboy": [
+   "imnawingoldenboy",
+   "nawingoldenboy",
+   "nawingoldenboy_"
+  ],
+  "Siddhant Rai Sikand": [
+   "catch_me_clicking",
+   "siddhantraisikand"
+  ],
+  "Yasmin Karachiwala": [
+   "yasminkarachiwala",
+   "yasminsbodyimage"
+  ],
+  "Bharat Thakur's Artistic Yoga": [
+   "bharatthaku",
+   "btartisticyoga"
+  ],
+  "The Yoga Institute": [
+   "hansajiyogendra",
+   "theyogainstituteofficial"
+  ],
+  "Gunjan Talks Clips": [
+   "gunjanshouts",
+   "gunjantalks",
+   "imwow.in"
+  ],
+  "Badri Fitness": [
+   "badri_fitnesss",
+   "kalyugi_raja_official",
+   "paavangupta51"
+  ],
+  "Pahal Nutrition": [
+   "virenderpah",
+   "virenderpahalnutrition"
+  ],
+  "Kapil Lohia": [
+   "angelicatalwar",
+   "k.s.lproductionhouse829",
+   "kapillohia_ftnssfreak",
+   "mayankflash",
+   "official_shubampandori"
+  ],
+  "Indian Calisthenics": [
+   "the_indiancalisthenics",
+   "this_is_varshney",
+   "vedzz97"
+  ],
+  "Dr AshishSaini UrologistAIIMS": [
+   "dr_ashishsaini",
+   "excel_advance_urology"
+  ],
+  "BigleeTamil": [
+   "bigleemural",
+   "getfitwithbiglee"
+  ],
+  "Gut Feeling with Dr Pal - Podcast": [
+   "dr.pal.manickam",
+   "gutfeelingwithdrpal"
+  ]
+ },
+ "no_instagram_link": [
+  "Food Pharmer",
+  "GOURAV KANDHIL VLOGS",
+  "Sam Sulek",
+  "Visphy Kharradi",
+  "Dr Vijayant Govinda Gupta",
+  "Dr. Cuterus",
+  "Dr Santhosh Jacob",
+  "Yogam Health-Dr Pankaj Verma",
+  "Health Coach Priyanka Maheshwari",
+  "Dr Prateek Makwana",
+  "AskDrUT",
+  "Panna Lathigara",
+  "Dr Ali Irani",
+  "Sahil Fitness",
+  "kisthenics",
+  "Fit.khurana",
+  "Yogabharati Bangalore",
+  "Sanatan Yoga Studio Bangalore",
+  "Meditation & Study Circle Bangalore",
+  "Tarun Kapoor Fitness",
+  "Venkat Guam Fitness",
+  "RISE2GETHER",
+  "Dr Siddharth Gupta",
+  "Mukesh Gahlot Fitness",
+  "Mohammedan Sporting Club Official",
+  "Dr SMiT",
+  "Healthy Bachpan ",
+  "Urs Fit KS",
+  "CoachMk official ",
+  "Varun dutt dubey",
+  "Dikshant Kathayat",
+  "Being Men",
+  "560fitness",
+  "About Ish",
+  "GET FIT WITH SAATWIK",
+  "Fit Nikhil Vlogs",
+  "LIFT WITH SREENATH",
+  "Astheticparvesh",
+  "Arun Paul ",
+  "Liyas Fitness Hub",
+  "Suvendu X Fitness",
+  "Ankit fitness series",
+  "Manish suri fitness",
+  "telugabbayi shiva",
+  "DANNY'S MANIA",
+  "Rohit Chattopadhyay",
+  "Chirag Poojary",
+  "Asveth Sreiram",
+  "Swara Yoga",
+  "Dr.Reynam Tyagi ",
+  "Ikrar Fitness",
+  "Coach Mathi Fit-தமிழா",
+  "Kashish Gupta",
+  "Leema mahajan",
+  "Nithya Suresh Neelampath",
+  "ikkons fit",
+  "Kuldeep Singh Yadav",
+  "Dakshayini Lifts",
+  "Sandy Baisoya Tiger ",
+  "RG Fitness TV",
+  "KHUSHAL FITNESS",
+  "Fine Fettle Cookery’s",
+  "Dr Priya Kalyani"
+ ],
+ "failed": []
+}

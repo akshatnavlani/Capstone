@@ -42,6 +42,6 @@ The project ends on 21 Nov 2026, so the study cannot wait for 30 events. The ONE
 uses every event with readings on both sides by then (scripts/collab_forward_test.py run). Today (10 Nov) the same
 script is run once as an EARLY LOOK only: it is reported with its event count and never called a result. Pass mark
 unchanged; the project rule also applies to both runs: fewer than 20 counted events = early evidence, not a result.
-- 11 Nov 2026 (data, identity only, before any outcome): 85 in-scope creators without an Instagram handle get the handle
-  from their OWN YouTube links (scripts/admin/fill_instagram_from_own_links.py, rule in its docstring, 11 doubtful ones
-  left out by hand). Tags of them count from when the handle is held, as for every creator; no test rule changes.
+- 11 Nov 2026 (data, identity only, before any outcome): 157 in-scope creators without an Instagram handle get the handle
+  from their OWN YouTube descriptions and About pages (scripts/admin/build_ig_handles_final.py, rules and hand checks in it;
+  75 left empty: no own link or no clear account). Tags of them count from when the handle is held, as for every creator; no test rule changes.
