@@ -31,7 +31,7 @@ LOADS_PER_REFRESH = 3.5     # one profile page plus about 2-3 young posts
 LOADS_PER_NEW_CREATOR = 10  # one profile page plus the newest NEW_CREATOR_POSTS posts (comments come with the post pages)
 NEW_CREATOR_POSTS = 8       # older posts do not help the lag analysis; fewer posts means more creators per day
 DEFAULT_DAILY_CAP = 130     # page loads per UTC day; 100-135 a day was measured safe (no block in about 700 loads over 6 days)
-REFRESH_SHARE = 0.4        # 9 Nov 2026: was 0.15; re-reading known creators catches their NEW posts, which carry the @tags the forward subscriber study (COLLAB_SPILLOVER_PLAN_7NOV.md) needs (only 2 tags in its first 2.5 days). 8 Nov 2026: was 0.3; the lag analysis has 1,074 pairs, so more loads go to the 166 in-scope creators with no Instagram data. 30 Oct 2026: was 0.6. The lag analysis already has enough readings; the page loads now go to creators that block training pairs (exposure_targets)
+REFRESH_SHARE = 0.7        # 11 Nov 2026: 0.4 -> 0.7 until 20 Nov (collaboration study result run): re-reading known taggers catches new @tags at 3.5 loads a creator; set back to 0.4 after 20 Nov. 9 Nov 2026: was 0.15; re-reading known creators catches their NEW posts, which carry the @tags the forward subscriber study (COLLAB_SPILLOVER_PLAN_7NOV.md) needs (only 2 tags in its first 2.5 days). 8 Nov 2026: was 0.3; the lag analysis has 1,074 pairs, so more loads go to the 166 in-scope creators with no Instagram data. 30 Oct 2026: was 0.6. The lag analysis already has enough readings; the page loads now go to creators that block training pairs (exposure_targets)
 PAUSE_BETWEEN_NEW_CREATORS = 45
 BACKFILL_LOADS_PER_DAY = 30  # 30 Oct 2026: was 60, so that about 7 new creators a day (was 4) go to the 41 that block training pairs; raise it again after about 6 Nov. # page loads kept each day for filling in the counts of old posts (and checking who really owns them); see instagram_backfill_counts.py
                              # 27 Oct 2026: raised from 25 to clear the backlog (403 posts of the 150 had no counts) in about a week; put it back to 25 once the backlog is below about 50
@@ -98,7 +98,7 @@ def refresh_handles(cur, n: int) -> list[str]:
        days since we last looked, highest first.
     In-scope creators only (in_scope_ids: override yes, or a sport/fitness category not overridden no/overseas)."""
     cur.execute("""
-      select username, creator_id from (
+      select username, creator_id, urgent > 0 from (
         select p.username, p.creator_id, p.fetched_at,
           (select count(*) from instagram_posts ip
             where ip.creator_id = p.creator_id and ip.thumbnail_url is not null and ip.posted_at > now() - interval '36 hours'
@@ -115,7 +115,17 @@ def refresh_handles(cur, n: int) -> list[str]:
     # 11 Nov 2026: only in-scope creators. Out-of-scope accounts collected early on (philadelphia 76ers, overseas,
     # override 'overseas') post many times a day, so they topped this list and took refresh loads from fitness creators.
     ok = in_scope_ids(cur)
-    return [handle for handle, cid in rows if cid in ok][:n]
+    # 11 Nov 2026 (until 20 Nov): after the urgent second readings, creators who have @tagged another in-scope creator before
+    # come first; their new posts are the likeliest to carry the tags the collaboration study (COLLAB_SPILLOVER_PLAN_7NOV.md) counts.
+    taggers = set()
+    try:
+        import json
+        ev = Path(__file__).resolve().parents[2] / "models" / "audience_flow_events_rep_9nov.json"
+        taggers = {str(a) for a, _b, _t in json.loads(ev.read_text(encoding="utf-8"))}
+    except Exception:  # the list is only a priority hint; never stop the day's collection over it
+        log.exception("could not read the tagger list")
+    rows = sorted(rows, key=lambda r: (not r[2], str(r[1]) not in taggers))  # stable: expected_new order kept within groups
+    return [handle for handle, cid, _u in rows if cid in ok][:n]
 
 
 BLOCK_MARKERS = ("429", "rate limit", "too many requests", "chromewebdata", "try again later", "challenge", "checkpoint", "accounts/login",

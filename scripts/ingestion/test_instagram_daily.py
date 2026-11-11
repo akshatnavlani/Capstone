@@ -20,7 +20,7 @@ def test_the_plan_never_costs_more_than_the_budget():
 
 def test_a_full_day_mixes_refreshes_and_new_creators():
     refresh, new = d.split_budget(100)
-    assert refresh >= 5 and new >= 5   # since 30 Oct 2026 the new-creator share is the larger one (REFRESH_SHARE 0.3)
+    assert refresh >= 5 and new >= 3   # 11 Nov 2026: REFRESH_SHARE 0.7 until 20 Nov (collaboration tags); was new >= 5 at 0.3-0.4
 
 
 class _Cur:
@@ -149,7 +149,18 @@ def test_refresh_skips_out_of_scope_accounts(monkeypatch):
         def execute(self, sql, params=None):
             pass
         def fetchall(self):
-            return [("sixers", "c_sixers"), ("fitnessmallu_", "c_fm"), ("lebron", "c_lb"), ("yogawithx", "c_yx")]
+            return [("sixers", "c_sixers", False), ("fitnessmallu_", "c_fm", False), ("lebron", "c_lb", False), ("yogawithx", "c_yx", False)]
     monkeypatch.setattr(d, "in_scope_ids", lambda cur: {"c_fm", "c_yx"})
     assert d.refresh_handles(Cur(), 5) == ["fitnessmallu_", "yogawithx"]
     assert d.refresh_handles(Cur(), 1) == ["fitnessmallu_"]
+
+
+def test_refresh_puts_urgent_first_then_past_taggers(monkeypatch):
+    class Cur:
+        def execute(self, sql, params=None):
+            pass
+        def fetchall(self):
+            return [("plain", "c1", False), ("tagger", "c2", False), ("urgent", "c3", True)]
+    monkeypatch.setattr(d, "in_scope_ids", lambda cur: {"c1", "c2", "c3"})
+    monkeypatch.setattr(d.Path, "read_text", lambda self, encoding=None: '[["c2", "b", "2026-01-01"]]')
+    assert d.refresh_handles(Cur(), 3) == ["urgent", "tagger", "plain"]
