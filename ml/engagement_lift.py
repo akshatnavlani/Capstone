@@ -38,6 +38,7 @@ sample size, so the threshold is a stated choice rather than a silent one.
 from __future__ import annotations
 
 import math
+import os
 import statistics
 from typing import Sequence
 
@@ -51,6 +52,51 @@ PLATFORM_TABLES = {
     "youtube": ("youtube_videos", "published_at", "view_count", "like_count"),
     "reddit": ("reddit_posts", "posted_at", "score", "num_comments"),
 }
+
+# 7 Nov 2026 audit. Two biases the lift had, each fixed here for treated AND
+# control rows alike (both paths read posts through `_posts_sql`):
+#   * FORMAT MIX. YouTube Shorts and long videos differ hugely in views, and
+#     creators shift their mix over time; a median over both measures the mix,
+#     not the sponsorship (the same confound gave the direct effect a +0.18 bias).
+#     With GAIL_LIFT_FORMAT_SPLIT=1 (default) each format is its own stream and
+#     `row_target` averages formats within a platform, then platforms.
+#   * UNSETTLED POSTS. Counts are cumulative as of the last reading, so a post a
+#     few days old has not finished collecting views; the after side of recent
+#     windows held such posts. Posts younger than GAIL_MIN_POST_AGE_DAYS (default
+#     14, as in the direct effect) are left out. Set either to 0 for the old behaviour.
+FORMAT_SPLIT = os.environ.get("GAIL_LIFT_FORMAT_SPLIT", "1") == "1"
+MIN_POST_AGE_DAYS = int(os.environ.get("GAIL_MIN_POST_AGE_DAYS", "14"))
+STREAM_FILTERS = {
+    "youtube_short": ("youtube", "duration_seconds is not null and duration_seconds <= 180"),
+    "youtube_long": ("youtube", "(duration_seconds is null or duration_seconds > 180)"),
+}
+
+
+def lift_streams() -> list[str]:
+    """The (platform, format) streams a lift is measured on."""
+    if FORMAT_SPLIT:
+        return ["instagram", "youtube_short", "youtube_long", "reddit"]
+    return list(PLATFORM_TABLES)
+
+
+def stream_platform(stream: str) -> str:
+    return STREAM_FILTERS.get(stream, (stream, ""))[0]
+
+
+def _posts_sql(stream: str, with_creator_col: bool) -> str:
+    platform, extra = STREAM_FILTERS.get(stream, (stream, ""))
+    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
+    conds = [f"{date_col} is not null", f"{e1} is not null", f"{e2} is not null"]
+    if extra:
+        conds.append(extra)
+    if MIN_POST_AGE_DAYS > 0:
+        conds.append(f"{date_col} <= now() - interval '{MIN_POST_AGE_DAYS} days'")
+    if with_creator_col:
+        return (f"select creator_id::text, {date_col}, {e1}, {e2} from {table} "
+                f"where creator_id is not null and {' and '.join(conds)} order by {date_col}")
+    return (f"select {date_col}, {e1}, {e2} from {table} where creator_id::text = %s "
+            f"and {' and '.join(conds)} order by {date_col}")
+
 
 # Which statistic produces the training target. "median" per the evidence above;
 # "mean" reproduces the pre-2026-10-19 behaviour exactly, for comparison runs.
@@ -102,13 +148,7 @@ def platform_engagement(
     Returns:
         (before, after), each a list of summed engagement values.
     """
-    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
-    cur.execute(
-        f"select {date_col}, {e1}, {e2} "
-        f"from {table} where creator_id::text = %s and {date_col} is not null "
-        f"and {e1} is not null and {e2} is not null order by {date_col}",
-        (creator_id,),
-    )
+    cur.execute(_posts_sql(platform, with_creator_col=False), (creator_id,))
     rows = cur.fetchall()
     return windowed_engagement(
         [(d, e1v + e2v) for d, e1v, e2v in rows], event_date, window_days, before_days
@@ -187,7 +227,12 @@ def row_target(platform_lifts: dict[str, dict], statistic: str = TARGET_STATISTI
     if not platform_lifts:
         raise ValueError("no platform has both sides measured; this row has no lift")
     key = _key(statistic)
-    return statistics.mean(v[key] for v in platform_lifts.values())
+    # Formats of one platform are averaged first, so YouTube's two format
+    # streams together weigh the same as one platform.
+    by_platform: dict[str, list[float]] = {}
+    for stream, v in platform_lifts.items():
+        by_platform.setdefault(stream_platform(stream), []).append(v[key])
+    return statistics.mean(statistics.mean(v) for v in by_platform.values())
 
 
 def well_measured(platform_lifts: dict[str, dict], min_posts: int = DEFAULT_MIN_POSTS) -> bool:
@@ -217,12 +262,7 @@ def well_measured(platform_lifts: dict[str, dict], min_posts: int = DEFAULT_MIN_
 
 def load_platform_posts(cur, platform: str) -> dict[str, list[tuple]]:
     """All fully-measured posts on one platform: creator_id -> [(date, engagement)]."""
-    table, date_col, e1, e2 = PLATFORM_TABLES[platform]
-    cur.execute(
-        f"select creator_id::text, {date_col}, {e1}, {e2} "
-        f"from {table} where creator_id is not null and {date_col} is not null "
-        f"and {e1} is not null and {e2} is not null order by {date_col}"
-    )
+    cur.execute(_posts_sql(platform, with_creator_col=True))
     out: dict[str, list[tuple]] = {}
     for creator_id, d, e1v, e2v in cur.fetchall():
         out.setdefault(creator_id, []).append((d, e1v + e2v))

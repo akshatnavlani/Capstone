@@ -80,12 +80,13 @@ import psycopg2  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _track_a import import_pair_count  # noqa: E402
 
-pair_count_compute = import_pair_count(ENV).compute
+_pair_count_module = import_pair_count(ENV)
+pair_count_compute = _pair_count_module.compute
 
 from ml.feature_extraction import FeatureExtractor, RawCreatorRecord  # noqa: E402
 from ml.bot_detection import load_bot_scores  # noqa: E402
 from ml.engagement_lift import (  # noqa: E402
-    PLATFORM_TABLES,
+    lift_streams,
     platform_engagement,
     platform_lift,
     row_target,
@@ -205,6 +206,9 @@ R_BOOT = int(os.environ.get("GAIL_R_BOOT", "200"))
 # keeps them on both sides and gives GAIL-R's nuisance models an own-sponsorship
 # input instead. Report both runs.
 KEEP_SELF_SPONSORED = os.environ.get("GAIL_KEEP_SELF_SPONSORED", "0") == "1"
+# 7 Nov 2026 audit: GAIL-R removes shocks shared by every creator in a window
+# (see ml.gail_r.fit_gail_r). GAIL_WINDOW_FE=0 reproduces the earlier runs.
+WINDOW_FE = os.environ.get("GAIL_WINDOW_FE", "1") == "1"
 LR = 1e-2
 SEED = 0
 
@@ -243,7 +247,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
     """
     summary = pair_count_compute(cur)
     good_rows = [r for r in summary["_rows"] if r[5] > 0 and r[6] > 0]
-    print(f"Canonical computable pairs (pair_count.py): {len(good_rows)}")
+    print(f"Canonical computable pairs (pair_count.py): {len(good_rows)}   [from {Path(_pair_count_module.__file__).resolve()}]")
     print(f"  checks_evaluated={summary['checks_evaluated']} events_total={summary['events_total']} "
           f"directed={summary['distinct_directed_creator_pairs']} undirected={summary['distinct_undirected_creator_pairs']} "
           f"events_yielding={summary['distinct_events_yielding_pairs']} collab_edge_pairs={summary['collab_edge_pairs']}")
@@ -256,7 +260,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
     for row in good_rows:
         event_creator_id, item_id, event_platform, event_date, neighbour_id, _, _ = row
         platform_lifts: dict[str, dict] = {}
-        for platform in PLATFORM_TABLES:
+        for platform in lift_streams():
             before, after = platform_engagement(
                 cur, neighbour_id, platform, event_date, DEFAULT_WINDOW_DAYS, before_days=BASELINE_DAYS
             )
@@ -1088,7 +1092,7 @@ def main() -> int:
     treated_obs = list(observations)
     controls = []
     if USE_CONTROLS:
-        posts_by_platform = {pl: load_platform_posts(cur, pl) for pl in PLATFORM_TABLES}
+        posts_by_platform = {pl: load_platform_posts(cur, pl) for pl in lift_streams()}
         index_to_id = {v: k for k, v in id_to_index.items()}
         reserved: dict[str, list] = {}
         for o in treated_obs:
@@ -1169,7 +1173,7 @@ def main() -> int:
     from dataclasses import replace as _replace
     from ml.placebo import placebo_lift, placebo_penalty
     if not USE_CONTROLS:
-        posts_by_platform = {pl: load_platform_posts(cur, pl) for pl in PLATFORM_TABLES}
+        posts_by_platform = {pl: load_platform_posts(cur, pl) for pl in lift_streams()}
     pre_of: dict[tuple[str, str], float] = {}
     for o in observations:
         v = placebo_lift(
@@ -1414,10 +1418,15 @@ def main() -> int:
               f"controls {int((own & ~exp).sum())}/{int((~exp).sum())}); exposed creators: "
               f"{len(set(r_obs.node[exp].tolist()))}")
     print(f"\n=== GAIL-R spillover estimate (R-learner, creator-level bootstrap B={R_BOOT}) ===")
+    from ml.engagement_lift import FORMAT_SPLIT, MIN_POST_AGE_DAYS
+    print(f"  settings: window effects {'ON' if WINDOW_FE else 'off'} (GAIL_WINDOW_FE); lift format split "
+          f"{'ON' if FORMAT_SPLIT else 'off'} (GAIL_LIFT_FORMAT_SPLIT); posts younger than {MIN_POST_AGE_DAYS}d "
+          f"excluded (GAIL_MIN_POST_AGE_DAYS)")
     gail_r_report = {}
     for label, w_pl in (("with placebo penalty", R_PLACEBO), ("without placebo penalty", 0.0)):
-        fit = fit_gail_r(data, treatments, r_obs, placebo_weight=w_pl, seed=SEED)
-        ci = cluster_bootstrap(data, treatments, r_obs, B=R_BOOT, seed=SEED, placebo_weight=w_pl)
+        fit = fit_gail_r(data, treatments, r_obs, placebo_weight=w_pl, seed=SEED, window_fe=WINDOW_FE)
+        ci = cluster_bootstrap(data, treatments, r_obs, B=R_BOOT, seed=SEED, placebo_weight=w_pl,
+                               window_fe=WINDOW_FE)
         a = ci["att"]
         print(f"  {label}:")
         print(f"    effect on the {fit['n_exposed']} observations with a sponsored collaborator: "

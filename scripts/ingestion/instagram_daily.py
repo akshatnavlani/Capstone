@@ -95,10 +95,11 @@ def refresh_handles(cur, n: int) -> list[str]:
     """Instagram handles to re-read today, chosen for the lag analysis, which needs posts read EARLY and then again:
     1. creators with a post under 36 hours old that has fewer than 2 readings (time-critical: the second reading must come soon);
     2. then creators most likely to have new posts we have not seen: their posts per day over the last 14 days times the
-       days since we last looked, highest first."""
+       days since we last looked, highest first.
+    In-scope creators only (in_scope_ids: override yes, or a sport/fitness category not overridden no/overseas)."""
     cur.execute("""
-      select username from (
-        select p.username, p.fetched_at,
+      select username, creator_id from (
+        select p.username, p.creator_id, p.fetched_at,
           (select count(*) from instagram_posts ip
             where ip.creator_id = p.creator_id and ip.thumbnail_url is not null and ip.posted_at > now() - interval '36 hours'
               and (select count(*) from post_snapshots s where s.post_id = ip.post_id and s.platform = 'instagram') < 2) as urgent,
@@ -109,8 +110,12 @@ def refresh_handles(cur, n: int) -> list[str]:
             * case when exists (select 1 from youtube_videos v where v.creator_id = p.creator_id and v.published_at > now() - interval '60 days') then 1.0 else 0.25 end as expected_new
         from instagram_profiles p
         where p.creator_id in (select creator_id from instagram_posts where thumbnail_url is not null)) t
-      order by (urgent > 0) desc, expected_new desc, fetched_at asc limit %s""", (n,))
-    return [r[0] for r in cur.fetchall()]
+      order by (urgent > 0) desc, expected_new desc, fetched_at asc""")
+    rows = cur.fetchall()
+    # 11 Nov 2026: only in-scope creators. Out-of-scope accounts collected early on (philadelphia 76ers, overseas,
+    # override 'overseas') post many times a day, so they topped this list and took refresh loads from fitness creators.
+    ok = in_scope_ids(cur)
+    return [handle for handle, cid in rows if cid in ok][:n]
 
 
 BLOCK_MARKERS = ("429", "rate limit", "too many requests", "chromewebdata", "try again later", "challenge", "checkpoint", "accounts/login",

@@ -77,3 +77,32 @@ def test_benchmark_merge_lines_up_shorter_runs_and_refuses_mismatch():
     assert out["clean"]["_true_ate"] == [0.1, 0.2, 0.3] and len(out["clean"]["A"]) == 3 and len(out["clean"]["B"]) == 1
     with pytest.raises(SystemExit):
         merge(old, {"clean": {"_true_ate": [0.9], "B": [{"x": 2}]}})
+
+
+def test_window_effects_remove_shocks_shared_by_a_window():
+    # No spillover. Two windows: in window 1 far more creators are sponsored, and
+    # every creator's lift also drops by 0.8 there (a platform-wide shock). Without
+    # window effects the shock is read as a negative spillover; with them it is removed.
+    world = make_world(fake_graph(), "clean", seed=0)
+    n = len(world.y)
+    g = torch.Generator().manual_seed(1)
+    t0 = (torch.rand(n, generator=g) < 0.05).float()
+    t1 = (torch.rand(n, generator=g) < 0.6).float()
+    node = torch.cat([torch.arange(n), torch.arange(n)])
+    window = torch.cat([torch.zeros(n, dtype=torch.long), torch.ones(n, dtype=torch.long)])
+    y = torch.where(window == 1, -0.8, 0.0) + 0.1 * torch.randn(2 * n, generator=g)
+    obs = Observations(node, window, y, torch.full((2 * n,), float("nan")))
+    off = fit_gail_r(world.data, [t0, t1], obs, placebo_weight=0.0, uniform=True, window_fe=False)
+    on = fit_gail_r(world.data, [t0, t1], obs, placebo_weight=0.0, uniform=True)
+    assert off["att"] < -0.3                      # a fake negative spillover (about -0.6)
+    assert abs(on["att"]) < 0.05
+    assert all(abs(v) < 0.05 for v in on["slopes"].values())
+
+
+def test_window_effects_change_nothing_with_one_window():
+    world = make_world(fake_graph(), "clean", seed=0)
+    n = len(world.y)
+    obs = Observations(torch.arange(n), torch.zeros(n, dtype=torch.long), world.y, torch.full((n,), float("nan")))
+    a = fit_gail_r(world.data, [world.treatment], obs, placebo_weight=0.0, uniform=True)
+    b = fit_gail_r(world.data, [world.treatment], obs, placebo_weight=0.0, uniform=True, window_fe=False)
+    assert a["slopes"] == b["slopes"]
