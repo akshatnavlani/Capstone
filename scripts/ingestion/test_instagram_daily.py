@@ -142,3 +142,30 @@ def test_the_count_phase_takes_a_small_protected_share_of_the_day():
     assert d.backfill_reserve(pending=0, budget=130) == 0 and d.backfill_reserve(pending=300, budget=0) == 0
     refresh, new = d.split_budget(130 - d.backfill_reserve(300, 130))
     assert refresh * d.LOADS_PER_REFRESH + new * d.LOADS_PER_NEW_CREATOR + 25 <= 130 + 1e-9   # the three phases together never exceed the cap
+
+
+def _budget_cursor(has_column):
+    class Cur:
+        def __init__(self):
+            self.sqls = []
+        def execute(self, sql, params=None):
+            self.sqls.append(sql)
+        def fetchone(self):
+            last = self.sqls[-1]
+            if "information_schema" in last:
+                return (2 if has_column else 0,)
+            return (53,) if "post_snapshots" in last else (38,)
+    return Cur()
+
+
+def test_each_collector_has_their_own_budget_once_the_column_exists():
+    cur = _budget_cursor(has_column=True)
+    assert d.done_today(cur) == 91
+    counted = [s for s in cur.sqls if "information_schema" not in s]
+    assert len(counted) == 2 and all("coalesce(collected_by, current_user) = current_user" in s for s in counted)
+
+
+def test_before_the_migration_the_shared_budget_is_kept():
+    cur = _budget_cursor(has_column=False)
+    assert d.done_today(cur) == 91
+    assert not any("collected_by" in s for s in cur.sqls if "information_schema" not in s)
