@@ -36,14 +36,16 @@ from pathlib import Path
 def _candidate_ingestion_dirs(start: Path) -> list[Path]:
     """Places Track A's ingestion package may live, most expected first.
 
-    The sibling-worktree layout is what the training scripts were written
-    against; the in-repo path covers a checkout where the directory was copied
-    alongside this branch's own scripts.
+    The in-repo copy (kept up to date on the team branch) comes first; the
+    sibling track-a-data-infra worktree is only a fallback for old layouts.
     """
     repo_root = start.resolve().parents[1]
+    # 11 Nov 2026: this repository's own copy first. An old sibling track-a-data-infra checkout used to win and
+    # silently gave an out-of-date pair definition (155 pairs instead of 7,061 on the same database: the old
+    # copy resolved collaboration edges through Instagram handles only, 185 edge pairs instead of 458).
     return [
-        repo_root.parent / "track-a-data-infra" / "scripts" / "ingestion",
         repo_root / "scripts" / "ingestion",
+        repo_root.parent / "track-a-data-infra" / "scripts" / "ingestion",
     ]
 
 

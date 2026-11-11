@@ -78,3 +78,16 @@ def test_missing_ingestion_dir_raises_with_the_paths_searched():
     message = str(excinfo.value)
     assert "track-a-data-infra" in message
     assert "Searched:" in message
+
+def test_the_repositorys_own_pair_count_wins_over_an_old_sibling_checkout(tmp_path):
+    """11 Nov 2026: an old sibling track-a-data-infra copy used to win and gave 155 pairs instead of 7,061."""
+    from _track_a import _candidate_ingestion_dirs
+
+    repo = tmp_path / "capstone"
+    start = repo / "scripts" / "_track_a.py"
+    for d in (repo / "scripts" / "ingestion", tmp_path / "track-a-data-infra" / "scripts" / "ingestion"):
+        d.mkdir(parents=True)
+        (d / "pair_count.py").write_text("")
+    start.write_text("")
+    assert find_ingestion_dir(start) == repo / "scripts" / "ingestion"
+    assert _candidate_ingestion_dirs(start)[0] == repo / "scripts" / "ingestion"

@@ -80,7 +80,8 @@ import psycopg2  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _track_a import import_pair_count  # noqa: E402
 
-pair_count_compute = import_pair_count(ENV).compute
+_pair_count_module = import_pair_count(ENV)
+pair_count_compute = _pair_count_module.compute
 
 from ml.feature_extraction import FeatureExtractor, RawCreatorRecord  # noqa: E402
 from ml.bot_detection import load_bot_scores  # noqa: E402
@@ -246,7 +247,7 @@ def build_targets_from_canonical(cur, creator_id_to_index: dict[str, int], num_c
     """
     summary = pair_count_compute(cur)
     good_rows = [r for r in summary["_rows"] if r[5] > 0 and r[6] > 0]
-    print(f"Canonical computable pairs (pair_count.py): {len(good_rows)}")
+    print(f"Canonical computable pairs (pair_count.py): {len(good_rows)}   [from {Path(_pair_count_module.__file__).resolve()}]")
     print(f"  checks_evaluated={summary['checks_evaluated']} events_total={summary['events_total']} "
           f"directed={summary['distinct_directed_creator_pairs']} undirected={summary['distinct_undirected_creator_pairs']} "
           f"events_yielding={summary['distinct_events_yielding_pairs']} collab_edge_pairs={summary['collab_edge_pairs']}")
