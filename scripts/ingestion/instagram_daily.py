@@ -5,8 +5,7 @@
 
 What it does, in this order, and nothing else:
   1. Stops quietly if Chrome with the OpenCLI extension is not connected (writes that to the log).
-  2. Works out the page loads left today for THIS person (cap minus the loads their database login wrote today, UTC day):
-     each collector's Instagram account has its own 130-a-day budget.
+  2. Works out the page loads left today (cap minus the snapshot rows already written today, UTC day).
   3. REFRESH (about 60% of the budget): creators whose young posts still need a second reading come first, then the creators
      most likely to have new posts (frequent posters not looked at for a while); their newest posts (under 2 days old) are
      read, so each post builds a first-day-and-after growth curve. Same code as snapshot_instagram.py.
@@ -67,30 +66,13 @@ def chrome_connected() -> bool:
     return "Extension: connected" in out
 
 
-def _has_collector_column(cur) -> bool:
-    cur.execute("""select count(*) from information_schema.columns
-                   where table_name in ('post_snapshots', 'instagram_extra_loads') and column_name = 'collected_by'""")
-    return cur.fetchone()[0] == 2
-
-
 def done_today(cur) -> int:
-    """Page loads made today (UTC day) by THIS collector: one per snapshot row, plus loads that left no snapshot row (audits)
-    logged in instagram_extra_loads.
-
-    The 130-a-day limit protects one Instagram account, so each person's laptop has its own budget: rows are matched on
-    collected_by, the database login that wrote them (migration 20261111000000). Rows with no collector (written before
-    that migration) count for everyone, so the budget can only err on the small side. Before the migration has run,
-    every Instagram load counts (the old, shared budget)."""
-    if _has_collector_column(cur):
-        mine = " and coalesce(collected_by, current_user) = current_user"
-    else:
-        log.warning("collected_by column missing (migration 20261111000000 not run): using the SHARED team budget")
-        mine = ""
-    cur.execute(f"""select count(*) from post_snapshots where platform='instagram'
-                   and fetched_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'{mine}""")
+    """Page loads made today (UTC day): one per snapshot row, plus loads that left no snapshot row (audits) logged in instagram_extra_loads."""
+    cur.execute("""select count(*) from post_snapshots where platform='instagram'
+                   and fetched_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'""")
     snapshots = cur.fetchone()[0]
-    cur.execute(f"""select coalesce(sum(loads), 0) from instagram_extra_loads
-                   where logged_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'{mine}""")
+    cur.execute("""select coalesce(sum(loads), 0) from instagram_extra_loads
+                   where logged_at >= date_trunc('day', now() at time zone 'UTC') at time zone 'UTC'""")
     return snapshots + int(cur.fetchone()[0])
 
 
@@ -218,7 +200,7 @@ def release_lock() -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--daily-cap", type=int, default=DEFAULT_DAILY_CAP, help="max Instagram page loads per UTC day for this collector, across all their runs")
+    ap.add_argument("--daily-cap", type=int, default=DEFAULT_DAILY_CAP, help="max Instagram page loads per UTC day, across all runs")
     args = ap.parse_args()
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s",
