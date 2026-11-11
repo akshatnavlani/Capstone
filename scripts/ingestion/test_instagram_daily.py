@@ -142,3 +142,14 @@ def test_the_count_phase_takes_a_small_protected_share_of_the_day():
     assert d.backfill_reserve(pending=0, budget=130) == 0 and d.backfill_reserve(pending=300, budget=0) == 0
     refresh, new = d.split_budget(130 - d.backfill_reserve(300, 130))
     assert refresh * d.LOADS_PER_REFRESH + new * d.LOADS_PER_NEW_CREATOR + 25 <= 130 + 1e-9   # the three phases together never exceed the cap
+
+
+def test_refresh_skips_out_of_scope_accounts(monkeypatch):
+    class Cur:
+        def execute(self, sql, params=None):
+            pass
+        def fetchall(self):
+            return [("sixers", "c_sixers"), ("fitnessmallu_", "c_fm"), ("lebron", "c_lb"), ("yogawithx", "c_yx")]
+    monkeypatch.setattr(d, "in_scope_ids", lambda cur: {"c_fm", "c_yx"})
+    assert d.refresh_handles(Cur(), 5) == ["fitnessmallu_", "yogawithx"]
+    assert d.refresh_handles(Cur(), 1) == ["fitnessmallu_"]
