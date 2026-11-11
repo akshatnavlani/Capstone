@@ -36,6 +36,13 @@ def run_once() -> int:
 
 
 prev = None
+# 11 Nov 2026: the laptop is off overnight; if started after 13:40 and today's fetch has not run, run it now
+start = datetime.now()
+if start.hour * 60 + start.minute >= 13 * 60 + 40 and not (ROOT / "exports" / f"rep_fetch_placebo_{start:%d%b}.log".lower()).exists():
+    prev = run_once()
+    if prev <= 20:
+        print(f"{prev} left; stopping", flush=True)
+        sys.exit(0)
 while True:
     now = datetime.now()
     nxt = now.replace(hour=13, minute=40, second=0, microsecond=0)
