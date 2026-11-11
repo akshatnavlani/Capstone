@@ -1,0 +1,47 @@
+# Subscriber counts only, every 30 minutes (9 Nov 2026).
+#
+# WHY: the forward spillover studies (COLLAB_SPILLOVER_PLAN_7NOV.md, BIG_HOST_SPILLOVER_PLAN_9NOV.md) need a subscriber
+# reading within 3 hours of each event time. The 2-hourly "YouTube snapshots" job was started by GitHub only every 5-7
+# hours on 7-9 Nov (and not at all for 9 h on 9 Nov): GitHub delays and drops scheduled runs when busy. This job does
+# only the cheap subscriber step (scripts/ingestion/snapshot_youtube_profiles.py: 1 quota unit per 50 channels, about
+# 8 units a run), twice an hour at odd minutes, so even with many runs dropped the readings stay close together.
+# Same secrets and code branch as snapshot_youtube.yml. GitHub runs scheduled workflows only from the default branch
+# (main), so this file must be on main.
+
+name: Subscriber snapshots
+
+on:
+  schedule:
+    - cron: "11,41 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: subscriber-snapshots
+  cancel-in-progress: false
+
+jobs:
+  subscribers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: review2-shimona-temporal
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the two packages the script needs
+        run: pip install psycopg2-binary pyyaml
+
+      - name: Provide a stand-in opencli
+        run: |
+          printf '#!/bin/sh\necho "opencli is not available in this job" >&2\nexit 1\n' | sudo tee /usr/local/bin/opencli > /dev/null
+          sudo chmod +x /usr/local/bin/opencli
+
+      - name: Snapshot channel subscriber counts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python scripts/ingestion/snapshot_youtube_profiles.py

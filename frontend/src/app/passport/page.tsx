@@ -1,5 +1,6 @@
 "use client";
 
+import Avatar from "@/components/Avatar";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -90,7 +91,7 @@ function PassportView() {
                 selected === c.creator_id ? "border-accent bg-accent-soft text-accent" : "border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
               }`}
             >
-              {c.name}
+              <span className="flex items-center gap-1.5"><Avatar creatorId={c.creator_id} name={c.name} size={20} />{c.name}</span>
             </button>
           ))}
           {query && matches.length === 0 && <span className="text-xs text-zinc-500">No creator with that name.</span>}
@@ -177,7 +178,7 @@ function Passport({ p }: { p: PassportRecord }) {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-xl font-semibold tracking-tight">{p.name}</h2>
+        <h2 className="flex items-center gap-3 text-xl font-semibold tracking-tight"><Avatar creatorId={p.creator_id} name={p.name} size={48} />{p.name}</h2>
         <span className="rounded-full border border-zinc-300 px-2 py-0.5 text-[11px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">{p.category.replace("_", " ")}</span>
         <EvidenceBadge grade={p.evidence.grade} />
         <span className="text-xs text-zinc-500">
@@ -270,7 +271,7 @@ function Passport({ p }: { p: PassportRecord }) {
           <Row k="Linked creators (collaboration or @mention)" v={String(p.network.linked_creators)} />
           <Row k="…of which sponsored in the last 30 days" v={String(p.network.linked_sponsored_last_30d)} />
           <Row k="Creators sharing a recent brand" v={String(p.network.shared_brand_creators)} />
-          <p className="mt-1 text-[11px] text-zinc-500">Spillover itself is not detectable in our data, so links are context, not a score.</p>
+          <p className="mt-1 text-[11px] text-zinc-500">Links are shown as context: who this creator is connected to, and which brands they share.</p>
         </Section>
 
         <Section title="Recent brands" sub="brands promoted in the last 120 days (basis of the clash warning)">

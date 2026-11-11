@@ -1,0 +1,12 @@
+{
+ "label": "EXPLORATORY (context only; these videos were already analysed in the pooled joint-video test)",
+ "plan": "BIG_HOST_SPILLOVER_PLAN_9NOV.md, section Exploratory",
+ "events": 52,
+ "effect": {
+  "mean": 0.01028930162257314,
+  "lo": -0.22813153046111173,
+  "hi": 0.28641252907979825,
+  "n": 29,
+  "pairs": 21
+ }
+}

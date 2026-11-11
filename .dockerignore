@@ -33,3 +33,4 @@ models/*
 !models/promotion_behaviour.json
 !models/temporal_sentiment.json
 !models/creator_value.csv
+!models/hidden_creators.json

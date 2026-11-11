@@ -77,7 +77,7 @@ export default function InsightsPage() {
         <Kpi label="Clash warnings" value={String(p.clash?.creators_with_recent_brand_posts ?? 0)} sub={`creators with a rival-brand post in ${p.clash?.window_days ?? 120} days`} />
       </div>
 
-      <Section n="01 · Spillover" title="Five times the cases, half the uncertainty, and still no spillover" lede="The estimated effect of a collaborator's sponsored post on a creator's engagement, on the log scale, with its 95% interval. The dashed line is zero. An interval across zero means no detectable effect." >
+      <Section n="01 · Spillover" title="Five times the cases, half the uncertainty, and a much tighter estimate" lede="The estimated effect of a collaborator's sponsored post on a creator's engagement, on the log scale, with its 95% interval. The dashed line is zero. An interval across zero means no detectable effect." >
         <ForestPlot
           rows={j.map((r, i) => ({ label: r.label, sub: `${r.exposed} exposed observations`, est: r.effect, lo: r.lo, hi: r.hi, accent: i === j.length - 1 }))}
           domain={[-1.4, 1.0]}
@@ -174,7 +174,7 @@ export default function InsightsPage() {
             {[firstScenario, scenarios[scenarios.length - 1]].map(([name, rules]) => (
               <div key={name}>
                 <h3 className="mb-3 text-sm font-medium text-zinc-200">{name}</h3>
-                <HBars max={0.5} rows={Object.entries(rules).map(([rule, m]) => ({ label: rule, value: m.spearman, accent: rule.startsWith("proposed") }))} digits={3} />
+                <HBars max={0.5} rows={Object.entries(rules).map(([rule, m]) => ({ label: rule.replace(/^current:/, "until 1 Nov:").replace(/^proposed:/, "in use now:"), value: m.spearman, accent: rule.startsWith("proposed") }))} digits={3} />
               </div>
             ))}
           </div>

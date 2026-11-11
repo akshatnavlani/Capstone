@@ -1,0 +1,24 @@
+{
+ "plan": "BETWEEN_CREATOR_GRANGER_PLAN_10NOV.md",
+ "as_of": "2026-11-10T17:44:45+00:00",
+ "primary_tag_pairs": {
+  "pairs_listed": 257,
+  "pairs_used": 238,
+  "F": 1.317,
+  "timing_placebo_F_median": 1.095,
+  "p_timing": 0.002,
+  "unlinked_placebo_F_median": 1.179,
+  "p_unlinked": 0.0539,
+  "verdict": "NOT detected"
+ },
+ "secondary_joint_video_pairs": {
+  "pairs_listed": 185,
+  "pairs_used": 164,
+  "F": 1.274,
+  "timing_placebo_F_median": 1.098,
+  "p_timing": 0.0339,
+  "unlinked_placebo_F_median": 1.162,
+  "p_unlinked": 0.1238,
+  "verdict": "NOT detected"
+ }
+}

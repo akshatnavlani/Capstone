@@ -165,3 +165,14 @@ export async function getPassportStrip(creatorIds: string[]): Promise<Record<str
   }
   return res.json();
 }
+
+// creator_id -> public channel photo address (GET /passport/photos). Fetched once and shared; a failure just means everyone shows initials.
+let photosPromise: Promise<Record<string, string>> | null = null;
+export function getPhotos(): Promise<Record<string, string>> {
+  if (!photosPromise) {
+    photosPromise = fetch(`${API_BASE_URL}/passport/photos`)
+      .then((res) => (res.ok ? (res.json() as Promise<Record<string, string>>) : {}))
+      .catch(() => ({}));
+  }
+  return photosPromise;
+}

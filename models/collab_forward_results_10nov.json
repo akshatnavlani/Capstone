@@ -1,0 +1,14 @@
+{
+ "plan": "COLLAB_SPILLOVER_PLAN_7NOV.md",
+ "run_at": "2026-11-10T17:50:24+00:00",
+ "run_type": "EARLY LOOK (not the result run)",
+ "unit": "log subscriber growth of B, 48 h after minus 48 h before the tag",
+ "events": 3,
+ "events_48h_passed": 3,
+ "primary": {
+  "effect": null,
+  "placebo": null,
+  "verdict": "fewer than 20 counted events: early evidence, not a result"
+ },
+ "subgroup_B_under_100k_not_the_pass_mark": null
+}

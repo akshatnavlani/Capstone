@@ -11,6 +11,8 @@ export interface ScoreBreakdown {
   weight_spillover: number;
   weight_sentiment_risk: number;
   weight_creator_feature: number;
+  value_score?: number | null; // 0-1: value-for-money percentile within the platform (engagement per ₹1,000); null when no cost estimate
+  weight_value?: number; // 0.4 when value_score is set (final score agreed 7 Nov 2026)
 }
 
 export interface BrandRecommendationRequest {

@@ -1,0 +1,20 @@
+{
+ "plan": "SPONSOR_CARRYOVER_PLAN_9NOV.md",
+ "unit": "comments naming the sponsored brand per 1,000 comments on A's own NON-sponsored videos, 30 days after minus before",
+ "events": 1026,
+ "effect": {
+  "mean": -0.009381309681277936,
+  "lo": -1.1957841769036028,
+  "hi": 0.8840466301632195,
+  "n": 431,
+  "pairs": 59
+ },
+ "placebo": {
+  "mean": -0.07620936166426763,
+  "lo": -1.5612190580707044,
+  "hi": 1.472534247152595,
+  "n": 2216,
+  "pairs": 86
+ },
+ "verdict": "NOT detected"
+}

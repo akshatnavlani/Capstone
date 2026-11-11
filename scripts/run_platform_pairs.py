@@ -15,7 +15,7 @@ PART 2, GRANGER CAUSALITY (the project document's cross-platform temporal test).
 all the creator's videos), X = Instagram posts per day. Does X lagged 1-3 days help predict Y beyond Y's own 1-3 lags (and the other way round)? Pooled over creators with the
 creator's own mean removed; F statistic; p from 500 placebo runs in which X is circularly shifted by a random 10-300 days within each creator (keeps its rhythm, breaks the link).
 A second variant uses only comments arriving on videos older than 72 h, which removes the direct effect of an upload.
-LIMITS: pairs within the window are not proven to be the same content (overlap check given); Instagram counts are read-time snapshots; comments were collected newest-first per video;
+LIMITS: pairs within the window may not always be the same content (overlap check given); Instagram counts are read-time snapshots; comments were collected newest-first per video;
 Granger is prediction, not cause; only 5,633 of 30,435 Instagram comments carry a time, so Instagram comment series are not used.
 """
 import argparse
@@ -225,7 +225,7 @@ def main() -> int:
            "adjusted_pairs": int(len(da)), "median_difference_adjusted": round(float(np.median(da)) - calibration, 3) if len(da) else None, "share_pairs_instagram_better_adjusted": round(float((da > 0).mean()), 3) if len(da) else None,
            "pairs_with_text_overlap": len(related), "median_difference_with_overlap": round(float(np.median(d_rel)), 3),
            "creators": creators, "pair_rows": rows, "placebo": placebo_out, "calibration_subtracted": calibration, "granger": gr,
-           "limits": "pairs within the window are not proven to be the same content; Instagram counts are read-time snapshots; Granger is prediction not cause; Instagram comments mostly lack times"}
+           "limits": "pairs within the window may not always be the same content; Instagram counts are read-time snapshots; Granger is prediction not cause; Instagram comments mostly lack times"}
     Path(args.out).write_text(json.dumps(out, indent=1), encoding="utf-8")
     print("saved", args.out)
     return 0

@@ -28,9 +28,11 @@ OUT = os.path.join(ROOT, "models", "mentioned_channels_6nov.json")
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=2000, help="most handles to look up this run (= quota units)")
+    ap.add_argument("--any-mentioner", action="store_true", help="also handles mentioned only by creators without a sponsorship "
+                                                                  "(the collaboration tests need any tag, 8 Nov 2026)")
     args = ap.parse_args()
     with open(MISSING, encoding="utf-8") as f:
-        rows = [r for r in csv.DictReader(f) if "yt_mention" in r["sources"] and int(r["sponsored_A"]) > 0]
+        rows = [r for r in csv.DictReader(f) if "yt_mention" in r["sources"] and (args.any_mentioner or int(r["sponsored_A"]) > 0)]
     done = json.load(open(OUT, encoding="utf-8")) if os.path.exists(OUT) else {}
     todo = [r for r in rows if r["handle"].lstrip("@").lower() not in done][: args.limit]
     log.info("%d candidate handles, %d already looked up, %d to look up now", len(rows), len(done), len(todo))

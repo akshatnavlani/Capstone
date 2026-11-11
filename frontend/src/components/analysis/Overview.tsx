@@ -5,7 +5,7 @@ import type { AnalysisData } from "@/types/analysis";
 import { Card, Note, Verdict } from "./ui";
 import type { Tone } from "./ui";
 
-export type TabId = "overview" | "s1" | "s2" | "s3" | "s6" | "s7" | "s8" | "s9" | "s10";
+export type TabId = "overview" | "s1" | "s2" | "s3" | "s6" | "s8" | "s9" | "s10";
 
 const CHIP: Record<Tone, string> = {
   good: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -70,15 +70,6 @@ export function Overview({ data, onSelect }: { data: AnalysisData; onSelect: (t:
       tone: "good",
       big: `${data.s3.calibration.creators} creators in the model`,
       line: "An interactive map of the collaboration and co-occurrence links the model reads. Click a creator to highlight their links.",
-    },
-    {
-      id: "s7",
-      tag: "S7",
-      title: "Filter and cost analysis",
-      status: "Audited · matchers fixed",
-      tone: "warn",
-      big: `Demo query: 0 → ${data.s7.demo_query_fixed[Object.keys(data.s7.demo_query_fixed)[0]].kept} results`,
-      line: "The region and product filters were dropping Indian creators and every athlete. Both matchers are fixed; data clean-up is still open. The cost model barely changes the ranking.",
     },
     {
       id: "s8",

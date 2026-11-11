@@ -1,0 +1,45 @@
+{
+ "plan": "CROSS_PROMOTION_MECHANISM_PLAN_10NOV.md",
+ "creators": 105,
+ "update_detected_test_today": {
+  "Instagram posts -> YouTube comments": {
+   "F": 1.559,
+   "placebo_F_median": 1.016,
+   "p_value": 0.002
+  },
+  "YouTube comments -> Instagram posts": {
+   "F": 1.561,
+   "placebo_F_median": 1.013,
+   "p_value": 0.014
+  }
+ },
+ "primary": {
+  "label": "Instagram captions mentioning YouTube (median split)",
+  "median_share": 0.0,
+  "promoters": 13,
+  "others": 92,
+  "verdict": "fewer than 15 creators in a group: printed, not a result"
+ },
+ "secondary": {
+  "label": "YouTube texts mentioning Instagram (median split)",
+  "median_share": 0.0266,
+  "promoters": 52,
+  "others": 53,
+  "direction": "YouTube comments -> Instagram posts",
+  "F_difference": -1.012,
+  "p_difference": 0.978,
+  "own_granger": {
+   "promoters": {
+    "F": 1.067,
+    "placebo_F_median": 1.006,
+    "p_value": 0.3333
+   },
+   "others": {
+    "F": 2.079,
+    "placebo_F_median": 0.995,
+    "p_value": 0.014
+   }
+  },
+  "verdict": "NOT supported"
+ }
+}

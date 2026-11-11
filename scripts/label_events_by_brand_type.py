@@ -30,8 +30,8 @@ sys.path.insert(0, str(ROOT / "scripts" / "ingestion"))
 from orchestrator import load_env  # noqa: E402
 
 LABELS = ROOT / "data" / "event_brand_labels.csv"
-YES_TYPES = {"supplement", "footwear", "equipment", "apparel", "wellness"}
-HEALTH_FOODS = {"Pintola", "Yogabar", "Alpino", "MyFitness", "Mille Supergrain", "Horlicks", "LiptonTeaIndia"}
+YES_TYPES = {"supplement", "footwear", "equipment", "apparel", "wellness", "drink"}  # drink: energy and sports drinks (user 2026-11-08)
+HEALTH_FOODS = {"Pintola", "Yogabar", "Alpino", "MyFitness", "Mille Supergrain", "Horlicks", "LiptonTeaIndia", "RiteBite Max Protein", "The Whole Truth", "Phab", "SuperYou", "True Elements"}
 # hand-label brand spelling -> database brand name, where they differ
 BRAND_ALIASES = {"2X Nutrition": "2XN", "2X Nutrition RealGainz": "2XN"}
 NOTE = "auto from brand type '{}' (user rule 2026-11-06: every fitness or health brand = yes; makeup, skincare, lifestyle, other consumer = no)"
@@ -52,8 +52,12 @@ select r.post_id::text, 'reddit', c.name, r.posted_at::date, b.name, b.category
 """
 
 
+# 8 Nov 2026 (user): any nutritious food counts (protein bars, drinks, milk, healthy staples); only junk food is out.
+JUNK_FOODS = {"Cadbury"}
+
+
 def verdict(brand: str, category: str) -> str:
-    if category in YES_TYPES or brand in HEALTH_FOODS:
+    if category in YES_TYPES or brand in HEALTH_FOODS or (category == "food" and brand not in JUNK_FOODS):
         return "yes"
     return "no"
 

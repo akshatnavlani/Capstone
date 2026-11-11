@@ -1,0 +1,47 @@
+{
+ "plan": "MENTION_SPILLOVER_PLAN_8NOV.md",
+ "unit": "comments naming A per 1,000 of B's comments, after minus before",
+ "effect": {
+  "mean": -0.48117622807692295,
+  "lo": -1.403713115543635,
+  "hi": 0.1920219337956132,
+  "n": 100,
+  "pairs": 63
+ },
+ "placebo": {
+  "mean": 0.33669418149086106,
+  "lo": -0.09854757809112313,
+  "hi": 0.9335418499817217,
+  "n": 478,
+  "pairs": 71
+ },
+ "verdict": "NOT detected",
+ "events_with_A_named_after_but_not_before": 3,
+ "examples": [
+  {
+   "A": "Kids Pharmer - Healthy Nursery Rhymes",
+   "B": "Food Pharmer",
+   "tag": "2026-02-06",
+   "comments": [
+    "I have started Kids Pharmer as a calm health education channel to promote health literacy in kids. <br>Follow us to teach your child to eat right &amp; build healthy habits with us.<br><br>Youtube - <"
+   ]
+  },
+  {
+   "A": "Wasim Khan",
+   "B": "Nitin Chandila",
+   "tag": "2026-02-08",
+   "comments": [
+    "Thank you Nithin Bhai💪🏻. meri wish is the Wasim Khan Bhai Ke Sath exercise.karo❤❤❤🫡",
+    "Indian tiger Wasim Khan ❤❤❤"
+   ]
+  },
+  {
+   "A": "NotSoFit (Yatharth)",
+   "B": "Prem Joshi",
+   "tag": "2026-06-19",
+   "comments": [
+    "Inspired from notsofit"
+   ]
+  }
+ ]
+}

@@ -33,8 +33,11 @@ What changed 2026-08-09 (was previously a no-op stub, see API_CONTRACTS.md):
   "no handle on this platform" is a directly known fact, not missing data.
 """
 
+import json
 import re
 import uuid
+from functools import lru_cache
+from pathlib import Path
 
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
@@ -44,7 +47,7 @@ from app.creator_features import get_feature_scores
 from app.creator_value import UNITS, best_value, explain, load_values
 from app.database import get_session
 from app.evidence import grade_evidence
-from app.fusion import compute_fusion_score, feature_uncertainty, sentiment_uncertainty
+from app.fusion import VALUE_WEIGHTS, compute_fusion_score, compute_value_score, feature_uncertainty, sentiment_uncertainty
 from app.models import Creator, FusionScore, InstagramPost, InstagramProfile, YouTubeChannel, YouTubeVideo
 from app.schemas import (
     BrandRecommendationRequest,
@@ -72,6 +75,18 @@ _MOCK_CREATORS = [
     Creator(creator_id=uuid.uuid5(uuid.NAMESPACE_DNS, "mock-yogaguru"), name="YogaGuru",
             category="lifestyle_influencer", instagram_handle="@yogaguru", reddit_handles=["u/yogaguru"]),
 ]
+
+
+HIDDEN_PATH = Path(__file__).resolve().parents[3] / "models" / "hidden_creators.json"
+
+
+@lru_cache(maxsize=1)
+def _hidden_creator_ids() -> frozenset[str]:
+    """Creators outside fitness and health that never promoted a fitness or health brand (user, 8 Nov 2026).
+    Hidden from the ranking; their rows stay in the database. Empty when the file is missing."""
+    if not HIDDEN_PATH.exists():
+        return frozenset()
+    return frozenset(c["creator_id"] for c in json.loads(HIDDEN_PATH.read_text(encoding="utf-8")).get("creators", []))
 
 
 def _extract_keywords(query: str | None) -> list[str]:
@@ -252,7 +267,8 @@ def _to_recommendation(
 def get_recommendations(
     request: BrandRecommendationRequest, session: Session = Depends(get_session)
 ) -> BrandRecommendationResponse:
-    creators = session.exec(select(Creator).limit(1000)).all()
+    hidden = _hidden_creator_ids()
+    creators = [c for c in session.exec(select(Creator).limit(1000)).all() if str(c.creator_id) not in hidden]
     using_mock_creators = False
 
     if not creators:
@@ -328,6 +344,14 @@ def get_recommendations(
                 platform_percentile=v["percentile"], direct_basis=v.get("direct_basis") or "prior",
                 overseas=v.get("overseas") == "yes", india_link=v.get("india_link") or None, why=explain(v),
             )
+            # Final score = 0.4 value + 0.3 mood + 0.3 fit, -10 if mood < 0.3 (agreed 7 Nov 2026, app/fusion.py)
+            b = rec.score_breakdown
+            rec.final_score, rec.confidence_low, rec.confidence_high, _ = compute_value_score(
+                v["percentile"] / 100, b.sentiment_risk_score, b.creator_feature_score,
+                (rec.confidence_high - rec.confidence_low) / 2)
+            rec.score_breakdown = b.model_copy(update={
+                "value_score": v["percentile"] / 100, "weight_value": VALUE_WEIGHTS[0], "weight_spillover": 0.0,
+                "weight_sentiment_risk": VALUE_WEIGHTS[1], "weight_creator_feature": VALUE_WEIGHTS[2]})
         return rec
 
     eligible: list[InfluencerRecommendation] = []
@@ -386,10 +410,10 @@ def get_recommendations(
 
         eligible.append(_build(creator, youtube_channel, instagram_profile))
 
-    # A4: within the creators that have collected posts, rank by engagement per rupee (within-platform percentile);
-    # creators with no value row (no recent posts or no follower count) follow, by the fused score.
+    # Within the creators that have collected posts, rank by the final score (0.4 value + 0.3 mood + 0.3 fit, 7 Nov 2026);
+    # creators with no value row (no recent posts or no follower count) follow, by the mood + fit score.
     def rank_key(r):
-        return (r.data_coverage != "none", r.value is not None, r.value.platform_percentile if r.value else 0.0, r.final_score)
+        return (r.data_coverage != "none", r.value is not None, r.final_score)
 
     eligible.sort(key=rank_key, reverse=True)
 

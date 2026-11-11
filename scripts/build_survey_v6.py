@@ -13,7 +13,6 @@ import os
 import re
 from pathlib import Path
 
-import psycopg2
 from docx import Document
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,17 +24,24 @@ ap.add_argument("--out", default=str(ROOT / "exports" / "literature_survey_and_r
 OUT = Path(ap.parse_args().out)
 
 # ---- counts from the database (read only) ---------------------------------------------------------------------------------------------------------
-url = os.environ.get("DATABASE_URL") or re.search(r"^DATABASE_URL=(.+)$", (ROOT / ".env").read_text(encoding="utf-8"), re.M).group(1).strip().strip('"')
-conn = psycopg2.connect(url.replace("postgresql+psycopg2://", "postgresql://"), connect_timeout=15)
-conn.set_session(readonly=True)
-cur = conn.cursor()
-def count(q):
-    cur.execute(q)
-    return cur.fetchone()[0]
-n = {"creators": count("select count(*) from creators"), "videos": count("select count(*) from youtube_videos"), "comments": count("select count(*) from youtube_comments"),
-     "sponsored": count("select count(*) from youtube_videos where is_sponsored"), "sponsoring": count("select count(distinct creator_id) from youtube_videos where is_sponsored"),
-     "ig_posts": count("select count(*) from instagram_posts"), "ig_creators": count("select count(distinct creator_id) from instagram_posts")}
-conn.close()
+# The counts are fetched by the project's own Python (it has the database driver); this script itself only needs python-docx, so either interpreter can run it.
+import subprocess
+import sys
+
+_COUNTS = r"""
+import json, os, re, psycopg2
+url = os.environ.get("DATABASE_URL") or re.search(r"^DATABASE_URL=(.+)$", open(r"%s", encoding="utf-8").read(), re.M).group(1).strip().strip('"')
+c = psycopg2.connect(url.replace("postgresql+psycopg2://", "postgresql://"), connect_timeout=15); c.set_session(readonly=True); cur = c.cursor()
+q = {"creators": "select count(*) from creators", "videos": "select count(*) from youtube_videos", "comments": "select count(*) from youtube_comments",
+     "sponsored": "select count(*) from youtube_videos where is_sponsored", "sponsoring": "select count(distinct creator_id) from youtube_videos where is_sponsored",
+     "ig_posts": "select count(*) from instagram_posts", "ig_creators": "select count(distinct creator_id) from instagram_posts"}
+out = {}
+for k, v in q.items():
+    cur.execute(v); out[k] = cur.fetchone()[0]
+print(json.dumps(out))
+""" % str(ROOT / ".env")
+_py = str(ROOT / "venv" / "Scripts" / "python.exe") if (ROOT / "venv" / "Scripts" / "python.exe").exists() else sys.executable
+n = json.loads(subprocess.check_output([_py, "-c", _COUNTS], text=True).strip().splitlines()[-1])
 
 # ---- result files ---------------------------------------------------------------------------------------------------------------------------------
 pairs, lag, fat, promo, power = J("platform_pairs.json"), J("long_lag.json"), J("ad_fatigue.json"), J("promotion_behaviour.json"), J("power_analysis.json")

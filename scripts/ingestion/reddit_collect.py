@@ -223,6 +223,7 @@ def main() -> None:
     ap.add_argument("--skip-searches", action="store_true", help="only read threads of posts already saved")
     ap.add_argument("--retime", action="store_true",
                     help="re-read OLD threads (comments saved without a time) and fill in each matching comment's exact time; adds nothing new")
+    ap.add_argument("--scope", action="store_true", help="also search in-scope creators that are not in the verified list (new creators first)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -232,6 +233,13 @@ def main() -> None:
                        where v.link_level in ('confirmed','probable') and v.creator_id is not null and v.content_type <> 'brand_like'
                        order by (v.sponsor_group = 'A') desc, v.ig_followers desc nulls last""")
         creators = cur.fetchall()
+        if args.scope:  # 9 Nov 2026: also every in-scope creator outside the verified list (8 Nov snowball, famous names, yoga groups), first
+            from instagram_daily import in_scope_ids
+            have = {c[0] for c in creators}
+            cur.execute("""select creator_id, name, youtube_handle, instagram_handle from creators where creator_id = any(%s::uuid[])
+                           and not exists (select 1 from reddit_post_creators rc where rc.creator_id = creators.creator_id)""",
+                        ([str(i) for i in in_scope_ids(cur) if i not in have],))
+            creators = cur.fetchall() + creators
         cur.execute("select lower(name), brand_id from brands"); brand_ids = dict(cur.fetchall())
         cur.execute("select kind, query, subreddit from reddit_search_log where searched_at > now() - interval '7 days'")
         done = set(cur.fetchall())
