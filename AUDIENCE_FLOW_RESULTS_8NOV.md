@@ -119,3 +119,18 @@ comments on linked B's videos older than 72 h, lags 1-3, 365 days? Needs BOTH pl
 - Reading: linked creators' timing does predict B's old-video comments better than shuffled timing, but most of that is
   shared calendar rhythm (unlinked pairs also score above the shifted placebo: 1.18 vs 1.10). What is left that is specific
   to linked pairs is suggestive (p 0.054) but not established. Not re-run; not to be re-run to cross 0.05.
+
+## Replication (plan section "Replication": 730 days, up to 300 comments per video; run ONCE on 12 Nov 2026 evening,
+## after the comment fetch reached 99.8% of the videos that have comments; models/audience_flow_results_rep_9nov.json)
+441 events. Same code, rules and pass mark as the first run.
+- Test 1 (primary, audience flow): 246 events counted (160 pairs). Mean -0.0006, 95% CI [-0.0023, +0.0013];
+  placebo (934) -0.0022, CI [-0.0052, -0.0001]. **Verdict: NOT detected.**
+- Test 2 (secondary, B's engagement in the 7 days after A tags B): 291 events counted (173 pairs). Mean **+0.095**
+  (about +10% views+likes against B's own usual), 95% CI **[+0.005, +0.185]**; placebo (1,165 counted) -0.010,
+  CI [-0.056, +0.038] includes 0. **Verdict: DETECTED.**
+- Reading: on the larger replication, a creator's videos in the week after being tagged by another fitness/health
+  creator get about 10% more engagement than their own usual, and random times show nothing. This is the first
+  between-creator test to pass its pre-registered mark. Stated with it: it is the plan's SECONDARY test (the plan says
+  Test 2 is not to be reported as the main finding); the first run on 365 days (116 events) pointed the same way
+  (+4%) but was not significant; the lower end of the interval is close to 0 (+0.5%). Commenters themselves did not
+  move from A to B (Test 1), so the lift is in views and likes, not in the same people commenting. Not re-run.
