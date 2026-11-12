@@ -134,3 +134,12 @@ comments on linked B's videos older than 72 h, lags 1-3, 365 days? Needs BOTH pl
   Test 2 is not to be reported as the main finding); the first run on 365 days (116 events) pointed the same way
   (+4%) but was not significant; the lower end of the interval is close to 0 (+0.5%). Commenters themselves did not
   move from A to B (Test 1), so the lift is in views and likes, not in the same people commenting. Not re-run.
+
+## Confirmation on NEW creator pairs (plan: TAG_ENGAGEMENT_CONFIRMATION_PLAN_12NOV.md, pushed c652df3 before the event
+## list was built; scripts/tag_engagement_confirmation_test.py; models/tag_confirmation_results_12nov.json; run ONCE 12 Nov)
+86 events on 35 pairs that were not in the replication (mostly newly recognised through the 11 Nov Instagram handles);
+42 counted (25 pairs; 29 B creators, 8 also B in the replication). Test 2 unchanged.
+- Effect -0.115, 95% CI [-0.339, +0.122]; placebo (200) +0.064, CI [-0.059, +0.185]. **Verdict: NOT detected.**
+- Reading: the confirmation did not repeat the +10%. It is about a seventh the size of the replication and its interval
+  is wide (it includes the replication's +0.095, and also zero and negative values), so it neither confirms nor rules
+  out the replication result. The replication's detection stands as a single, unconfirmed secondary result. Not re-run.

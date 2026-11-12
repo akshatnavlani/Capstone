@@ -1,0 +1,21 @@
+{
+ "plan": "TAG_ENGAGEMENT_CONFIRMATION_PLAN_12NOV.md",
+ "events_new_pairs": 86,
+ "B_creators_also_in_replication": 8,
+ "B_creators": 29,
+ "effect": {
+  "mean": -0.11514927373559432,
+  "lo": -0.3392433651054302,
+  "hi": 0.12227776178250795,
+  "n": 42,
+  "pairs": 25
+ },
+ "placebo": {
+  "mean": 0.0643465567284172,
+  "lo": -0.05933467860259745,
+  "hi": 0.1847943922451975,
+  "n": 200,
+  "pairs": 29
+ },
+ "verdict": "NOT detected"
+}
