@@ -31,10 +31,17 @@ def fetch(days: int, budget: int) -> tuple[int, int]:
 
 
 def day_run() -> int:
-    added, used = fetch(1470, DAILY)
-    if used < DAILY - 50:
-        a2, _ = fetch(6000, DAILY - used)
-        added += a2
+    """The script stops at its first error (e.g. a network timeout); retry with what is left, up to 6 tries per stage."""
+    added = used = 0
+    for days in (1470, 6000):
+        for _try in range(6):
+            left = DAILY - used
+            if left < 50:
+                return added
+            a, u = fetch(days, left)
+            added, used = added + a, used + u
+            if u < left - 50 and a == 0:   # finished this stage (nothing left to add) or failed straight away
+                break
     return added
 
 
