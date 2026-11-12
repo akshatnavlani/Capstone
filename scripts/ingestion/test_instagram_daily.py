@@ -36,6 +36,8 @@ class _Cur:
 
 def test_creators_that_block_training_pairs_come_first_and_are_not_repeated(monkeypatch):
     monkeypatch.setattr(d, "exposure_targets", lambda cur, n: [("t1", "target_one"), ("v2", "verified_two")])
+    monkeypatch.setattr(d, "scope_targets", lambda cur, n: [])   # added 8 Nov 2026; this test is about the two older sources
+    monkeypatch.setattr(d, "in_scope_ids", lambda cur: {"t1", "v1", "v2"})   # 9 Nov 2026 scope filter: all three in scope here
     got = d.new_creators(_Cur(), 3)
     assert got == [("t1", "target_one"), ("v1", "verified_one"), ("v2", "verified_two")]   # alternates: a blocking creator, then a verified one
     assert d.new_creators(_Cur(), 1) == [("t1", "target_one")]
