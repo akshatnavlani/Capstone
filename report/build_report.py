@@ -97,8 +97,8 @@ set_text(abstract,
          "fitness and health creators. Public YouTube, Instagram and Reddit data for 651 creators (2.3 million comments) is "
          "collected daily into a PostgreSQL database and modelled as a multi-relational creator graph. GAIL-R, a graph-based, "
          "cross-fitted causal learner with a placebo penalty, estimates spillover and achieved the lowest error on a planted-effect benchmark "
-         "against DeepInf, TNet and INFLECT-DGNN. A mood branch scores comment sentiment in English and Hindi, and a creator-fit branch matches "
-         "CLIP and BERT embeddings to the brand brief. A fusion layer returns a ranked 0–100 score with a range and an evidence grade in a "
+         "against DeepInf, TNet and INFLECT-DGNN. Mood and brief-fit branches use "
+         "comment sentiment in English and Hindi and CLIP and BERT embeddings. A fusion layer returns a ranked 0–100 score with a range and an evidence grade in a "
          "web dashboard. Pre-registered tests detected cross-platform spillover within creators (p = 0.002) and a 10% "
          "engagement lift for creators tagged by another creator.")
 for r in abstract.runs:
