@@ -57,12 +57,21 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--only-names", nargs="+", help="these creators (exact creators.name) instead of the verified set; for channels added "
                                                     "later by hand-checked lists (teams, leagues, collaborators), 6 Nov 2026")
+    ap.add_argument("--in-scope", action="store_true", help="all in-scope creators' channels (scope rule of the spillover tests), "
+                                                            "not only the verified set; 12 Nov 2026 (more tag events for the tests)")
     args = ap.parse_args()
 
     conn = get_connection()
     cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
     with conn.cursor() as cur:
-        if args.only_names:
+        if args.in_scope:
+            import sys
+            from pathlib import Path
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+            from joint_video_spillover_test import load
+            scope = list(load(cur)[0])
+            who, params = "c.creator_id::text = any(%s)", (scope,)
+        elif args.only_names:
             who, params = "c.creator_id in (select creator_id from creators where name = any(%s))", (args.only_names,)
         else:
             who, params = """c.creator_id in (select creator_id from creator_verification

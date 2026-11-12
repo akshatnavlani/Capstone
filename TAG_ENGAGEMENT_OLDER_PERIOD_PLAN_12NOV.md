@@ -16,6 +16,11 @@ scripts/ingestion/youtube_backfill_history.py --days 1470 for the verified creat
 deletes), within the shared daily quota (at most 3,000 units on 12 Nov, the rest after the 13 Nov reset). The test runs
 once the backfill has finished.
 
+Note added 12 Nov 2026, 21:25, still before any event list or outcome existed: the data step is widened from the 149
+verified channels to all 381 in-scope channels (youtube_backfill_history.py --in-scope), because tags made by the
+other channels would otherwise be missed. Daily runs from 13 Nov (scripts/ingestion/history_backfill_runner.py,
+4,500 units a day); the test runs once the 2022-2024 window is complete for all 381 channels.
+
 ## Events
 Same identity rule as the replication (scripts/audience_flow_test.py build_events): YouTube video or Instagram post by
 A with the @handle of held, in-scope B; first tag of B by A within 30 days; A and B both have YouTube videos; no
