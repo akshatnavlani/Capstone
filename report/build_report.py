@@ -94,12 +94,13 @@ abstract = find_par("Today, brands generally choose")
 set_text(abstract,
          "Brands usually choose influencers by follower count, without measuring whether a sponsorship also reaches the audiences of connected "
          "creators or of the same creator on another platform. This project builds an end-to-end influencer–brand matching system for Indian "
-         "fitness and health creators. Public YouTube, Instagram and Reddit data for 651 creators, including 184,251 videos and 2.3 million "
-         "comments, is collected daily into a PostgreSQL database and modelled as a multi-relational creator graph. GAIL-R, a graph-based, "
+         "fitness and health creators. Public YouTube, Instagram and Reddit data for 651 creators (2.3 million comments) is "
+         "collected daily into a PostgreSQL database and modelled as a multi-relational creator graph. GAIL-R, a graph-based, "
          "cross-fitted causal learner with a placebo penalty, estimates spillover and achieved the lowest error on a planted-effect benchmark "
          "against DeepInf, TNet and INFLECT-DGNN. A mood branch scores comment sentiment in English and Hindi, and a creator-fit branch matches "
-         "CLIP and BERT embeddings to the brand brief. A fusion layer returns a ranked 0–100 score with a range and an evidence grade through a "
-         "FastAPI service and a Next.js dashboard. Pre-registered tests detected cross-platform audience spillover within creators (p = 0.002).")
+         "CLIP and BERT embeddings to the brand brief. A fusion layer returns a ranked 0–100 score with a range and an evidence grade in a "
+         "web dashboard. Pre-registered tests detected cross-platform spillover within creators (p = 0.002) and a 10% "
+         "engagement lift for creators tagged by another creator.")
 for r in abstract.runs:
     r.font.size = Pt(14)
 abstract.paragraph_format.line_spacing = 1.5
@@ -591,9 +592,14 @@ R.P("Thumbnails are embedded with CLIP [30] (512 dimensions) and titles, descrip
     "rescaled to [0, 1]:")
 R.equation("fit_i = ( 1 + cos( z_brief , z̄_i ) ) / 2")
 R.section("Fusion Layer")
-R.P("The fusion layer combines the branch outputs into the final score on a 0–100 scale. Spillover is shown next to the score as context "
-    "with its own range, and has weight 0 in the score:")
-R.equation("score = clip( 100 × ( 0.5 · mood + 0.5 · fit ) + adj , 0 , 100 ),   adj = −10 if mood < 0.3")
+R.P("The fusion layer combines value for money, audience mood and brief fit into the final score on a 0–100 scale. Value is the "
+    "creator's percentile, within the platform, of expected sponsored engagement per rupee: the creator's normal engagement (90-day mean of "
+    "log engagement over posts of the same format) plus the measured sponsored-post adjustment, divided by the cost per post from the "
+    "follower tier of a 2026 Indian rate card. Budget is applied first as a filter. Spillover is shown next to the score as context with "
+    "its own range:")
+R.equation("score = clip( 100 × ( 0.4 · value + 0.3 · mood + 0.3 · fit ) + adj , 0 , 100 ),   adj = −10 if mood < 0.3")
+R.P("A branch with no information for a creator is left out and the other weights are rescaled, so a creator is never credited with a "
+    "neutral value that no data supports. The weights are documented priors agreed by the team on 7 November 2026.")
 R.P("The range combines each branch's half-width u_k with its weight w_k in quadrature:")
 R.equation("half-width = sqrt( Σ_k ( w_k · u_k )² ),     range = score ± 100 × half-width")
 R.P("Every score also carries a basis label for each branch (trained, inferred, scored, placeholder or isolated) and an evidence grade "
@@ -796,9 +802,11 @@ R.code("Algorithm 9.5: Serving a recommendation", [
     "C <- C minus creators above budget or without the requested platform",
     "C <- C minus creators whose text evidence contradicts region/audience/product",
     "for c in C:",
-    "    mood, u_m <- mood branch (or 0.5 placeholder);  fit, u_f <- fit branch",
-    "    score <- 100 * (0.5*mood + 0.5*fit);  if mood < 0.3: score -= 10",
-    "    half <- sqrt((0.5*u_m)^2 + (0.5*u_f)^2);  range <- score +/- 100*half",
+    "    value <- percentile of expected sponsored engagement per rupee",
+    "    mood, u_m <- mood branch;  fit, u_f <- fit branch",
+    "    drop branches with no data; rescale the remaining weights",
+    "    score <- 100 * (0.4*value + 0.3*mood + 0.3*fit);  if mood < 0.3: score -= 10",
+    "    half <- sqrt(sum_k (w_k*u_k)^2);  range <- score +/- 100*half",
     "    grade <- evidence_grade(comments, fit basis, platforms, links)",
     "    attach spillover estimate and range as context",
     "rank by (has posts, score) descending; return JSON"])
@@ -855,18 +863,26 @@ R.P("A follow-up test asked whether the link comes from creators who explicitly 
     "audience appears to follow creators across platforms on its own. As with all Granger tests, this shows prediction in time rather than "
     "proof of cause.")
 R.section("Spillover Between Creators")
-R.P("Spillover between different creators was examined with eleven pre-registered designs, from 34 to 3,985 events (Table 10.1). The "
-    "strongest design used every day of a year for 238 creator pairs linked by tags: creator A's posting predicted comments on creator B's "
-    "older videos better than shuffled timing (p = 0.002), and better than randomly chosen unlinked creators at p = 0.054, just above the "
-    "pre-set 0.05 threshold. The other designs placed the between-creator effect within the placebo range, which bounds any spillover between "
-    "creators to a small size. Three forward tests with readings every 30 minutes (Table 10.2) measure new collaborations as they happen.")
+R.P("Spillover between different creators was examined with pre-registered designs from 34 to 3,985 events (Table 10.1). The "
+    "replication of the tag study, on two years of tags (441 events) and up to 300 comments per video, detected spillover between "
+    "creators: when creator A tags creator B, B's videos in the following seven days receive about 10% more views and likes than B's own "
+    "usual (+0.095 on the log scale, 95% interval +0.005 to +0.185, 291 events from 173 creator pairs), while 1,165 placebo times show no "
+    "change (−0.010, interval −0.056 to +0.038). This is the plan's secondary test; its primary test, whether A's commenters move to B, "
+    "was not detected, so the lift is in B's general reach rather than in the same commenters. The first run on one year of tags (116 "
+    "events) pointed the same way (+4%) without reaching significance.",
+    "Spillover of a sponsorship to linked creators over 30-day windows stayed within the placebo range, which bounds it to a small size. "
+    "Together, the results show a short-lived effect of being tagged by another creator, consistent with collaboration gains concentrated "
+    "in the first days. The strongest timing design (238 tag pairs) beat shuffled timing (p = 0.002) and came close against unlinked pairs "
+    "(p = 0.054). Forward tests with readings every 30 minutes (Table 10.2) measure new collaborations as they happen.")
 R.table("Pre-registered spillover tests", ["Test", "Size", "Result"], [
     ["Instagram post -> comments on the same creator's older YouTube videos", "105 creators", "**Detected, p = 0.002**"],
     ["YouTube activity -> the same creator's Instagram posts", "105 creators", "**Detected, p = 0.014**"],
     ["Creator A posts -> comments on tag-linked creator B's older videos", "238 pairs", "p = 0.002 vs timing; p = 0.054 vs unlinked"],
     ["Same, creators who made a video together", "164 pairs", "p = 0.034 vs timing; within placebo vs unlinked"],
     ["A sponsored -> linked creators' engagement (GAIL-R)", "298 exposed", "Within placebo range"],
-    ["A tags B -> A's commenters move to B; B's 7-day engagement", "100 / 116 events", "Within placebo range"],
+    ["**A tags B -> B's 7-day engagement (replication, 2 years)**", "291 events", "**Detected, +10% (+0.5% to +20%)**"],
+    ["A tags B -> A's commenters move to B (replication)", "246 events", "Within placebo range"],
+    ["A tags B -> A's commenters move to B; B's 7-day engagement (first run, 1 year)", "100 / 116 events", "Within placebo range"],
     ["A tags B -> B's comments name A", "100 events", "Within placebo range"],
     ["A sponsors brand X -> B's comments name brand X", "3,985 events", "Within placebo range"],
     ["A and B in one video -> B's engagement", "177 events", "Within placebo range"],
@@ -874,7 +890,6 @@ R.table("Pre-registered spillover tests", ["Test", "Size", "Result"], [
     ["Sponsored video -> brand named on the creator's next videos", "431 events", "Within placebo range"],
     ["A sponsors -> B's older videos' views within 48 h", "63 events", "Within placebo range"]], [9.0, 3.0, 5.0], size=10)
 R.table("Forward tests running with 30-minute readings", ["Test", "Result date"], [
-    ["Tag retest with up to 300 comments per video (441 events)", "13–14 Nov 2026"],
     ["Large creator -> smaller guest's subscribers within 48 h", "20 Nov 2026"],
     ["New collaborations -> partner's subscribers within 48 h", "20 Nov 2026"]], [12.0, 5.0])
 R.section("Model Benchmark Against Published Methods")
@@ -913,8 +928,9 @@ R.placeholder("Monitoring page with risk alerts", "Monitoring page with brand-sa
 R.section("Discussion")
 R.P("The results answer the research questions as follows. For RQ2, a creator's activity on one platform predicts their audience's activity "
     "on the other within one to three days, in both directions, and this cross-platform audience spillover is the main empirical finding. For "
-    "RQ1, eleven designs bound spillover between creators to a small size; the strongest design came close to the threshold, and forward "
-    "tests with 30-minute readings are measuring new collaborations as they happen. For RQ3, GAIL-R recovered planted effects with a fraction "
+    "RQ1, being tagged by another creator raised the tagged creator's engagement by about 10% over the next week (replication, 291 "
+    "events), while sponsorship spillover over 30-day windows was bounded to a small size; forward tests with 30-minute readings are "
+    "measuring new collaborations as they happen. For RQ3, GAIL-R recovered planted effects with a fraction "
     "of the error of published graph models, and its placebo penalty protected it against pre-existing trends. For RQ4, the application "
     "turns these signals into a ranked list in which each score states its range and the evidence behind it.",
     "For brands, the practical message is that a creator's audience should be treated as one audience across platforms: a campaign on "
@@ -929,8 +945,8 @@ R.P("This project built a complete influencer-brand matching system for Indian f
     "2.3 million comments and 573,368 time-stamped readings. A six-tier sponsorship detector with an owner check and a standing-code "
     "correction produced reliable labels. GAIL and GAIL-R model spillover on a multi-relational creator graph; GAIL-R, with cross-fitting "
     "and a placebo penalty, recovered planted effects far more accurately than DeepInf, TNet and INFLECT-DGNN. Pre-registered tests detected "
-    "cross-platform audience spillover within creators (p = 0.002 and p = 0.014 on 105 creators) and bounded spillover between creators to a "
-    "small size. The mood branch, creator-fit branch and fusion layer turn these signals into a 0–100 score with a range and an evidence grade.")
+    "cross-platform audience spillover within creators (p = 0.002 and p = 0.014 on 105 creators) and spillover between creators after a "
+    "tag (about +10% engagement over seven days, 291 events), while bounding sponsorship spillover over 30-day windows to a small size. The mood branch, creator-fit branch and fusion layer turn these signals into a 0–100 score with a range and an evidence grade.")
 R.section("Utility")
 R.bullets(["Brands get a shortlist that is not driven by follower count alone, with the evidence behind each score stated in plain words.",
            "Campaign planners learn that Instagram and YouTube audiences of the same creator respond together within days.",
@@ -946,7 +962,7 @@ R.table("Work carried out", ["Phase", "Work"], [
 R.figure(ASSETS / "gantt_v4.png", "Project timeline (Gantt chart)", 16.5)
 R.section("Future Work")
 R.bullets(["Report the forward collaboration tests with 30-minute readings (20 November 2026) and extend them over a longer period.",
-           "Add rate-card data so that creators can be ranked by expected engagement per rupee.",
+           "Replace the published rate card with real price quotes, and fit the fusion weights once a brand partner shares sales data.",
            "Train GAIL-R on more seeds on a GPU and add the direct effect of sponsored posts as a second target.",
            "Extend Instagram coverage and human label checks, and add load and security testing to the deployment.",
            "Prepare the work as a research paper on cross-platform audience spillover."])
