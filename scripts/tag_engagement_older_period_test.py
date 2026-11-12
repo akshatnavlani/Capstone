@@ -1,0 +1,103 @@
+"""Second confirmation of tag -> 7-day engagement on the OLDER period 10 Nov 2022 - 9 Nov 2024.
+Plan: TAG_ENGAGEMENT_OLDER_PERIOD_PLAN_12NOV.md (pushed ca6c16d before the history was fetched).
+
+    python scripts/tag_engagement_older_period_test.py count   # event list only (no outcome)
+    python scripts/tag_engagement_older_period_test.py run     # the one run, after the history backfill has finished
+
+Same event rule and outcome as the replication (audience_flow_test, --rep constants: NOW = 9 Nov 2026). READ ONLY.
+"""
+import csv
+import json
+import random
+import re
+import sys
+from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+_argv, sys.argv = sys.argv, [sys.argv[0], "--rep"]
+import audience_flow_test as af  # noqa: E402
+sys.argv = _argv
+
+import psycopg2  # noqa: E402
+
+LO, HI = af.NOW - af.D(days=1460), af.NOW - af.D(days=730)   # 10 Nov 2022 .. 9 Nov 2024
+EVENTS = ROOT / "models" / "tag_older_period_events.json"
+OUT = ROOT / "models" / "tag_older_period_results.json"
+
+
+def build(cur):
+    fit = {"athlete", "team", "league", "fitness_influencer"}
+    ov = {r["name"].strip().lower(): r["include"].strip().lower()
+          for r in csv.DictReader(open(ROOT / "data" / "creator_scope_overrides.csv", encoding="utf-8")) if r.get("name")}
+    cur.execute("select creator_id::text, name, category, lower(youtube_handle), lower(instagram_handle) from creators")
+    scope, h2c = set(), {}
+    for cid, n, c, yt, ig in cur.fetchall():
+        o = ov.get((n or "").strip().lower())
+        if o == "yes" or (c in fit and o not in ("no", "overseas")):
+            scope.add(cid)
+        for h in (yt, ig):
+            if h:
+                h2c[h.lstrip("@")] = cid
+    cur.execute("select distinct creator_id::text from youtube_videos where creator_id is not null")
+    on_yt = {r[0] for r in cur.fetchall()}
+    cur.execute("""select creator_id::text, published_at, lower(coalesce(title,'')||' '||coalesce(description,'')) from youtube_videos
+                   where creator_id is not null and published_at >= %s and published_at < %s
+                   union all select creator_id::text, posted_at, lower(coalesce(caption,'')) from instagram_posts
+                   where creator_id is not null and posted_at >= %s and posted_at < %s""", (LO, HI) * 2)
+    tags = []
+    for a, t, txt in cur.fetchall():
+        for m in set(re.findall(r"@([a-z0-9_.]{3,30})", txt or "")):
+            b = h2c.get(m.rstrip("."))
+            if b and b != a and b in scope and a in on_yt and b in on_yt:
+                tags.append((a, b, t))
+    events, last = [], {}
+    for a, b, t in sorted(tags, key=lambda x: x[2]):
+        if (a, b) in last and (t - last[(a, b)]).days < 30:
+            continue
+        last[(a, b)] = t
+        events.append((a, b, t))
+    EVENTS.write_text(json.dumps([(a, b, t.isoformat()) for a, b, t in events]))
+    print(f"{len(events)} events on {len({(a, b) for a, b, _ in events})} pairs, {LO:%d %b %Y} - {HI:%d %b %Y} -> {EVENTS.name}")
+    return events
+
+
+def main() -> int:
+    mode = sys.argv[1] if len(sys.argv) > 1 else "count"
+    cur = psycopg2.connect(af.load_env()["DATABASE_URL"]).cursor()
+    events = build(cur)
+    if mode != "run":
+        return 0
+    assert not OUT.exists(), "already run once (plan: run once)"
+    cache: dict = {}
+    eff = [((a, b), f) for a, b, t in events if (f := af.engagement_change(cur, b, t, cache)) is not None]
+    tag_times = defaultdict(list)
+    for _a, b, t in events:
+        tag_times[b].append(t)
+    rng, plac = random.Random(1), []
+    span = (HI - LO).total_seconds()
+    for a, b, t in events:
+        got = tries = 0
+        while got < af.PLACEBOS and tries < 1000:
+            tries += 1
+            p = LO + af.D(seconds=rng.uniform(0, span))
+            if all(abs((p - x).days) > 30 for x in tag_times[b]):
+                got += 1
+                if (f := af.engagement_change(cur, b, p, cache)) is not None:
+                    plac.append(((a, b), f))
+    e, pl = af.boot_ci(eff), af.boot_ci(plac)
+    if not e or e["n"] < 20:
+        verdict = "fewer than 20 counted events: printed, not a result"
+    else:
+        verdict = "DETECTED" if e["lo"] > 0 and pl and pl["lo"] <= 0 <= pl["hi"] else "NOT detected"
+    res = {"plan": "TAG_ENGAGEMENT_OLDER_PERIOD_PLAN_12NOV.md", "run_at": datetime.now().isoformat(timespec="seconds"),
+           "window": [LO.isoformat(), HI.isoformat()], "events": len(events), "effect": e, "placebo": pl, "verdict": verdict}
+    OUT.write_text(json.dumps(res, indent=1))
+    print(json.dumps(res, indent=1))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
