@@ -869,7 +869,9 @@ R.P("Spillover between different creators was examined with pre-registered desig
     "usual (+0.095 on the log scale, 95% interval +0.005 to +0.185, 291 events from 173 creator pairs), while 1,165 placebo times show no "
     "change (−0.010, interval −0.056 to +0.038). This is the plan's secondary test; its primary test, whether A's commenters move to B, "
     "was not detected, so the lift is in B's general reach rather than in the same commenters. The first run on one year of tags (116 "
-    "events) pointed the same way (+4%) without reaching significance.",
+    "events) pointed the same way (+4%) without reaching significance. A further pre-registered check on 35 creator pairs not seen by "
+    "the replication counted 42 events; its interval (−0.34 to +0.12) is wide and includes the replication's estimate, so a larger "
+    "independent sample is needed to confirm the size of the effect.",
     "Spillover of a sponsorship to linked creators over 30-day windows stayed within the placebo range, which bounds it to a small size. "
     "Together, the results show a short-lived effect of being tagged by another creator, consistent with collaboration gains concentrated "
     "in the first days. The strongest timing design (238 tag pairs) beat shuffled timing (p = 0.002) and came close against unlinked pairs "
@@ -881,6 +883,7 @@ R.table("Pre-registered spillover tests", ["Test", "Size", "Result"], [
     ["Same, creators who made a video together", "164 pairs", "p = 0.034 vs timing; within placebo vs unlinked"],
     ["A sponsored -> linked creators' engagement (GAIL-R)", "298 exposed", "Within placebo range"],
     ["**A tags B -> B's 7-day engagement (replication, 2 years)**", "291 events", "**Detected, +10% (+0.5% to +20%)**"],
+    ["Same, confirmation on 35 new creator pairs", "42 events", "Within placebo range (wide interval)"],
     ["A tags B -> A's commenters move to B (replication)", "246 events", "Within placebo range"],
     ["A tags B -> A's commenters move to B; B's 7-day engagement (first run, 1 year)", "100 / 116 events", "Within placebo range"],
     ["A tags B -> B's comments name A", "100 events", "Within placebo range"],
