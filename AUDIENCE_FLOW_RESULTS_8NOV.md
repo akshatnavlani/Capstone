@@ -143,3 +143,15 @@ comments on linked B's videos older than 72 h, lags 1-3, 365 days? Needs BOTH pl
 - Reading: the confirmation did not repeat the +10%. It is about a seventh the size of the replication and its interval
   is wide (it includes the replication's +0.095, and also zero and negative values), so it neither confirms nor rules
   out the replication result. The replication's detection stands as a single, unconfirmed secondary result. Not re-run.
+
+## Second confirmation on the OLDER period (plan: TAG_ENGAGEMENT_OLDER_PERIOD_PLAN_12NOV.md, pushed ca6c16d before the
+## history was fetched, note ca1554d before the run; scripts/tag_engagement_older_period_test.py; run ONCE 14 Nov 21:47)
+Tags from 10 Nov 2022 - 9 Nov 2024 (no overlap with the replication), 365/381 channels' history complete (16 listed in
+the plan note). 864 events on 437 pairs; 654 counted (357 pairs).
+- Effect **+0.050** (about +5%), 95% CI **[-0.006, +0.107]**; placebo (2,813 counted) +0.027, CI [-0.021, +0.074].
+  **Verdict: NOT detected** (the lower end is just below 0).
+- Reading: same direction as the replication (+0.095) and about half its size; the interval narrowly includes zero, and
+  random dates in this period also show a small positive drift (+0.027). So the older period does not confirm the
+  replication at the pre-set mark; together the two point to a small positive effect of being tagged (a few percent),
+  not established. All three runs (replication, new-pair check, older period) are reported; no further attempts before
+  21 Nov.
