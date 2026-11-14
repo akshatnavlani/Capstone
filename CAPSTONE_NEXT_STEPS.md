@@ -6,7 +6,13 @@ supersedes memory when they disagree — memory is a pointer, this is the record
 
 Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 closed state unchanged: 259/54/170 wired end-to-end, see §1 Review 1 closed. Team decision 2026-09-24: Review 2 = pipeline-complete per PendingWork 2026-09-20; Review 3 = improvements).
 
-**14 NOV 2026, 01:00 (newest) — TO RUN WHEN SHIMONA ASKS (in this order):**
+**15 NOV 2026, 00:00 (newest) — TO RUN WHEN SHIMONA ASKS (no GAIL-R result has been printed yet for any of these):**
+1. ONE GAIL-R run at a time (two in parallel took the night): `bash scripts/run_gail_r_chain_14nov.sh` runs update -> joint_video -> tag with retries and restores the app model (backup in exports/model_backup_14nov). Do NOT run the mood scoring at the same time.
+2. Then negative spillover: `scripts/negative_spillover_test.py score` (resumes; 400 of 12,992 videos scored), then `... run` ONCE.
+3. Older-period replications still needing comments: audience flow T1, brand spillover, sponsor carry-over (OLDER_PERIOD_REPLICATIONS_PLAN_14NOV.md); only if quota/time allows, else "not run (data)".
+Done 14 Nov: older history 365/381 channels; 844+470 older sponsorships labelled (event_brand_labels.csv rule rows); tag confirmation older period +0.050 [-0.006, +0.107] NOT detected; joint video older: all B not detected, small B +0.277 [+0.113, +0.529] DETECTED (suggestive); BK Shivani in scope (+ @bkshivani); yoga/meditation IG priority.
+
+**14 NOV 2026, 01:00 — (previous list, done):**
 1. Check the 13:40 history fetch finished (`exports/history_backfill_14nov_1470d.log`; channels complete back to Nov 2022 were 254/381 at 01:00). If a few channels can never complete (deleted/private videos), say so and treat as complete.
 2. Label sponsorships in videos fetched since 14 Nov 00:00: `scripts/ingestion/label_new_videos.py --since "2026-11-13 18:30+00"` (dry-run first). 398 older sponsored videos were already labelled on 14 Nov 00:20.
 3. Run ONCE: `scripts/tag_engagement_older_period_test.py run` (plan TAG_ENGAGEMENT_OLDER_PERIOD_PLAN_12NOV.md) -> the +10% confirmation.
