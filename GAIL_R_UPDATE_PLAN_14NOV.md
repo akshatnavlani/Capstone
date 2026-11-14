@@ -23,3 +23,11 @@ and more neighbour windows become computable. More exposed observations give a n
 - Detected only if the 95% interval of the effect on exposed observations (placebo penalty 30) is above 0, as before.
 - Otherwise the upper end of the interval is the new bound on positive spillover.
 - Both runs (11 Nov and this update) are reported, with their observation counts. No further re-runs before 21 Nov.
+
+Note added 14 Nov 2026, 23:05, BEFORE any result: the first start of the update (21:45) was stopped before it printed
+any estimate, because the fitness event rule reads data/event_brand_labels.csv and the 1,365 sponsorship events added
+since the hand labelling (mostly the 2022-2024 history) were not in it, so the update would have silently left out the
+new data. They were labelled by a fixed rule (brand category supplement / apparel / equipment / footwear / wellness =
+fitness "yes"; other known categories "no"; no identifiable brand "unknown", which the rule excludes as before):
+470 yes, 13 no, 882 unknown. The labels are rule-based, not hand-checked, and the note column says so. Then the single
+update run is started; nothing else changes.
