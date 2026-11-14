@@ -163,7 +163,11 @@ def exposure_targets(cur, n: int) -> list[tuple]:
 
 SCOPE_CATEGORIES = {"athlete", "team", "league", "fitness_influencer"}  # as train_prod_model.FITNESS_CREATOR_CATEGORIES
 OVERRIDES = Path(__file__).resolve().parents[2] / "data" / "creator_scope_overrides.csv"
-PRIORITY_HANDLES = ("swaamiramdev",)  # 8 Nov 2026: the guide asked for Baba Ramdev (Swami Ramdev) on both platforms
+PRIORITY_HANDLES = ("swaamiramdev",  # 8 Nov 2026: the guide asked for Baba Ramdev (Swami Ramdev) on both platforms
+                    # 14 Nov 2026: the mentor asked for the famous yoga and meditation creators (Bangalore ones included); all had
+                    # YouTube history but no Instagram posts yet
+                    "gurudev", "sadhguru", "artofliving", "srisriyoga", "aksharyoga", "heartfulness", "isha.foundation",
+                    "theyogainstituteofficial", "theshilpashetty", "habuild.in", "mahabodhiblr", "practiceheartfulness")
 
 
 def in_scope_ids(cur) -> set:
