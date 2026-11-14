@@ -68,13 +68,17 @@ def links(cur):
 
 
 def score():
-    from transformers import pipeline
-    en = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment-latest", top_k=None, truncation=True)
-    hi = pipeline("sentiment-analysis", model="cardiffnlp/twitter-xlm-roberta-base-sentiment", top_k=None, truncation=True)
+    """The app's own scorers (ml/temporal/sentiment.py): English RoBERTa, and XLM-R for Devanagari from the local cache;
+    safety = expected value with negative 0, neutral 0.5, positive 1 (= P(pos) + 0.5 P(neu))."""
+    sys.path.insert(0, str(ROOT))
+    from ml.temporal.sentiment import SentimentScorer, multilingual_scorer
+    en_s, hi_s = SentimentScorer(), multilingual_scorer()
 
-    def mood(outs):
-        d = {o["label"].lower(): o["score"] for o in outs}
-        return d.get("positive", 0) + 0.5 * d.get("neutral", 0)
+    def en(texts, batch_size=32):
+        return [float(x) for x in en_s.score(texts)]
+
+    def hi(texts, batch_size=32):
+        return [float(x) for x in hi_s.score(texts)]
 
     done = json.loads(MOOD.read_text()) if MOOD.exists() else {}
     cur = connect().cursor()
@@ -93,7 +97,7 @@ def score():
             continue
         dev = [x for x in texts if DEVANAGARI.search(x)]
         lat = [x for x in texts if not DEVANAGARI.search(x)]
-        scores = [mood(o) for o in (en(lat, batch_size=32) if lat else [])] + [mood(o) for o in (hi(dev, batch_size=32) if dev else [])]
+        scores = [x for x in (en(lat) if lat else []) + (hi(dev) if dev else []) if x == x]
         if scores:
             done[vid] = {"creator": cid, "t": t.isoformat(), "mood": sum(scores) / len(scores), "n": len(scores)}
         if i % 200 == 0:
