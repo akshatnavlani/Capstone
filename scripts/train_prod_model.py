@@ -746,7 +746,13 @@ def load_sponsorship_dates(cur) -> dict:
     `is_sponsored` only, so a creator sponsored only via Instagram's native
     label could generate training pairs while having T = 0. One definition now
     drives both. P0 found the label-carrying events 33/33 genuine.
+
+    14 Nov 2026: with GAIL_TREATMENT=joint_video | tag the treatment dates are those events instead
+    (GAIL_R_COLLAB_TREATMENT_PLAN_14NOV.md), from the same list pair_count uses.
     """
+    if _pair_count_module.TREATMENT != "sponsorship":
+        from datetime import datetime as _dt
+        return sponsorship_dates([(a, _dt.fromisoformat(t)) for a, _b, _i, t in _pair_count_module.collab_events()])
     cur.execute(
         """
         select creator_id::text, posted_at from instagram_posts
@@ -908,8 +914,8 @@ def main() -> int:
     # window: their lift mixes their own direct effect into the "spillover".
     lift_rows = [d for d in detailed if d["robust_lift"] is not None]
 
-    # Event rule: which sponsorships define a treated observation.
-    if EVENT_RULE == "fitness":
+    # Event rule: which sponsorships define a treated observation (brand rule applies to sponsorships only).
+    if EVENT_RULE == "fitness" and _pair_count_module.TREATMENT == "sponsorship":
         labels = load_event_labels(EVENT_LABELS_PATH)
         kept_by_rule, off_rule, unlabelled = [], [], []
         for d in lift_rows:
@@ -1442,6 +1448,19 @@ def main() -> int:
                                 "placebo_penalty": fit["placebo"], "placebo_weight": w_pl}
     print(f"  {len(r_rows)} observations from {len(set(r[1] for r in r_rows))} creators; "
           "the interval resamples creators, so repeat observations do not narrow it.")
+    if os.environ.get("GAIL_R_SMALL_B") == "1":   # 14 Nov 2026: secondary of GAIL_R_COLLAB_TREATMENT_PLAN_14NOV.md
+        conn, cur = _reconnect(conn, database_url)
+        cur.execute("select creator_id::text, max(subscriber_count) from youtube_channels group by 1")
+        small = {id_to_index[c] for c, s in cur.fetchall() if c in id_to_index and (s or 0) < 100_000}
+        mask = torch.tensor([int(n) in small for n in r_obs.node.tolist()])
+        sub = Observations(node=r_obs.node[mask], window=r_obs.window[mask], y=r_obs.y[mask], pre=r_obs.pre[mask], own=None)
+        fit = fit_gail_r(data, treatments, sub, placebo_weight=R_PLACEBO, seed=SEED, window_fe=WINDOW_FE)
+        if fit["n_exposed"] < 20:
+            print(f"  secondary, neighbours under 100k subscribers: {fit['n_exposed']} exposed (< 20): printed, not a result")
+        ci = cluster_bootstrap(data, treatments, sub, B=R_BOOT, seed=SEED, placebo_weight=R_PLACEBO, window_fe=WINDOW_FE)
+        print(f"  secondary, neighbours under 100k subscribers (placebo penalty {R_PLACEBO}): {fit['n_exposed']} exposed "
+              f"of {int(mask.sum())}; effect {fit['att']:+.4f}  95% CI [{ci['att']['lo']:+.4f}, {ci['att']['hi']:+.4f}]")
+        gail_r_report["small_B_with_placebo"] = {"att": fit["att"], "n_exposed": fit["n_exposed"], "ci": ci}
 
     # Save checkpoint
     models_dir = Path(__file__).resolve().parents[1] / "models"

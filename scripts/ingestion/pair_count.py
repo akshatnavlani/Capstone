@@ -69,6 +69,38 @@ PAIRS = """
                       and c2.creator_id <> x.creator_id
 """
 
+# 14 Nov 2026 (GAIL_R_COLLAB_TREATMENT_PLAN_14NOV.md): GAIL_TREATMENT=joint_video | tag swaps the EVENT for a joint video
+# or a tag of another held creator (event lists in models/), and adds each event's (A, B) pair as an edge in both
+# directions. Default "sponsorship" leaves Clauses 1-2 exactly as above.
+import os as _os
+TREATMENT = _os.environ.get("GAIL_TREATMENT", "sponsorship")
+
+
+def collab_events():
+    """[(creator_a, creator_b, item_id, posted_at_iso)] for GAIL_TREATMENT; [] for sponsorship."""
+    from pathlib import Path as _P
+    models = _P(__file__).resolve().parents[2] / "models"
+    out = []
+    if TREATMENT == "joint_video":
+        for f in ("joint_video_events_9nov.json", "joint_video_events_9nov_older.json"):
+            for e in json.load(open(models / f, encoding="utf-8")):
+                if e["a_id"] != e["b_id"]:
+                    out.append((e["a_id"], e["b_id"], e["video_id"], e["t"]))
+    elif TREATMENT == "tag":
+        for f in ("audience_flow_events_rep_9nov.json", "tag_older_period_events.json"):
+            for a, b, t in json.load(open(models / f, encoding="utf-8")):
+                if a != b:
+                    out.append((a, b, f"tag:{a[:8]}:{b[:8]}:{t[:10]}", t))
+    return out
+
+
+if TREATMENT != "sponsorship":
+    _ev = collab_events()
+    _vals = ",".join(f"('{a}'::uuid, '{i}', '{t}'::timestamptz, 'youtube')" for a, _b, i, t in _ev)
+    EVENTS = f"select distinct * from (values {_vals}) as ev(creator_id, item_id, posted_at, platform)"
+    _pairs = ",".join(f"('{a}'::uuid, '{b}'::uuid), ('{b}'::uuid, '{a}'::uuid)" for a, b, _i, _t in _ev)
+    PAIRS = f"select a, b from ({PAIRS}) p0 union select a, b from (values {_pairs}) as pv(a, b)"
+
 # Clause 3, as two scalar counts so the two halves can be reported separately -- the reason
 # a straddle fails is the actionable part, and "56 of 137 fail on the BEFORE side alone" is
 # what identified the recency window as the binding constraint.
