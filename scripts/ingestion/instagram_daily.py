@@ -167,7 +167,7 @@ PRIORITY_HANDLES = ("swaamiramdev",  # 8 Nov 2026: the guide asked for Baba Ramd
                     # 14 Nov 2026: the mentor asked for the famous yoga and meditation creators (Bangalore ones included); all had
                     # YouTube history but no Instagram posts yet
                     "gurudev", "sadhguru", "artofliving", "srisriyoga", "aksharyoga", "heartfulness", "isha.foundation",
-                    "theyogainstituteofficial", "theshilpashetty", "habuild.in", "mahabodhiblr", "practiceheartfulness")
+                    "theyogainstituteofficial", "theshilpashetty", "habuild.in", "mahabodhiblr", "practiceheartfulness", "bkshivani")
 
 
 def in_scope_ids(cur) -> set:
