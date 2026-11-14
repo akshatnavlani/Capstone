@@ -37,3 +37,10 @@ above 0 AND the placebo interval includes 0. Fewer than 20 counted events: print
 ## Rules
 Run once (scripts/tag_engagement_older_period_test.py run); no change to windows, thresholds or events after any
 number is seen; reported next to the replication and the first confirmation.
+
+Note added 14 Nov 2026, 21:35, BEFORE the run and before any event list or outcome: the 2022-2024 window is complete for
+365 of 381 in-scope channels (96%). 16 channels still have older videos to fetch and would need another quota day
+(Vikram Singh Fitness alone has 22,755 videos): Vikram Singh Fitness, Tarun Gill, Visphy Kharradi, Tamil Nadu Premier
+League, Shilpa Shetty Kundra, Surakshith Battina, Neha Bhat, SYRUS VEERA, Wasim Khan, Saarah Fit Chick, Swara Yoga,
+OBAID KHAN, Nutritionist Amita Gadre, Nithya Suresh Neelampath, Roshni Sanghvi, Ravi Kapoor IRS. The test runs now on
+this data (decided with Shimona before any result), and the 16 are stated with the result. Not re-run when they finish.
