@@ -1,0 +1,46 @@
+{
+ "plan": "JOINT_VIDEO_SPILLOVER_PLAN_9NOV.md",
+ "unit": "log(views+likes+1) of B's own videos vs B's median, 14 days after minus 30 days before",
+ "events": 536,
+ "primary_all_B": {
+  "effect": {
+   "mean": 0.025423825882331164,
+   "lo": -0.03512554588803046,
+   "hi": 0.08983586990200683,
+   "n": 464,
+   "pairs": 276
+  },
+  "placebo": {
+   "mean": 0.025109109103840812,
+   "lo": -0.018059667096398325,
+   "hi": 0.06493494414865181,
+   "n": 2149,
+   "pairs": 306
+  },
+  "verdict": "NOT detected"
+ },
+ "secondary_B_under_100k": {
+  "effect": {
+   "mean": 0.2770935055122096,
+   "lo": 0.11258634955097697,
+   "hi": 0.5286450583884293,
+   "n": 67,
+   "pairs": 41
+  },
+  "placebo": {
+   "mean": 0.11775888938270526,
+   "lo": -0.0013371538951327696,
+   "hi": 0.20385495358785888,
+   "n": 258,
+   "pairs": 49
+  },
+  "verdict": "DETECTED"
+ },
+ "host_A_printed_only": {
+  "mean": 0.07247384347453292,
+  "lo": 0.0204910768121663,
+  "hi": 0.12868665840584798,
+  "n": 510,
+  "pairs": 309
+ }
+}

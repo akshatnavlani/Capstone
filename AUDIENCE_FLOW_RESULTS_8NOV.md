@@ -155,3 +155,15 @@ the plan note). 864 events on 437 pairs; 654 counted (357 pairs).
   replication at the pre-set mark; together the two point to a small positive effect of being tagged (a few percent),
   not established. All three runs (replication, new-pair check, older period) are reported; no further attempts before
   21 Nov.
+
+## Older-period replication: joint video (plan OLDER_PERIOD_REPLICATIONS_PLAN_14NOV.md, pushed e1460a5 before the event
+## list; SPILL_NOW=2024-11-09; models/joint_video_results_9nov_older.json; run ONCE 14 Nov 22:35)
+536 joint-video events on 325 pairs (Nov 2022 - Nov 2024; original run had 177 counted).
+- Primary (all B): 464 counted, +0.025, 95% CI [-0.035, +0.090]; placebo +0.025 [-0.018, +0.065]. **NOT detected.**
+- Secondary, pre-specified in JOINT_VIDEO_SPILLOVER_PLAN_9NOV.md (B under 100,000 subscribers): 67 counted (41 pairs),
+  **+0.277, 95% CI [+0.113, +0.529]**; placebo +0.118 [-0.001, +0.204] includes 0 (narrowly). **DETECTED** under the
+  plan's mark. In the original period the same subgroup had only 28 events (-0.093, wide, not detected).
+- Reading: small creators who appear in a joint video with another creator gain engagement in the next two weeks
+  (about +32%; beyond their own placebo drift of +12%, roughly +17%), as Koch et al. (2018) report for small channels.
+  Stated with it: a secondary subgroup of 67 events, its placebo is itself high and only just includes 0, and it is one
+  of about nineteen tests, so under the plan's multiple-testing note it is SUGGESTIVE and needs confirmation.
