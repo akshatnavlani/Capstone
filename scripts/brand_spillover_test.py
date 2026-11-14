@@ -25,12 +25,26 @@ from audience_flow_test import TOP, boot_ci  # noqa: E402
 from known_brands import KNOWN_BRANDS  # noqa: E402
 from orchestrator import load_env  # noqa: E402
 
+# 14 Nov 2026 (OLDER_PERIOD_REPLICATIONS_PLAN_14NOV.md): SPILL_NOW moves the end date back (e.g. 2024-11-09) and SPILL_TAG
+# adds a suffix to every output file, so the original runs' files are never overwritten. Defaults are unchanged.
+import os as _os
+_SPILL_TAG = _os.environ.get("SPILL_TAG", "")
+
+
+def _tagged(p):
+    return p.with_name(f"{p.stem}_{_SPILL_TAG}{p.suffix}") if _SPILL_TAG else p
+
 EVENTS = ROOT / "models" / "brand_spillover_events_8nov.json"
 VIDEOS = ROOT / "models" / "brand_spillover_videos_8nov.txt"
 OUT = ROOT / "models" / "brand_spillover_results_8nov.json"
 D = timedelta
 WIN, EXCL, PLACEBOS, MIN_COMMENTS = 30, 60, 5, 50
 NOW = datetime(2026, 11, 8, tzinfo=timezone.utc)
+if _os.environ.get("SPILL_NOW"):
+    NOW = datetime.fromisoformat(_os.environ["SPILL_NOW"]).replace(tzinfo=timezone.utc)
+EVENTS = _tagged(EVENTS)
+VIDEOS = _tagged(VIDEOS)
+OUT = _tagged(OUT)
 FIT = {"athlete", "team", "league", "fitness_influencer"}
 MENTION = re.compile(r"@([a-z0-9_.]{3,30})")
 
