@@ -94,7 +94,10 @@ def _posts_sql(stream: str, with_creator_col: bool) -> str:
     if with_creator_col:
         return (f"select creator_id::text, {date_col}, {e1}, {e2} from {table} "
                 f"where creator_id is not null and {' and '.join(conds)} order by {date_col}")
-    return (f"select {date_col}, {e1}, {e2} from {table} where creator_id::text = %s "
+    # 15 Nov 2026: `creator_id = %s::uuid` instead of `creator_id::text = %s`: the same rows (checked on 95 creator x
+    # platform calls; only the order of same-second ties differs, which mean/median ignore), but it uses the creator_id
+    # index instead of scanning the whole table on every call (about 30x faster on 250k videos).
+    return (f"select {date_col}, {e1}, {e2} from {table} where creator_id = %s::uuid "
             f"and {' and '.join(conds)} order by {date_col}")
 
 
