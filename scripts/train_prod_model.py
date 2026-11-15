@@ -877,6 +877,18 @@ def main() -> int:
         conn, cur = _reconnect(conn, database_url)
 
         collab_index, collab_attr = load_collab_edges(cur, id_to_index)
+        if _pair_count_module.TREATMENT != "sponsorship":
+            # 15 Nov 2026 (GAIL_R_COLLAB_TREATMENT_PLAN_14NOV.md, fix): the plan adds each event's (A, B) pair as a
+            # collaborates_with edge so the featured / tagged creator is A's neighbour in the MODEL graph too; the first
+            # joint-video run added it only to pair_count's pairs (stated in GAIL_R_RESULTS_15NOV.md).
+            have = {(int(a), int(b)) for a, b in collab_index.t().tolist()}
+            extra = sorted({(id_to_index[a], id_to_index[b]) for a, b, _i, _t in _pair_count_module.collab_events()
+                            if a in id_to_index and b in id_to_index} - have)
+            extra = sorted(set(extra) | {(b, a) for a, b in extra} - have)
+            if extra:
+                collab_index = torch.cat([collab_index, torch.tensor(extra, dtype=collab_index.dtype).t()], dim=1)
+                collab_attr = torch.cat([collab_attr, torch.ones((len(extra),) + tuple(collab_attr.shape[1:]), dtype=collab_attr.dtype)])
+            print(f"Event pairs added to the collaboration graph: {len(extra)} directed edges")
         cooccur_index, cooccur_attr = load_cooccurrence_edges(cur, id_to_index)
         brand_x, brand_id_to_index = load_brands(cur)
         print(f"Edges: collab {collab_index.size(1)} directed ({collab_index.size(1)//2} undirected), "

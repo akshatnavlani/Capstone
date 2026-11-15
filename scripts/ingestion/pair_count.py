@@ -138,6 +138,19 @@ CANDIDATES = f"""
 """
 
 
+# 15 Nov 2026 (GAIL_R_FEATURED_JOINT_VIDEO_PLAN_15NOV.md): GAIL_FEATURED_ONLY=1 measures only the creator B named in
+# each event (the featured / tagged creator), not every neighbour of A.
+FEATURED = _os.environ.get("GAIL_FEATURED_ONLY", "0") == "1"
+if FEATURED and TREATMENT != "sponsorship":
+    _vals_b = ",".join(f"('{a}'::uuid, '{i}', '{t}'::timestamptz, 'youtube', '{b}'::uuid)" for a, b, i, t in collab_events())
+    CANDIDATES = f"""
+    with events as (select distinct * from (values {_vals_b}) as ev(creator_id, item_id, posted_at, platform, b))
+    select e.creator_id, e.item_id, e.platform, e.posted_at, e.b,
+           ({BEFORE.replace('pr.b', 'e.b')}) as n_before, ({AFTER.replace('pr.b', 'e.b')}) as n_after
+      from events e
+"""
+
+
 def compute(cur) -> dict:
     """The single implementation. Every reported pair count comes through here."""
     cur.execute(f"select * from ({CANDIDATES}) t")
