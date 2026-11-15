@@ -753,6 +753,15 @@ def load_sponsorship_dates(cur) -> dict:
     if _pair_count_module.TREATMENT != "sponsorship":
         from datetime import datetime as _dt
         return sponsorship_dates([(a, _dt.fromisoformat(t)) for a, _b, _i, t in _pair_count_module.collab_events()])
+    if _pair_count_module.STRONG:   # 15 Nov 2026: same strong-evidence rule as pair_count's events
+        cur.execute(f"""
+            select creator_id::text, posted_at from instagram_posts
+             where (is_sponsored or has_paid_partnership_label) and {_pair_count_module.STRONG_IG}
+               and posted_at is not null and creator_id is not null
+            union all
+            select creator_id::text, published_at from youtube_videos
+             where is_sponsored and {_pair_count_module.STRONG_YT} and published_at is not null and creator_id is not null""")
+        return sponsorship_dates(cur.fetchall())
     cur.execute(
         """
         select creator_id::text, posted_at from instagram_posts

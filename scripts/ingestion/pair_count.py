@@ -94,6 +94,22 @@ def collab_events():
     return out
 
 
+# 15 Nov 2026 (GAIL_R_FOCUSED_SPONSORSHIP_PLAN_15NOV.md): GAIL_STRONG_EVENTS=1 keeps only strong-evidence sponsorships.
+STRONG = _os.environ.get("GAIL_STRONG_EVENTS", "0") == "1"
+STRONG_YT = "sponsorship_evidence in ('spoken', 'creator_comment', 'disclosure_tag')"
+STRONG_IG = "(has_paid_partnership_label or sponsorship_evidence in ('official_label', 'disclosure_tag'))"
+if STRONG and TREATMENT == "sponsorship":
+    EVENTS = f"""
+    select creator_id, post_id::text as item_id, posted_at, 'instagram' as platform
+      from instagram_posts
+     where (is_sponsored or has_paid_partnership_label) and {STRONG_IG} and posted_at is not null
+       and creator_id is not null
+    union all
+    select creator_id, video_id::text, published_at, 'youtube'
+      from youtube_videos where is_sponsored and {STRONG_YT} and published_at is not null
+       and creator_id is not null
+"""
+
 if TREATMENT != "sponsorship":
     _ev = collab_events()
     _vals = ",".join(f"('{a}'::uuid, '{i}', '{t}'::timestamptz, 'youtube')" for a, _b, i, t in _ev)

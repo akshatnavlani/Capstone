@@ -53,7 +53,7 @@ from typing import Iterable, Sequence
 # weekly, and narrow enough that events a quarter apart do not overlap. Any
 # change here changes both the targets and the clustering, so it belongs in the
 # write-up as a stated hyperparameter.
-DEFAULT_WINDOW_DAYS = 30
+DEFAULT_WINDOW_DAYS = int(__import__("os").environ.get("GAIL_OUTCOME_DAYS", "30"))   # 15 Nov 2026: switch for GAIL_R_FOCUSED_SPONSORSHIP_PLAN_15NOV.md; default 30 unchanged
 
 
 def _as_date(value: date | datetime) -> date:
