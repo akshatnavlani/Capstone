@@ -31,3 +31,5 @@ Run history (no estimate was printed by any stopped attempt): 14 Nov 21:45 start
   cannot confirm the small-creator effect: with 241 exposed observations its interval spans -31% to +48%. Note the two
   tests define exposure differently: the simple test measures the creator who APPEARS in the joint video; GAIL-R measures
   every creator whose linked neighbour made a joint video in the window (a wider, weaker exposure).
+- **Caveat found after this run:** the joint-video pairs were not added to the model graph (plan said they should be);
+  this run is reported as "with the graph error" and re-run correctly (see the plan note of 16 Nov, 00:05).

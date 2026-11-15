@@ -22,3 +22,10 @@ same validated estimator at those treatments. Written before any code change or 
 - Each variant runs once; both are reported whatever they show, next to the sponsorship result. Multiple testing as in
   OLDER_PERIOD_REPLICATIONS_PLAN_14NOV.md: a single pass is "suggestive".
 - The app's model files are backed up and restored around each run, as in GAIL_R_UPDATE_PLAN_14NOV.md.
+
+Note added 15 Nov 2026, 00:05 (16 Nov), before any corrected result: an implementation error was found. The first
+joint-video run (finished 23:38, GAIL_R_RESULTS_15NOV.md section 2) added each event pair only to pair_count's pairs,
+not to the model's collaborates_with graph, contrary to this plan (its log shows the same 924 graph edges as the
+sponsorship run). The tag run started 23:38 had the same error and was stopped before printing any estimate. The code
+is fixed (scripts/train_prod_model.py adds the event pairs to the model graph) and both variants are re-run once as the
+plan intended; the first joint-video result is kept and reported as "run with the graph error".
