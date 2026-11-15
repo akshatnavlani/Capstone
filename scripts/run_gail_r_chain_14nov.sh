@@ -7,6 +7,12 @@ ROOT=/c/Users/Shimona/Documents/casptone
 cd "$ROOT" || exit 1
 PY="$ROOT/venv/Scripts/python.exe"
 BACKUP="$ROOT/exports/model_backup_14nov"
+# 15 Nov 2026: a silently dropped connection hung the 11:09 run for over an hour (client waiting, server idle). TCP
+# keepalives make a dead connection fail within about a minute, so the script's reconnecting cursor carries on.
+# The address is read from .env into the environment only (never printed).
+DATABASE_URL="$("$PY" -c "import sys; sys.path.insert(0, 'scripts/ingestion'); from orchestrator import load_env; print(load_env()['DATABASE_URL'])")"
+case "$DATABASE_URL" in *\?*) SEP='&' ;; *) SEP='?' ;; esac
+export DATABASE_URL="${DATABASE_URL}${SEP}keepalives=1&keepalives_idle=30&keepalives_interval=10&keepalives_count=3&connect_timeout=20"
 
 keep_and_restore () {   # $1 = suffix
   [ -f models/gail_checkpoint.pt ] && ! cmp -s models/gail_checkpoint.pt "$BACKUP/gail_checkpoint.pt" && cp -p models/gail_checkpoint.pt "models/gail_checkpoint_$1.pt"
