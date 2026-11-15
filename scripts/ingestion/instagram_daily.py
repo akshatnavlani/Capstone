@@ -120,8 +120,18 @@ def refresh_handles(cur, n: int) -> list[str]:
     taggers = set()
     try:
         import json
-        ev = Path(__file__).resolve().parents[2] / "models" / "audience_flow_events_rep_9nov.json"
+        models = Path(__file__).resolve().parents[2] / "models"
+        ev = models / "audience_flow_events_rep_9nov.json"
         taggers = {str(a) for a, _b, _t in json.loads(ev.read_text(encoding="utf-8"))}
+        # 16 Nov 2026: both sides of every tag and joint video (2022-2026) count, so new collaborations are caught sooner
+        for f in ("audience_flow_events_rep_9nov.json", "tag_older_period_events.json"):
+            if (models / f).exists():
+                for a, b, _t in json.loads((models / f).read_text(encoding="utf-8")):
+                    taggers |= {str(a), str(b)}
+        for f in ("joint_video_events_9nov.json", "joint_video_events_9nov_older.json"):
+            if (models / f).exists():
+                for e in json.loads((models / f).read_text(encoding="utf-8")):
+                    taggers |= {str(e["a_id"]), str(e["b_id"])}
     except Exception:  # the list is only a priority hint; never stop the day's collection over it
         log.exception("could not read the tagger list")
     rows = sorted(rows, key=lambda r: (not r[2], str(r[1]) not in taggers))  # stable: expected_new order kept within groups
