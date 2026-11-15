@@ -6,6 +6,13 @@ supersedes memory when they disagree — memory is a pointer, this is the record
 
 Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 closed state unchanged: 259/54/170 wired end-to-end, see §1 Review 1 closed. Team decision 2026-09-24: Review 2 = pipeline-complete per PendingWork 2026-09-20; Review 3 = improvements).
 
+**DECISIONS ALREADY MADE (15 Nov 2026) — a new chat must follow these, not propose a different direction:**
+- Paper = Eesha's final 6-page IEEE version ("GAIL-R: Testing Sponsorship Spillover..."); Eesha owns the .tex. Main result = GAIL-R bound on sponsorship spillover (3% on 11 Nov; update run pending). Cross-platform result (p 0.002) proposed as a short subsection, team to decide. Tag +10% stays OUT of the paper unless confirmed (older period +5% was NOT detected).
+- Report = Downloads/ESA_Report_Capstone_updated.docx built by report/build_report.py (60 pp, template order, screenshots pasted by Shimona); update only its numbers when new results arrive.
+- Every test: plan pushed before data, run once, every result reported; no re-runs to cross 0.05; no new spillover tests before 21 Nov beyond those already planned.
+- Scope: Indian fitness/health incl. yoga, meditation (BK Shivani added 14 Nov); Gaur Gopal Das stays out.
+- Only answer from saved files / live checks; never guess numbers (her explicit rule, 15 Nov).
+
 **15 NOV 2026, 00:00 (newest) — TO RUN WHEN SHIMONA ASKS (no GAIL-R result has been printed yet for any of these):**
 1. ONE GAIL-R run at a time (two in parallel took the night): `bash scripts/run_gail_r_chain_14nov.sh` runs update -> joint_video -> tag with retries and restores the app model (backup in exports/model_backup_14nov). Do NOT run the mood scoring at the same time.
 2. Then negative spillover: `scripts/negative_spillover_test.py score` (resumes; 400 of 12,992 videos scored), then `... run` ONCE.
