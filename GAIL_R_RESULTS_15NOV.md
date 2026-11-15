@@ -17,3 +17,17 @@ Run history (no estimate was printed by any stopped attempt): 14 Nov 21:45 start
 - Reading: with almost twice the exposed observations, still no detectable sponsorship spillover. The upper end of the
   interval is now +0.074 on the log scale, so positive spillover above about **8%** is ruled out (the 11 Nov run's bound
   was about 3%; the estimate moved toward zero and the interval narrowed from 0.33 to 0.28). Both runs are reported.
+
+## 2. Joint video as the treatment (GAIL_TREATMENT=joint_video; finished 15 Nov 23:38)
+776 dated joint-video events; 5,009 computable pairs; 1,348 observations with a joint-video collaborator in the window
+(815 exposed in the GAIL-R fit) + 4,046 comparison, 396 creators.
+- **With placebo penalty: effect on exposed +0.0575, 95% CI [-0.0646, +0.1374]. NOT detected** (about +6%, range -6% to +15%).
+- Without placebo penalty: +0.0576 [-0.0651, +0.1381].
+- collaborates_with slope +0.088 [-0.097, +0.215]; co_occurs_with -0.052 [-1.683, +1.493].
+- Secondary, collaborators under 100k subscribers (pre-specified): 241 exposed, -0.0291, 95% CI [-0.3753, +0.3950].
+  NOT detected; the interval is very wide (few small exposed creators per window after window effects).
+- Placebo (pre-trend) DiD -0.0525 (SE 0.0498); matched DiD +0.0191 (SE 0.0449, too narrow).
+- Reading: GAIL-R points the same way as the simple joint-video test for all creators (small positive, not detected) and
+  cannot confirm the small-creator effect: with 241 exposed observations its interval spans -31% to +48%. Note the two
+  tests define exposure differently: the simple test measures the creator who APPEARS in the joint video; GAIL-R measures
+  every creator whose linked neighbour made a joint video in the window (a wider, weaker exposure).
