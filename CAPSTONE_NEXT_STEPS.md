@@ -15,7 +15,7 @@ Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 c
 
 **15 NOV 2026, 00:00 (newest) — TO RUN WHEN SHIMONA ASKS (no GAIL-R result has been printed yet for any of these):**
 1. ONE GAIL-R run at a time (two in parallel took the night): `bash scripts/run_gail_r_chain_14nov.sh` runs update -> joint_video -> tag with retries and restores the app model (backup in exports/model_backup_14nov). Do NOT run the mood scoring at the same time.
-2. Then negative spillover: `scripts/negative_spillover_test.py score` (resumes; 400 of 12,992 videos scored), then `... run` ONCE.
+2. Then negative spillover: `scripts/negative_spillover_test.py score` (resumes; 400 of 12,992 videos scored), then `... run` ONCE (simple before/after + placebo, NOT GAIL-R). Only if it is detected: write a plan for a GAIL-R version (GAIL_TREATMENT = bad moment), agreed with Shimona 15 Nov.
 3. Older-period replications still needing comments: audience flow T1, brand spillover, sponsor carry-over (OLDER_PERIOD_REPLICATIONS_PLAN_14NOV.md); only if quota/time allows, else "not run (data)".
 Done 14 Nov: older history 365/381 channels; 844+470 older sponsorships labelled (event_brand_labels.csv rule rows); tag confirmation older period +0.050 [-0.006, +0.107] NOT detected; joint video older: all B not detected, small B +0.277 [+0.113, +0.529] DETECTED (suggestive); BK Shivani in scope (+ @bkshivani); yoga/meditation IG priority.
 
