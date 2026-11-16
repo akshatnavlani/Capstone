@@ -58,3 +58,15 @@ models/gail_r_joint_video_fixed_16nov.log, checkpoint models/gail_checkpoint_joi
 - Placebo (pre-trend) DiD -0.0483 (SE 0.0500); matched DiD -0.0019 (SE 0.0452, too narrow).
 - Reading: with the graph error fixed, 1,348 exposed (815 before); same answer as section 2: small positive, not
   detected; positive joint-video spillover above about 11% on linked creators is ruled out.
+
+## 5. Tag, corrected graph (GAIL_R_COLLAB_TREATMENT_PLAN_14NOV.md + note; 16 Nov 15:21-17:04, try 1)
+530 event edges added to the model graph (1,305 tag events); 11,403 computable pairs; log models/gail_r_tag_fixed_16nov.log.
+- **With placebo penalty: effect on the 1,856 exposed observations +0.0342, 95% CI [-0.0284, +0.1222]. NOT detected**
+  (about +3%, range -3% to +13%). Without penalty +0.0342 [-0.0284, +0.1223].
+- Secondary, neighbours under 100k: 538 exposed of 1,656; +0.0001 [-0.1780, +0.1627]. NOT detected.
+- Placebo (pre-trend) DiD -0.0247 (SE 0.0463); matched DiD +0.0818 (SE 0.0481, [-0.0125, +0.1761], too narrow).
+- Reading: small positive, not detected, on every neighbour of the tagger over 30 days (the tagged creator alone, 7 days,
+  is GAIL_R_FEATURED_TAG_PLAN_16NOV.md).
+Note: at 17:25 the laptop ran out of process resources (bash "fork: Resource temporarily unavailable"); the queue
+stopped during mood scoring (200 of 12,592 videos, ~16 h at that pace). Remaining jobs resumed with the GAIL-R runs first
+and mood scoring last (order only; scripts/run_resume_16nov.sh).
