@@ -81,12 +81,13 @@ def collab_events():
     from pathlib import Path as _P
     models = _P(__file__).resolve().parents[2] / "models"
     out = []
-    if TREATMENT == "joint_video":
+    # 16 Nov 2026 (GAIL_R_POOLED_COLLAB_PLAN_16NOV.md): "collab" = joint videos + tags, same (A, B, day) counted once
+    if TREATMENT in ("joint_video", "collab"):
         for f in ("joint_video_events_9nov.json", "joint_video_events_9nov_older.json"):
             for e in json.load(open(models / f, encoding="utf-8")):
                 if e["a_id"] != e["b_id"]:
                     out.append((e["a_id"], e["b_id"], e["video_id"], e["t"]))
-    elif TREATMENT == "tag":
+    if TREATMENT in ("tag", "collab"):
         files = ["audience_flow_events_rep_9nov.json", "tag_older_period_events.json"]
         if _os.environ.get("GAIL_TAG_CONFIRMATION", "0") == "1":  # 16 Nov 2026, GAIL_R_FEATURED_TAG_PLAN_16NOV.md
             files.append("tag_confirmation_events_12nov.json")
@@ -94,6 +95,13 @@ def collab_events():
             for a, b, t in json.load(open(models / f, encoding="utf-8")):
                 if a != b:
                     out.append((a, b, f"tag:{a[:8]}:{b[:8]}:{t[:10]}", t))
+    if TREATMENT == "collab":
+        seen, kept = set(), []
+        for ev in out:
+            if (ev[0], ev[1], ev[3][:10]) not in seen:
+                seen.add((ev[0], ev[1], ev[3][:10]))
+                kept.append(ev)
+        out = kept
     return out
 
 
