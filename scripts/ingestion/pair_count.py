@@ -96,6 +96,18 @@ def collab_events():
                 if a != b:
                     out.append((a, b, f"tag:{a[:8]}:{b[:8]}:{t[:10]}", t))
     if TREATMENT == "collab":
+        # 16 Nov 2026, 21:00 (plan note in GAIL_R_POOLED_COLLAB_PLAN_16NOV.md, before any pooled number): also the lists
+        # rebuilt on 16 Nov data by the same builders (*_count16nov.json); duplicates removed below
+        for f in ("joint_video_events_9nov_count16nov.json", "joint_video_events_9nov_older_count16nov.json"):
+            if (models / f).exists():
+                for e in json.load(open(models / f, encoding="utf-8")):
+                    if e["a_id"] != e["b_id"]:
+                        out.append((e["a_id"], e["b_id"], e["video_id"], e["t"]))
+        for f in ("audience_flow_events_rep_9nov_count16nov.json", "tag_older_period_events_count16nov.json"):
+            if (models / f).exists():
+                for a, b, t in json.load(open(models / f, encoding="utf-8")):
+                    if a != b:
+                        out.append((a, b, f"tag:{a[:8]}:{b[:8]}:{t[:10]}", t))
         seen, kept = set(), []
         for ev in out:
             if (ev[0], ev[1], ev[3][:10]) not in seen:

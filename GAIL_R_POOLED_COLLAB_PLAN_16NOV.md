@@ -29,3 +29,11 @@ GAIL_TREATMENT=collab GAIL_FEATURED_ONLY=1 GAIL_OUTCOME_DAYS=7 GAIL_BASELINE_DAY
 
 Count after the code change (events only, no outcome computed): 1,573 pooled events (594 found in both lists counted
 once), 703 creator pairs. joint_video (776) and tag (1,305 default; 1,391 with the switch) unchanged.
+
+Note added 16 Nov 2026, 21:05, before this run has started and before any pooled number (the tagged-creator run is
+running; no tag-featured number yet). The same event builders were re-run on 16 Nov data into new files (originals
+untouched, checked by md5): joint videos 294 recent + 536 older (joint_video_events_9nov[_older]_count16nov.json), tags
+653 recent + 864 older (audience_flow_events_rep_9nov_count16nov.json, tag_older_period_events_count16nov.json). The
+pooled run uses the earlier lists AND these, each (A, B, day) once: 1,727 events, 732 pairs (was 1,573 / 703). Reason:
+116,082 YouTube videos arrived after 9 Nov (history backfill), so the earlier lists missed tags in them. Nothing else
+changes; joint_video and tag modes are unchanged (776 / 1,391 events).
