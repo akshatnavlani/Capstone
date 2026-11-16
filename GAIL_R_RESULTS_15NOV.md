@@ -47,3 +47,14 @@ Graph fix active: 448 directed event edges added to the model graph; 760 computa
   (SE 0.0581). All point positive, in the same direction as the simple test.
 - Reading: every estimate is positive (GAIL-R +1% all, +7% small; model-free +9% to +12%), none detected under the plan's
   creator-level interval. The limit is 72 small featured creators.
+
+## 4. Joint video, corrected graph (GAIL_R_COLLAB_TREATMENT_PLAN_14NOV.md + note; 16 Nov 13:19-15:21, try 1)
+448 event edges added to the model graph; 5,023 computable pairs; 5,364 observations; log
+models/gail_r_joint_video_fixed_16nov.log, checkpoint models/gail_checkpoint_joint_video_fixed_16nov.pt.
+- **With placebo penalty: effect on the 1,348 exposed observations +0.0305, 95% CI [-0.0529, +0.1006]. NOT detected**
+  (about +3%, range -5% to +11%). Without penalty +0.0305 [-0.0533, +0.1015] (penalty chosen 0).
+- collaborates_with slope +0.068 [-0.116, +0.233]; co_occurs_with -0.203 [-1.714, +1.468].
+- Secondary, neighbours under 100k: 336 exposed of 1,787; -0.0565 [-0.2514, +0.1895]. NOT detected.
+- Placebo (pre-trend) DiD -0.0483 (SE 0.0500); matched DiD -0.0019 (SE 0.0452, too narrow).
+- Reading: with the graph error fixed, 1,348 exposed (815 before); same answer as section 2: small positive, not
+  detected; positive joint-video spillover above about 11% on linked creators is ruled out.
