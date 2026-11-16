@@ -33,3 +33,17 @@ Run history (no estimate was printed by any stopped attempt): 14 Nov 21:45 start
   every creator whose linked neighbour made a joint video in the window (a wider, weaker exposure).
 - **Caveat found after this run:** the joint-video pairs were not added to the model graph (plan said they should be);
   this run is reported as "with the graph error" and re-run correctly (see the plan note of 16 Nov, 00:05).
+
+## 3. Featured creator of a joint video, 14 days (GAIL_R_FEATURED_JOINT_VIDEO_PLAN_15NOV.md; 16 Nov 10:30-13:19, try 1)
+Graph fix active: 448 directed event edges added to the model graph; 760 computable pairs; 10,292 observations from
+395 creators; log models/gail_r_featured_jv_16nov.log, checkpoint models/gail_checkpoint_featured_jv_16nov.pt.
+- **Primary (plan): featured creators under 100k, placebo penalty 30: 72 exposed of 3,320; effect +0.0674, 95% CI
+  [-0.4368, +0.3980]. NOT detected -> "GAIL-R cannot confirm" the simple test's +0.277** (which lies inside this interval).
+- Secondary, all featured creators: 459 exposed; +0.0086 [-0.0526, +0.1455] (without penalty +0.0086 [-0.0526, +0.1473];
+  penalty chosen 0). collaborates_with slope +0.027 [-0.131, +0.375]; co_occurs_with -0.418 [-1.760, +1.639].
+- Placebo (pre-trend) DiD -0.0256 (SE 0.0551): no pre-trend.
+- Model-free checks (observations treated as independent, so intervals are too narrow; NOT the plan's reading):
+  matched DiD +0.0898 (SE 0.0490, [-0.0063, +0.1859]); overlap-trimmed DiD +0.1167 (SE 0.0491); category-matched +0.0878
+  (SE 0.0581). All point positive, in the same direction as the simple test.
+- Reading: every estimate is positive (GAIL-R +1% all, +7% small; model-free +9% to +12%), none detected under the plan's
+  creator-level interval. The limit is 72 small featured creators.
