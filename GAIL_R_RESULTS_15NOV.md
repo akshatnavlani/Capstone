@@ -70,3 +70,13 @@ models/gail_r_joint_video_fixed_16nov.log, checkpoint models/gail_checkpoint_joi
 Note: at 17:25 the laptop ran out of process resources (bash "fork: Resource temporarily unavailable"); the queue
 stopped during mood scoring (200 of 12,592 videos, ~16 h at that pace). Remaining jobs resumed with the GAIL-R runs first
 and mood scoring last (order only; scripts/run_resume_16nov.sh).
+
+## 6. Focused paid sponsorship (GAIL_R_FOCUSED_SPONSORSHIP_PLAN_15NOV.md; 16 Nov 20:09-20:43, try 1)
+Strong-evidence sponsorships only, 7-day outcome, 30-day baseline; 2,045 computable pairs; log
+models/gail_r_focused_sponsorship_16nov.log.
+- **Primary (plan): collaborators under 100k, placebo penalty 30: 50 exposed of 2,623; effect +0.1479, 95% CI
+  [-0.3733, +0.5398]. NOT detected** (too few small exposed collaborators for a narrow interval).
+- All collaborators: 247 exposed; +0.0372 [-0.1198, +0.1713] (without penalty +0.0373 [-0.1198, +0.1720]).
+- collaborates_with slope +0.072 [-0.241, +0.344]; co_occurs_with 0 (no strong-sponsorship co-occurrence links).
+- Placebo (pre-trend) DiD +0.0384 (SE 0.0851); matched DiD -0.0246 (SE 0.0695, too narrow).
+- Reading: positive point estimates (unlike the broad update run, -0.090), not detected.
