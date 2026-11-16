@@ -87,7 +87,10 @@ def collab_events():
                 if e["a_id"] != e["b_id"]:
                     out.append((e["a_id"], e["b_id"], e["video_id"], e["t"]))
     elif TREATMENT == "tag":
-        for f in ("audience_flow_events_rep_9nov.json", "tag_older_period_events.json"):
+        files = ["audience_flow_events_rep_9nov.json", "tag_older_period_events.json"]
+        if _os.environ.get("GAIL_TAG_CONFIRMATION", "0") == "1":  # 16 Nov 2026, GAIL_R_FEATURED_TAG_PLAN_16NOV.md
+            files.append("tag_confirmation_events_12nov.json")
+        for f in files:
             for a, b, t in json.load(open(models / f, encoding="utf-8")):
                 if a != b:
                     out.append((a, b, f"tag:{a[:8]}:{b[:8]}:{t[:10]}", t))
