@@ -87,3 +87,18 @@ models/gail_r_focused_sponsorship_16nov.log.
   NOT detected -> "GAIL-R cannot confirm" the simple tag test's +0.095** (which lies inside this interval).
   Without penalty identical (+0.0105 [-0.0623, +0.1014]).
 - Secondary, tagged creators under 100k: 157 exposed of 5,502; +0.1614 [-0.2308, +0.3731]. NOT detected.
+
+## 8. Pooled collaborations (tags + joint videos), featured creator, 7 days (GAIL_R_POOLED_COLLAB_PLAN_16NOV.md + note 21:05; 16 Nov 22:55 - 17 Nov ~01:10, try 1)
+1,727 events (earlier + 16 Nov rebuilt lists, each (A, B, day) once); 1,662 computable pairs; log
+models/gail_r_pooled_collab_16nov.log.
+- **Primary (plan): all featured/tagged creators, placebo penalty 30: 906 exposed; effect +0.0116, 95% CI
+  [-0.0657, +0.0898]. NOT detected.** Without penalty +0.0117 [-0.0657, +0.0900].
+- Secondary, under 100k: 178 exposed of 5,537; +0.1748 [-0.1001, +0.3547]. NOT detected (largest point estimate of
+  any GAIL-R run; same direction as the simple small-creator joint-video result +0.277).
+
+## Summary of the 16 Nov GAIL-R runs (each run once, plans fixed before data)
+All collaboration variants positive, none detected: featured JV +0.009 (small +0.067); JV +0.031 (small -0.057); tag
++0.034 (small +0.000); tagged creator +0.011 (small +0.161); pooled +0.012 (small +0.175). Focused sponsorship +0.037
+(small +0.148). Upper bounds: collaboration spillover on the partner about +9-10%; on linked creators about +10-13%.
+The simple tests' detected effects (+0.095 tags, +0.277 small JV) lie inside GAIL-R's intervals: GAIL-R cannot confirm
+them, and does not contradict them.
