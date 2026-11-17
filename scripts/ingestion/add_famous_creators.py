@@ -20,6 +20,9 @@ SHORTLIST = {
     # 17 Nov 2026: small Indian fitness creators tagged by 2+ held creators but not held (snowball from captions and
     # descriptions; 420 tagged handles looked up, brands, clinics and non-fitness channels left out). Checked by hand.
     "shubhamk28": "fitness_influencer", "pawanchechi": "fitness_influencer", "abhishekpoojary21": "fitness_influencer",
+    # round 2 (17 Nov): tagged by one held creator; 473 channels looked up, only Indian fitness persons kept
+    "anandsemwal5079": "fitness_influencer", "chikufitness03": "fitness_influencer", "sagar_ahuja": "fitness_influencer",
+    "mitushiajmera": "fitness_influencer", "bigleemuralienglish": "fitness_influencer", "alexthokchom007": "fitness_influencer",
     # 8 Nov 2026: the guide asked for Baba Ramdev (held) and other famous Indian yoga/fitness names, plus Bangalore yoga and meditation groups.
     # Found with search.list and checked: official channel, Indian, real subscriber count (models/famous_search_8nov.json); fan pages left out.
     "theshilpashettykundra": "fitness_influencer", "rujutadiwekarofficial": "fitness_influencer", "yasminbodyimage": "fitness_influencer",
