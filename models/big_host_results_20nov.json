@@ -1,0 +1,40 @@
+{
+ "plan": "BIG_HOST_SPILLOVER_PLAN_9NOV.md",
+ "run_at": "2026-11-20T09:36:31.094748+00:00",
+ "unit": "log subscriber growth of the guest, 48 h after minus 48 h before",
+ "events": 6,
+ "primary_host_3x": {
+  "effect": {
+   "mean": -0.0027855225247277147,
+   "lo": -0.0055710450494554295,
+   "hi": 0.0,
+   "n": 2,
+   "pairs": 2
+  },
+  "placebo": {
+   "mean": -0.0015482570847262993,
+   "lo": -0.0028203385813662858,
+   "hi": 0.0,
+   "n": 337,
+   "pairs": 2
+  },
+  "verdict": "fewer than 20 counted events: early evidence, not a result"
+ },
+ "secondary_host_10x": {
+  "effect": {
+   "mean": -0.0027855225247277147,
+   "lo": -0.0055710450494554295,
+   "hi": 0.0,
+   "n": 2,
+   "pairs": 2
+  },
+  "placebo": {
+   "mean": -0.0015482570847262993,
+   "lo": -0.0028203385813662858,
+   "hi": 0.0,
+   "n": 337,
+   "pairs": 2
+  },
+  "verdict": "fewer than 20 counted events: early evidence, not a result"
+ }
+}
