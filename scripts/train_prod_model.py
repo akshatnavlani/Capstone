@@ -1436,6 +1436,15 @@ def main() -> int:
         pre=torch.tensor([r[3] for r in r_rows], dtype=torch.float32),
         own=torch.tensor([r[4] for r in r_rows], dtype=torch.float32) if KEEP_SELF_SPONSORED else None,
     )
+    if os.environ.get("GAIL_SAVE_R_INPUTS"):   # 22 Nov 2026, GAIL_R_HYBRID_SIMULATION_PLAN_22NOV.md: save inputs, stop
+        conn, cur = _reconnect(conn, database_url)
+        cur.execute("select creator_id::text, max(subscriber_count) from youtube_channels group by 1")
+        small = sorted(id_to_index[c] for c, s in cur.fetchall() if c in id_to_index and (s or 0) < 100_000)
+        torch.save({"data": data, "treatments": treatments, "obs": r_obs, "small_nodes": small,
+                    "placebo_weight": R_PLACEBO, "window_fe": WINDOW_FE, "seed": SEED},
+                   os.environ["GAIL_SAVE_R_INPUTS"])
+        print(f"GAIL-R inputs saved to {os.environ['GAIL_SAVE_R_INPUTS']}: {len(r_rows)} rows, {len(small)} small creators; stopping")
+        raise SystemExit(0)
     if KEEP_SELF_SPONSORED:
         own = r_obs.own.bool()
         exp = torch.tensor([bool(p["has_sponsored"][id_to_index[o.neighbour_id]])
