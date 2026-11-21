@@ -98,12 +98,14 @@ def collab_events():
     if TREATMENT == "collab":
         # 16 Nov 2026, 21:00 (plan note in GAIL_R_POOLED_COLLAB_PLAN_16NOV.md, before any pooled number): also the lists
         # rebuilt on 16 Nov data by the same builders (*_count16nov.json); duplicates removed below
-        for f in ("joint_video_events_9nov_count16nov.json", "joint_video_events_9nov_older_count16nov.json"):
+        # 21 Nov 2026 (GAIL_R_FINAL_SMALL_CREATORS_PLAN_17NOV.md): plus the lists rebuilt on the complete data (*_final21nov.json)
+        sfx = ("count16nov", "final21nov")
+        for f in [g for s in sfx for g in (f"joint_video_events_9nov_{s}.json", f"joint_video_events_9nov_older_{s}.json")]:
             if (models / f).exists():
                 for e in json.load(open(models / f, encoding="utf-8")):
                     if e["a_id"] != e["b_id"]:
                         out.append((e["a_id"], e["b_id"], e["video_id"], e["t"]))
-        for f in ("audience_flow_events_rep_9nov_count16nov.json", "tag_older_period_events_count16nov.json"):
+        for f in [g for s in sfx for g in (f"audience_flow_events_rep_9nov_{s}.json", f"tag_older_period_events_{s}.json")]:
             if (models / f).exists():
                 for a, b, t in json.load(open(models / f, encoding="utf-8")):
                     if a != b:
