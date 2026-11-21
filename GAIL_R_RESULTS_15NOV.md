@@ -102,3 +102,17 @@ All collaboration variants positive, none detected: featured JV +0.009 (small +0
 (small +0.148). Upper bounds: collaboration spillover on the partner about +9-10%; on linked creators about +10-13%.
 The simple tests' detected effects (+0.095 tags, +0.277 small JV) lie inside GAIL-R's intervals: GAIL-R cannot confirm
 them, and does not contradict them.
+
+## 9. FINAL run on the complete dataset (GAIL_R_FINAL_SMALL_CREATORS_PLAN_17NOV.md; 21 Nov 19:46 - 22 Nov 00:44, try 1)
+Event lists rebuilt on 21 Nov data (*_final21nov.json) and pooled with the earlier lists: 1,768 events, 754 pairs;
+728 directed event edges in the model graph; 1,701 computable pairs; log models/gail_r_final_small_21nov.log.
+Mood scoring ran on the same laptop at the same time (it does not touch GAIL-R's inputs).
+- **Primary (plan): featured/tagged creators under 100k, placebo penalty 30: 187 exposed of 5,744; effect +0.1288,
+  95% CI [-0.1000, +0.3781]. NOT detected.**
+- Secondary, all featured/tagged creators: 924 exposed; +0.0176 [-0.0623, +0.0886] (without penalty +0.0176
+  [-0.0625, +0.0892]). NOT detected.
+- collaborates_with slope +0.046 [-0.161, +0.224]; co_occurs_with -0.031 [-1.443, +1.892].
+- Placebo (pre-trend) DiD +0.0223 (SE 0.0396); matched DiD +0.0010 (SE 0.0385, too narrow).
+- Reading (as fixed in the plan): this is the final GAIL-R result. Every GAIL-R collaboration estimate across 9 runs is
+  positive; none is detected. The small-creator estimate (+12.9%) points the same way as the simple joint-video result
+  (+27.7%), which lies inside its interval. No further GAIL-R spillover variants.
