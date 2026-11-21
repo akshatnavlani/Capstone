@@ -4,7 +4,7 @@
 ROOT=/c/Users/Shimona/Documents/casptone
 cd "$ROOT" || exit 1
 PY="$ROOT/venv/Scripts/python.exe"; Q=exports/queue_21nov.log
-until grep -q "final GAIL-R run done" $Q; do sleep 60; done
+# 21 Nov 20:09: started now, alongside GAIL-R (5.1 GB RAM free, 10 GB commit headroom checked)
 for TRY in 1 2 3 4 5; do
   echo "$(date +%H:%M) mood scoring, try $TRY (resumes from saved videos)" >> $Q
   PYTHONIOENCODING=utf-8 "$PY" -u scripts/negative_spillover_test.py score >> exports/negative_spillover_score_14nov.log 2>&1 && break
