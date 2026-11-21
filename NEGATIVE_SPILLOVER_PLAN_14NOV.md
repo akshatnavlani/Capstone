@@ -31,3 +31,16 @@ Placebo: 5 random times per (event, B) in the same window, with no bad moment of
 ## Rules
 Run once; reported whatever it shows. Multiple testing: one more test on top of about nineteen; a single pass is
 "suggestive, needs confirmation". scripts/negative_spillover_test.py; results models/negative_spillover_results_14nov.json.
+
+## Result (run once, 22 Nov 2026 00:58 IST; models/negative_spillover_results_14nov.json)
+Mood scored for 12,992 videos (finished 22 Nov 00:38, scoring split over several days; resumable file
+models/video_mood_14nov.json). 368 bad moments of 95 creators; 2,549 (bad moment, linked B) events.
+- **Primary, all linked B: +0.0082, 95% CI [-0.0332, +0.0502] (n 1,794, 466 pairs); placebo +0.0047 [-0.0169, +0.0257].
+  Negative spillover NOT detected.**
+- Secondary, B under 100k (reported, not the pass mark): +0.1075, 95% CI [+0.0175, +0.1992] (n 417, 124 pairs); placebo
+  +0.0415 [-0.0173, +0.0985] (includes 0). The interval is ABOVE 0: after a linked creator's bad moment, small linked
+  creators' engagement ROSE, the opposite of negative spillover. Reported as the plan says ("a positive interval is
+  reported as such"); a single secondary result among about 25 tests: suggestive only, needs confirmation. The placebo
+  mean is also positive (+0.04), so part of the rise is general.
+- Reading: a creator's bad audience moment does not hurt linked creators' engagement (no negative spillover); the app's
+  risk alerts should not assume it does. The GAIL-R negative-spillover version (planned only if detected) is not run.
