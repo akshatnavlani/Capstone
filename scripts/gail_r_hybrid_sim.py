@@ -17,7 +17,31 @@ import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from ml.gail_r import Observations, _gather, cluster_bootstrap, fit_gail_r, uniform_share  # noqa: E402
+import ml.gail_r as _gr  # noqa: E402
+from ml.gail_r import Observations, _gather, cluster_bootstrap, fit_gail_r  # noqa: E402
+
+# Speed only, same numbers: every fit recomputes the neighbour shares and the feature PCs from the SAME graph, treatment
+# vectors and creator features; remember them by object identity (the objects live for the whole script).
+_us, _nf = _gr.uniform_share, _gr.nuisance_features
+_cache_us, _cache_nf = {}, {}
+
+
+def _uniform_share_cached(edge_index, treatment, n):
+    k = (id(edge_index), id(treatment), n)
+    if k not in _cache_us:
+        _cache_us[k] = _us(edge_index, treatment, n)
+    return _cache_us[k]
+
+
+def _nuisance_features_cached(x, k=16):
+    key = (id(x), k)
+    if key not in _cache_nf:
+        _cache_nf[key] = _nf(x, k)
+    return _cache_nf[key]
+
+
+_gr.uniform_share, _gr.nuisance_features = _uniform_share_cached, _nuisance_features_cached
+uniform_share = _uniform_share_cached
 
 PLANTED = [0.0, 0.10, 0.20, 0.30, 0.40, 0.60]   # percent effects; planted on the log scale as log(1 + p)
 
@@ -61,6 +85,8 @@ def main() -> int:
             hits += int(ci["lo"] > 0)
             ests.append(fit["att"])
             done += 1
+            if p == PLANTED[0] and s < 3:
+                print(f"  study {s + 1} done, {time.time() - t0:.0f}s so far", flush=True)
         mean_est = sum(ests) / len(ests)
         out["results"][f"+{int(p*100)}%"] = {"planted_log": d, "studies": done, "detected_share": hits / done,
                                             "mean_estimate": mean_est, "bias": mean_est - d}
