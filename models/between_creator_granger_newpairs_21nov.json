@@ -1,0 +1,14 @@
+{
+ "plan": "BETWEEN_CREATOR_GRANGER_NEW_PAIRS_PLAN_21NOV.md",
+ "as_of": "2026-11-21T14:58:57+00:00",
+ "new_tag_pairs": {
+  "pairs_listed": 67,
+  "pairs_used": 35,
+  "F": 0.975,
+  "timing_placebo_F_median": 1.094,
+  "p_timing": 0.7265,
+  "unlinked_placebo_F_median": 1.138,
+  "p_unlinked": 0.8084,
+  "verdict": "NOT detected"
+ }
+}

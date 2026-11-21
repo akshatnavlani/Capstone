@@ -24,3 +24,7 @@ pairs below (identity only); no F, p or series of the new pairs has been compute
 Run once (models/between_creator_granger_newpairs_21nov.json). Reported next to the 10 Nov result whatever it shows; a
 pass is "suggestive, confirms on new pairs" (about 25 tests run in the project); the 10 Nov null is not replaced.
 Granger is prediction, not proof of cause.
+
+## Result (run once, 21 Nov 2026 20:28 IST; models/between_creator_granger_newpairs_21nov.json)
+67 new pairs listed, 35 used. F 0.975 (timing placebo median 1.094, p 0.7265; unlinked placebo median 1.138, p 0.8084).
+**NOT detected.** The new pairs do not repeat the 10 Nov timing signal (p 0.002 on 238 pairs). Both results are reported.
