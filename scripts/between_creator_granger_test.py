@@ -81,7 +81,37 @@ def test(pairs, com, posts, days, pool, links):
     return out
 
 
+def main_new_pairs() -> int:
+    """21 Nov 2026 (BETWEEN_CREATOR_GRANGER_NEW_PAIRS_PLAN_21NOV.md): same test on tag pairs the 10 Nov run never saw."""
+    m = ROOT / "models"
+    out = m / "between_creator_granger_newpairs_21nov.json"
+    assert not out.exists(), "already run once (plan: run once)"
+    old = {(a, b) for a, b, _ in json.load(open(m / "audience_flow_events_rep_9nov.json"))}
+    new = {(a, b) for a, b, _ in json.load(open(m / "audience_flow_events_rep_9nov_final21nov.json"))}
+    oldl = {frozenset(p) for p in old}
+    fresh = sorted(p for p in new if frozenset(p) not in oldl and p[0] != p[1])
+    joint = []
+    for f in ("joint_video_events_9nov.json", "joint_video_events_9nov_older.json",
+              "joint_video_events_9nov_final21nov.json", "joint_video_events_9nov_older_final21nov.json"):
+        if (m / f).exists():
+            joint += [(e["a_id"], e["b_id"]) for e in json.load(open(m / f, encoding="utf-8"))]
+    links = {frozenset(p) for p in old | new | set(joint)}
+    pool = sorted({a for a, _ in old | new})
+    ids = sorted({c for p in fresh for c in p} | set(pool))
+    com, posts = load(ids)
+    end = datetime.now(timezone.utc).date()
+    days = [end.fromordinal(end.toordinal() - k) for k in range(365, 0, -1)]
+    res = {"plan": "BETWEEN_CREATOR_GRANGER_NEW_PAIRS_PLAN_21NOV.md", "as_of": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+           "new_tag_pairs": test(fresh, com, posts, days, pool, links)}
+    out.write_text(json.dumps(res, indent=1), encoding="utf-8")
+    print(json.dumps(res, indent=1))
+    return 0
+
+
 def main() -> int:
+    import os
+    if os.environ.get("GRANGER_NEW_PAIRS") == "1":
+        return main_new_pairs()
     tags = json.load(open(ROOT / "models" / "audience_flow_events_rep_9nov.json"))
     joint = json.load(open(ROOT / "models" / "joint_video_events_9nov.json"))
     primary = sorted({(a, b) for a, b, _ in tags})
