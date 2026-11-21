@@ -33,7 +33,7 @@ Run once; reported whatever it shows. Multiple testing: one more test on top of 
 "suggestive, needs confirmation". scripts/negative_spillover_test.py; results models/negative_spillover_results_14nov.json.
 
 ## Result (run once, 22 Nov 2026 00:58 IST; models/negative_spillover_results_14nov.json)
-Mood scored for 12,992 videos (finished 22 Nov 00:38, scoring split over several days; resumable file
+Mood scored for 12,991 videos (finished 22 Nov 00:38, scoring split over several days; resumable file
 models/video_mood_14nov.json). 368 bad moments of 95 creators; 2,549 (bad moment, linked B) events.
 - **Primary, all linked B: +0.0082, 95% CI [-0.0332, +0.0502] (n 1,794, 466 pairs); placebo +0.0047 [-0.0169, +0.0257].
   Negative spillover NOT detected.**
