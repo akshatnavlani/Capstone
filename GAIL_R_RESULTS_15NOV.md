@@ -116,3 +116,12 @@ Mood scoring ran on the same laptop at the same time (it does not touch GAIL-R's
 - Reading (as fixed in the plan): this is the final GAIL-R result. Every GAIL-R collaboration estimate across 9 runs is
   positive; none is detected. The small-creator estimate (+12.9%) points the same way as the simple joint-video result
   (+27.7%), which lies inside its interval. No further GAIL-R spillover variants.
+
+## 10. Power of the final run (22 Nov; computed from section 9's intervals, as in models/power_analysis.json of 1 Nov)
+Normal approximation, SE = (CI width)/3.92; detection = 95% interval above 0. NOT a new GAIL-R run; not a result about
+whether spillover exists.
+- All creators (924 exposed): SE 0.0385; planted +10% detected 70% of the time, +20% 100%; 80% power from about +11%.
+- Small creators (187 exposed): SE 0.1220; planted +10% 12%, +20% 32%, +30% 58%, +40% 79%, +50% 91%; 80% power from
+  about +41%.
+- Reading: the small-creator estimate (+12.9%) and the simple joint-video result (+27.7%) are both below GAIL-R's
+  small-creator detection threshold at this sample size; its non-significance reflects sample size.
