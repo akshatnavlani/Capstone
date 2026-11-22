@@ -140,3 +140,21 @@ GAIL-R uniform attention, placebo penalty 30, window effects; 40 studies per siz
 Reading: no false alarm (0/40 at 0%); estimates rise with the planted effect and stay somewhat below it; at the real
 number of small creators GAIL-R detects even a +60% effect in only a third of studies. Its non-significance on the real
 data (+12.9%) is therefore expected at this sample size. Not a result about real spillover. Part 2 (more creators) follows.
+
+## 12. Hybrid simulation part 2: more small creators (SIMULATED; GAIL_R_HYBRID_SAMPLE_SIZE_PLAN_22NOV.md; 22 Nov 18:07-20:30)
+Real inputs of the final run; K x the 168 small creators drawn with replacement per study (each draw a separate creator);
+10 studies per cell, creator bootstrap B = 50; detected = 95% interval above 0.
+| creators per study | planted | detected | mean estimate (log) | truth (log) |
+|---|---|---|---|---|
+| 336 (2x) | +13% | 4/10 | +0.149 | +0.122 |
+| 336 (2x) | +30% | 8/10 | +0.242 | +0.262 |
+| 672 (4x) | +13% | 7/10 | +0.152 | +0.122 |
+| 672 (4x) | +30% | 9/10 | +0.210 | +0.262 |
+| 1,344 (8x) | +13% | 9/10 | +0.150 | +0.122 |
+| 1,344 (8x) | +30% | 10/10 | +0.251 | +0.262 |
+| 1,344 (8x) | 0% (false-alarm check) | 1/10 | +0.045 | 0.000 |
+Reading: detection rises with the number of creators: +30% reliably (>= 80%) from 2x, +13% from about 8x (9/10).
+Caveats, reported with the result: (1) a small upward lean of about +0.03 to +0.07 (also +0.071 at 0% in part 1), so
+detection of small effects is somewhat helped by it; (2) the false-alarm check at 8x gave 1/10 (10%; with 10 studies
+this is consistent with the nominal 5% but not proof of it); (3) more creators are resampled copies of the real ones,
+which assumes new creators behave like them. Method validation only; not a result about real spillover.

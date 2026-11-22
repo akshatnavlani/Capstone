@@ -17,7 +17,7 @@ result is pushed. Where to look:
   the detected spillover, not significant at this sample size". Never "GAIL-R detected spillover on real data".
 - **Hybrid simulation (SIMULATED, method validation, section 11 + `models/gail_r_hybrid_*_22nov.json`):** part 1 (real 187
   exposed): 0/40 false alarms at 0%; detection 0,0,1,4,13 of 40 at +10..+60%. Part 2 (more creators, K = 2/4/8): +13% detected
-  4/10, 7/10, 9/10; +30% detected 8/10, 9/10, 10/10; 0% false-alarm check at 8x pending. Reading: GAIL-R detects reliably with
+  4/10, 7/10, 9/10; +30% detected 8/10, 9/10, 10/10; 0% at 8x: 1/10 false alarm (small upward lean ~+0.05). Reading: GAIL-R detects reliably with
   about 2-4x today's small creators.
 - **Negative spillover (run once 22 Nov):** NEGATIVE_SPILLOVER_PLAN_14NOV.md result section: no harm to linked creators
   (+0.008 [-0.033, +0.050]). Mood scoring finished (models/video_mood_14nov.json, 12,991 videos): Eesha does NOT need to run it.
