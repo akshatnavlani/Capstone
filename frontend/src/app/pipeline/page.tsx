@@ -119,16 +119,18 @@ export default function PipelinePage() {
     return result.results.find((r) => r.creator_id === selected) ?? result.results[0];
   }, [result, selected]);
 
+  // Keyed on the creator's id: the stored result is re-parsed on every render, so the object itself changes each time.
+  const creatorId = creator?.creator_id ?? null;
   useEffect(() => {
-    if (!creator) return;
+    if (!creatorId) return;
     let alive = true;
-    getPassport(creator.creator_id)
-      .then((rec) => alive && setPassport({ id: creator.creator_id, rec }))
-      .catch(() => alive && setPassport({ id: creator.creator_id, rec: null }));
+    getPassport(creatorId)
+      .then((rec) => alive && setPassport({ id: creatorId, rec }))
+      .catch(() => alive && setPassport({ id: creatorId, rec: null }));
     return () => {
       alive = false;
     };
-  }, [creator]);
+  }, [creatorId]);
 
   const stages = useMemo(
     () => (creator ? stagesFor(creator, passport?.id === creator.creator_id ? passport.rec : null) : []),
