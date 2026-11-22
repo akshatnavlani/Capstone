@@ -142,6 +142,55 @@ main > *:nth-child(4) { animation-delay: 150ms; }
   transform-origin: center;
   animation: pipe-pulse 2.4s ease-in-out infinite;
 }
+/* Campaign Simulator: rows slide in, risk hops along links, a ping on the source, a hint dot, a loading bar. */
+@keyframes sim-row-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: none; }
+}
+.sim-row {
+  animation: sim-row-in 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes sim-hop {
+  from { transform: translate(var(--x0), var(--y0)); opacity: 1; }
+  to { transform: translate(var(--x1), var(--y1)); opacity: 0; }
+}
+.sim-hop {
+  animation: sim-hop 900ms ease-in-out forwards;
+}
+@keyframes sim-ping {
+  from { transform: scale(1); opacity: 0.9; }
+  to { transform: scale(3.2); opacity: 0; }
+}
+.sim-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sim-ping 1.3s ease-out infinite;
+}
+@keyframes sim-pop {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.sim-pop {
+  animation: sim-pop 350ms ease-out both;
+}
+.sim-hint-dot {
+  animation: pipe-pulse 1.4s ease-in-out infinite;
+}
+@keyframes sim-loading {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+.sim-loading {
+  animation: sim-loading 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sim-row, .sim-pop, .sim-hint-dot, .sim-loading {
+    animation: none;
+  }
+  .sim-hop, .sim-ping {
+    display: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   svg line {
     animation: none !important;
