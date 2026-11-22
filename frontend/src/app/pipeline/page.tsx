@@ -28,6 +28,13 @@ const BASIS: Record<string, string> = {
   isolated: "Independent creator, no network ties yet",
 };
 
+// Brand words for the platform mood-gap labels of scripts/passport_stats.py (a gap counts only beyond its error bound).
+const MOOD_GAP: Record<string, string> = {
+  "no clear gap": "Similar on both platforms",
+  "warmer on Instagram than on YouTube": "Warmer on Instagram",
+  "warmer on YouTube than on Instagram": "Warmer on YouTube",
+};
+
 // A 0-1 percentile in brand words: "Top 4%" for high ranks, "Above 70%" style otherwise.
 const rank = (s: number | null | undefined) =>
   s === null || s === undefined || Number.isNaN(s) ? "not available" : s >= 0.5 ? `Top ${Math.max(1, Math.round((1 - s) * 100))}%` : `Above ${Math.round(s * 100)}% of creators`;
@@ -76,7 +83,7 @@ function stagesFor(r: InfluencerRecommendation, p: PassportRecord | null): Stage
       key: "mood", title: "4 · Audience mood", model: "RoBERTa (English) + XLM-R (Hindi script)",
       lines: [
         ["Audience mood", `${fmt(b.sentiment_risk_score)} · ${moodWord(b.sentiment_risk_score)}`],
-        ["YouTube vs Instagram mood", p?.mood?.label ?? "not available"],
+        ["YouTube vs Instagram mood", MOOD_GAP[p?.mood?.label ?? ""] ?? p?.mood?.label ?? "not available"],
       ],
       note: b.sentiment_risk_score < 0.3 ? "Below 0.3: a 10-point risk penalty applies." : undefined,
     },
