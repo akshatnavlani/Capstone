@@ -247,6 +247,16 @@ main > *:nth-child(4) { animation-delay: 150ms; }
   100% { opacity: 1; transform: none; }
 }
 .lm-photo { animation: lm-photo 550ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+/* Analysis: shopping carts floating up from the sponsored bar. */
+@keyframes an-float {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  20% { opacity: 1; transform: translateY(-10px) scale(1); }
+  100% { opacity: 0; transform: translateY(-70px) scale(1); }
+}
+.an-float { animation: an-float 2.4s ease-out infinite both; }
+@media (prefers-reduced-motion: reduce) {
+  .an-float { display: none; }
+}
 @keyframes lm-grow { from { transform: scaleX(0); } }
 .lm-grow { transform-origin: left; animation: lm-grow 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .lm-stripes { background-image: repeating-linear-gradient(135deg, rgba(10, 16, 22, 0.55) 0 3px, transparent 3px 6px); }

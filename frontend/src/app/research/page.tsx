@@ -6,6 +6,8 @@ import Link from "next/link";
 const TOOLS = [
   { href: "/insights", title: "Insights", body: "Evidence charts: spillover results, benchmark against published methods, power, passport statistics." },
   { href: "/explainability", title: "Graph and scores", body: "The creator graph the model reads and the fusion formula for each score." },
+  // 23 Nov 2026: the full tabbed analysis (S1-S10) moved here; the brand Analysis page keeps only what brands use.
+  { href: "/research/analysis", title: "Detailed analysis", body: "Every analysis section (S1 to S10): temporal tests, feature score, fusion calibration, graph, linking audits, live results." },
 ];
 
 export default function ResearchPage() {
