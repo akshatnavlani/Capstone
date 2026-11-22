@@ -394,10 +394,7 @@ export default function LiveMatchPage() {
           </div>
           <Glance results={results} budget={Number(req.budget)} top={top} />
           <RankedList results={results} />
-          <div className="grid gap-4 lg:grid-cols-2">
-            <PlatformChart results={results} />
-            <ValueChart results={results} />
-          </div>
+          <Charts results={results} />
           <div className="flex flex-wrap gap-3">
             <Link href="/dashboard" className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90">
               Detailed view →
@@ -639,22 +636,40 @@ function Glance({ results, budget, top }: { results: InfluencerRecommendation[];
   );
 }
 
-function PlatformChart({ results }: { results: InfluencerRecommendation[] }) {
+/** The charts block: both charts plus the X vs Y explorer share one fetch of the per-platform profiles. */
+function Charts({ results }: { results: InfluencerRecommendation[] }) {
   const [profiles, setProfiles] = useState<Record<string, PlatformProfile> | null>(null);
-  const [hover, setHover] = useState<string | null>(null);
   const ids = results.map((r) => r.creator_id).join(",");
   useEffect(() => {
     let cancelled = false;
-    Promise.allSettled(ids.split(",").filter(Boolean).map((id) => getPlatformProfile(id))).then((rs) => {
-      if (cancelled) return;
+    // 3 at a time: the backend has 15 database connections, and 10 parallel profile calls per open report exhausted them
+    // (QueuePool timeout seen 23 Nov 2026 with two reports open).
+    (async () => {
+      const list = ids.split(",").filter(Boolean);
       const m: Record<string, PlatformProfile> = {};
-      for (const x of rs) if (x.status === "fulfilled") m[x.value.creator_id] = x.value;
-      setProfiles(m);
-    });
+      for (let i = 0; i < list.length && !cancelled; i += 3) {
+        const rs = await Promise.allSettled(list.slice(i, i + 3).map((id) => getPlatformProfile(id)));
+        for (const x of rs) if (x.status === "fulfilled") m[x.value.creator_id] = x.value;
+      }
+      if (!cancelled) setProfiles(m);
+    })();
     return () => {
       cancelled = true;
     };
   }, [ids]);
+  return (
+    <>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PlatformChart results={results} profiles={profiles} />
+        <ValueChart results={results} />
+      </div>
+      <Explorer results={results} profiles={profiles} />
+    </>
+  );
+}
+
+function PlatformChart({ results, profiles }: { results: InfluencerRecommendation[]; profiles: Record<string, PlatformProfile> | null }) {
+  const [hover, setHover] = useState<string | null>(null);
 
   return (
     <div className="rounded-xl border border-line bg-panel p-4">
@@ -713,8 +728,8 @@ function PlatformChart({ results }: { results: InfluencerRecommendation[] }) {
                   {lo != null && hi != null && (
                     <span className="lm-grow absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-zinc-500/60" style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
                   )}
-                  {y != null && <Dot left={y} color={YT} label="YT" big={g == null || y >= g} />}
-                  {g != null && <Dot left={g} color={IG} label="IG" big={y == null || g > y} />}
+                  {y != null && <Dot left={y} color={YT} label="YT" big={g == null || y >= g} dy={g != null && Math.abs(y - g) < 4 ? -7 : 0} />}
+                  {g != null && <Dot left={g} color={IG} label="IG" big={y == null || g > y} dy={y != null && Math.abs(y - g) < 4 ? 7 : 0} />}
                 </span>
                 <span className="text-right text-[11px]" style={{ color: verdict?.color ?? "#63768a" }}>
                   {verdict?.text ?? (profiles ? "Not measured yet" : "")}
@@ -742,11 +757,25 @@ function PlatformChart({ results }: { results: InfluencerRecommendation[] }) {
   );
 }
 
-function Dot({ left, color, label, big }: { left: number; color: string; label: string; big: boolean }) {
+/** Smallest sideways moves (in chart units) so no two dots cover each other; dots that do not touch stay exactly in place. */
+function spreadX(ps: { id: string; x: number; y: number; r: number }[]) {
+  const out = new Map<string, number>();
+  const placed: { x: number; y: number; r: number }[] = [];
+  for (const p of [...ps].sort((a, b) => a.y - b.y)) {
+    const hits = (dx: number) => placed.some((q) => Math.hypot(p.x + dx - q.x, p.y - q.y) < p.r + q.r - 1);
+    let dx = 0;
+    for (let k = 1; hits(dx) && k <= 40; k++) dx = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 3;
+    out.set(p.id, dx);
+    placed.push({ x: p.x + dx, y: p.y, r: p.r });
+  }
+  return out;
+}
+
+function Dot({ left, color, label, big, dy = 0 }: { left: number; color: string; label: string; big: boolean; dy?: number }) {
   return (
     <span
       className="lm-fade absolute top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full font-mono text-[8px] font-bold text-background"
-      style={{ left: `${left}%`, background: color, width: big ? 20 : 15, height: big ? 20 : 15, boxShadow: big ? `0 0 12px ${color}` : "none" }}
+      style={{ left: `${left}%`, marginTop: dy, background: color, width: big ? 20 : 15, height: big ? 20 : 15, boxShadow: big ? `0 0 12px ${color}` : "none" }}
       title={`${label === "YT" ? "YouTube" : "Instagram"}: more engaged than ${Math.round(left)}% of creators there`}
     >
       {label}
@@ -767,13 +796,10 @@ function ValueChart({ results }: { results: InfluencerRecommendation[] }) {
   const Y = (v: number) => T + (1 - (v - y0) / (y1 - y0)) * (VH - T - B);
   // Sweet spot: the cheaper half of the price range (log middle; rate-card prices repeat, so a median can equal the top price).
   const midCost = Math.sqrt(Math.min(...costs) * Math.max(...costs));
-  // Creators with the same rate-card price sit side by side instead of on top of each other.
-  const sameCost = new Map<number, string[]>();
-  for (const r of pts) sameCost.set(r.estimated_cost as number, [...(sameCost.get(r.estimated_cost as number) ?? []), r.creator_id]);
-  const nudge = (r: InfluencerRecommendation) => {
-    const g = sameCost.get(r.estimated_cost as number) ?? [];
-    return (g.indexOf(r.creator_id) - (g.length - 1) / 2) * 20;
-  };
+  const radius = (r: InfluencerRecommendation) => Math.max(6, Math.min(14, 6 + (r.final_score - 60) / 2.5));
+  // Only bubbles that would cover each other are moved, and only as far as needed.
+  const offsets = spreadX(pts.map((r) => ({ id: r.creator_id, x: X(r.estimated_cost as number), y: Y(r.score_breakdown.value_score as number), r: radius(r) })));
+  const nudge = (r: InfluencerRecommendation) => offsets.get(r.creator_id) ?? 0;
   const ticks = [4000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000].filter((t) => Math.log10(t) > lx0 && Math.log10(t) < lx1);
   const yTicks = [0, 0.25, 0.5, 0.75, 0.9, 1].filter((t) => t >= y0);
   const top3 = new Set([...results].sort((a, b) => b.final_score - a.final_score).slice(0, 3).map((r) => r.creator_id));
@@ -810,7 +836,7 @@ function ValueChart({ results }: { results: InfluencerRecommendation[] }) {
           {pts.map((r, i) => {
             const cx = X(r.estimated_cost as number) + nudge(r);
             const cy = Y(r.score_breakdown.value_score as number);
-            const rad = Math.max(6, Math.min(14, 6 + (r.final_score - 60) / 2.5));
+            const rad = radius(r);
             const color = r.value?.platform === "instagram" ? IG : YT;
             return (
               <g key={r.creator_id} onMouseEnter={() => setHover(r.creator_id)} onMouseLeave={() => setHover(null)} style={{ cursor: "pointer" }}>
@@ -854,6 +880,302 @@ function ValueChart({ results }: { results: InfluencerRecommendation[] }) {
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-accent" /> your top 3
         </span>
+      </div>
+    </div>
+  );
+}
+
+// ---- X vs Y explorer (23 Nov 2026): the brand picks what goes on each axis; each dot is one matched creator. ----
+// Every number is real: the recommendation answer and /platform-profiles. A part at the neutral 0.5 (too little data) and
+// a platform the creator is not measured on are left out, and the chart says how many creators that leaves.
+
+type Prof = PlatformProfile | undefined;
+type Metric = {
+  key: string;
+  label: string;
+  get: (r: InfluencerRecommendation, p: Prof) => number | null;
+  fmt: (v: number) => string;
+  log?: boolean;
+  domain?: [number, number];
+};
+
+const pct100 = (v: number) => `${Math.round(v)}`;
+const METRICS: Metric[] = [
+  { key: "price", label: "Price per post", get: (r) => r.estimated_cost, fmt: (v) => shortInr(v), log: true },
+  {
+    key: "audience",
+    label: "Audience size",
+    get: (r, p) => {
+      if (!p) return null;
+      const side = r.value?.platform === "instagram" ? p.instagram : p.youtube;
+      return side.available && side.audience ? side.audience : null;
+    },
+    fmt: (v) => people(v),
+    log: true,
+  },
+  { key: "score", label: "Overall score", get: (r) => r.final_score, fmt: (v) => v.toFixed(0) },
+  {
+    key: "value",
+    label: "Value for money",
+    get: (r) => (r.score_breakdown.value_score == null ? null : 100 * r.score_breakdown.value_score),
+    fmt: pct100,
+    domain: [0, 100],
+  },
+  {
+    key: "mood",
+    label: "Audience mood",
+    get: (r) => (r.score_breakdown.sentiment_risk_score === 0.5 ? null : 100 * r.score_breakdown.sentiment_risk_score),
+    fmt: pct100,
+    domain: [0, 100],
+  },
+  {
+    key: "fit",
+    label: "Content match",
+    get: (r) => (r.score_breakdown.creator_feature_score === 0.5 ? null : 100 * r.score_breakdown.creator_feature_score),
+    fmt: pct100,
+    domain: [0, 100],
+  },
+  {
+    key: "yt",
+    label: "YouTube engagement",
+    get: (_r, p) => (p?.youtube.available && p.youtube.percentile != null ? p.youtube.percentile : null),
+    fmt: pct100,
+    domain: [0, 100],
+  },
+  {
+    key: "ig",
+    label: "Instagram engagement",
+    get: (_r, p) => (p?.instagram.available && p.instagram.percentile != null ? p.instagram.percentile : null),
+    fmt: pct100,
+    domain: [0, 100],
+  },
+];
+const QUESTIONS = [
+  { q: "Is a higher price worth it?", x: "price", y: "value" },
+  { q: "Do bigger creators score better?", x: "audience", y: "score" },
+  { q: "Bigger audience, happier audience?", x: "audience", y: "mood" },
+  { q: "Better content match, better score?", x: "fit", y: "score" },
+  { q: "YouTube vs Instagram engagement", x: "yt", y: "ig" },
+];
+
+function ticksFor(lo: number, hi: number, log?: boolean) {
+  if (log) {
+    const out: number[] = [];
+    for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+      for (const m of [1, 2.5, 5]) {
+        const t = m * 10 ** e;
+        if (t >= lo && t <= hi) out.push(t);
+      }
+    return out;
+  }
+  const raw = (hi - lo) / 5;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? raw;
+  const out: number[] = [];
+  for (let t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) out.push(Number(t.toFixed(6)));
+  return out;
+}
+
+function domainFor(m: Metric, vals: number[]): [number, number] {
+  if (m.domain) return m.domain;
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  if (m.log) return [lo / 1.6, hi * 1.6];
+  const span = hi - lo || 10;
+  return [lo - 0.15 * span, hi + 0.15 * span];
+}
+
+function Explorer({ results, profiles }: { results: InfluencerRecommendation[]; profiles: Record<string, PlatformProfile> | null }) {
+  const [xk, setXk] = useState("price");
+  const [yk, setYk] = useState("value");
+  const [hover, setHover] = useState<string | null>(null);
+  const mx = METRICS.find((m) => m.key === xk)!, my = METRICS.find((m) => m.key === yk)!;
+  const pts = results
+    .map((r) => ({ r, x: mx.get(r, profiles?.[r.creator_id]), y: my.get(r, profiles?.[r.creator_id]) }))
+    .filter((p): p is { r: InfluencerRecommendation; x: number; y: number } => p.x != null && p.y != null);
+  const needsProfiles = [mx, my].some((m) => ["audience", "yt", "ig"].includes(m.key));
+  const VW = 900, VH = 380, L = 64, R = 24, T = 20, B = 52;
+  const [x0, x1] = pts.length ? domainFor(mx, pts.map((p) => p.x)) : [0, 1];
+  const [y0, y1] = pts.length ? domainFor(my, pts.map((p) => p.y)) : [0, 1];
+  const fx = (v: number) => (mx.log ? (Math.log10(v) - Math.log10(x0)) / (Math.log10(x1) - Math.log10(x0)) : (v - x0) / (x1 - x0));
+  const fy = (v: number) => (my.log ? (Math.log10(v) - Math.log10(y0)) / (Math.log10(y1) - Math.log10(y0)) : (v - y0) / (y1 - y0));
+  const X = (v: number) => L + fx(v) * (VW - L - R);
+  const Y = (v: number) => VH - B - fy(v) * (VH - T - B);
+  const top3 = new Set([...results].sort((a, b) => b.final_score - a.final_score).slice(0, 3).map((r) => r.creator_id));
+  const rad = (id: string) => (top3.has(id) ? 11 : 8);
+  const offsets = spreadX(pts.map((p) => ({ id: p.r.creator_id, x: X(p.x), y: Y(p.y), r: rad(p.r.creator_id) })));
+  const h = pts.find((p) => p.r.creator_id === hover);
+
+  // Trend line: least squares on the plotted positions (so on a price or audience axis it follows the log scale drawn).
+  const PW = VW - L - R, PH = VH - T - B;
+  const trend = (() => {
+    if (pts.length < 3) return null;
+    const u = pts.map((p) => fx(p.x)), v = pts.map((p) => fy(p.y));
+    const n = u.length, mu = u.reduce((a, b) => a + b, 0) / n, mv = v.reduce((a, b) => a + b, 0) / n;
+    let sxy = 0, sxx = 0, syy = 0;
+    for (let i = 0; i < n; i++) {
+      sxy += (u[i] - mu) * (v[i] - mv);
+      sxx += (u[i] - mu) ** 2;
+      syy += (v[i] - mv) ** 2;
+    }
+    if (sxx < 1e-9 || syy < 1e-9) return null;
+    const b = sxy / sxx, a = mv - b * mu, r = sxy / Math.sqrt(sxx * syy);
+    const ua = Math.min(...u), ub = Math.max(...u);
+    const at = (uu: number) => [L + uu * PW, VH - B - Math.max(-0.02, Math.min(1.02, a + b * uu)) * PH];
+    return { r, b, p1: at(ua), p2: at(ub) };
+  })();
+  const lc = (s: string) => (/^(YouTube|Instagram)/.test(s) ? s : s[0].toLowerCase() + s.slice(1));
+  const reading = !trend
+    ? null
+    : Math.abs(trend.r) < 0.3
+      ? `No clear pattern between ${lc(mx.label)} and ${lc(my.label)} in these ${pts.length} creators.`
+      : `${Math.abs(trend.r) >= 0.6 ? "Clear" : "Slight"} pattern: as ${lc(mx.label)} goes up, ${lc(my.label)} tends to go ${trend.b > 0 ? "up" : "down"} (in these ${pts.length} creators).`;
+
+  return (
+    <div className="rounded-xl border border-line bg-panel p-4">
+      <h3 className="text-base font-semibold text-zinc-100">Compare your matches</h3>
+      <p className="mt-0.5 text-xs text-zinc-500">Pick a question. Each dot is one creator; the line shows the overall pattern.</p>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {QUESTIONS.map((q) => {
+          const on = q.x === xk && q.y === yk;
+          return (
+            <button
+              key={q.q}
+              onClick={() => {
+                setXk(q.x);
+                setYk(q.y);
+              }}
+              className={`rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-accent bg-accent text-background" : "border-line text-zinc-300 hover:border-accent hover:text-accent"}`}
+            >
+              {q.q}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="relative mt-3">
+        {pts.length === 0 ? (
+          <p className="py-16 text-center text-sm text-zinc-500">{needsProfiles && !profiles ? "Loading platform numbers…" : "None of these creators has both of these numbers yet. Try another pair."}</p>
+        ) : (
+          <svg viewBox={`0 0 ${VW} ${VH}`} className="block h-auto w-full" role="img" aria-label={`${mx.label} against ${my.label}`} onMouseLeave={() => setHover(null)}>
+            {ticksFor(y0, y1, my.log).map((t) => (
+              <g key={`y${t}`}>
+                <line x1={L} x2={VW - R} y1={Y(t)} y2={Y(t)} stroke="#1e2b37" />
+                <text x={L - 8} y={Y(t) + 4} fontSize="11" textAnchor="end" fill="#63768a">
+                  {my.fmt(t)}
+                </text>
+              </g>
+            ))}
+            {ticksFor(x0, x1, mx.log).map((t) => (
+              <g key={`x${t}`}>
+                <line x1={X(t)} x2={X(t)} y1={T} y2={VH - B} stroke="#1e2b37" strokeDasharray="2 4" />
+                <text x={X(t)} y={VH - B + 18} fontSize="11" textAnchor="middle" fill="#63768a">
+                  {mx.fmt(t)}
+                </text>
+              </g>
+            ))}
+            <line x1={L} x2={VW - R} y1={VH - B} y2={VH - B} stroke="#8497aa" strokeWidth={1.5} />
+            <line x1={L} x2={L} y1={T} y2={VH - B} stroke="#8497aa" strokeWidth={1.5} />
+            <path d={`M ${VW - R} ${VH - B} l -7 -4 l 0 8 z`} fill="#8497aa" />
+            <path d={`M ${L} ${T} l -4 7 l 8 0 z`} fill="#8497aa" />
+            <text x={(L + VW - R) / 2} y={VH - 10} fontSize="13" fontWeight={600} textAnchor="middle" fill="#cbd6e1">
+              X axis: {mx.label}
+            </text>
+            <text x={16} y={(T + VH - B) / 2} fontSize="13" fontWeight={600} textAnchor="middle" fill="#cbd6e1" transform={`rotate(-90 16 ${(T + VH - B) / 2})`}>
+              Y axis: {my.label}
+            </text>
+            {trend && (
+              <line
+                key={`${xk}-${yk}`}
+                x1={trend.p1[0]}
+                y1={trend.p1[1]}
+                x2={trend.p2[0]}
+                y2={trend.p2[1]}
+                pathLength={1}
+                stroke="#f5b83d"
+                strokeWidth={2.5}
+                strokeOpacity={0.85}
+                strokeLinecap="round"
+                className="lm-draw"
+              />
+            )}
+            {pts.map((p, i) => {
+              const id = p.r.creator_id;
+              const cx = X(p.x) + (offsets.get(id) ?? 0), cy = Y(p.y);
+              const color = p.r.value?.platform === "instagram" ? IG : YT;
+              const dim = hover && hover !== id;
+              return (
+                <g key={id} onMouseEnter={() => setHover(id)} style={{ cursor: "pointer" }}>
+                  <circle cx={cx} cy={cy} r={rad(id) + 8} fill="transparent" style={{ transition: "cx 700ms ease, cy 700ms ease" }} />
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={rad(id)}
+                    fill={color}
+                    fillOpacity={dim ? 0.25 : 0.9}
+                    stroke={top3.has(id) ? "#f5b83d" : "var(--panel)"}
+                    strokeWidth={top3.has(id) ? 3 : 2}
+                    className="lm-dot"
+                    style={{ animationDelay: `${i * 50}ms`, transition: "cx 700ms cubic-bezier(0.2,0.7,0.2,1), cy 700ms cubic-bezier(0.2,0.7,0.2,1), fill-opacity 200ms" }}
+                  />
+                  {(top3.has(id) || hover === id) && (
+                    <text
+                      x={cx + rad(id) + 5}
+                      y={cy + 4}
+                      fontSize="12"
+                      fill="#f2f6fa"
+                      stroke="var(--panel)"
+                      strokeWidth={4}
+                      paintOrder="stroke"
+                      style={{ pointerEvents: "none", transition: "x 700ms, y 700ms" }}
+                    >
+                      {p.r.name}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        )}
+        {h && (
+          <div
+            className="pointer-events-none absolute z-10 w-56 rounded-lg border border-line bg-background/95 p-2.5 text-xs shadow-xl"
+            style={{ left: `${Math.min(80, (X(h.x) / VW) * 100)}%`, top: `${(Y(h.y) / VH) * 100}%`, transform: "translate(-50%, 18px)" }}
+          >
+            <div className="font-semibold text-zinc-50">{h.r.name}</div>
+            <div className="mt-1 flex justify-between text-zinc-400">
+              <span>{mx.label}</span>
+              <span className="font-mono text-zinc-100">{mx.key === "price" ? inr(h.x) : mx.fmt(h.x)}</span>
+            </div>
+            <div className="flex justify-between text-zinc-400">
+              <span>{my.label}</span>
+              <span className="font-mono text-zinc-100">{my.key === "price" ? inr(h.y) : my.fmt(h.y)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+      {reading && (
+        <p key={`${xk}-${yk}`} className="lm-fade mt-2 rounded-md border border-accent/30 bg-accent/5 px-3 py-2 text-sm text-zinc-200">
+          {reading}
+        </p>
+      )}
+      <div className="mt-2 flex flex-wrap items-center gap-4 text-[11px] text-zinc-400">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: YT }} /> best on YouTube
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: IG }} /> best on Instagram
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-accent" /> your top 3
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-0.5 w-4 rounded bg-accent" /> pattern line
+        </span>
+        {pts.length < results.length && pts.length > 0 && (
+          <span className="ml-auto text-zinc-500">
+            {pts.length} of {results.length} creators shown: the others don&apos;t have both numbers yet
+          </span>
+        )}
       </div>
     </div>
   );
