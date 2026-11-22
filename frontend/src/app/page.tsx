@@ -10,16 +10,16 @@ const PROMISES = ["See both platforms.", "Know how sure we are.", "Check the evi
 
 const FEATURES = [
   { href: "/passport", tag: "01", title: "Creator Passport", body: "One page per creator: both platforms, mood, speed and an evidence grade." },
-  { href: "/insights", tag: "02", title: "Evidence room", body: "Interactive charts of what we found, and how much we could have seen." },
-  { href: "/dashboard", tag: "03", title: "Ranked creators", body: "A brief in, a ranked list out, with ranges, grades and clash warnings." },
-  { href: "/explainability", tag: "04", title: "Graph and scores", body: "Who links to whom, and how each score is built." },
+  { href: "/dashboard", tag: "02", title: "Ranked creators", body: "A brief in, a ranked list out, with ranges, grades and clash warnings." },
+  { href: "/analysis", tag: "03", title: "Analysis", body: "The creator network and the numbers behind each recommendation." },
+  { href: "/monitoring", tag: "04", title: "Monitoring", body: "Risk alerts: a creator's bad moment and who it could reach." },
 ];
 
 const STEPS = [
   ["Brief", "Product and budget"],
   ["Rank", "Mood, fit, honest range"],
   ["Passport", "Both platforms"],
-  ["Evidence", "What we know"],
+  ["Monitor", "Risk alerts"],
 ];
 
 /** A card with a soft light that follows the pointer. */
@@ -70,8 +70,8 @@ export default function Home() {
             <Link href="/brand-input" className="rounded-md bg-accent px-6 py-3 text-sm font-semibold text-[#1a1306] transition hover:-translate-y-0.5 hover:brightness-110">
               Start a brief
             </Link>
-            <Link href="/insights" className="rounded-md border border-line px-6 py-3 text-sm font-medium text-zinc-200 transition hover:-translate-y-0.5 hover:border-accent hover:text-accent">
-              Evidence room
+            <Link href="/dashboard" className="rounded-md border border-line px-6 py-3 text-sm font-medium text-zinc-200 transition hover:-translate-y-0.5 hover:border-accent hover:text-accent">
+              Ranked creators
             </Link>
             <Link href="/passport" className="px-2 py-3 text-sm text-zinc-400 transition-colors hover:text-signal">
               Open a Creator Passport →

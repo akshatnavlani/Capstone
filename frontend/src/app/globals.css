@@ -127,6 +127,11 @@ main > *:nth-child(4) { animation-delay: 150ms; }
     stroke-dashoffset: -22;
   }
 }
+/* Pipeline Live: data flowing down a lit connector (reuses the dash keyframes; reduced motion turns it off below). */
+.pipe-flow {
+  stroke-dasharray: 6 5;
+  animation: dash 900ms linear infinite;
+}
 @media (prefers-reduced-motion: reduce) {
   svg line {
     animation: none !important;

@@ -14,6 +14,8 @@ const ICONS: Record<string, React.ReactNode> = {
   monitoring: <path d="M12 3 3 19h18zM12 10v4.5M12 17.2v.1" />,
   explain: <path d="M6 7a2 2 0 1 0 0 .01M18 6a2 2 0 1 0 0 .01M12 18a2 2 0 1 0 0 .01M7.6 8.1l3.2 8.2M16.6 7.7l-3.4 8.6M8 6.4l8 .2" />,
   analysis: <path d="M4 20h16M7 20v-6m5 6V8m5 12v-9" />,
+  pipeline: <path d="M5 4h6v4H5zM13 10h6v4h-6zM5 16h6v4H5zM8 8v8M11 12h2" />,
+  map: <path d="M6 7a1.5 1.5 0 1 0 0 .01M17 6a1.5 1.5 0 1 0 0 .01M9 15a1.5 1.5 0 1 0 0 .01M16 17a1.5 1.5 0 1 0 0 .01M12 11a1.5 1.5 0 1 0 0 .01M3 21h18M3 3v18" />,
 };
 
 const GROUPS = [
@@ -24,16 +26,16 @@ const GROUPS = [
       { href: "/brand-input", label: "New brief", icon: "brief" },
       { href: "/dashboard", label: "Ranked creators", icon: "dashboard" },
       { href: "/passport", label: "Creator Passport", icon: "passport" },
+      { href: "/analysis", label: "Analysis", icon: "analysis" },
+      { href: "/niche-map", label: "Niche Map", icon: "map" },
+      { href: "/pipeline", label: "Pipeline Live", icon: "pipeline" },
     ],
   },
   {
+    // 22 Nov 2026: brands see only what concerns creators, the network and risk. Insights and Graph and scores are
+    // research views for the team: /research (not in this menu).
     label: "Evidence",
-    items: [
-      { href: "/insights", label: "Insights", icon: "insights" },
-      { href: "/analysis", label: "Analysis", icon: "analysis" },
-      { href: "/explainability", label: "Graph and scores", icon: "explain" },
-      { href: "/monitoring", label: "Monitoring", icon: "monitoring" },
-    ],
+    items: [{ href: "/monitoring", label: "Monitoring", icon: "monitoring" }],
   },
 ];
 
