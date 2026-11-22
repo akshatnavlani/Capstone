@@ -75,7 +75,8 @@ function stagesFor(r: InfluencerRecommendation, p: PassportRecord | null): Stage
       lines: [
         ["Network reach (GAIL)", rank(b.spillover_score)],
         ["How it is measured", BASIS[r.spillover_basis ?? ""] ?? "not available"],
-        ["Direct collaborators", p ? (p.network.linked_creators > 0 ? int(p.network.linked_creators) : "None on record") : "not available"],
+        // shown only when the creator has direct collaborations on record (her request, 22 Nov: no negative-sounding row)
+        ...(p && p.network.linked_creators > 0 ? [["Direct collaborators", int(p.network.linked_creators)] as [string, string]] : []),
       ],
       note: "Network reach is reported alongside the score, so brands can weigh it themselves.",
     },
