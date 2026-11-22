@@ -6,7 +6,29 @@ supersedes memory when they disagree — memory is a pointer, this is the record
 
 Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 closed state unchanged: 259/54/170 wired end-to-end, see §1 Review 1 closed. Team decision 2026-09-24: Review 2 = pipeline-complete per PendingWork 2026-09-20; Review 3 = improvements).
 
-**16 NOV 2026, 00:15 (newest) — STOPPED for the night at her request. TOMORROW: `bash scripts/run_queue_16nov.sh` (one job at a time): featured joint video (GAIL_R_FEATURED_JOINT_VIDEO_PLAN_15NOV.md) -> corrected joint video -> corrected tag (graph-edge fix, plan note 16 Nov) -> mood scoring (resumes) -> negative spillover test once -> focused sponsorship. Results so far: GAIL_R_RESULTS_15NOV.md (update -0.090 [-0.203,+0.074]; joint video WITH GRAPH ERROR +0.058 [-0.065,+0.137], small -0.029 [-0.375,+0.395]). None of the queue's runs printed an estimate tonight. App model = original. Still running: subscriber loop, history runner. Keep laptop lid open while runs go.
+**22 NOV 2026 (NEWEST) — STATUS FOR THE TEAM (Eesha, read this first).** All planned spillover tests are DONE; every
+result is pushed. Where to look:
+- **All spillover results in one table:** `SPILLOVER_RESULTS_OVERALL_22NOV.md` (significant: tag +0.095 replicated, small-creator
+  joint video +0.277, cross-platform Granger p 0.002, small linked creators after a bad moment +0.108; GAIL-R benchmark error
+  0.068-0.101 vs TNet/DeepInf/INFLECT 0.44-0.58).
+- **GAIL-R real-data runs (9 runs, sections 1-10):** `GAIL_R_RESULTS_15NOV.md`. FINAL run on the complete data (21-22 Nov, plan
+  GAIL_R_FINAL_SMALL_CREATORS_PLAN_17NOV.md): small creators +0.129 [-0.100, +0.378], all +0.018 [-0.062, +0.089], NOT
+  significant; power: 80% only from about +41% (small) / +11% (all). Paper wording: "positive in every variant, consistent with
+  the detected spillover, not significant at this sample size". Never "GAIL-R detected spillover on real data".
+- **Hybrid simulation (SIMULATED, method validation, section 11 + `models/gail_r_hybrid_*_22nov.json`):** part 1 (real 187
+  exposed): 0/40 false alarms at 0%; detection 0,0,1,4,13 of 40 at +10..+60%. Part 2 (more creators, K = 2/4/8): +13% detected
+  4/10, 7/10, 9/10; +30% detected 8/10, 9/10, 10/10; 0% false-alarm check at 8x pending. Reading: GAIL-R detects reliably with
+  about 2-4x today's small creators.
+- **Negative spillover (run once 22 Nov):** NEGATIVE_SPILLOVER_PLAN_14NOV.md result section: no harm to linked creators
+  (+0.008 [-0.033, +0.050]). Mood scoring finished (models/video_mood_14nov.json, 12,991 videos): Eesha does NOT need to run it.
+- **Other:** forward tests too few events (FORWARD_TESTS_RESULTS_20NOV.md); between-creator Granger on new pairs not
+  significant (BETWEEN_CREATOR_GRANGER_NEW_PAIRS_PLAN_21NOV.md).
+- **Frontend (22 Nov), brand-facing menu:** Overview, New brief, Ranked creators, Creator Passport, Analysis, Niche Map (new),
+  Pipeline Live (new), Campaign Simulator (new, what-if labelled simulated); Monitoring. Team-only `/research`: Insights, Graph
+  and scores. Niche map data: `python scripts/export_niche_map.py`.
+- Data collection ended 20 Nov as planned (history fetch, Instagram, forward tests). App model = original checkpoint.
+
+**16 NOV 2026, 00:15 — STOPPED for the night at her request. TOMORROW: `bash scripts/run_queue_16nov.sh` (one job at a time): featured joint video (GAIL_R_FEATURED_JOINT_VIDEO_PLAN_15NOV.md) -> corrected joint video -> corrected tag (graph-edge fix, plan note 16 Nov) -> mood scoring (resumes) -> negative spillover test once -> focused sponsorship. Results so far: GAIL_R_RESULTS_15NOV.md (update -0.090 [-0.203,+0.074]; joint video WITH GRAPH ERROR +0.058 [-0.065,+0.137], small -0.029 [-0.375,+0.395]). None of the queue's runs printed an estimate tonight. App model = original. Still running: subscriber loop, history runner. Keep laptop lid open while runs go.
 
 **15 NOV 2026, 22:30 (newest) — RUNNING OVERNIGHT, one at a time:** GAIL-R joint_video (try 2, 22:02) -> GAIL-R tag -> mood scoring (negative spillover) [exports/gail_r_chain_15nov.log], then scripts/run_after_chain_15nov.sh: negative_spillover_test.py run ONCE, then focused GAIL-R (GAIL_R_FOCUSED_SPONSORSHIP_PLAN_15NOV.md: strong sponsorships, 7 days, small collaborators) [exports/after_chain_15nov.log]. DONE 15 Nov: GAIL-R update (555 exposed) -0.090 [-0.203, +0.074] NOT detected, bound ~8% (GAIL_R_RESULTS_15NOV.md). Fixes: TCP keepalives in the chain; engagement query uses the creator_id index (same rows, 95 checks). Laptop lid must stay open (sleep froze a run). Next: record each result in GAIL_R_RESULTS_15NOV.md, give Shimona one table, then update report/paper numbers (paper: Eesha).
 

@@ -1,0 +1,59 @@
+{
+ "plan": "GAIL_R_HYBRID_SAMPLE_SIZE_PLAN_22NOV.md",
+ "SIMULATED": true,
+ "small_creators": 168,
+ "small_exposed_rows": 187,
+ "studies": 10,
+ "bootstrap_B": 50,
+ "results": {
+  "K=2, +13%": {
+   "creators_per_study": 336,
+   "planted_log": 0.12221763272424921,
+   "detected_share": 0.4,
+   "detected": 4,
+   "studies": 10,
+   "mean_estimate": 0.1485609333962202
+  },
+  "K=2, +30%": {
+   "creators_per_study": 336,
+   "planted_log": 0.262364264467491,
+   "detected_share": 0.8,
+   "detected": 8,
+   "studies": 10,
+   "mean_estimate": 0.24242855608463287
+  },
+  "K=4, +13%": {
+   "creators_per_study": 672,
+   "planted_log": 0.12221763272424921,
+   "detected_share": 0.7,
+   "detected": 7,
+   "studies": 10,
+   "mean_estimate": 0.15200302191078663
+  },
+  "K=4, +30%": {
+   "creators_per_study": 672,
+   "planted_log": 0.262364264467491,
+   "detected_share": 0.9,
+   "detected": 9,
+   "studies": 10,
+   "mean_estimate": 0.20997507497668266
+  },
+  "K=8, +13%": {
+   "creators_per_study": 1344,
+   "planted_log": 0.12221763272424921,
+   "detected_share": 0.9,
+   "detected": 9,
+   "studies": 10,
+   "mean_estimate": 0.14988377764821054
+  },
+  "K=8, +30%": {
+   "creators_per_study": 1344,
+   "planted_log": 0.262364264467491,
+   "detected_share": 1.0,
+   "detected": 10,
+   "studies": 10,
+   "mean_estimate": 0.25053002387285234
+  }
+ },
+ "as_of": "2026-11-22T14:22:09+00:00"
+}
