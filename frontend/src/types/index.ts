@@ -206,6 +206,7 @@ export interface PassportCreatorLite {
   grade: "A" | "B" | "C" | "D";
   mood_gap_flag: boolean;
   has_recent_brand_posts: boolean;
+  ad_load_above_usual?: boolean; // 23 Nov 2026: at least 3 sponsored posts in 30 days and twice the usual rate
   sections_filled: number;
 }
 

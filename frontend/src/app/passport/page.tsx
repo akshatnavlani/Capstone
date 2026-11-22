@@ -12,7 +12,6 @@ import type { PassportCreatorLite, PassportPenalty, PassportRecord, PassportSumm
 // The group-level findings sit on top; every number comes from models/creator_passport.json (scripts/build_creator_passport.py). Nothing here changes a score.
 
 const pct = (x: number, digits = 0) => `${x >= 0 ? "+" : ""}${x.toFixed(digits)}%`;
-const signed = (x: number) => `${x >= 0 ? "+" : ""}${x.toFixed(3)}`;
 
 export default function PassportPage() {
   return (
@@ -71,7 +70,7 @@ function PassportView() {
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">Couldn&apos;t load the passport. Is the backend running, and has scripts/build_creator_passport.py been run?</p>}
 
-      {summary && <Findings s={summary} />}
+      {summary && <Findings s={summary} creators={creators} onOpen={(id) => router.push(`/passport?creator=${id}`)} />}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Look up a creator</h2>
@@ -114,63 +113,182 @@ function PassportView() {
   );
 }
 
-function Findings({ s }: { s: PassportSummary }) {
+function Findings({ s, creators, onOpen }: { s: PassportSummary; creators: PassportCreatorLite[]; onOpen: (id: string) => void }) {
   const x = s.summary;
-  const views = x.sponsored_response.youtube_views;
-  const pred = x.prediction;
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">What the passports reveal across {x.creators} creators</h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Tile
-          label="Mood gap between platforms"
-          big={`${x.mood_gap.flagged} of ${x.mood_gap.creators_with_both}`}
-          text={`creators are liked noticeably more on one platform than the other; ${x.mood_gap.warmer_on_instagram} of them are warmer on Instagram. Median gap ${Math.abs(Math.round(100 * (x.mood_gap.median_gap ?? 0)))} points on a 0 to 100 scale, ${(x.mood_gap.median_gap ?? 0) >= 0 ? "Instagram" : "YouTube"} warmer.`}
-          foot="Flagged only when the gap is at least 0.10 and clears a worst-case error bound."
-        />
-        <Tile
-          label="Do sponsored posts get less response?"
-          big={views.approx_percent != null ? pct(views.approx_percent, 1) : "n/a"}
-          text={`YouTube views of sponsored posts against the same creator's organic posts of the same format (${views.creators} creators; 95% interval ${views.ci95_percent ? `${pct(views.ci95_percent[0], 1)} to ${pct(views.ci95_percent[1], 1)}` : "n/a"}). The interval includes zero, so no clear penalty. Instagram has only ${x.sponsored_response.instagram_likes.creators} creators with enough sponsored posts: too few to say.`}
-          foot={`Placebo with fake sponsored posts: ${x.sponsored_response.youtube_views.placebo.mean != null ? pct(100 * (Math.exp(x.sponsored_response.youtube_views.placebo.mean) - 1), 1) : "n/a"}.`}
-        />
-        <Tile
-          label="Attention speed (YouTube)"
-          big={x.speed.median_share_first_24h != null ? `${Math.round(100 * x.speed.median_share_first_24h)}%` : "n/a"}
-          text={`of a video's first-week views arrive in the first 24 hours (median over ${x.speed.videos.toLocaleString()} videos, ${x.speed.creators} creators). A time-limited offer should land in the first day.`}
-          foot="Instagram has too few growth readings for the same estimate."
-        />
-        <Tile
-          label="Estimate the missing platform"
-          big={pred.spearman_full != null ? pred.spearman_full.toFixed(2) : "n/a"}
-          text={`rank agreement between the estimated and the real Instagram level, each creator predicted without their own data (${pred.n} creators; subscriber count alone gives ${pred.spearman_size_only?.toFixed(2)}). The typical error is about ${pred.mae_full != null ? Math.exp(pred.mae_full).toFixed(1) : "?"} times, so estimates are shown as ranges.`}
-          foot="Used for creators with no Instagram data; always shown with an 80% range."
-        />
-        <Tile
-          label="Ad load right now"
-          big={`${x.fatigue.creators_above_usual} creators`}
-          text={`posted at least 3 sponsored posts in the last 30 days and at least twice their usual rate. The group test finds no clear drop in views per extra sponsored post (median slope ${x.fatigue.global_test.median_slope.toFixed(3)}, 95% ${signed(x.fatigue.global_test.ci95[0])} to ${signed(x.fatigue.global_test.ci95[1])}), so this is a fact about recent ad load, not a prediction.`}
-          foot="Ad fatigue is not detected in our data."
-        />
-        <Tile
-          label="Competitor clash"
-          big={`${x.clash.creators_with_recent_brand_posts} creators`}
-          text={`promoted a brand in the last ${x.clash.window_days} days. Enter a brief on the dashboard and each recommended creator who promoted a rival brand in your category carries a warning.`}
-          foot="A warning only; scores are not changed."
-        />
+      <h2 className="text-lg font-medium">Good to know before you book</h2>
+      <div className="grid gap-3 md:grid-cols-3">
+        {x.speed.median_share_first_24h != null && <SpeedCard share={x.speed.median_share_first_24h} videos={x.speed.videos} />}
+        <ClashCard n={x.clash.creators_with_recent_brand_posts} days={x.clash.window_days} creators={creators.filter((c) => c.has_recent_brand_posts)} onOpen={onOpen} />
+        <BusyCard n={x.fatigue.creators_above_usual} creators={creators.filter((c) => c.ad_load_above_usual)} onOpen={onOpen} />
       </div>
     </section>
   );
 }
 
-function Tile({ label, big, text, foot }: { label: string; big: string; text: string; foot: string }) {
+/** Counts up from 0 to `target` once, on mount (jumps straight there under reduced motion). */
+function useCountUp(target: number, ms = 900) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let id = 0;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      id = requestAnimationFrame(() => setV(target));
+      return () => cancelAnimationFrame(id);
+    }
+    const t0 = performance.now();
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms);
+      setV(Math.round(target * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) id = requestAnimationFrame(step);
+    };
+    id = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(id);
+  }, [target, ms]);
+  return v;
+}
+
+function Card({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-      <div className="text-xs font-medium text-zinc-500">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tracking-tight text-accent">{big}</div>
-      <p className="mt-1 text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">{text}</p>
-      <p className="mt-auto pt-2 text-[11px] text-zinc-500">{foot}</p>
+    <div className="flex flex-col rounded-xl border border-line bg-panel p-4">
+      <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-accent-soft text-sm" aria-hidden>
+          {icon}
+        </span>
+        {title}
+      </div>
+      {children}
     </div>
+  );
+}
+
+function SpeedCard({ share, videos }: { share: number; videos: number }) {
+  const shown = useCountUp(Math.round(share * 100));
+  const [focus, setFocus] = useState<"day1" | "rest">("day1");
+  const R = 44;
+  const C = 2 * Math.PI * R;
+  const day1 = (shown / 100) * C;
+  return (
+    <Card icon="⚡" title="Post on day one">
+      <div className="mt-3 flex items-center gap-4">
+        <svg viewBox="0 0 110 110" className="h-28 w-28 shrink-0" role="img" aria-label={`${Math.round(share * 100)}% of first-week views on day one`}>
+          <g transform="rotate(-90 55 55)">
+            <circle cx="55" cy="55" r={R} fill="none" stroke="var(--line)" strokeWidth="12" />
+            <circle
+              cx="55"
+              cy="55"
+              r={R}
+              fill="none"
+              strokeWidth="12"
+              strokeLinecap="round"
+              stroke={focus === "rest" ? "#2e3c4a" : "var(--accent)"}
+              strokeDasharray={`${day1} ${C}`}
+              className="cursor-pointer transition-[stroke] duration-300"
+              onMouseEnter={() => setFocus("day1")}
+            />
+            <circle
+              cx="55"
+              cy="55"
+              r={R}
+              fill="none"
+              strokeWidth="12"
+              stroke={focus === "rest" ? "var(--signal)" : "transparent"}
+              strokeDasharray={`${Math.max(0, C - day1 - 8)} ${C}`}
+              strokeDashoffset={-day1 - 4}
+              className="cursor-pointer transition-[stroke] duration-300"
+              onMouseEnter={() => setFocus("rest")}
+            />
+          </g>
+          <text x="55" y="55" textAnchor="middle" dominantBaseline="central" fill="var(--foreground)" fontSize="22" fontWeight={600}>
+            {focus === "day1" ? shown : 100 - shown}%
+          </text>
+        </svg>
+        <div className="flex flex-col gap-1.5 text-xs">
+          {(["day1", "rest"] as const).map((k) => (
+            <button
+              key={k}
+              onMouseEnter={() => setFocus(k)}
+              onClick={() => setFocus(k)}
+              className={`flex items-center gap-2 rounded-md px-2 py-1 text-left transition-colors ${focus === k ? "bg-line text-zinc-50" : "text-zinc-400"}`}
+            >
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: k === "day1" ? "var(--accent)" : "var(--signal)" }} />
+              {k === "day1" ? "Day 1" : "Days 2 to 7"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="mt-3 text-sm text-zinc-300">Most of a video&apos;s first-week views come on the first day. Launch offers on day one.</p>
+      <p className="mt-auto pt-2 text-[11px] text-zinc-500">YouTube, {videos.toLocaleString()} videos</p>
+    </Card>
+  );
+}
+
+function CreatorChip({ c, onOpen }: { c: PassportCreatorLite; onOpen: (id: string) => void }) {
+  return (
+    <button
+      onClick={() => onOpen(c.creator_id)}
+      title={`Open ${c.name}'s passport`}
+      className="flex items-center gap-1.5 rounded-full border border-line py-0.5 pl-0.5 pr-2.5 text-xs text-zinc-300 transition-colors hover:border-accent hover:text-accent"
+    >
+      <Avatar creatorId={c.creator_id} name={c.name} size={20} />
+      {c.name}
+    </button>
+  );
+}
+
+function ClashCard({ n, days, creators, onOpen }: { n: number; days: number; creators: PassportCreatorLite[]; onOpen: (id: string) => void }) {
+  const shown = useCountUp(n);
+  const [open, setOpen] = useState(false);
+  const faces = creators.slice(0, 7);
+  return (
+    <Card icon="🛡" title="Rival brand check">
+      <div className="mt-3 flex items-baseline gap-2">
+        <span className="text-4xl font-semibold tracking-tight text-accent">{shown}</span>
+        <span className="text-sm text-zinc-400">creators promoted a brand in the last {days} days</span>
+      </div>
+      <button onClick={() => setOpen((o) => !o)} className="mt-3 flex items-center -space-x-2 self-start" aria-expanded={open}>
+        {faces.map((c) => (
+          <span key={c.creator_id} className="rounded-full ring-2 ring-[var(--panel)] transition-transform hover:-translate-y-1">
+            <Avatar creatorId={c.creator_id} name={c.name} size={28} />
+          </span>
+        ))}
+        {creators.length > faces.length && (
+          <span className="grid h-7 place-items-center rounded-full bg-line px-2 text-[11px] text-zinc-300 ring-2 ring-[var(--panel)]">
+            +{creators.length - faces.length}
+          </span>
+        )}
+        <span className="pl-4 text-xs text-zinc-500">{open ? "hide" : "see who"}</span>
+      </button>
+      {open && (
+        <div className="mt-2 flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+          {creators.map((c) => (
+            <CreatorChip key={c.creator_id} c={c} onOpen={onOpen} />
+          ))}
+        </div>
+      )}
+      <p className="mt-3 text-sm text-zinc-300">We warn you if a creator recently worked with your rival.</p>
+      <Link href="/brand-input" className="mt-auto pt-2 text-xs font-medium text-accent hover:underline">
+        Check with my brand →
+      </Link>
+    </Card>
+  );
+}
+
+function BusyCard({ n, creators, onOpen }: { n: number; creators: PassportCreatorLite[]; onOpen: (id: string) => void }) {
+  const shown = useCountUp(n);
+  return (
+    <Card icon="📣" title="Busy with ads right now">
+      <div className="mt-3 flex items-baseline gap-2">
+        <span className="text-4xl font-semibold tracking-tight text-accent">{shown}</span>
+        <span className="text-sm text-zinc-400">creators are posting twice their usual ads this month</span>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {creators.map((c) => (
+          <CreatorChip key={c.creator_id} c={c} onOpen={onOpen} />
+        ))}
+      </div>
+      <p className="mt-auto pt-3 text-[11px] text-zinc-500">Good to know when booking. Our data shows no clear drop in their views from it.</p>
+    </Card>
   );
 }
 

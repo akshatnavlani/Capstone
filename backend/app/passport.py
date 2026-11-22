@@ -81,7 +81,8 @@ def creator_list() -> list[dict]:
         parts = [c.get("platform_strength"), mood.get("gap") is not None, c.get("speed"), sp.get("youtube_views") or sp.get("youtube_likes") or sp.get("instagram_likes"), sp.get("buying_signals"),
                  sp.get("disclosure"), c.get("fatigue"), c.get("clash_events"), (c.get("network") or {}).get("linked_creators")]
         out.append({"creator_id": c["creator_id"], "name": c["name"], "category": c["category"], "platforms": c["coverage"]["platforms"], "grade": c["evidence"]["grade"],
-                    "mood_gap_flag": bool(mood.get("significant")), "has_recent_brand_posts": bool(c.get("clash_events")), "sections_filled": sum(bool(x) for x in parts)})
+                    "mood_gap_flag": bool(mood.get("significant")), "has_recent_brand_posts": bool(c.get("clash_events")),
+                    "ad_load_above_usual": bool((c.get("fatigue") or {}).get("above_usual")), "sections_filled": sum(bool(x) for x in parts)})
     return sorted(out, key=lambda r: r["name"].lower())
 
 
