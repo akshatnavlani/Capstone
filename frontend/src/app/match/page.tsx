@@ -285,15 +285,14 @@ export default function LiveMatchPage() {
               (points ?? []).map((p) => {
                 const r = matched.get(p.creator_id);
                 const isTop = stage >= 6 && topIds.has(p.creator_id);
-                let fill = COLOR[p.niche] ?? "#63768a";
+                const fill = COLOR[p.niche] ?? "#63768a";
                 let size = 3.2;
                 let opacity = 0.85;
                 if (stage >= 4) {
                   if (r) {
-                    const t = (r.score_breakdown.sentiment_risk_score - moodRange[0]) / Math.max(1e-6, moodRange[1] - moodRange[0]);
-                    fill = stage >= 5 ? mix(COOL, WARM, t) : "#f5b83d";
+                    // The matched creator's photo is drawn over this spot (see the photo layer below the map).
                     size = 4 + 7 * r.score_breakdown.creator_feature_score;
-                    opacity = 1;
+                    opacity = 0;
                   } else {
                     opacity = 0.12;
                   }
@@ -314,21 +313,6 @@ export default function LiveMatchPage() {
                     >
                       <title>{p.name}</title>
                     </circle>
-                    {isTop && (
-                      <text
-                        x={sx(p.x) + 12}
-                        y={sy(p.y) - 10}
-                        fontSize="15"
-                        fontWeight={600}
-                        fill="#f2f6fa"
-                        stroke="var(--panel)"
-                        strokeWidth={4}
-                        paintOrder="stroke"
-                        className="lm-fade"
-                      >
-                        {p.name}
-                      </text>
-                    )}
                   </g>
                 );
               })}
@@ -337,6 +321,47 @@ export default function LiveMatchPage() {
               <rect x={-160} y={0} width={160} height={H} fill="url(#lm-sweep-g)" className={stage === 1 ? "lm-sweep-once" : "lm-sweep"} />
             )}
           </svg>
+
+          {/* Photo layer: each matched creator's picture at their spot on the map (same box as the map, so positions line up).
+              Size = content match, ring colour = audience mood (from stage 5), top 3 bigger with their names. */}
+          {stage >= 4 && (
+            <div className="pointer-events-none absolute inset-x-0 top-0" style={{ aspectRatio: `${W} / ${H}` }}>
+              {[...results]
+                .sort((a, b) => Number(topIds.has(a.creator_id)) - Number(topIds.has(b.creator_id)))
+                .map((r, i) => {
+                  const p = byId.get(r.creator_id);
+                  if (!p) return null;
+                  const isTop = stage >= 6 && topIds.has(r.creator_id);
+                  const t = (r.score_breakdown.sentiment_risk_score - moodRange[0]) / Math.max(1e-6, moodRange[1] - moodRange[0]);
+                  const ring = stage >= 5 ? mix(COOL, WARM, t) : "#f5b83d";
+                  const size = Math.round(24 + 18 * r.score_breakdown.creator_feature_score) + (isTop ? 12 : 0);
+                  return (
+                    <div
+                      key={r.creator_id}
+                      className="pointer-events-auto absolute"
+                      style={{ left: `${(sx(p.x) / W) * 100}%`, top: `${(sy(p.y) / H) * 100}%`, transform: "translate(-50%, -50%)", zIndex: isTop ? 2 : 1 }}
+                      title={r.name}
+                    >
+                      <span
+                        className="lm-photo block rounded-full"
+                        style={{
+                          animationDelay: `${i * 90}ms`,
+                          boxShadow: `0 0 0 3px ${ring}${isTop ? `, 0 0 22px 4px ${ring}` : ""}`,
+                          transition: "box-shadow 700ms",
+                        }}
+                      >
+                        <Avatar creatorId={r.creator_id} name={r.name} size={size} />
+                      </span>
+                      {isTop && (
+                        <span className="lm-fade absolute left-1/2 top-full mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-background/80 px-1.5 py-0.5 text-xs font-semibold text-zinc-50">
+                          {r.name}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          )}
 
           {stage === 0 && (
             <div className="absolute inset-0 grid place-items-center">
@@ -376,7 +401,7 @@ export default function LiveMatchPage() {
                 Audience mood of your matches
                 <span className="inline-block h-2 w-24 rounded-full" style={{ background: `linear-gradient(to right, ${COOL}, ${WARM})` }} />
                 <span>more positive →</span>
-                <span className="text-zinc-600">· bigger dot = closer content match</span>
+                <span className="text-zinc-600">· bigger photo = closer content match</span>
               </span>
             )}
             {result && <span className="ml-auto">{onMap} of {results.length} matches shown on the map</span>}
