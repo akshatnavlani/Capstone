@@ -125,3 +125,18 @@ whether spillover exists.
   about +41%.
 - Reading: the small-creator estimate (+12.9%) and the simple joint-video result (+27.7%) are both below GAIL-R's
   small-creator detection threshold at this sample size; its non-significance reflects sample size.
+
+## 11. Hybrid simulation part 1 (SIMULATED; GAIL_R_HYBRID_SIMULATION_PLAN_22NOV.md; 22 Nov 12:19-18:05)
+Real inputs of the final run (small creators: 5,744 rows, 187 exposed); real estimate removed, known effect planted;
+GAIL-R uniform attention, placebo penalty 30, window effects; 40 studies per size, creator bootstrap B = 100.
+| planted | detected | mean estimate (log) | truth (log) |
+|---|---|---|---|
+| 0% | 0/40 | +0.071 | 0.000 |
+| +10% | 0/40 | +0.088 | +0.095 |
+| +20% | 0/40 | +0.160 | +0.182 |
+| +30% | 1/40 | +0.222 | +0.262 |
+| +40% | 4/40 | +0.275 | +0.336 |
+| +60% | 13/40 | +0.398 | +0.470 |
+Reading: no false alarm (0/40 at 0%); estimates rise with the planted effect and stay somewhat below it; at the real
+number of small creators GAIL-R detects even a +60% effect in only a third of studies. Its non-significance on the real
+data (+12.9%) is therefore expected at this sample size. Not a result about real spillover. Part 2 (more creators) follows.

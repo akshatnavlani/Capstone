@@ -1,0 +1,55 @@
+{
+ "plan": "GAIL_R_HYBRID_SIMULATION_PLAN_22NOV.md",
+ "SIMULATED": true,
+ "inputs": "models/gail_r_inputs_final_22nov.pt",
+ "small_rows": 5744,
+ "small_exposed_rows": 187,
+ "real_att_uniform": 0.1327138990163803,
+ "studies_per_size_target": 40,
+ "bootstrap_B": 100,
+ "results": {
+  "+0%": {
+   "planted_log": 0.0,
+   "studies": 40,
+   "detected_share": 0.0,
+   "mean_estimate": 0.07054344179341569,
+   "bias": 0.07054344179341569
+  },
+  "+10%": {
+   "planted_log": 0.09531017980432487,
+   "studies": 40,
+   "detected_share": 0.0,
+   "mean_estimate": 0.08827299973199842,
+   "bias": -0.0070371800723264405
+  },
+  "+20%": {
+   "planted_log": 0.18232155679395465,
+   "studies": 40,
+   "detected_share": 0.0,
+   "mean_estimate": 0.15961642963811756,
+   "bias": -0.022705127155837085
+  },
+  "+30%": {
+   "planted_log": 0.262364264467491,
+   "studies": 40,
+   "detected_share": 0.025,
+   "mean_estimate": 0.2215686023060698,
+   "bias": -0.04079566216142119
+  },
+  "+40%": {
+   "planted_log": 0.33647223662121295,
+   "studies": 40,
+   "detected_share": 0.1,
+   "mean_estimate": 0.2746909539680928,
+   "bias": -0.06178128265312016
+  },
+  "+60%": {
+   "planted_log": 0.4700036292457356,
+   "studies": 40,
+   "detected_share": 0.325,
+   "mean_estimate": 0.3984072744846344,
+   "bias": -0.07159635476110116
+  }
+ },
+ "as_of": "2026-11-22T12:36:54+00:00"
+}
