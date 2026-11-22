@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Avatar from "@/components/Avatar";
-import { getCoOccurrenceEdges, getCollaborationEdges, postRecommendations } from "@/lib/api";
-import type { BrandRecommendationRequest, BrandRecommendationResponse, InfluencerRecommendation } from "@/types";
+import { getCoOccurrenceEdges, getCollaborationEdges, getPlatformProfile, postRecommendations } from "@/lib/api";
+import type { BrandRecommendationRequest, BrandRecommendationResponse, InfluencerRecommendation, PlatformProfile } from "@/types";
 
 // Live Match (23 Nov 2026): what a brand sees between pressing "Get Recommendations" and the ranking. The backend takes
 // about 15-25 s, so the wait plays the real steps on real data instead of a spinner:
@@ -392,7 +392,12 @@ export default function LiveMatchPage() {
               r ? <Podium key={r.creator_id} r={r} place={slot === 1 ? 1 : slot === 0 ? 2 : 3} /> : <div key={`empty${slot}`} />,
             )}
           </div>
+          <Glance results={results} budget={Number(req.budget)} top={top} />
           <RankedList results={results} />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <PlatformChart results={results} />
+            <ValueChart results={results} />
+          </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/dashboard" className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-background hover:opacity-90">
               Detailed view →
@@ -560,6 +565,296 @@ function RankedList({ results }: { results: InfluencerRecommendation[] }) {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+// ---- Brand report (23 Nov 2026): at-a-glance tiles, YouTube vs Instagram, value for money. Real data only. ----
+
+const YT = "#d95926", IG = "#3987e5";
+const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+const shortInr = (n: number) => (n >= 1e5 ? `₹${Number((n / 1e5).toFixed(1))}L` : `₹${Math.round(n / 1e3)}K`);
+const people = (n: number | null) => (n == null ? "" : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : `${n}`);
+
+function useCountUp(target: number, ms = 900) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let id = 0;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      id = requestAnimationFrame(() => setV(target));
+      return () => cancelAnimationFrame(id);
+    }
+    const t0 = performance.now();
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms);
+      setV(target * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) id = requestAnimationFrame(step);
+    };
+    id = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(id);
+  }, [target, ms]);
+  return v;
+}
+
+function Tile({ icon, big, small, delay, children }: { icon: string; big: string; small: string; delay: number; children?: React.ReactNode }) {
+  return (
+    <div className="lm-rise flex flex-col gap-1 rounded-xl border border-line bg-panel p-4" style={{ animationDelay: `${delay}ms` }}>
+      <span className="text-lg" aria-hidden>
+        {icon}
+      </span>
+      <span className="font-mono text-2xl font-semibold text-zinc-50">{big}</span>
+      <span className="text-xs text-zinc-400">{small}</span>
+      {children}
+    </div>
+  );
+}
+
+function Glance({ results, budget, top }: { results: InfluencerRecommendation[]; budget: number; top: InfluencerRecommendation[] }) {
+  const topCost = top.every((r) => r.estimated_cost != null) ? top.reduce((a, r) => a + (r.estimated_cost ?? 0), 0) : null;
+  const yt = results.filter((r) => r.value?.platform === "youtube").length;
+  const ig = results.filter((r) => r.value?.platform === "instagram").length;
+  const moods = results.map((r) => r.score_breakdown.sentiment_risk_score).filter((m) => m !== 0.5);
+  const avgMood = moods.length ? (100 * moods.reduce((a, b) => a + b, 0)) / moods.length : null;
+  const n = useCountUp(results.length);
+  const cost = useCountUp(topCost ?? 0);
+  const mood = useCountUp(avgMood ?? 0);
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Tile icon="🎯" big={`${Math.round(n)}`} small="creators fit your product and budget" delay={0} />
+      {topCost != null && (
+        <Tile icon="💰" big={inr(cost)} small={`your top 3, one post each (${Math.round((100 * topCost) / budget)}% of your budget)`} delay={80}>
+          <span className="mt-1 h-1.5 overflow-hidden rounded-full bg-line">
+            <span className="lm-grow block h-full rounded-full bg-accent" style={{ width: `${Math.min(100, (100 * topCost) / budget)}%` }} />
+          </span>
+        </Tile>
+      )}
+      <Tile icon="📺" big={`${yt} · ${ig}`} small="best value on YouTube · on Instagram" delay={160}>
+        <span className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-line">
+          <span className="lm-grow h-full" style={{ width: `${(100 * yt) / Math.max(1, yt + ig)}%`, background: YT }} />
+          <span className="lm-grow h-full" style={{ width: `${(100 * ig) / Math.max(1, yt + ig)}%`, background: IG }} />
+        </span>
+      </Tile>
+      {avgMood != null && <Tile icon="😊" big={`${Math.round(mood)}/100`} small="average audience mood of your matches" delay={240} />}
+    </div>
+  );
+}
+
+function PlatformChart({ results }: { results: InfluencerRecommendation[] }) {
+  const [profiles, setProfiles] = useState<Record<string, PlatformProfile> | null>(null);
+  const [hover, setHover] = useState<string | null>(null);
+  const ids = results.map((r) => r.creator_id).join(",");
+  useEffect(() => {
+    let cancelled = false;
+    Promise.allSettled(ids.split(",").filter(Boolean).map((id) => getPlatformProfile(id))).then((rs) => {
+      if (cancelled) return;
+      const m: Record<string, PlatformProfile> = {};
+      for (const x of rs) if (x.status === "fulfilled") m[x.value.creator_id] = x.value;
+      setProfiles(m);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ids]);
+
+  return (
+    <div className="rounded-xl border border-line bg-panel p-4">
+      <h3 className="text-base font-semibold text-zinc-100">YouTube vs Instagram</h3>
+      <p className="mt-0.5 text-xs text-zinc-500">How engaged each creator&apos;s audience is, compared with other creators on the same platform</p>
+      <div className="mt-2 flex gap-4 text-[11px] text-zinc-400">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: YT }} /> YouTube
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: IG }} /> Instagram
+        </span>
+      </div>
+      <div className="mt-3 flex flex-col">
+        <div className="grid grid-cols-[minmax(0,120px)_1fr_minmax(0,110px)] gap-3 text-[10px] text-zinc-600">
+          <span />
+          <span className="flex justify-between">
+            <span>less engaged</span>
+            <span>more engaged</span>
+          </span>
+          <span />
+        </div>
+        {results.map((r, i) => {
+          const p = profiles?.[r.creator_id];
+          const y = p?.youtube.available ? p.youtube.percentile : null;
+          const g = p?.instagram.available ? p.instagram.percentile : null;
+          const verdict =
+            y != null && g != null
+              ? Math.abs(y - g) < 10
+                ? { text: "Similar on both", color: "#aab9c8" }
+                : y > g
+                  ? { text: "More engaged on YouTube", color: YT }
+                  : { text: "More engaged on Instagram", color: IG }
+              : y != null
+                ? { text: "YouTube creator", color: YT }
+                : g != null
+                  ? { text: "Instagram creator", color: IG }
+                  : null;
+          const lo = y != null && g != null ? Math.min(y, g) : null;
+          const hi = y != null && g != null ? Math.max(y, g) : null;
+          const isHover = hover === r.creator_id;
+          return (
+            <div
+              key={r.creator_id}
+              onMouseEnter={() => setHover(r.creator_id)}
+              onMouseLeave={() => setHover(null)}
+              className={`lm-row rounded-md px-1 py-1.5 transition-colors ${isHover ? "bg-line/50" : ""}`}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="grid grid-cols-[minmax(0,120px)_1fr_minmax(0,110px)] items-center gap-3">
+                <span className="truncate text-xs text-zinc-200">{r.name}</span>
+                <span className="relative h-5">
+                  <span className="absolute inset-x-0 top-1/2 h-px bg-line" />
+                  <span className="absolute top-1/2 h-2 w-px -translate-y-1/2 bg-zinc-700" style={{ left: "50%" }} />
+                  {!profiles && <span className="lm-shimmer absolute top-1/2 h-1 w-1/4 -translate-y-1/2 rounded-full bg-zinc-700" />}
+                  {lo != null && hi != null && (
+                    <span className="lm-grow absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-zinc-500/60" style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
+                  )}
+                  {y != null && <Dot left={y} color={YT} label="YT" big={g == null || y >= g} />}
+                  {g != null && <Dot left={g} color={IG} label="IG" big={y == null || g > y} />}
+                </span>
+                <span className="text-right text-[11px]" style={{ color: verdict?.color ?? "#63768a" }}>
+                  {verdict?.text ?? (profiles ? "Not measured yet" : "")}
+                </span>
+              </div>
+              {isHover && p && (
+                <div className="lm-fade mt-1 pl-[132px] text-[11px] text-zinc-400">
+                  {p.youtube.available && (
+                    <span className="mr-4">
+                      <span style={{ color: YT }}>YouTube</span> {people(p.youtube.audience)} subscribers · typical {people(p.youtube.typical_views)} views
+                    </span>
+                  )}
+                  {p.instagram.available && (
+                    <span>
+                      <span style={{ color: IG }}>Instagram</span> {people(p.instagram.audience)} followers · typical {people(p.instagram.typical_likes)} likes
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Dot({ left, color, label, big }: { left: number; color: string; label: string; big: boolean }) {
+  return (
+    <span
+      className="lm-fade absolute top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full font-mono text-[8px] font-bold text-background"
+      style={{ left: `${left}%`, background: color, width: big ? 20 : 15, height: big ? 20 : 15, boxShadow: big ? `0 0 12px ${color}` : "none" }}
+      title={`${label === "YT" ? "YouTube" : "Instagram"}: more engaged than ${Math.round(left)}% of creators there`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function ValueChart({ results }: { results: InfluencerRecommendation[] }) {
+  const [hover, setHover] = useState<string | null>(null);
+  const pts = results.filter((r) => r.estimated_cost != null && r.score_breakdown.value_score != null);
+  if (pts.length < 2) return null;
+  const VW = 520, VH = 300, L = 48, R = 16, T = 16, B = 40;
+  const costs = pts.map((r) => r.estimated_cost as number);
+  const lx0 = Math.log10(Math.min(...costs) / 1.6), lx1 = Math.log10(Math.max(...costs) * 1.6);
+  const vals = pts.map((r) => r.score_breakdown.value_score as number);
+  const y0 = Math.max(0, Math.floor((Math.min(...vals) - 0.08) * 10) / 10), y1 = 1;
+  const X = (c: number) => L + ((Math.log10(c) - lx0) / (lx1 - lx0)) * (VW - L - R);
+  const Y = (v: number) => T + (1 - (v - y0) / (y1 - y0)) * (VH - T - B);
+  // Sweet spot: the cheaper half of the price range (log middle; rate-card prices repeat, so a median can equal the top price).
+  const midCost = Math.sqrt(Math.min(...costs) * Math.max(...costs));
+  // Creators with the same rate-card price sit side by side instead of on top of each other.
+  const sameCost = new Map<number, string[]>();
+  for (const r of pts) sameCost.set(r.estimated_cost as number, [...(sameCost.get(r.estimated_cost as number) ?? []), r.creator_id]);
+  const nudge = (r: InfluencerRecommendation) => {
+    const g = sameCost.get(r.estimated_cost as number) ?? [];
+    return (g.indexOf(r.creator_id) - (g.length - 1) / 2) * 20;
+  };
+  const ticks = [4000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000, 2500000].filter((t) => Math.log10(t) > lx0 && Math.log10(t) < lx1);
+  const yTicks = [0, 0.25, 0.5, 0.75, 0.9, 1].filter((t) => t >= y0);
+  const top3 = new Set([...results].sort((a, b) => b.final_score - a.final_score).slice(0, 3).map((r) => r.creator_id));
+  const h = pts.find((r) => r.creator_id === hover);
+  return (
+    <div className="rounded-xl border border-line bg-panel p-4">
+      <h3 className="text-base font-semibold text-zinc-100">Price vs value</h3>
+      <p className="mt-0.5 text-xs text-zinc-500">Top left is the sweet spot: lower price, more engagement per rupee. Bigger bubble = higher overall score.</p>
+      <div className="relative mt-2">
+        <svg viewBox={`0 0 ${VW} ${VH}`} className="block h-auto w-full" role="img" aria-label="Price per post against value for money">
+          <rect x={L} y={Y(1)} width={Math.max(0, X(midCost) - L)} height={Y(Math.max(y0, 0.9)) - Y(1)} fill="#35d6c0" fillOpacity={0.08} rx={6} />
+          <text x={L + 8} y={Y(1) + 16} fontSize="11" fill="#35d6c0">
+            Sweet spot
+          </text>
+          {yTicks.map((t) => (
+            <g key={t}>
+              <line x1={L} x2={VW - R} y1={Y(t)} y2={Y(t)} stroke="#1e2b37" />
+              <text x={L - 6} y={Y(t) + 3} fontSize="10" textAnchor="end" fill="#63768a">
+                {Math.round(t * 100)}%
+              </text>
+            </g>
+          ))}
+          {ticks.map((t) => (
+            <text key={t} x={X(t)} y={VH - B + 16} fontSize="10" textAnchor="middle" fill="#63768a">
+              {shortInr(t)}
+            </text>
+          ))}
+          <text x={(L + VW - R) / 2} y={VH - 6} fontSize="10" textAnchor="middle" fill="#8497aa">
+            price per post →
+          </text>
+          <text x={12} y={(T + VH - B) / 2} fontSize="10" textAnchor="middle" fill="#8497aa" transform={`rotate(-90 12 ${(T + VH - B) / 2})`}>
+            value for money →
+          </text>
+          {pts.map((r, i) => {
+            const cx = X(r.estimated_cost as number) + nudge(r);
+            const cy = Y(r.score_breakdown.value_score as number);
+            const rad = Math.max(6, Math.min(14, 6 + (r.final_score - 60) / 2.5));
+            const color = r.value?.platform === "instagram" ? IG : YT;
+            return (
+              <g key={r.creator_id} onMouseEnter={() => setHover(r.creator_id)} onMouseLeave={() => setHover(null)} style={{ cursor: "pointer" }}>
+                <circle cx={cx} cy={cy} r={rad + 8} fill="transparent" />
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={rad}
+                  fill={color}
+                  fillOpacity={hover && hover !== r.creator_id ? 0.25 : 0.85}
+                  stroke={top3.has(r.creator_id) ? "#f5b83d" : "var(--panel)"}
+                  strokeWidth={top3.has(r.creator_id) ? 2.5 : 2}
+                  className="lm-dot"
+                  style={{ animationDelay: `${i * 80}ms`, transition: "fill-opacity 200ms" }}
+                />
+              </g>
+            );
+          })}
+        </svg>
+        {h && (
+          <div
+            className="pointer-events-none absolute z-10 w-52 -translate-x-1/2 rounded-lg border border-line bg-background/95 p-2.5 text-xs shadow-xl"
+            style={{ left: `${((X(h.estimated_cost as number) + nudge(h)) / VW) * 100}%`, top: `${(Y(h.score_breakdown.value_score as number) / VH) * 100}%`, transform: "translate(-50%, 16px)" }}
+          >
+            <div className="font-semibold text-zinc-50">{h.name}</div>
+            <div className="mt-0.5 text-zinc-400">
+              {inr(h.estimated_cost as number)} per post on {h.value?.platform === "instagram" ? "Instagram" : "YouTube"}
+            </div>
+            <div className="text-zinc-400">Better value than {Math.round(100 * (h.score_breakdown.value_score as number))}% of creators there</div>
+            <div className="text-zinc-400">Overall score {h.final_score.toFixed(1)}</div>
+          </div>
+        )}
+      </div>
+      <div className="mt-1 flex flex-wrap gap-4 text-[11px] text-zinc-400">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: YT }} /> best on YouTube
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: IG }} /> best on Instagram
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-accent" /> your top 3
+        </span>
+      </div>
     </div>
   );
 }
