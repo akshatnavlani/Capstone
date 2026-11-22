@@ -31,14 +31,12 @@ const GROUPS = [
       { href: "/niche-map", label: "Niche Map", icon: "map" },
       { href: "/pipeline", label: "Pipeline Live", icon: "pipeline" },
       { href: "/simulator", label: "Campaign Simulator", icon: "sim" },
+      // 23 Nov 2026: Monitoring (risk alerts) is for brands too, so it moved here from the old "Evidence" group.
+      { href: "/monitoring", label: "Monitoring", icon: "monitoring" },
     ],
   },
-  {
-    // 22 Nov 2026: brands see only what concerns creators, the network and risk. Insights and Graph and scores are
-    // research views for the team: /research (not in this menu).
-    label: "Evidence",
-    items: [{ href: "/monitoring", label: "Monitoring", icon: "monitoring" }],
-  },
+  // 22 Nov 2026: brands see only what concerns creators, the network and risk. Insights and Graph and scores are
+  // research views for the team: /research (not in this menu).
 ];
 
 function Icon({ name }: { name: string }) {
