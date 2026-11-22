@@ -132,9 +132,25 @@ main > *:nth-child(4) { animation-delay: 150ms; }
   stroke-dasharray: 6 5;
   animation: dash 900ms linear infinite;
 }
+/* Pipeline Live: a soft pulse on lit stages. */
+@keyframes pipe-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.pipe-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pipe-pulse 2.4s ease-in-out infinite;
+}
 @media (prefers-reduced-motion: reduce) {
   svg line {
     animation: none !important;
+  }
+  .pipe-glow {
+    animation: none;
+  }
+  .pipe-particle {
+    display: none;
   }
 }
 
