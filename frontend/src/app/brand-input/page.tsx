@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { postRecommendations } from "@/lib/api";
 
 // Field shape: BrandRecommendationRequest (src/types/index.ts), matching
-// Track C's backend/app/schemas.py. On submit, POSTs to /recommendations
-// and hands the response to /dashboard via sessionStorage (no shared state
-// layer needed for a single-hop flow).
+// Track C's backend/app/schemas.py. On submit, the request goes to /match
+// (Live Match) via sessionStorage; /match POSTs to /recommendations and hands
+// the response to /dashboard the same way.
 
 // Product categories to pick from. `value` is what is sent as product_category: plain keywords, because the backend matches each word against the
 // creator's profile text and the CLIP/BERT feature score embeds the same words. Avoid filler words such as "and" (they would match almost every profile).
@@ -41,26 +40,25 @@ export default function BrandInputPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  // 23 Nov 2026: the request is sent from /match (Live Match), which plays the real matching steps while the backend
+  // works and then saves the answer for /dashboard as before.
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
     try {
-      const response = await postRecommendations({
-        product_category: productCategory,
-        budget: Number(budget),
-        target_region: targetRegion || undefined,
-        target_demographic: targetDemographic || undefined,
-      });
-      sessionStorage.setItem("recommendationResult", JSON.stringify(response));
-      router.push("/dashboard");
-    } catch {
-      setError(
-        "Couldn't reach the recommendation API. Is the Track C backend running at " +
-          (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000") +
-          "?"
+      sessionStorage.setItem(
+        "liveMatchRequest",
+        JSON.stringify({
+          product_category: productCategory,
+          budget: Number(budget),
+          target_region: targetRegion || undefined,
+          target_demographic: targetDemographic || undefined,
+        }),
       );
-    } finally {
+      router.push("/match");
+    } catch {
+      setError("Couldn't start the match in this browser.");
       setIsSubmitting(false);
     }
   }
