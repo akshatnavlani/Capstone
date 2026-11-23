@@ -15,6 +15,10 @@ Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 c
   Simulator's default mode is Bonus reach with the MEASURED spillover (+10% tags, +32% small creators in joint videos). GAIL's
   weight in the score is still 0; `GAIL_WEIGHT_PROPOSAL_23NOV.md` + setting `FUSION_WEIGHT_GAIL_IN_VALUE` (default 0, OFF) for a
   team decision.
+- **GAIL graph is a 1 Nov snapshot (checked 23 Nov):** `models/gail_checkpoint.pt` holds 390 creators, 177 collaboration pairs and
+  1,478 co-occurrence pairs; the live graph (`/feature-store/edges/*`) has 462 collaboration and 708 co-occurrence pairs. So some
+  creators have a GAIL score but no live links (Gokul Bijuraj: 26 links in the checkpoint, 0 live) and some have live links but no
+  GAIL score (Saurabh Thapa). The Simulator's GAIL strip says so in one line. A GAIL retrain on today's graph would align them.
 - **Frontend for brands:** Live Match (`/match`, the brief now opens it), brand Analysis (5 insights from
   `scripts/export_brand_insights.py`; full S1-S10 moved to `/research/analysis`), friendlier New brief / Niche Map / Passport,
   no emoji (line icons). New read-only route `/platform-profiles/{id}/timeline` for the line charts.

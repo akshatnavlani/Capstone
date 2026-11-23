@@ -4,6 +4,7 @@ import { forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getCoOccurrenceEdges, getCollaborationEdges, getCreatorSummaries, postRecommendations } from "@/lib/api";
 import type { GraphEdge, InfluencerRecommendation } from "@/types";
+import Icon from "@/components/Icon";
 
 // Campaign Simulator (22 Nov 2026, idea 2 of 3 Nov). Part 1 (real): a portfolio of creators under budget, skipping
 // creators directly linked to one already chosen (overlapping audiences). Part 2 (real): their network neighbourhood from
@@ -490,6 +491,38 @@ export default function SimulatorPage() {
                 <span className="sim-hint-dot inline-block h-2 w-2 rounded-full bg-accent" /> {mode === "bonus" ? "Click a yellow creator to see their bonus reach" : "Click a yellow creator to start the what-if"}
               </p>
             )}
+            {mode === "bonus" && plan.chosen.length > 0 && (
+              <div className="mt-3 rounded-md border border-accent/30 bg-accent/5 p-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <Icon name="network" size={16} className="text-accent" />
+                  <span className="font-semibold text-zinc-100">GAIL network reach</span>
+                  <span className="text-zinc-400">our GAIL model reads the creator network and scores how far a sponsorship can spread from each creator</span>
+                </div>
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  GAIL learned from the network as it was on 1 Nov; the map below shows today&apos;s links, so for a few creators the two differ. Shown alongside the score, not part of it.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {plan.chosen
+                    .map((c) => ({ id: c.r.creator_id, name: c.r.name, top: gailTop(c.r) }))
+                    .sort((a, b) => (a.top ?? 101) - (b.top ?? 101))
+                    .map((c) =>
+                      c.top != null ? (
+                        <button
+                          key={c.id}
+                          onClick={() => startRipple(c.id)}
+                          className={`rounded-full border px-3 py-1 text-xs transition ${source === c.id ? "border-accent bg-accent text-background" : "border-accent/50 text-zinc-200 hover:bg-accent/15"}`}
+                        >
+                          {c.name} · <span className="font-mono font-semibold">{gailLabel(c.top)}</span>
+                        </button>
+                      ) : (
+                        <span key={c.id} className="rounded-full border border-line px-3 py-1 text-xs text-zinc-500">
+                          {c.name} · not scored by GAIL
+                        </span>
+                      ),
+                    )}
+                </div>
+              </div>
+            )}
             {graph && (
               <div className="relative mt-2">
                 <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label="Creator network around the portfolio" onMouseLeave={() => setHover(null)}>
@@ -620,6 +653,7 @@ export default function SimulatorPage() {
                     ) : (
                       <div className="mt-1 text-zinc-400">Connected creator, not in your portfolio</div>
                     )}
+                    {gailTop(hoverPick?.r) != null && <div className="mt-1 text-accent">GAIL network reach: {gailLabel(gailTop(hoverPick?.r) as number)}</div>}
                     {hoverLinkedTo.length > 0 && <div className="mt-1 text-zinc-400">Linked to: {hoverLinkedTo.join(", ")}</div>}
                     {risk && (risk.get(hoverNode.id) ?? 0) > 0 && (
                       <div className="mt-1 text-[#f2a27f]">Simulated risk on day {day}: {Math.round((risk.get(hoverNode.id) ?? 0) * 100)}%</div>
@@ -715,12 +749,31 @@ export default function SimulatorPage() {
   );
 }
 
+function GailTile({ top }: { top: number }) {
+  return (
+    <div className="rounded-md border border-accent/40 bg-accent/10 p-2">
+      <div className="font-mono text-xl font-semibold text-zinc-50">{top <= 50 ? `Top ${top}%` : "Local"}</div>
+      <div className="text-[11px] text-zinc-400">GAIL network reach among connected creators</div>
+    </div>
+  );
+}
+
+// GAIL network reach as "top X%" (score_breakdown.spillover_score is the percentile among graph-connected creators); null when
+// GAIL did not score the creator (no links: basis isolated/placeholder).
+function gailTop(r?: InfluencerRecommendation): number | null {
+  return r && (r.spillover_basis === "trained" || r.spillover_basis === "inferred") ? Math.max(1, Math.round(100 - 100 * r.score_breakdown.spillover_score)) : null;
+}
+// Shown to brands: "top X%" for the better-connected half, "local reach" below that (no bare low ranks).
+function gailLabel(top: number): string {
+  return top <= 50 ? `top ${top}%` : "local reach";
+}
+
 // Bonus reach panel (23 Nov 2026): measured spillover along the source's collaboration links, plus GAIL's network score.
 // Numbers: SPILLOVER_RESULTS_OVERALL_22NOV.md (tag +0.095 log, 7 days, 291 events; joint video small featured creators
 // +0.277 log, 14 days, 67 events). GAIL: score_breakdown.spillover_score (percentile among graph-connected creators).
 function BonusPanel({ source, ids, name, isSmall, pick, onClear }: { source: string; ids: string[]; name: (id: string) => string; isSmall: (id: string) => boolean; pick?: InfluencerRecommendation; onClear: () => void }) {
   const small = ids.filter(isSmall);
-  const gail = pick && (pick.spillover_basis === "trained" || pick.spillover_basis === "inferred") ? Math.max(1, Math.round(100 - 100 * pick.score_breakdown.spillover_score)) : null;
+  const gail = gailTop(pick);
   return (
     <div className="mt-3 rounded-md border border-signal/40 bg-background p-3 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -730,10 +783,17 @@ function BonusPanel({ source, ids, name, isSmall, pick, onClear }: { source: str
         </button>
       </div>
       {ids.length === 0 ? (
-        <p className="mt-1 text-zinc-400">No collaborations on record for this creator, so there is no measured bonus reach to show. Their own audience is the whole reach.</p>
+        <>
+          <p className="mt-1 text-zinc-400">No collaborations on today&apos;s map for this creator, so there is no measured bonus reach to show.</p>
+          {gail != null && (
+            <div className="mt-2 max-w-[14rem]">
+              <GailTile top={gail} />
+            </div>
+          )}
+        </>
       ) : (
         <>
-          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <div className="rounded-md bg-signal/10 p-2">
               <div className="font-mono text-xl font-semibold text-zinc-50">{ids.length}</div>
               <div className="text-[11px] text-zinc-400">collaborators who can gain</div>
@@ -746,6 +806,7 @@ function BonusPanel({ source, ids, name, isSmall, pick, onClear }: { source: str
               <div className="font-mono text-xl font-semibold text-zinc-50">{small.length}</div>
               <div className="text-[11px] text-zinc-400">are small (under 100k): about +32% if featured in a joint video</div>
             </div>
+            {gail != null && <GailTile top={gail} />}
           </div>
           <p className="mt-2 text-xs text-zinc-400">
             Collaborators: {ids.slice(0, 8).map(name).join(", ")}
@@ -753,7 +814,6 @@ function BonusPanel({ source, ids, name, isSmall, pick, onClear }: { source: str
           </p>
         </>
       )}
-      {gail != null && <p className="mt-1 text-xs text-zinc-400">GAIL network reach: top {gail}% of connected creators.</p>}
       <p className="mt-1 text-[11px] text-zinc-500">Average gains measured on real events; one campaign can do better or worse.</p>
     </div>
   );
