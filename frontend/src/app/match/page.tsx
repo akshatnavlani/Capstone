@@ -1233,8 +1233,8 @@ function GailLine({ r }: { r: InfluencerRecommendation }) {
       <Icon name="network" size={14} className="text-[#d55181]" />
       {gailScored(r) ? (
         <span>
-          Network reach (GAIL): <span className="font-semibold text-zinc-100">top {topPct(r.score_breakdown.spillover_score)}%</span> of connected creators · shown alongside, not
-          part of the score
+          Network reach (GAIL): <span className="font-semibold text-zinc-100">top {topPct(r.score_breakdown.spillover_score)}%</span> of connected creators ·{" "}
+          {r.score_breakdown.weight_spillover > 0 ? `counts for ${Math.round(100 * r.score_breakdown.weight_spillover)}% of the score` : "shown alongside, not part of the score"}
         </span>
       ) : r.spillover_basis === "isolated" ? (
         <span>Network reach (GAIL): independent creator, no collaborations on record</span>
@@ -1295,7 +1295,10 @@ function NetworkReach({ results }: { results: InfluencerRecommendation[] }) {
         </p>
       )}
       <p className="mt-2 text-[11px] text-zinc-500">
-        Shown alongside the ranking: GAIL&apos;s reach does not change the score yet. The two measured numbers come from our real-data spillover tests (7-day and 14-day windows).
+        {results.some((r) => r.score_breakdown.weight_spillover > 0)
+          ? `GAIL's reach counts for ${Math.round(100 * Math.max(...results.map((r) => r.score_breakdown.weight_spillover)))}% of the score for the creators it scored. `
+          : "Shown alongside the ranking: GAIL's reach does not change the score yet. "}
+        The two measured numbers come from our real-data spillover tests (7-day and 14-day windows).
       </p>
     </div>
   );

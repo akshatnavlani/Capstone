@@ -346,12 +346,16 @@ def get_recommendations(
             )
             # Final score = 0.4 value + 0.3 mood + 0.3 fit, -10 if mood < 0.3 (agreed 7 Nov 2026, app/fusion.py)
             b = rec.score_breakdown
+            # GAIL's weight here is 0 unless config.fusion_weight_gail_in_value is set (proposal of 23 Nov 2026, off by default);
+            # it applies only to creators GAIL actually scored (trained / inferred), never to the 0.5 placeholder.
+            gail = b.spillover_score if rec.spillover_basis in ("trained", "inferred") else None
+            g = settings.fusion_weight_gail_in_value if gail is not None else 0.0
             rec.final_score, rec.confidence_low, rec.confidence_high, _ = compute_value_score(
                 v["percentile"] / 100, b.sentiment_risk_score, b.creator_feature_score,
-                (rec.confidence_high - rec.confidence_low) / 2)
+                (rec.confidence_high - rec.confidence_low) / 2, gail, g)
             rec.score_breakdown = b.model_copy(update={
-                "value_score": v["percentile"] / 100, "weight_value": VALUE_WEIGHTS[0], "weight_spillover": 0.0,
-                "weight_sentiment_risk": VALUE_WEIGHTS[1], "weight_creator_feature": VALUE_WEIGHTS[2]})
+                "value_score": v["percentile"] / 100, "weight_value": VALUE_WEIGHTS[0] * (1 - g), "weight_spillover": g,
+                "weight_sentiment_risk": VALUE_WEIGHTS[1] * (1 - g), "weight_creator_feature": VALUE_WEIGHTS[2] * (1 - g)})
         return rec
 
     eligible: list[InfluencerRecommendation] = []

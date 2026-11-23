@@ -6,7 +6,20 @@ supersedes memory when they disagree — memory is a pointer, this is the record
 
 Last verified: **2026-09-24** (re-scope only, no live DB re-query — Review 1 closed state unchanged: 259/54/170 wired end-to-end, see §1 Review 1 closed. Team decision 2026-09-24: Review 2 = pipeline-complete per PendingWork 2026-09-20; Review 3 = improvements).
 
-**22 NOV 2026 (NEWEST) — STATUS FOR THE TEAM (Eesha, read this first).** All planned spillover tests are DONE; every
+**23 NOV 2026 (NEWEST) — ADDED SINCE 22 NOV.**
+- **Paper changes for Eesha:** `exports/paper_changes_for_eesha_23nov.pdf` (built by `scripts/build_paper_changes_pdf.py`): every
+  change to the 13 Nov paper (its "below 3%" / "return only from own audience" reading is out of date), ready-to-paste text, and 4
+  figures in `exports/paper_figures_23nov/`. Live counts 23 Nov: 660 creators, 4,294 events, 343,676 videos, 2,333,098 comments,
+  794,355 post snapshots.
+- **GAIL in the app:** Live Match shows a GAIL step, a Network reach (GAIL) chart and GAIL in each creator's details; the Campaign
+  Simulator's default mode is Bonus reach with the MEASURED spillover (+10% tags, +32% small creators in joint videos). GAIL's
+  weight in the score is still 0; `GAIL_WEIGHT_PROPOSAL_23NOV.md` + setting `FUSION_WEIGHT_GAIL_IN_VALUE` (default 0, OFF) for a
+  team decision.
+- **Frontend for brands:** Live Match (`/match`, the brief now opens it), brand Analysis (5 insights from
+  `scripts/export_brand_insights.py`; full S1-S10 moved to `/research/analysis`), friendlier New brief / Niche Map / Passport,
+  no emoji (line icons). New read-only route `/platform-profiles/{id}/timeline` for the line charts.
+
+**22 NOV 2026 — STATUS FOR THE TEAM (Eesha, read this first).** All planned spillover tests are DONE; every
 result is pushed. Where to look:
 - **All spillover results in one table:** `SPILLOVER_RESULTS_OVERALL_22NOV.md` (significant: tag +0.095 replicated, small-creator
   joint video +0.277, cross-platform Granger p 0.002, small linked creators after a bad moment +0.108; GAIL-R benchmark error

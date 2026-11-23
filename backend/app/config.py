@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     fusion_weight_spillover: float = 0.0
     fusion_weight_sentiment_risk: float = 0.5
     fusion_weight_creator_feature: float = 0.5
+    # 23 Nov 2026, PROPOSAL, OFF: weight of GAIL's network score inside the value score (app/fusion.py compute_value_score).
+    # 0 keeps the formula agreed on 7 Nov (0.4 value + 0.3 mood + 0.3 fit). 0.15 would give 0.34 / 0.255 / 0.255 + 0.15 GAIL, for
+    # creators GAIL scored. Set FUSION_WEIGHT_GAIL_IN_VALUE in .env only after Shimona and Eesha agree (GAIL_WEIGHT_PROPOSAL_23NOV.md).
+    fusion_weight_gail_in_value: float = 0.0
 
     api_title: str = "Capstone Fusion Backend"
     api_version: str = "0.1.0"

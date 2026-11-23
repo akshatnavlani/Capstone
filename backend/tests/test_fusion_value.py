@@ -10,3 +10,14 @@ def test_value_score_formula():
     final, _lo, _hi, adj = compute_value_score(0.5, 0.2, 0.6, 0.0)
     assert adj == -10.0 and final == pytest.approx(100 * (0.2 + 0.06 + 0.18) - 10)
     assert compute_value_score(0.0, 0.0, 0.0, 5.0)[0] == 0.0
+
+
+def test_gail_weight_switch():
+    # 23 Nov 2026 proposal: weight 0 (the default) or no GAIL score leaves the 7 Nov formula unchanged;
+    # weight g mixes in GAIL's network score as (1 - g) x old + g x GAIL.
+    from app.fusion import compute_value_score
+    old = compute_value_score(0.8, 0.7, 0.6, 10.0)
+    assert compute_value_score(0.8, 0.7, 0.6, 10.0, gail_score=0.9, gail_weight=0.0) == old
+    assert compute_value_score(0.8, 0.7, 0.6, 10.0, gail_score=None, gail_weight=0.15) == old
+    final = compute_value_score(0.8, 0.7, 0.6, 10.0, gail_score=0.9, gail_weight=0.15)[0]
+    assert final == pytest.approx(100 * (0.85 * (0.4 * 0.8 + 0.3 * 0.7 + 0.3 * 0.6) + 0.15 * 0.9))

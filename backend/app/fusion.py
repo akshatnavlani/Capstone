@@ -156,11 +156,17 @@ VALUE_WEIGHTS = (0.4, 0.3, 0.3)
 
 
 def compute_value_score(value_pct: float, sentiment_risk_score: float, creator_feature_score: float,
-                        old_margin: float) -> tuple[float, float, float, float]:
+                        old_margin: float, gail_score: float | None = None, gail_weight: float = 0.0) -> tuple[float, float, float, float]:
     """(final_score, confidence_low, confidence_high, risk_adjustment). The value percentile carries no stated
-    uncertainty, so the mood/fit margin is scaled by their combined weight (0.6)."""
+    uncertainty, so the mood/fit margin is scaled by their combined weight (0.6).
+
+    23 Nov 2026, proposal (OFF by default, config.fusion_weight_gail_in_value = 0): with gail_weight g > 0 and a GAIL
+    network score for the creator, final = 100 x ((1 - g) x (0.4 value + 0.3 mood + 0.3 fit) + g x GAIL). With g = 0, or
+    no GAIL score, the formula is exactly the agreed 7 Nov one."""
     wv, wm, wf = VALUE_WEIGHTS
+    g = gail_weight if gail_score is not None else 0.0
     risk_adjustment = -RISK_PENALTY_POINTS if sentiment_risk_score < RISK_THRESHOLD else 0.0
-    final = max(0.0, min(100.0, 100 * (wv * value_pct + wm * sentiment_risk_score + wf * creator_feature_score) + risk_adjustment))
-    margin = old_margin * (wm + wf)
+    base = wv * value_pct + wm * sentiment_risk_score + wf * creator_feature_score
+    final = max(0.0, min(100.0, 100 * ((1 - g) * base + g * (gail_score or 0.0)) + risk_adjustment))
+    margin = old_margin * (wm + wf) * (1 - g)
     return final, max(0.0, final - margin), min(100.0, final + margin), risk_adjustment
