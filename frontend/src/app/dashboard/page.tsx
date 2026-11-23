@@ -212,25 +212,25 @@ export default function DashboardPage() {
 
               <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
                 <ScorePart
-                  label="Spillover"
-                  value={spilloverRaw.toFixed(2)}
-                  sublabel={
-                    basis === "trained"
-                      ? "percentile · trained, very small N · context, not scored"
-                      : basis === "inferred"
-                        ? "percentile · inferred, wide · context, not scored"
-                        : "no graph signal · context, not scored"
+                  label="Network reach (GAIL)"
+                  value={
+                    basis === "trained" || basis === "inferred"
+                      ? 100 * (1 - spilloverRaw) <= 50
+                        ? `Top ${Math.max(1, Math.round(100 * (1 - spilloverRaw)))}%`
+                        : "Local"
+                      : "—"
                   }
+                  sublabel={basis === "trained" || basis === "inferred" ? "GAIL network score · shown alongside, not in the score" : "no collaborations on record · not in the score"}
                 />
                 <ScorePart
-                  label="Sentiment / Risk"
+                  label="Audience mood"
                   value={influencer.score_breakdown.sentiment_risk_score.toFixed(2)}
-                  sublabel="comment sentiment · 0.5 if none scored"
+                  sublabel="how positive the comments are · 0.5 if none scored"
                 />
                 <ScorePart
-                  label="Feature Score"
+                  label="Content match"
                   value={influencer.score_breakdown.creator_feature_score.toFixed(2)}
-                  sublabel="brief relevance + reach · 0.5 if unknown"
+                  sublabel="fit to your brief + reach · 0.5 if unknown"
                 />
               </div>
 

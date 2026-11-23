@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getPlatformProfile } from "@/lib/api";
 import type { PlatformProfile, PlatformSide, PlatformStatus } from "@/types";
+import PlatformTimelineChart from "@/components/PlatformTimelineChart";
 
 const STATUS_STYLE: Record<PlatformStatus, string> = {
   strong: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -10,6 +11,9 @@ const STATUS_STYLE: Record<PlatformStatus, string> = {
   weak: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
   unknown: "border border-zinc-300 text-zinc-500 dark:border-zinc-700",
 };
+
+// Brand-facing words; the backend's status values stay as they are.
+const STATUS_WORD: Record<PlatformStatus, string> = { strong: "strong", typical: "typical", weak: "lower", unknown: "unknown" };
 
 const num = (v: number | null, digits = 0) => (v == null ? "unknown" : v.toLocaleString(undefined, { maximumFractionDigits: digits }));
 const pct = (v: number | null) => (v == null ? "unknown" : `${(v * 100).toFixed(1)}%`);
@@ -21,8 +25,8 @@ function Side({ side }: { side: PlatformSide }) {
       <div className="flex items-center justify-between">
         <span className="font-medium">{youtube ? "YouTube" : "Instagram"}</span>
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLE[side.status]}`}>
-          {side.status === "unknown" ? "not enough data" : `${side.status} engagement`}
-          {side.percentile != null ? ` · top ${Math.round(100 - side.percentile)}%` : ""}
+          {side.status === "unknown" ? "not enough data" : `${STATUS_WORD[side.status]} engagement`}
+          {side.percentile != null && 100 - side.percentile <= 50 ? ` · top ${Math.max(1, Math.round(100 - side.percentile))}%` : ""}
         </span>
       </div>
       {!side.available ? (
@@ -46,18 +50,18 @@ function Side({ side }: { side: PlatformSide }) {
             <dd>{pct(side.engagement_rate)}</dd>
             <dt className="text-zinc-500">Posts, last 90 days</dt>
             <dd>{side.items_last_90_days}</dd>
-            <dt className="text-zinc-500">Counts known for</dt>
-            <dd>
-              {side.items_with_counts} of {side.items_total}
-            </dd>
-            <dt className="text-zinc-500">Sponsored vs usual</dt>
-            <dd>{side.sponsored_vs_usual == null ? "unknown" : `${side.sponsored_vs_usual.toFixed(2)}×`}</dd>
-            <dt className="text-zinc-500">First 24 hours</dt>
-            <dd>
-              {side.first_day
-                ? `${num(side.first_day.median_value_at_24h)} ${youtube ? "views" : "likes"} (${pct(side.first_day.median_share_of_current_total)} of today's total, ${side.first_day.items_with_a_first_day_reading} posts)`
-                : "unknown"}
-            </dd>
+            {side.sponsored_vs_usual != null && (
+              <>
+                <dt className="text-zinc-500">Sponsored vs usual</dt>
+                <dd>{`${side.sponsored_vs_usual.toFixed(2)}×`}</dd>
+              </>
+            )}
+            {side.first_day && side.first_day.median_value_at_24h != null && (
+              <>
+                <dt className="text-zinc-500">First 24 hours</dt>
+                <dd>{`${num(side.first_day.median_value_at_24h)} ${youtube ? "views" : "likes"} (${Math.round(100 * (side.first_day.median_share_of_current_total ?? 0))}% of all so far)`}</dd>
+              </>
+            )}
           </dl>
           {side.notes.map((n) => (
             <p key={n} className="mt-1 text-[11px] text-zinc-500">
@@ -122,6 +126,7 @@ export default function PlatformProfileCard({ creatorId }: { creatorId: string }
         <Side side={profile.youtube} />
         <Side side={profile.instagram} />
       </div>
+      <PlatformTimelineChart creatorId={profile.creator_id} />
       <p className="mt-1 text-[11px] text-zinc-500">
         Status compares engagement rate with the other creators we track on that platform. Numbers are medians of the latest posts; nothing is estimated where the data is missing.
       </p>
