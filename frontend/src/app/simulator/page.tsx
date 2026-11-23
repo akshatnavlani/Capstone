@@ -88,6 +88,9 @@ export default function SimulatorPage() {
   const [source, setSource] = useState<string | null>(null);
   const [day, setDay] = useState(0);
   const [playing, setPlaying] = useState(false);
+  // 23 Nov 2026: "bonus" shows the spillover we MEASURED on real data along collaboration links; "risk" is the controversy what-if.
+  const [mode, setMode] = useState<"bonus" | "risk">("bonus");
+  const [subs, setSubs] = useState<Map<string, number | null>>(new Map());
   const [pos, setPos] = useState<Map<string, { x: number; y: number }>>(new Map());
   const posRef = useRef(pos);
 
@@ -98,6 +101,11 @@ export default function SimulatorPage() {
     // Names for linked creators outside the portfolio; the light summary endpoint (under 1 s), not required to plan.
     getCreatorSummaries()
       .then((creators) => setNames(new Map(creators.map((c) => [c.creator_id, c.name]))))
+      .catch(() => {});
+    // Subscriber counts (to mark small creators, under 100k) from the Niche Map data.
+    fetch("/niche_map.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { points: { creator_id: string; subscribers: number | null }[] }) => setSubs(new Map(d.points.map((q) => [q.creator_id, q.subscribers]))))
       .catch(() => {});
   }, []);
 
@@ -201,7 +209,17 @@ export default function SimulatorPage() {
     };
   }, [graph]);
 
-  const days = useMemo(() => (source && graph ? ripple(source, graph.links) : null), [source, graph]);
+  const days = useMemo(() => (mode === "risk" && source && graph ? ripple(source, graph.links) : null), [mode, source, graph]);
+  // Bonus reach: the source's direct collaborators (collaboration links only; co-appearance has no measured lift).
+  const bonus = useMemo(() => {
+    if (mode !== "bonus" || !source || !graph) return null;
+    const ids = graph.links.filter((l) => l.kind === "collab" && (l.a === source || l.b === source)).map((l) => (l.a === source ? l.b : l.a));
+    return new Set(ids);
+  }, [mode, source, graph]);
+  const isSmall = (id: string) => {
+    const n = subs.get(id);
+    return n != null && n < 100000;
+  };
   const risk = days?.[day] ?? null;
   const prevRisk = days && day > 0 ? days[day - 1] : null;
 
@@ -215,7 +233,14 @@ export default function SimulatorPage() {
   function startRipple(id: string) {
     setSource(id);
     setDay(0);
-    setPlaying(true);
+    setPlaying(mode === "risk");
+  }
+
+  function switchMode(m: "bonus" | "risk") {
+    setMode(m);
+    setSource(null);
+    setPlaying(false);
+    setDay(0);
   }
 
   function removeCreator(id: string) {
@@ -360,7 +385,7 @@ export default function SimulatorPage() {
                       style={{ animationDelay: `${i * 110}ms` }}
                     >
                       <td className="py-1.5 text-zinc-100">
-                        <button onClick={() => startRipple(c.r.creator_id)} className="text-left hover:text-accent" title="Play out a controversy for this creator">
+                        <button onClick={() => startRipple(c.r.creator_id)} className="text-left hover:text-accent" title={mode === "bonus" ? "See this creator's bonus reach" : "Play out a controversy for this creator"}>
                           {c.r.name}
                         </button>
                       </td>
@@ -430,17 +455,39 @@ export default function SimulatorPage() {
           <div className="rounded-xl border border-line bg-panel p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-zinc-100">Network around your portfolio</h2>
-              <span className="rounded-full border border-accent/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent">
-                What-if · simulated
+              <span
+                className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${mode === "bonus" ? "border-signal/50 text-signal" : "border-accent/50 text-accent"}`}
+              >
+                {mode === "bonus" ? "Measured · real data" : "What-if · simulated"}
               </span>
             </div>
-            <p className="mt-1 text-xs text-zinc-500">
-              Click a creator to play out a controversy: risk spreads along links day by day (assumed rates: {PASS.collab * 100}% per day
-              along a collaboration, {PASS.cooc * 100}% along a co-appearance).
+            <div className="mt-2 inline-flex rounded-full border border-line p-0.5 text-xs">
+              {(["bonus", "risk"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => switchMode(m)}
+                  className={`rounded-full px-3 py-1 transition-colors ${mode === m ? (m === "bonus" ? "bg-signal text-background" : "bg-accent text-background") : "text-zinc-400 hover:text-zinc-100"}`}
+                >
+                  {m === "bonus" ? "Bonus reach (measured)" : "Controversy risk (what-if)"}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              {mode === "bonus" ? (
+                <>
+                  Click a creator: their collaborators light up with the spillover we measured on real data. A tagged creator gained about +10% engagement in
+                  the next week; a small creator (under 100k) featured in a joint video gained about +32% over two weeks.
+                </>
+              ) : (
+                <>
+                  Click a creator to play out a controversy: risk spreads along links day by day (assumed rates: {PASS.collab * 100}% per day along a
+                  collaboration, {PASS.cooc * 100}% along a co-appearance).
+                </>
+              )}
             </p>
             {!source && plan.chosen.length > 0 && (
               <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-line px-3 py-1 text-xs text-zinc-300">
-                <span className="sim-hint-dot inline-block h-2 w-2 rounded-full bg-accent" /> Click a yellow creator to start the what-if
+                <span className="sim-hint-dot inline-block h-2 w-2 rounded-full bg-accent" /> {mode === "bonus" ? "Click a yellow creator to see their bonus reach" : "Click a yellow creator to start the what-if"}
               </p>
             )}
             {graph && (
@@ -451,6 +498,7 @@ export default function SimulatorPage() {
                     if (!p || !q) return null;
                     const lit = hover && (l.a === hover || l.b === hover);
                     const hot = risk && (risk.get(l.a) ?? 0) > 0 && (risk.get(l.b) ?? 0) > 0;
+                    const gain = bonus && l.kind === "collab" && ((l.a === source && bonus.has(l.b)) || (l.b === source && bonus.has(l.a)));
                     return (
                       <line
                         key={`${l.a}|${l.b}`}
@@ -458,10 +506,11 @@ export default function SimulatorPage() {
                         y1={p.y}
                         x2={q.x}
                         y2={q.y}
-                        stroke={hot ? "#d95926" : lit ? "var(--accent)" : l.kind === "collab" ? "#8497aa" : "#2e3c4a"}
-                        strokeWidth={lit || hot ? 2 : l.kind === "collab" ? 1.5 : 1}
-                        strokeOpacity={hover && !lit ? 0.15 : hot ? 0.8 : 1}
-                        className="transition-[stroke,stroke-opacity] duration-300"
+                        stroke={gain ? "#35d6c0" : hot ? "#d95926" : lit ? "var(--accent)" : l.kind === "collab" ? "#8497aa" : "#2e3c4a"}
+                        strokeWidth={gain ? 2.5 : lit || hot ? 2 : l.kind === "collab" ? 1.5 : 1}
+                        strokeOpacity={hover && !lit ? 0.15 : hot || gain ? 0.85 : 1}
+                        strokeDasharray={gain ? "6 5" : undefined}
+                        className={gain ? "pipe-flow" : "transition-[stroke,stroke-opacity] duration-300"}
                       />
                     );
                   })}
@@ -482,6 +531,7 @@ export default function SimulatorPage() {
                     const p = pos.get(n.id);
                     if (!p) return null;
                     const r = risk?.get(n.id) ?? 0;
+                    const g = bonus?.has(n.id) ?? false;
                     const dim = near && !near.has(n.id);
                     return (
                       <g
@@ -490,13 +540,15 @@ export default function SimulatorPage() {
                         onMouseEnter={() => setHover(n.id)}
                         style={{ cursor: "pointer", opacity: dim ? 0.25 : 1, transition: "opacity 250ms" }}
                       >
-                        {n.id === source && playing && <circle cx={p.x} cy={p.y} r={10} fill="none" stroke="#d95926" strokeWidth={2} className="sim-ping" />}
+                        {n.id === source && (playing || mode === "bonus") && (
+                          <circle cx={p.x} cy={p.y} r={10} fill="none" stroke={mode === "bonus" ? "#35d6c0" : "#d95926"} strokeWidth={2} className="sim-ping" />
+                        )}
                         <circle cx={p.x} cy={p.y} r={16} fill="transparent" />
                         <circle
                           cx={p.x}
                           cy={p.y}
                           r={(n.chosen ? 9 : 6) + (hover === n.id ? 3 : 0)}
-                          fill={r > 0 ? "#d95926" : n.chosen ? "var(--accent)" : "#4a5b6d"}
+                          fill={g ? "#35d6c0" : r > 0 ? "#d95926" : n.chosen ? "var(--accent)" : "#4a5b6d"}
                           fillOpacity={r > 0 ? 0.3 + 0.7 * r : 1}
                           stroke={n.id === source ? "#f2f6fa" : "var(--panel)"}
                           strokeWidth={2}
@@ -514,6 +566,23 @@ export default function SimulatorPage() {
                             style={{ pointerEvents: "none" }}
                           >
                             {n.name}
+                          </text>
+                        )}
+                        {g && (
+                          <text
+                            x={p.x}
+                            y={p.y - (n.chosen ? 15 : 11)}
+                            textAnchor="middle"
+                            fontSize="11"
+                            fontWeight={600}
+                            fill="#35d6c0"
+                            stroke="var(--panel)"
+                            strokeWidth={3}
+                            paintOrder="stroke"
+                            className="sim-pop"
+                            style={{ pointerEvents: "none" }}
+                          >
+                            {isSmall(n.id) ? "+10 to 32%" : "+10%"}
                           </text>
                         )}
                         {r > 0 && n.id !== source && (
@@ -555,7 +624,12 @@ export default function SimulatorPage() {
                     {risk && (risk.get(hoverNode.id) ?? 0) > 0 && (
                       <div className="mt-1 text-[#f2a27f]">Simulated risk on day {day}: {Math.round((risk.get(hoverNode.id) ?? 0) * 100)}%</div>
                     )}
-                    <div className="mt-1 text-zinc-500">Click to play out a controversy here</div>
+                    {bonus?.has(hoverNode.id) && (
+                      <div className="mt-1 text-signal">
+                        Measured gain from a collaboration: about +10% if tagged{isSmall(hoverNode.id) ? ", about +32% if featured in a joint video (small creator)" : ""}
+                      </div>
+                    )}
+                    <div className="mt-1 text-zinc-500">{mode === "bonus" ? "Click to see bonus reach here" : "Click to play out a controversy here"}</div>
                   </div>
                 )}
               </div>
@@ -567,16 +641,23 @@ export default function SimulatorPage() {
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "#4a5b6d" }} /> connected creator
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "#d95926" }} /> simulated risk (darker = more)
-              </span>
+              {mode === "bonus" ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "#35d6c0" }} /> gains from a collaboration (measured)
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "#d95926" }} /> simulated risk (darker = more)
+                </span>
+              )}
               {plan.chosen.length > 0 && (
                 <span className="text-zinc-500">
                   {standalone} of {plan.chosen.length} portfolio creators stand alone: a problem at one stays with that creator.
                 </span>
               )}
             </div>
-            {source && (
+            {source && mode === "bonus" && bonus && <BonusPanel source={source} ids={[...bonus]} name={(id) => graph?.nodes.find((x) => x.id === id)?.name ?? "creator"} isSmall={isSmall} pick={plan.chosen.find((c) => c.r.creator_id === source)?.r} onClear={() => setSource(null)} />}
+            {source && mode === "risk" && (
               <div className="mt-3 rounded-md border border-line bg-background p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="mr-1 text-xs text-zinc-400">Day</span>
@@ -627,9 +708,53 @@ export default function SimulatorPage() {
       )}
 
       <p className="text-xs text-zinc-500">
-        The portfolio and the network are real data. The spread is a what-if with assumed rates, not a prediction: our real-data
+        The portfolio and the network are real data. Bonus reach uses the spillover measured on real data (tags: 291 events; joint videos with small creators: 67 events). The controversy spread is a what-if with assumed rates, not a prediction: our real-data
         test of 368 bad audience moments across 2,549 creator pairs found no measurable harm to linked creators.
       </p>
     </main>
+  );
+}
+
+// Bonus reach panel (23 Nov 2026): measured spillover along the source's collaboration links, plus GAIL's network score.
+// Numbers: SPILLOVER_RESULTS_OVERALL_22NOV.md (tag +0.095 log, 7 days, 291 events; joint video small featured creators
+// +0.277 log, 14 days, 67 events). GAIL: score_breakdown.spillover_score (percentile among graph-connected creators).
+function BonusPanel({ source, ids, name, isSmall, pick, onClear }: { source: string; ids: string[]; name: (id: string) => string; isSmall: (id: string) => boolean; pick?: InfluencerRecommendation; onClear: () => void }) {
+  const small = ids.filter(isSmall);
+  const gail = pick && (pick.spillover_basis === "trained" || pick.spillover_basis === "inferred") ? Math.max(1, Math.round(100 - 100 * pick.score_breakdown.spillover_score)) : null;
+  return (
+    <div className="mt-3 rounded-md border border-signal/40 bg-background p-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-medium text-zinc-100">Bonus reach of {name(source)}</span>
+        <button onClick={onClear} className="rounded-md px-2 py-1 text-xs text-zinc-500 hover:text-zinc-200">
+          Clear
+        </button>
+      </div>
+      {ids.length === 0 ? (
+        <p className="mt-1 text-zinc-400">No collaborations on record for this creator, so there is no measured bonus reach to show. Their own audience is the whole reach.</p>
+      ) : (
+        <>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-md bg-signal/10 p-2">
+              <div className="font-mono text-xl font-semibold text-zinc-50">{ids.length}</div>
+              <div className="text-[11px] text-zinc-400">collaborators who can gain</div>
+            </div>
+            <div className="rounded-md bg-signal/10 p-2">
+              <div className="font-mono text-xl font-semibold text-zinc-50">+10%</div>
+              <div className="text-[11px] text-zinc-400">engagement for a tagged creator, next 7 days</div>
+            </div>
+            <div className="rounded-md bg-signal/10 p-2">
+              <div className="font-mono text-xl font-semibold text-zinc-50">{small.length}</div>
+              <div className="text-[11px] text-zinc-400">are small (under 100k): about +32% if featured in a joint video</div>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-zinc-400">
+            Collaborators: {ids.slice(0, 8).map(name).join(", ")}
+            {ids.length > 8 ? ` and ${ids.length - 8} more` : ""}.
+          </p>
+        </>
+      )}
+      {gail != null && <p className="mt-1 text-xs text-zinc-400">GAIL network reach: top {gail}% of connected creators.</p>}
+      <p className="mt-1 text-[11px] text-zinc-500">Average gains measured on real events; one campaign can do better or worse.</p>
+    </div>
   );
 }
