@@ -23,6 +23,7 @@ Labels: **Significant** = the whole 95% interval is above 0 (and the placebo che
 |---|---|
 | Tag -> tagged creator, older period 2022-24 (654 events) | +0.050 [-0.006, +0.107] |
 | Tag -> tagged creator, first run (116 events) | +0.040 [-0.086, +0.152] |
+| Tag -> tagged creator, re-test on 144 never-tested events (23 Nov, 98 counted) | +0.037 [-0.091, +0.160] |
 | Joint video -> all featured creators (9 Nov) | +0.033 [-0.07, +0.13] |
 | Joint video -> all featured creators, older period | +0.025 [-0.035, +0.090] |
 | Between creators (Granger, 238 tag pairs): linked vs random times | p = 0.002; linked vs random pairs p = 0.054 |

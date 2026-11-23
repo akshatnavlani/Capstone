@@ -1,0 +1,20 @@
+{
+ "plan": "TAG_ENGAGEMENT_REREPLICATION_PLAN_23NOV.md",
+ "events_never_tested": 144,
+ "tagged_creators": 56,
+ "effect": {
+  "mean": 0.03661586309476268,
+  "lo": -0.0913351801600689,
+  "hi": 0.16019093220749372,
+  "n": 98,
+  "pairs": 43
+ },
+ "placebo": {
+  "mean": -0.023145308716551537,
+  "lo": -0.16597724942222566,
+  "hi": 0.10709080303868987,
+  "n": 462,
+  "pairs": 56
+ },
+ "verdict": "NOT detected"
+}

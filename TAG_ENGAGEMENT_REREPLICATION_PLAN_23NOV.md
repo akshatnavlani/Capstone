@@ -26,3 +26,10 @@ same way (seed 1, at least 30 days from any known tag of that creator, using all
   A non-detection therefore mostly reflects the small sample; a detection would be a genuine replication.
 - Whatever the result, it is reported next to the earlier four (first run +0.040, 9 Nov +0.095, older period +0.050,
   new pairs -0.115), and the app and paper wording follow the full set, not this run alone.
+
+## Result (run once, 23 Nov 2026 ~21:00; models/tag_rereplication_results_23nov.json)
+- 144 events, 98 counted (43 pairs): effect **+0.037 [-0.091, +0.160]** (about +3.7%, range -8.7% to +17.4%).
+  Placebo -0.023 [-0.166, +0.107] (includes 0). **NOT detected.**
+- Reading: positive, not significant, as the stated power (about 20-30%) made likely. The 9 Nov estimate (+0.095) lies
+  inside this interval, so it neither confirms nor contradicts it. Tag result across five event sets: first run +0.040,
+  9 Nov +0.095 (DETECTED), older period +0.050, new pairs -0.115, this re-test +0.037: detected once, not replicated.
