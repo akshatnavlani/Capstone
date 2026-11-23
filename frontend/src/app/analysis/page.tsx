@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Avatar from "@/components/Avatar";
+import Icon from "@/components/Icon";
 import type { BrandRecommendationResponse, InfluencerRecommendation } from "@/types";
 
 // Analysis for brands (23 Nov 2026): only the findings a brand can act on, as pictures. Numbers come from
@@ -79,8 +80,8 @@ function Section({ n, icon, title, children }: { n: number; icon: string; title:
   return (
     <section ref={ref} className={`rounded-2xl border border-line bg-panel p-5 transition-all duration-700 sm:p-6 ${seen ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}>
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-accent-soft text-xl" aria-hidden>
-          {icon}
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-accent-soft text-accent" aria-hidden>
+          <Icon name={icon} size={20} />
         </span>
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-signal">Insight {n}</div>
@@ -95,7 +96,7 @@ function Section({ n, icon, title, children }: { n: number; icon: string; title:
 function Takeaway({ children }: { children: React.ReactNode }) {
   return (
     <p className="mt-4 flex gap-2 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-zinc-100">
-      <span aria-hidden>💡</span>
+      <Icon name="bulb" size={18} className="mt-0.5 shrink-0 text-accent" />
       <span>{children}</span>
     </p>
   );
@@ -150,9 +151,9 @@ function CrossPlatform({ d, seen }: { d: Insights["cross_platform"]; seen: boole
             <g key={k} className="lm-photo" style={{ animationDelay: `${600 + k * 350}ms`, transformBox: "fill-box", transformOrigin: "center" }}>
               <rect x={dayX(k) - 22} y={56} width={44} height={26} rx={8} fill="#f2f6fa" />
               <path d={`M ${dayX(k) - 4} 82 l 4 8 l 4 -8 z`} fill="#f2f6fa" />
-              <text x={dayX(k)} y={74} textAnchor="middle" fontSize="13">
-                💬
-              </text>
+              <g style={{ color: "#0b131a" }}>
+                <Icon name="chat" x={dayX(k) - 8} y={61} size={16} />
+              </g>
             </g>
           ))}
         <g>
@@ -294,8 +295,8 @@ function Promotion({ d, seen }: { d: Insights["promotion"]; seen: boolean }) {
               {i === 1 && seen && (
                 <>
                   {[0, 1, 2].map((k) => (
-                    <span key={k} className="an-float absolute text-lg" style={{ left: `${20 + k * 25}%`, bottom: barH(b.x), animationDelay: `${1.2 + k * 0.7}s` }} aria-hidden>
-                      🛒
+                    <span key={k} className="an-float absolute text-accent" style={{ left: `${20 + k * 25}%`, bottom: barH(b.x), animationDelay: `${1.2 + k * 0.7}s` }} aria-hidden>
+                      <Icon name="cart" size={18} />
                     </span>
                   ))}
                 </>
@@ -538,19 +539,19 @@ export default function AnalysisPage() {
       {failed && <p className="text-sm text-red-400">Couldn&apos;t load the insights (/brand_insights.json).</p>}
       {d && (
         <>
-          <Section n={1} icon="🔁" title="Post on Instagram, YouTube wakes up">
+          <Section n={1} icon="repeat" title="Post on Instagram, YouTube wakes up">
             {(seen) => <CrossPlatform d={d.cross_platform} seen={seen} />}
           </Section>
-          <Section n={2} icon="📱" title="Where is each creator stronger?">
+          <Section n={2} icon="phone" title="Where is each creator stronger?">
             {(seen) => <StrongerPlatform d={d.stronger_platform} seen={seen} />}
           </Section>
-          <Section n={3} icon="🛒" title="Do sponsored posts spark buying interest?">
+          <Section n={3} icon="cart" title="Do sponsored posts spark buying interest?">
             {(seen) => <Promotion d={d.promotion} seen={seen} />}
           </Section>
-          <Section n={4} icon="📉" title="Does posting lots of ads hurt views?">
+          <Section n={4} icon="trend" title="Does posting lots of ads hurt views?">
             {(seen) => <AdLoad d={d.ad_load} seen={seen} />}
           </Section>
-          <Section n={5} icon="🎚" title="What matters most to you?">
+          <Section n={5} icon="sliders" title="What matters most to you?">
             {(seen) => <Rerank seen={seen} />}
           </Section>
         </>

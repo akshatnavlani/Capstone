@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Avatar from "@/components/Avatar";
-import { getCoOccurrenceEdges, getCollaborationEdges, getPlatformProfile, postRecommendations } from "@/lib/api";
+import Icon from "@/components/Icon";
+import { getCoOccurrenceEdges, getCollaborationEdges, getPlatformProfile, getTimeline, postRecommendations, type CreatorTimeline } from "@/lib/api";
 import type { BrandRecommendationRequest, BrandRecommendationResponse, InfluencerRecommendation, PlatformProfile } from "@/types";
 
 // Live Match (23 Nov 2026): what a brand sees between pressing "Get Recommendations" and the ranking. The backend takes
@@ -148,8 +149,8 @@ export default function LiveMatchPage() {
   const STAGES = [
     { title: "Reading your brief", sub: "AI turns your product words into numbers" },
     { title: "Scanning the creator market", sub: `${points?.length ?? "…"} creators, placed by what their content looks and sounds like` },
-    { title: "Mapping who works with whom", sub: `${mapEdges.length.toLocaleString()} real collaborations and co-appearances` },
-    { title: "Scoring every creator", sub: result ? "Done" : `Content match, audience mood, value for money · ${elapsed}s` },
+    { title: "GAIL reads the creator network", sub: `${mapEdges.length.toLocaleString()} real collaborations and co-appearances; GAIL scores how far each creator's sponsorship can spread` },
+    { title: "Scoring every creator", sub: result ? "Done" : `Content match (CLIP + BERT), audience mood, value for money, GAIL network reach · ${elapsed}s` },
     { title: "Finding your matches", sub: result ? `${results.length} creators fit your product and budget` : "" },
     { title: "Listening to their audiences", sub: "Warmer colour = more positive comments" },
     { title: "Your top creators", sub: top.length ? `${top.length} best picks` : "" },
@@ -574,6 +575,7 @@ function RankedList({ results }: { results: InfluencerRecommendation[] }) {
                       <div className="mt-1 text-[11px] text-zinc-400">{p.neutral ? "Little data yet, so counted as average" : partWords(p.key, p.score, r.value?.platform)}</div>
                     </div>
                   ))}
+                  <GailLine r={r} />
                   {penalty && <div className="text-[11px] text-red-300 sm:col-span-3">10 points taken off: some audience comments are negative.</div>}
                   <div className="flex items-center gap-3 sm:col-span-3">
                     <span className="text-xs text-zinc-400">{strongest(r)}</span>
@@ -621,8 +623,8 @@ function useCountUp(target: number, ms = 900) {
 function Tile({ icon, big, small, delay, children }: { icon: string; big: string; small: string; delay: number; children?: React.ReactNode }) {
   return (
     <div className="lm-rise flex flex-col gap-1 rounded-xl border border-line bg-panel p-4" style={{ animationDelay: `${delay}ms` }}>
-      <span className="text-lg" aria-hidden>
-        {icon}
+      <span className="text-accent" aria-hidden>
+        <Icon name={icon} size={20} />
       </span>
       <span className="font-mono text-2xl font-semibold text-zinc-50">{big}</span>
       <span className="text-xs text-zinc-400">{small}</span>
@@ -642,21 +644,21 @@ function Glance({ results, budget, top }: { results: InfluencerRecommendation[];
   const mood = useCountUp(avgMood ?? 0);
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Tile icon="🎯" big={`${Math.round(n)}`} small="creators fit your product and budget" delay={0} />
+      <Tile icon="target" big={`${Math.round(n)}`} small="creators fit your product and budget" delay={0} />
       {topCost != null && (
-        <Tile icon="💰" big={inr(cost)} small={`your top 3, one post each (${Math.round((100 * topCost) / budget)}% of your budget)`} delay={80}>
+        <Tile icon="wallet" big={inr(cost)} small={`your top 3, one post each (${Math.round((100 * topCost) / budget)}% of your budget)`} delay={80}>
           <span className="mt-1 h-1.5 overflow-hidden rounded-full bg-line">
             <span className="lm-grow block h-full rounded-full bg-accent" style={{ width: `${Math.min(100, (100 * topCost) / budget)}%` }} />
           </span>
         </Tile>
       )}
-      <Tile icon="📺" big={`${yt} · ${ig}`} small="best value on YouTube · on Instagram" delay={160}>
+      <Tile icon="screen" big={`${yt} · ${ig}`} small="best value on YouTube · on Instagram" delay={160}>
         <span className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-line">
           <span className="lm-grow h-full" style={{ width: `${(100 * yt) / Math.max(1, yt + ig)}%`, background: YT }} />
           <span className="lm-grow h-full" style={{ width: `${(100 * ig) / Math.max(1, yt + ig)}%`, background: IG }} />
         </span>
       </Tile>
-      {avgMood != null && <Tile icon="😊" big={`${Math.round(mood)}/100`} small="average audience mood of your matches" delay={240} />}
+      {avgMood != null && <Tile icon="smile" big={`${Math.round(mood)}/100`} small="average audience mood of your matches" delay={240} />}
     </div>
   );
 }
@@ -688,6 +690,8 @@ function Charts({ results }: { results: InfluencerRecommendation[] }) {
         <PlatformChart results={results} profiles={profiles} />
         <ValueChart results={results} />
       </div>
+      <NetworkReach results={results} />
+      <PerformanceChart top={[...results].sort((a, b) => b.final_score - a.final_score).slice(0, 3)} />
       <Explorer results={results} profiles={profiles} />
     </>
   );
@@ -968,6 +972,13 @@ const METRICS: Metric[] = [
     domain: [0, 100],
   },
   {
+    key: "network",
+    label: "Network reach (GAIL)",
+    get: (r) => (r.spillover_basis === "trained" || r.spillover_basis === "inferred" ? 100 * r.score_breakdown.spillover_score : null),
+    fmt: pct100,
+    domain: [0, 100],
+  },
+  {
     key: "ig",
     label: "Instagram engagement",
     get: (_r, p) => (p?.instagram.available && p.instagram.percentile != null ? p.instagram.percentile : null),
@@ -981,6 +992,7 @@ const QUESTIONS = [
   { q: "Bigger audience, happier audience?", x: "audience", y: "mood" },
   { q: "Better content match, better score?", x: "fit", y: "score" },
   { q: "YouTube vs Instagram engagement", x: "yt", y: "ig" },
+  { q: "Network reach (GAIL) vs overall score", x: "network", y: "score" },
 ];
 
 function ticksFor(lo: number, hi: number, log?: boolean) {
@@ -1202,6 +1214,269 @@ function Explorer({ results, profiles }: { results: InfluencerRecommendation[]; 
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+// ---- GAIL in the report (23 Nov 2026) ----
+// score_breakdown.spillover_score is GAIL's output (backend/app/spillover.py: the creator's percentile among
+// graph-connected creators). With a price estimate the final score gives it weight 0 (agreed 7 Nov 2026), so it is shown
+// alongside the ranking, never folded into it here. Measured spillover (SPILLOVER_RESULTS_OVERALL_22NOV.md): a tagged
+// creator's engagement +0.095 log (about +10%, 7 days, 291 events); small featured creators in joint videos +0.277 log
+// (about +32%, 14 days).
+const gailScored = (r: InfluencerRecommendation) => r.spillover_basis === "trained" || r.spillover_basis === "inferred";
+const topPct = (s: number) => Math.max(1, Math.round(100 - 100 * s));
+
+function GailLine({ r }: { r: InfluencerRecommendation }) {
+  return (
+    <div className="flex items-center gap-2 text-[11px] text-zinc-400 sm:col-span-3">
+      <Icon name="network" size={14} className="text-[#d55181]" />
+      {gailScored(r) ? (
+        <span>
+          Network reach (GAIL): <span className="font-semibold text-zinc-100">top {topPct(r.score_breakdown.spillover_score)}%</span> of connected creators · shown alongside, not
+          part of the score
+        </span>
+      ) : r.spillover_basis === "isolated" ? (
+        <span>Network reach (GAIL): independent creator, no collaborations on record</span>
+      ) : (
+        <span>Network reach (GAIL): not scored yet</span>
+      )}
+    </div>
+  );
+}
+
+function NetworkReach({ results }: { results: InfluencerRecommendation[] }) {
+  const scored = [...results].filter(gailScored).sort((a, b) => b.score_breakdown.spillover_score - a.score_breakdown.spillover_score);
+  const solo = results.filter((r) => r.spillover_basis === "isolated");
+  const pending = results.filter((r) => !gailScored(r) && r.spillover_basis !== "isolated");
+  return (
+    <div className="rounded-xl border border-line bg-panel p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="flex items-center gap-2 text-base font-semibold text-zinc-100">
+            <Icon name="network" size={18} className="text-[#d55181]" /> Network reach (GAIL)
+          </h3>
+          <p className="mt-0.5 max-w-2xl text-xs text-zinc-500">
+            Our GAIL model reads who works with whom and scores how well placed each creator is for a sponsorship to spread to the creators they collaborate with.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-lg border border-[#d55181]/40 bg-[#d55181]/10 px-3 py-1.5 text-xs text-zinc-200">
+            Measured: tagged collaborators <span className="font-semibold text-zinc-50">+10%</span> engagement
+          </span>
+          <span className="rounded-lg border border-[#d55181]/40 bg-[#d55181]/10 px-3 py-1.5 text-xs text-zinc-200">
+            Small creators in joint videos <span className="font-semibold text-zinc-50">+32%</span>
+          </span>
+        </div>
+      </div>
+      {scored.length > 0 ? (
+        <div className="mt-4 flex flex-col gap-2">
+          {scored.map((r, i) => (
+            <div key={r.creator_id} className="lm-row grid grid-cols-[28px_minmax(0,180px)_1fr_64px] items-center gap-3" style={{ animationDelay: `${i * 60}ms` }}>
+              <Avatar creatorId={r.creator_id} name={r.name} size={28} />
+              <span className="truncate text-sm text-zinc-200">{r.name}</span>
+              <span className="h-3 overflow-hidden rounded-full bg-line">
+                <span
+                  className="lm-grow block h-full rounded-full"
+                  style={{ width: `${100 * r.score_breakdown.spillover_score}%`, background: "linear-gradient(90deg, #8e3a63, #d55181)", animationDelay: `${150 + i * 60}ms` }}
+                />
+              </span>
+              <span className="text-right font-mono text-xs text-zinc-100">top {topPct(r.score_breakdown.spillover_score)}%</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-zinc-500">None of these creators has collaborations on record yet.</p>
+      )}
+      {(solo.length > 0 || pending.length > 0) && (
+        <p className="mt-3 text-[11px] text-zinc-500">
+          {solo.length > 0 && `${solo.length} independent creator${solo.length > 1 ? "s" : ""} with no collaborations on record. `}
+          {pending.length > 0 && `${pending.length} not scored yet.`}
+        </p>
+      )}
+      <p className="mt-2 text-[11px] text-zinc-500">
+        Shown alongside the ranking: GAIL&apos;s reach does not change the score yet. The two measured numbers come from our real-data spillover tests (7-day and 14-day windows).
+      </p>
+    </div>
+  );
+}
+
+// ---- Recent performance: a zig-zag line per creator (23 Nov 2026) ----
+// Real counts from /platform-profiles/{id}/timeline, each post divided by that creator's own median, so creators of very
+// different sizes share one axis (100% = their usual). Log scale, because single posts can run several times the usual.
+const LINE = ["#f5b83d", "#35d6c0", "#d55181"];
+
+function PerformanceChart({ top }: { top: InfluencerRecommendation[] }) {
+  const [tl, setTl] = useState<Record<string, CreatorTimeline> | null>(null);
+  const [platform, setPlatform] = useState<"youtube" | "instagram">("youtube");
+  const [off, setOff] = useState<Set<string>>(new Set());
+  const [hover, setHover] = useState<{ id: string; i: number } | null>(null);
+  const ids = top.map((r) => r.creator_id).join(",");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const m: Record<string, CreatorTimeline> = {};
+      for (const id of ids.split(",").filter(Boolean)) {
+        try {
+          m[id] = await getTimeline(id);
+        } catch {
+          // a creator without a timeline simply has no line
+        }
+        if (cancelled) return;
+      }
+      setTl(m);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ids]);
+
+  const series = top.map((r, ci) => {
+    const t = tl?.[r.creator_id];
+    const raw = (platform === "youtube" ? t?.youtube.map((v) => ({ at: v.at, n: v.views, sp: v.sponsored })) : t?.instagram.map((v) => ({ at: v.at, n: v.likes, sp: v.sponsored }))) ?? [];
+    const pos = raw.filter((p) => p.n > 0);
+    const sorted = [...pos].map((p) => p.n).sort((a, b) => a - b);
+    const med = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 1;
+    return { r, color: LINE[ci % LINE.length], pts: pos.map((p) => ({ ...p, rel: (100 * p.n) / med })) };
+  });
+  const shown = series.filter((s) => s.pts.length >= 3 && !off.has(s.r.creator_id));
+  const VW = 900, VH = 330, L = 64, R = 24, T = 20, B = 52;
+  const all = shown.flatMap((s) => s.pts.map((p) => p.rel));
+  const y0 = Math.max(5, Math.min(25, ...all) / 1.3), y1 = Math.max(400, ...all) * 1.15;
+  const X = (i: number, n: number) => L + (n <= 1 ? 0.5 : i / (n - 1)) * (VW - L - R);
+  const Y = (v: number) => VH - B - ((Math.log10(v) - Math.log10(y0)) / (Math.log10(y1) - Math.log10(y0))) * (VH - T - B);
+  const ticks = [10, 25, 50, 100, 200, 400, 800, 1600, 3200].filter((t) => t >= y0 && t <= y1);
+  const best = shown.flatMap((s) => s.pts.map((p) => ({ s, p }))).sort((a, b) => b.p.rel - a.p.rel)[0];
+  const h = hover ? series.find((s) => s.r.creator_id === hover.id) : undefined;
+  const hp = h && hover ? h.pts[hover.i] : undefined;
+  const date = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const unit = platform === "youtube" ? "views" : "likes";
+
+  return (
+    <div className="rounded-xl border border-line bg-panel p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-zinc-100">Recent performance of your top 3</h3>
+          <p className="mt-0.5 text-xs text-zinc-500">Each point is one post, compared with that creator&apos;s own usual (100%). Ringed points are sponsored posts.</p>
+        </div>
+        <div className="flex gap-1.5">
+          {(["youtube", "instagram"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPlatform(p)}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${platform === p ? "border-accent bg-accent text-background" : "border-line text-zinc-300 hover:border-accent"}`}
+            >
+              <Icon name={p} size={14} />
+              {p === "youtube" ? "YouTube views" : "Instagram likes"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {series.map((s) => {
+          const enough = s.pts.length >= 3;
+          const on = enough && !off.has(s.r.creator_id);
+          return (
+            <button
+              key={s.r.creator_id}
+              disabled={!enough}
+              onClick={() =>
+                setOff((o) => {
+                  const n = new Set(o);
+                  if (n.has(s.r.creator_id)) n.delete(s.r.creator_id);
+                  else n.add(s.r.creator_id);
+                  return n;
+                })
+              }
+              className={`flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs transition-colors ${on ? "border-line text-zinc-100" : "border-line text-zinc-600"}`}
+              title={enough ? "Show or hide this line" : `Too few ${platform === "youtube" ? "videos" : "posts"} on this platform`}
+            >
+              <span className="inline-block h-0.5 w-4 rounded" style={{ background: on ? s.color : "#2e3c4a" }} />
+              {s.r.name}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="relative mt-2">
+        {!tl ? (
+          <p className="py-16 text-center text-sm text-zinc-500">Loading their latest posts…</p>
+        ) : shown.length === 0 ? (
+          <p className="py-16 text-center text-sm text-zinc-500">Not enough recent {platform === "youtube" ? "YouTube videos" : "Instagram posts"} for these creators.</p>
+        ) : (
+          <svg viewBox={`0 0 ${VW} ${VH}`} className="block h-auto w-full" role="img" aria-label="Recent posts of the top creators compared with their usual" onMouseLeave={() => setHover(null)}>
+            {ticks.map((t) => (
+              <g key={t}>
+                <line x1={L} x2={VW - R} y1={Y(t)} y2={Y(t)} stroke={t === 100 ? "#4a5b6d" : "#1e2b37"} strokeDasharray={t === 100 ? "6 4" : undefined} />
+                <text x={L - 8} y={Y(t) + 4} fontSize="11" textAnchor="end" fill="#63768a">
+                  {t}%
+                </text>
+              </g>
+            ))}
+            <text x={VW - R - 4} y={Y(100) - 6} fontSize="11" textAnchor="end" fill="#8497aa">
+              their usual
+            </text>
+            <line x1={L} x2={VW - R} y1={VH - B} y2={VH - B} stroke="#8497aa" strokeWidth={1.5} />
+            <line x1={L} x2={L} y1={T} y2={VH - B} stroke="#8497aa" strokeWidth={1.5} />
+            <text x={L} y={VH - B + 18} fontSize="11" fill="#63768a">
+              older
+            </text>
+            <text x={VW - R} y={VH - B + 18} fontSize="11" textAnchor="end" fill="#63768a">
+              newest
+            </text>
+            <text x={(L + VW - R) / 2} y={VH - 10} fontSize="13" fontWeight={600} textAnchor="middle" fill="#cbd6e1">
+              X axis: their latest posts, in order
+            </text>
+            <text x={16} y={(T + VH - B) / 2} fontSize="13" fontWeight={600} textAnchor="middle" fill="#cbd6e1" transform={`rotate(-90 16 ${(T + VH - B) / 2})`}>
+              Y axis: {unit} vs their usual
+            </text>
+            {shown.map((s) => {
+              const n = s.pts.length;
+              const d = s.pts.map((p, i) => `${i ? "L" : "M"} ${X(i, n)} ${Y(Math.max(y0, p.rel))}`).join(" ");
+              return (
+                <g key={`${platform}-${s.r.creator_id}`}>
+                  <path d={d} fill="none" stroke={s.color} strokeWidth={2.2} strokeLinejoin="round" pathLength={1} className="lm-draw" style={{ animationDuration: "1.4s" }} />
+                  {s.pts.map((p, i) => (
+                    <g key={i} onMouseEnter={() => setHover({ id: s.r.creator_id, i })}>
+                      <circle cx={X(i, n)} cy={Y(Math.max(y0, p.rel))} r={10} fill="transparent" />
+                      <circle
+                        cx={X(i, n)}
+                        cy={Y(Math.max(y0, p.rel))}
+                        r={p.sp ? 5 : 3}
+                        fill={p.sp ? "var(--panel)" : s.color}
+                        stroke={s.color}
+                        strokeWidth={p.sp ? 2.5 : 0}
+                        className="lm-fade"
+                        style={{ animationDelay: `${600 + i * 25}ms` }}
+                      />
+                    </g>
+                  ))}
+                </g>
+              );
+            })}
+          </svg>
+        )}
+        {h && hp && hover && (
+          <div
+            className="pointer-events-none absolute z-10 w-56 rounded-lg border border-line bg-background/95 p-2.5 text-xs shadow-xl"
+            style={{ left: `${Math.min(82, (X(hover.i, h.pts.length) / VW) * 100)}%`, top: `${(Y(Math.max(y0, hp.rel)) / VH) * 100}%`, transform: "translate(-50%, 16px)" }}
+          >
+            <div className="font-semibold text-zinc-50">{h.r.name}</div>
+            <div className="text-zinc-400">
+              {date(hp.at)} · {hp.n.toLocaleString("en-IN")} {unit}
+            </div>
+            <div className="text-zinc-400">
+              {Math.round(hp.rel)}% of their usual{hp.sp ? " · sponsored" : ""}
+            </div>
+          </div>
+        )}
+      </div>
+      {best && (
+        <p className="mt-2 rounded-md border border-accent/30 bg-accent/5 px-3 py-2 text-sm text-zinc-200">
+          Biggest jump: {best.s.r.name}&apos;s {platform === "youtube" ? "video" : "post"} on {date(best.p.at)} reached {Math.round(best.p.rel)}% of their usual
+          {best.p.sp ? " (a sponsored post)" : ""}.
+        </p>
+      )}
     </div>
   );
 }

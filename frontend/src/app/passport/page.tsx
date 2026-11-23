@@ -1,6 +1,7 @@
 "use client";
 
 import Avatar from "@/components/Avatar";
+import Icon from "@/components/Icon";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -152,8 +153,8 @@ function Card({ icon, title, children }: { icon: string; title: string; children
   return (
     <div className="flex flex-col rounded-xl border border-line bg-panel p-4">
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-accent-soft text-sm" aria-hidden>
-          {icon}
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-accent-soft text-accent" aria-hidden>
+          <Icon name={icon} size={16} />
         </span>
         {title}
       </div>
@@ -169,7 +170,7 @@ function SpeedCard({ share, videos }: { share: number; videos: number }) {
   const C = 2 * Math.PI * R;
   const day1 = (shown / 100) * C;
   return (
-    <Card icon="⚡" title="Post on day one">
+    <Card icon="bolt" title="Post on day one">
       <div className="mt-3 flex items-center gap-4">
         <svg viewBox="0 0 110 110" className="h-28 w-28 shrink-0" role="img" aria-label={`${Math.round(share * 100)}% of first-week views on day one`}>
           <g transform="rotate(-90 55 55)">
@@ -241,7 +242,7 @@ function ClashCard({ n, days, creators, onOpen }: { n: number; days: number; cre
   const [open, setOpen] = useState(false);
   const faces = creators.slice(0, 7);
   return (
-    <Card icon="🛡" title="Rival brand check">
+    <Card icon="shield" title="Rival brand check">
       <div className="mt-3 flex items-baseline gap-2">
         <span className="text-4xl font-semibold tracking-tight text-accent">{shown}</span>
         <span className="text-sm text-zinc-400">creators promoted a brand in the last {days} days</span>
@@ -277,7 +278,7 @@ function ClashCard({ n, days, creators, onOpen }: { n: number; days: number; cre
 function BusyCard({ n, creators, onOpen }: { n: number; creators: PassportCreatorLite[]; onOpen: (id: string) => void }) {
   const shown = useCountUp(n);
   return (
-    <Card icon="📣" title="Busy with ads right now">
+    <Card icon="megaphone" title="Busy with ads right now">
       <div className="mt-3 flex items-baseline gap-2">
         <span className="text-4xl font-semibold tracking-tight text-accent">{shown}</span>
         <span className="text-sm text-zinc-400">creators are posting twice their usual ads this month</span>

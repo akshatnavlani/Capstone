@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -16,19 +17,19 @@ import { useRouter } from "next/navigation";
 // creator's profile text and the CLIP/BERT feature score embeds the same words. Avoid filler words such as "and" (they would match almost every profile).
 // 8 Nov 2026 (guide's request, user-friendly dropdown): the fitness and health products listed first, one option per kind of product.
 const CATEGORIES = [
-  { label: "Fitness and gym", icon: "🏋️", value: "fitness gym workout" },
-  { label: "Protein and supplements", icon: "🥤", value: "protein supplement whey nutrition" },
-  { label: "Protein bars and healthy snacks", icon: "🍫", value: "protein healthy snack nutrition diet" },
-  { label: "Energy and sports drinks", icon: "⚡", value: "energy drink hydration electrolyte" },
-  { label: "Running and sports shoes", icon: "👟", value: "shoes running sneakers footwear marathon" },
-  { label: "Sportswear and gymwear", icon: "👕", value: "sportswear activewear gymwear athleisure" },
-  { label: "Gym and home workout equipment", icon: "🏠", value: "equipment dumbbell gym workout" },
-  { label: "Yoga, meditation and wellness", icon: "🧘", value: "yoga meditation wellness" },
-  { label: "Health, diet and physiotherapy", icon: "🩺", value: "health diet nutrition physiotherapy doctor" },
-  { label: "Cricket and sports gear", icon: "🏏", value: "cricket sports gear" },
-  { label: "Badminton, football and other sports", icon: "⚽", value: "badminton football tennis kabaddi athlete sports" },
-  { label: "Healthy food and nutrition", icon: "🥗", value: "healthy food nutrition diet protein recipe" },
-  { label: "Running, cycling and marathons", icon: "🚴", value: "running marathon cycling endurance" },
+  { label: "Fitness and gym", icon: "dumbbell", value: "fitness gym workout" },
+  { label: "Protein and supplements", icon: "shake", value: "protein supplement whey nutrition" },
+  { label: "Protein bars and healthy snacks", icon: "bar", value: "protein healthy snack nutrition diet" },
+  { label: "Energy and sports drinks", icon: "bolt", value: "energy drink hydration electrolyte" },
+  { label: "Running and sports shoes", icon: "shoe", value: "shoes running sneakers footwear marathon" },
+  { label: "Sportswear and gymwear", icon: "shirt", value: "sportswear activewear gymwear athleisure" },
+  { label: "Gym and home workout equipment", icon: "home", value: "equipment dumbbell gym workout" },
+  { label: "Yoga, meditation and wellness", icon: "yoga", value: "yoga meditation wellness" },
+  { label: "Health, diet and physiotherapy", icon: "stethoscope", value: "health diet nutrition physiotherapy doctor" },
+  { label: "Cricket and sports gear", icon: "bat", value: "cricket sports gear" },
+  { label: "Badminton, football and other sports", icon: "ball", value: "badminton football tennis kabaddi athlete sports" },
+  { label: "Healthy food and nutrition", icon: "leaf", value: "healthy food nutrition diet protein recipe" },
+  { label: "Running, cycling and marathons", icon: "bike", value: "running marathon cycling endurance" },
   // Fitness and health only (user, 8 Nov 2026): no perfume, gadgets, travel, gaming, finance, entertainment, makeup or fashion.
 ];
 const OTHER = "__other";
@@ -47,9 +48,9 @@ const fromSlider = (s: number) => Math.round((MIN_B * Math.pow(MAX_B / MIN_B, s 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const short = (n: number) => (n >= 1e5 ? `₹${Number((n / 1e5).toFixed(1))}L` : `₹${Math.round(n / 1e3)}K`);
 const PLATFORMS = [
-  { key: "both", label: "Both", icon: "✨", pref: undefined },
-  { key: "youtube", label: "YouTube", icon: "▶️", pref: ["youtube"] as ("youtube" | "instagram")[] },
-  { key: "instagram", label: "Instagram", icon: "📸", pref: ["instagram"] as ("youtube" | "instagram")[] },
+  { key: "both", label: "Both", icon: "layers", pref: undefined },
+  { key: "youtube", label: "YouTube", icon: "youtube", pref: ["youtube"] as ("youtube" | "instagram")[] },
+  { key: "instagram", label: "Instagram", icon: "instagram", pref: ["instagram"] as ("youtube" | "instagram")[] },
 ];
 
 export default function BrandInputPage() {
@@ -108,7 +109,7 @@ export default function BrandInputPage() {
           {/* 1. product */}
           <Step n={1} title="What are you promoting?" done={!!productCategory}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-              {[...CATEGORIES, { label: "Something else", icon: "✍️", value: OTHER }].map((c, i) => {
+              {[...CATEGORIES, { label: "Something else", icon: "pen", value: OTHER }].map((c, i) => {
                 const on = categoryChoice === c.value;
                 return (
                   <button
@@ -121,8 +122,8 @@ export default function BrandInputPage() {
                     }`}
                     style={{ animationDelay: `${i * 30}ms` }}
                   >
-                    <span className={`text-2xl transition-transform ${on ? "scale-110" : ""}`} aria-hidden>
-                      {c.icon}
+                    <span className={`transition-transform ${on ? "scale-110 text-accent" : "text-zinc-400"}`} aria-hidden>
+                      <Icon name={c.icon} size={26} />
                     </span>
                     <span className="leading-tight">{c.label}</span>
                   </button>
@@ -211,8 +212,8 @@ export default function BrandInputPage() {
                     platform === p.key ? "border-accent bg-accent/10 text-zinc-50 shadow-[0_0_20px_rgba(245,184,61,0.25)]" : "border-line bg-background/50 text-zinc-300 hover:border-zinc-500"
                   }`}
                 >
-                  <span className="text-xl" aria-hidden>
-                    {p.icon}
+                  <span className={platform === p.key ? "text-accent" : "text-zinc-400"} aria-hidden>
+                    <Icon name={p.icon} size={22} />
                   </span>
                   {p.label}
                 </button>
@@ -254,10 +255,10 @@ export default function BrandInputPage() {
         <aside className="lg:sticky lg:top-6 lg:self-start">
           <div className="flex flex-col gap-4 rounded-2xl border border-accent/40 bg-panel p-5 shadow-[0_0_40px_-20px_rgba(245,184,61,0.6)]">
             <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-accent">Your brief</h2>
-            <Row icon={chosen?.icon ?? (categoryChoice === OTHER ? "✍️" : "❔")} label="Promoting" value={chosen?.label ?? (categoryChoice === OTHER ? customCategory || "Something else" : "Pick a product")} muted={!productCategory} />
-            <Row icon="💰" label="Budget" value={inr(budget)} />
+            <Row icon={chosen?.icon ?? (categoryChoice === OTHER ? "pen" : "help")} label="Promoting" value={chosen?.label ?? (categoryChoice === OTHER ? customCategory || "Something else" : "Pick a product")} muted={!productCategory} />
+            <Row icon="wallet" label="Budget" value={inr(budget)} />
             <Row icon={plat.icon} label="Platform" value={plat.label === "Both" ? "YouTube and Instagram" : plat.label} />
-            {(targetRegion || targetDemographic) && <Row icon="🎯" label="Reach" value={[targetRegion, targetDemographic].filter(Boolean).join(" · ")} />}
+            {(targetRegion || targetDemographic) && <Row icon="target" label="Reach" value={[targetRegion, targetDemographic].filter(Boolean).join(" · ")} />}
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button
               type="submit"
@@ -292,8 +293,8 @@ function Step({ n, title, done, children }: { n: number; title: string; done: bo
 function Row({ icon, label, value, muted }: { icon: string; label: string; value: string; muted?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-background text-xl" aria-hidden>
-        {icon}
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-background text-accent" aria-hidden>
+        <Icon name={icon} size={20} />
       </span>
       <div className="min-w-0">
         <div className="text-[11px] uppercase tracking-wide text-zinc-500">{label}</div>

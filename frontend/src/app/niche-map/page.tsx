@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Avatar from "@/components/Avatar";
+import Icon from "@/components/Icon";
 import { postRecommendations } from "@/lib/api";
 
 // Niche Map (22 Nov 2026, idea 3 of 3 Nov; made friendlier 23 Nov): every creator the model knows, placed by what their
@@ -17,20 +18,20 @@ type Match = { p: Point; fit: number };
 
 // Categorical palette, dark-surface steps, fixed order (validated: dataviz validate_palette.js, surface #101820, all pass).
 const NICHES = [
-  { name: "Gym and bodybuilding", short: "Gym", icon: "🏋️", color: "#3987e5" },
-  { name: "Nutrition and health", short: "Nutrition", icon: "🥗", color: "#d95926" },
-  { name: "Yoga and wellness", short: "Yoga", icon: "🧘", color: "#199e70" },
-  { name: "Sports and athletes", short: "Sports", icon: "🏏", color: "#c98500" },
-  { name: "Running and endurance", short: "Running", icon: "🏃", color: "#d55181" },
-  { name: "Lifestyle and other", short: "Lifestyle", icon: "✨", color: "#0ca30c" },
+  { name: "Gym and bodybuilding", short: "Gym", icon: "dumbbell", color: "#3987e5" },
+  { name: "Nutrition and health", short: "Nutrition", icon: "leaf", color: "#d95926" },
+  { name: "Yoga and wellness", short: "Yoga", icon: "yoga", color: "#199e70" },
+  { name: "Sports and athletes", short: "Sports", icon: "bat", color: "#c98500" },
+  { name: "Running and endurance", short: "Running", icon: "run", color: "#d55181" },
+  { name: "Lifestyle and other", short: "Lifestyle", icon: "sparkle", color: "#0ca30c" },
 ];
 const BY_NICHE = Object.fromEntries(NICHES.map((n) => [n.name, n]));
 const BRIEFS = [
-  { label: "Fitness and gym", icon: "🏋️", value: "fitness gym workout" },
-  { label: "Protein and supplements", icon: "🥤", value: "protein supplement whey nutrition" },
-  { label: "Yoga and wellness", icon: "🧘", value: "yoga meditation wellness" },
-  { label: "Running shoes", icon: "👟", value: "shoes running sneakers footwear marathon" },
-  { label: "Healthy food", icon: "🥗", value: "healthy food nutrition diet protein recipe" },
+  { label: "Fitness and gym", icon: "dumbbell", value: "fitness gym workout" },
+  { label: "Protein and supplements", icon: "shake", value: "protein supplement whey nutrition" },
+  { label: "Yoga and wellness", icon: "yoga", value: "yoga meditation wellness" },
+  { label: "Running shoes", icon: "shoe", value: "shoes running sneakers footwear marathon" },
+  { label: "Healthy food", icon: "leaf", value: "healthy food nutrition diet protein recipe" },
 ];
 const W = 1000, H = 620, PAD = 36;
 const FULL: Box = { x: 0, y: 0, w: W, h: H };
@@ -218,8 +219,8 @@ export default function NicheMapPage() {
               brief === b.value ? "border-accent bg-accent text-background shadow-[0_0_18px_rgba(245,184,61,0.35)]" : "border-line bg-panel text-zinc-200 hover:border-accent"
             }`}
           >
-            <span className="text-base" aria-hidden>
-              {b.icon}
+            <span aria-hidden>
+              <Icon name={b.icon} size={18} />
             </span>
             {b.label}
           </button>
@@ -326,7 +327,7 @@ export default function NicheMapPage() {
                         <g transform={`translate(${lx} ${ly}) scale(${k})`}>
                           <rect x={-64} y={-18} width={128} height={36} rx={18} fill={on ? s.color : "#0b131a"} fillOpacity={on ? 0.95 : 0.88} stroke={s.color} strokeWidth={2} />
                           <text x={0} y={5} textAnchor="middle" fontSize="14" fontWeight={600} fill={on ? "#0b131a" : "#f2f6fa"}>
-                            {s.icon} {s.short} · {s.count}
+                            {s.short} · {s.count}
                           </text>
                         </g>
                       </g>
@@ -340,9 +341,9 @@ export default function NicheMapPage() {
                   ))}
                   <g className="nm-drop">
                     <path d="M0 0 C -14 -18 -16 -26 -16 -32 A 16 16 0 1 1 16 -32 C 16 -26 14 -18 0 0 Z" fill="#f5b83d" stroke="#0b131a" strokeWidth={2} />
-                    <text x={0} y={-27} textAnchor="middle" fontSize="15">
-                      {briefLabel?.icon ?? "★"}
-                    </text>
+                    <g style={{ color: "#0b131a" }}>
+                      <Icon name={briefLabel?.icon ?? "star"} x={-9} y={-41} size={18} strokeWidth={2.2} />
+                    </g>
                   </g>
                 </g>
               )}
@@ -382,7 +383,8 @@ export default function NicheMapPage() {
                 <div className="text-xs">
                   <div className="font-semibold text-zinc-50">{hp.name}</div>
                   <div className="mt-0.5 text-zinc-400">
-                    {BY_NICHE[hp.niche]?.icon} {hp.niche}
+                    <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: BY_NICHE[hp.niche]?.color }} />
+                    {hp.niche}
                   </div>
                   {hp.subscribers != null && <div className="text-zinc-500">{subs(hp.subscribers)}</div>}
                 </div>
@@ -396,7 +398,9 @@ export default function NicheMapPage() {
                   <div className="relative h-40 w-40 rounded-full border border-signal/40">
                     <div className="nm-radar absolute inset-0 rounded-full" />
                     <div className="absolute inset-[30%] rounded-full border border-signal/30" />
-                    <span className="absolute inset-0 grid place-items-center text-3xl">{briefLabel?.icon}</span>
+                    <span className="absolute inset-0 grid place-items-center text-signal">
+                      <Icon name={briefLabel?.icon ?? "star"} size={36} />
+                    </span>
                   </div>
                   <p className="rounded-full bg-background/85 px-4 py-1.5 text-sm text-zinc-200">Finding where {briefLabel?.label.toLowerCase()} fits… (about 20 seconds)</p>
                 </div>
@@ -424,7 +428,7 @@ export default function NicheMapPage() {
                   className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition-colors ${hidden.has(n.name) ? "border-line text-zinc-600" : "border-line text-zinc-200 hover:border-zinc-500"}`}
                 >
                   <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: hidden.has(n.name) ? "transparent" : n.color, border: `2px solid ${n.color}` }} />
-                  {n.icon} {n.short} <span className="text-zinc-500">{n.count}</span>
+                  {n.short} <span className="text-zinc-500">{n.count}</span>
                 </button>
               </li>
             ))}
@@ -433,7 +437,8 @@ export default function NicheMapPage() {
           {matches && mix && (
             <div className="lm-rise flex flex-col gap-3 rounded-2xl border border-line bg-panel p-5">
               <p className="text-base text-zinc-100">
-                📍 Your product lives mostly in <span className="font-semibold" style={{ color: mix.niche?.color }}>{mix.niche?.icon} {mix.niche?.short}</span>{" "}
+                <Icon name="pin" size={18} className="mr-1.5 inline -translate-y-0.5 text-accent" />
+                Your product lives mostly in <span className="font-semibold" style={{ color: mix.niche?.color }}>{mix.niche?.short}</span>{" "}
                 <span className="text-zinc-400">
                   ({mix.n} of your {mix.of} closest creators)
                 </span>
@@ -452,7 +457,8 @@ export default function NicheMapPage() {
                     <Avatar creatorId={m.p.creator_id} name={m.p.name} size={52} />
                     <span className="line-clamp-2 text-sm font-medium text-zinc-100">{m.p.name}</span>
                     <span className="text-[11px] text-zinc-400">
-                      {BY_NICHE[m.p.niche]?.icon} {BY_NICHE[m.p.niche]?.short}
+                      <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: BY_NICHE[m.p.niche]?.color }} />
+                      {BY_NICHE[m.p.niche]?.short}
                     </span>
                     <span className="w-full">
                       <span className="block h-1.5 overflow-hidden rounded-full bg-line">

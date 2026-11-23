@@ -117,6 +117,20 @@ export async function getPlatformProfile(creatorId: string): Promise<PlatformPro
   return res.json();
 }
 
+// GET /platform-profiles/{id}/timeline (23 Nov 2026): latest YouTube videos (7+ days old) and Instagram posts, oldest first.
+export type CreatorTimeline = {
+  creator_id: string;
+  youtube: { at: string; views: number; sponsored: boolean }[];
+  instagram: { at: string; likes: number; sponsored: boolean }[];
+};
+export async function getTimeline(creatorId: string): Promise<CreatorTimeline> {
+  const res = await fetch(`${API_BASE_URL}/platform-profiles/${creatorId}/timeline`);
+  if (!res.ok) {
+    throw new Error(`GET /platform-profiles/${creatorId}/timeline failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function getPassportSummary(): Promise<PassportSummary> {
   const res = await fetch(`${API_BASE_URL}/passport/summary`);
   if (!res.ok) {
