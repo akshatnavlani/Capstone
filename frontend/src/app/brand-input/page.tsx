@@ -34,13 +34,6 @@ const CATEGORIES = [
 ];
 const OTHER = "__other";
 
-// Mid price of one Instagram post or YouTube Short by audience size: the geometric middle of each published range
-// (data/cost_rate_card.csv: nano 2k-8k, micro 8k-80k, mid 50k-3.5L, macro 2L-12L), as ml/cost_estimate.py computes it.
-const TIERS = [
-  { label: "Small creators", size: "10K–100K followers", price: 25298 },
-  { label: "Mid-size creators", size: "100K–500K", price: 132288 },
-  { label: "Big creators", size: "500K–2M", price: 489898 },
-];
 const PRESETS = [25000, 50000, 100000, 300000, 500000, 1000000];
 const MIN_B = 10000, MAX_B = 2000000;
 const toSlider = (b: number) => (100 * Math.log(b / MIN_B)) / Math.log(MAX_B / MIN_B);
@@ -179,24 +172,6 @@ export default function BrandInputPage() {
                 </button>
               ))}
             </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              {TIERS.map((t) => {
-                const n = Math.floor(budget / t.price);
-                return (
-                  <div key={t.label} className={`rounded-xl border p-3 transition-colors ${n > 0 ? "border-signal/40 bg-signal/5" : "border-line opacity-60"}`}>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-mono text-2xl font-semibold text-zinc-50">{n}</span>
-                      <span className="text-xs text-zinc-400">post{n === 1 ? "" : "s"}</span>
-                    </div>
-                    <div className="text-xs text-zinc-300">{t.label}</div>
-                    <div className="text-[11px] text-zinc-500">
-                      {t.size} · about {short(t.price)} each
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="mt-2 text-[11px] text-zinc-500">What your budget buys, roughly: one Instagram post or YouTube Short, mid prices from published Indian rate cards.</p>
           </Step>
 
           {/* 3. platform */}
