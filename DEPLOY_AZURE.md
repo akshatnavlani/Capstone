@@ -95,6 +95,23 @@ az containerapp update -g $RG -n capstone-backend --image "$ACR.azurecr.io/capst
 az containerapp update -g $RG -n capstone-frontend --image "$ACR.azurecr.io/capstone-frontend:v2"
 ```
 
+## Demo-only deployment (deploy, show, delete)
+For a one-day demo keep the backend always on, so nobody waits for it to wake up (roughly 5 USD per 24 h, mostly covered
+by the monthly free amount):
+```powershell
+az containerapp update -g $RG -n capstone-backend --min-replicas 1
+az containerapp update -g $RG -n capstone-frontend --min-replicas 1
+```
+Right after the demo, delete what was created for it. **Do not delete the resource group**: it also holds the database.
+```powershell
+az containerapp delete -g $RG -n capstone-frontend --yes
+az containerapp delete -g $RG -n capstone-backend --yes
+az containerapp env delete -g $RG -n capstone-env --yes
+az acr delete -g $RG -n $ACR --yes
+az postgres flexible-server firewall-rule delete -g $RG -n $PG --rule-name allow-azure-services --yes
+```
+The database and its data are not touched by any of these.
+
 ## Stopping it (to save credit)
 ```powershell
 az containerapp update -g $RG -n capstone-backend --min-replicas 0
