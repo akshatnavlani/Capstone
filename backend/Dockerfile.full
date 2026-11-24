@@ -1,0 +1,35 @@
+# FULL backend image for deployment (24 Nov 2026): the API plus the ML models, so the live site gives real scores.
+# The plain backend/Dockerfile leaves ml/ and the models out (scores fall back to a neutral 0.5); this one includes:
+#   ml/ (GAIL inference, CLIP/BERT query embedder), models/gail_checkpoint.pt, models/creator_embeddings.npz,
+#   CLIP (openai/clip-vit-base-patch32) and BERT (bert-base-uncased) weights downloaded at build time.
+# Build context = repo root:   docker build -f backend/Dockerfile.full -t capstone-backend-full .
+# Needs about 3-4 GB RAM at run time. DATABASE_URL (and API_KEY, CORS_ALLOW_ORIGINS) come from the host's secret settings,
+# never from the image.
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    HF_HOME=/srv/hf
+WORKDIR /srv
+
+# Python packages: the API's own, then the ML stack (PyTorch CPU build, same versions as the local venv).
+COPY backend/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+ && pip install --no-cache-dir torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu \
+ && pip install --no-cache-dir torch-geometric==2.8.0.post1 transformers==5.14.1 scipy==1.18.1 pillow==12.2.0 requests==2.34.2
+
+# CLIP and BERT weights baked into the image, so the server never downloads them at start-up.
+RUN python -c "from transformers import BertModel, BertTokenizer, CLIPModel, CLIPProcessor; \
+CLIPModel.from_pretrained('openai/clip-vit-base-patch32'); CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32'); \
+BertTokenizer.from_pretrained('bert-base-uncased'); BertModel.from_pretrained('bert-base-uncased')"
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
+
+COPY ml/ ./ml/
+COPY backend/ ./backend/
+# Result files the API reads (same list as backend/Dockerfile) plus the two model artifacts.
+COPY models/analysis_dashboard.json models/creator_passport.json models/platform_pairs.json models/promotion_behaviour.json models/temporal_sentiment.json models/creator_photos.json models/gail_real_results.json models/semisynth_new_graph_effect0.json models/semisynth_new_graph_effect1.json models/power_analysis.json models/fusion_simulation.json models/e4_e5_results.json models/published_baselines_eesha.json models/creator_value.csv models/hidden_creators.json models/gail_checkpoint.pt models/creator_embeddings.npz ./models/
+
+WORKDIR /srv/backend
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=5 CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

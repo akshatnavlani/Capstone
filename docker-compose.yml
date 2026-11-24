@@ -2,19 +2,19 @@
 #     docker compose up --build
 # then open http://localhost:3000. The database address is read from your shell or from a .env file next to this file (DATABASE_URL), never baked into an image.
 #
-# STATUS (1 Nov 2026): RUN AND TESTED on Docker Desktop 4.97 (engine 29.9.2, WSL 2): both images build, the backend reports healthy, every API endpoint tested answers 200 (health, passport,
-# analysis, alerts, scenario, creators, a real /recommendations request in about 4 s) and all 7 frontend pages answer 200. Needs DATABASE_URL (from the shell or a .env next to this file).
-#
-# The backend image has no ml/ and no checkpoint, so inside Docker the GAIL spillover score and the CLIP/BERT creator-feature score fall back to the neutral 0.5 by design.
-# It does serve the passport, the analysis tab, the platform comparison and the sentiment result files (copied from models/). The full models run when the backend is started
-# outside Docker (python -m uvicorn app.main:app --app-dir backend) from the repository root.
+# 24 Nov 2026: the backend now builds from backend/Dockerfile.full, which includes ml/, the GAIL checkpoint, the creator embeddings and the
+# CLIP/BERT weights, so Docker gives the same real scores as the backend run outside Docker (tested: protein brief, Sonal Kapoor 80.3, GAIL 0.96).
+# The image is about 4.8 GB and needs about 3-4 GB RAM. The plain backend/Dockerfile (no models, neutral 0.5 scores) is kept for a light API-only image.
+# For a deployed site set CORS_ALLOW_ORIGINS (the site's address) and API_KEY on the host, and build the frontend with NEXT_PUBLIC_API_BASE_URL = the backend's address.
 services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/Dockerfile.full
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      - API_KEY=${API_KEY:-}
     ports:
       - "8000:8000"
 
